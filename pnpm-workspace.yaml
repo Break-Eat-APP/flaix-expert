@@ -1,0 +1,6 @@
+packages:
+  - apps/*
+  - packages/*
+# Seuls les paquets listés ici peuvent exécuter un script à l'installation.
+allowBuilds:
+  esbuild: true

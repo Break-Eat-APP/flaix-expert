@@ -1,0 +1,19 @@
+{
+  "name": "flaix-expert",
+  "private": true,
+  "description": "FlaiX Expert — caisse et gestion financière des buvettes de stade (Break Eat)",
+  "packageManager": "pnpm@11.3.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "db:up": "docker compose -f infra/docker-compose.yml up -d --wait",
+    "db:down": "docker compose -f infra/docker-compose.yml down",
+    "db:migrate": "pnpm --filter @flaix/api migrate",
+    "db:reset": "pnpm --filter @flaix/api db-reset",
+    "cli": "pnpm --filter @flaix/api cli",
+    "dev": "pnpm --parallel --filter @flaix/api --filter @flaix/web dev",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  }
+}

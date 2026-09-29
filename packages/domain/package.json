@@ -1,0 +1,22 @@
+{
+  "name": "@flaix/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Modèle canonique et moteur de calcul de FlaiX Expert — code pur, sans accès réseau ni base, testé.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2"
+  }
+}
