@@ -19,6 +19,7 @@ docs/             dossier projet, brief, décisions, questions à l'expert-compt
 Prérequis : Node.js 24+, pnpm, Docker Desktop.
 
 ```bash
+git config core.hooksPath .githooks   # garde-fou : n'autorise l'envoi que vers Break-Eat-APP/flaix-expert
 pnpm install
 pnpm db:up          # démarre PostgreSQL (port 5433)
 pnpm db:migrate     # applique le schéma

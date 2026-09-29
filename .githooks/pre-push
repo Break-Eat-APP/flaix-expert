@@ -1,0 +1,24 @@
+#!/bin/sh
+# Garde-fou : ce dépôt (FlaiX Expert) ne peut être envoyé que vers
+# github.com/Break-Eat-APP/flaix-expert — jamais vers breakeat-admin ni
+# vers un autre dépôt, même en cas d'erreur de manipulation.
+# Activé par : git config core.hooksPath .githooks (voir README).
+
+nom_distant="$1"
+adresse="$2"
+
+case "$adresse" in
+  https://github.com/Break-Eat-APP/flaix-expert | \
+  https://github.com/Break-Eat-APP/flaix-expert.git | \
+  git@github.com:Break-Eat-APP/flaix-expert | \
+  git@github.com:Break-Eat-APP/flaix-expert.git)
+    exit 0
+    ;;
+esac
+
+echo "" >&2
+echo "ENVOI REFUSÉ : ce dossier contient FlaiX Expert." >&2
+echo "  Destination demandée : $nom_distant ($adresse)" >&2
+echo "  Seule destination autorisée : https://github.com/Break-Eat-APP/flaix-expert" >&2
+echo "" >&2
+exit 1
