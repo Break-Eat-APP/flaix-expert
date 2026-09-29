@@ -1,6 +1,6 @@
 # Questions à poser par écrit à l'expert-comptable (ou à un fiscaliste)
 
-**Préparé le 2026-09-28.** À envoyer par Rémi Notta. Réponse écrite demandée — une réponse orale ne pourra pas être versée au dossier de conformité.
+**Préparé le 2026-09-28, mis à jour le 2026-09-29** (le paiement carte en caisse passe par le TPE bancaire du lieu, pas par Stripe). À envoyer par Rémi Notta. Réponse écrite demandée — une réponse orale ne pourra pas être versée au dossier de conformité.
 
 ---
 
@@ -10,7 +10,7 @@ Break Eat *(forme sociale exacte à confirmer : SAS ou SASU)*, SIREN 925 187 395
 
 Fonctionnement prévu :
 - la caissière saisit chaque vente dans FlaiX Expert, sur une tablette : le logiciel crée le ticket (produits, prix, TVA, remises) ;
-- le règlement se fait par carte bancaire via un terminal **Stripe**, rattaché au **compte Stripe du lieu** (l'argent va directement au lieu ; Break Eat ne perçoit aucun fonds et facture ses services en fin de mois) ;
+- le règlement par carte se fait sur le **terminal de paiement (TPE) du lieu, fourni par sa propre banque**, qui n'est **pas relié** au logiciel : la caissière indique « carte » sur le ticket une fois le paiement accepté sur le TPE (l'argent va directement au lieu ; Break Eat ne perçoit aucun fonds et facture ses services en fin de mois) ;
 - les espèces : *(à préciser par Rémi avant l'envoi : aucune / sur certaines caisses)* ;
 - le logiciel conserve chaque ticket sans possibilité de modification ni de suppression, avec clôtures journalière, mensuelle et annuelle, et archive annuelle.
 
@@ -18,8 +18,8 @@ Fonctionnement prévu :
 
 ## A. Obligation de logiciel de caisse sécurisé (CGI art. 286, I-3° bis)
 
-1. Dans ce fonctionnement, FlaiX Expert est-il un « logiciel ou système de caisse » au sens de l'article 286, I-3° bis du CGI, du fait qu'il **enregistre** chaque vente et son mode de règlement, même si le paiement est traité par Stripe ?
-2. La dispense du BOFiP (BOI-TVA-DECLA-30-10-30, §35 à §37) vise les paiements réalisés exclusivement par « l'intermédiation directe d'un établissement de crédit ». Stripe opère en Europe, sauf erreur de notre part, comme **établissement de monnaie électronique** agréé en Irlande, et non comme établissement de crédit. **Un lieu qui n'accepte que la carte bancaire via Stripe peut-il bénéficier de cette dispense ?**
+1. Dans ce fonctionnement, FlaiX Expert est-il un « logiciel ou système de caisse » au sens de l'article 286, I-3° bis du CGI, du fait qu'il **enregistre** chaque vente et son mode de règlement, même si le paiement carte est traité par un TPE bancaire qui n'est pas relié au logiciel ?
+2. La dispense du BOFiP (BOI-TVA-DECLA-30-10-30, §35 à §37) vise les paiements réalisés exclusivement par « l'intermédiation directe d'un établissement de crédit ». **Un lieu qui n'accepte que la carte bancaire, sur le TPE fourni par sa banque, bénéficie-t-il de cette dispense ?** (L'exemple 4 du §37, péages et distributeurs de carburant n'acceptant que la carte, semble aller dans ce sens, mais ne vise pas explicitement un comptoir de restauration.)
 3. Si une seule caisse du lieu accepte des espèces, confirmez-vous que la dispense ne s'applique à aucune caisse du lieu (BOFiP §37, « quelle que soit l'importance de cette partie ») ?
 4. Break Eat peut-il délivrer lui-même l'**attestation individuelle d'éditeur** (modèle BOI-LETTRE-000242) à ses clients, compte tenu de son activité déclarée ? Y a-t-il une condition que nous n'aurions pas vue ?
 
@@ -37,7 +37,7 @@ Fonctionnement prévu :
 7. Une remise « abonné » de 15 % consentie au moment de la vente réduit-elle la base de la TVA (CGI art. 267, II-1°) ? La TVA porte-t-elle bien sur le prix net ?
 8. Un produit **offert** (geste commercial, repas du personnel) : quel traitement TVA, et comment doit-il apparaître dans la caisse ?
 9. La commission facturée par Break Eat au lieu (TVA 20 %) : le lieu, assujetti, peut-il déduire cette TVA ?
-10. Les frais prélevés par Stripe sur chaque paiement sont-ils soumis à TVA, et le lieu peut-il la récupérer ?
+10. Les frais prélevés sur les paiements (commission bancaire du TPE ; frais Stripe sur les commandes Click & Collect passées dans l'application Break Eat) sont-ils soumis à TVA, et le lieu peut-il la récupérer ?
 
 ## D. Conservation et contrôle
 

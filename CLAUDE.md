@@ -21,12 +21,12 @@ Le prototype de référence (`docs/reference/flaix-gestion-final.html`, artifact
 
 ## Périmètre de cette mise en production (résumé — le détail fait foi dans le brief)
 
-Confirmé avec Rémi le 2026-09-28 : le module **Ma caisse** (création de tickets par la caissière) est dans le périmètre, avec un encaissement carte via **Stripe** — ce n'est ni le « Mode A » ni le « Mode B » tels que définis initialement dans le dossier (§0), voir le brief §2 pour le détail et le point bloquant NF525/Stripe à faire trancher avant de coder cette brique.
+Confirmé avec Rémi le 2026-09-28 : le module **Ma caisse** (création de tickets par la caissière) est dans le périmètre. **Corrigé par Rémi le 2026-09-29 : aucun encaissement ne passe par Stripe ni par FlaiX Expert. Le paiement carte se fait sur le TPE du lieu (sa banque), non relié au logiciel ; la caisse enregistre « carte » une fois le paiement accepté** (dossier §15.95). Stripe ne concerne que le Click & Collect de l'application Break Eat. La question NF525 reste à trancher avant la mise en service réelle de la caisse (`docs/questions-expert-comptable.md`).
 
 ## Avant de commencer à coder
 
 1. Lire les documents `docs/` en entier.
-2. ~~Écrire et faire valider les décisions d'architecture~~ — **fait le 2026-09-28** (`docs/decisions-architecture-production.md` § 10). Restent ouverts : produit Stripe, hébergeur, ticket papier/dématérialisé, hors-ligne (§ 11 du même document).
+2. ~~Écrire et faire valider les décisions d'architecture~~ — **fait le 2026-09-28** (`docs/decisions-architecture-production.md` § 10). Restent ouverts : hébergeur de production, ticket papier/dématérialisé, hors-ligne, et la nouvelle organisation des écrans (dossier §15.95) (§ 11 du même document).
 3. ~~Construire la configuration d'un lieu vide~~ — **socle + phase 1 livrés le 2026-09-28** (dossier §15.93), en attente de validation visuelle par Rémi.
 4. Ensuite, reprendre la méthode déjà éprouvée sur ce projet : un module à la fois, décision → code → vérification → validation visuelle par Rémi → module suivant.
 

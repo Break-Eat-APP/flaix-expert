@@ -3897,3 +3897,35 @@ Le module 15c (recettes/sous-recettes) était en pause depuis le 25/08 (§15.25)
 - Le serveur de test affiche en permanence « VERSION DE TEST — aucune vente réelle ».
 
 **Vérifié (étape 1, 2026-09-29)** : 102 tests automatisés (50 sur le moteur, dont le calcul du ticket avec les exemples du dossier — 15,50 € remise abonné 10 % → 13,95 € ; 7,00 € remise abonné 15 % → 5,95 € ; 52 sur le serveur et la base, dont les tests de falsification A1, A2, A3, A8 sur le journal de caisse et les lignes de ticket, le test A6 d'annulation, vingt ventes simultanées sur une caisse sans trou ni doublon de numéro, et l'envoi répété d'un même ticket qui n'en crée jamais deux). Parcours complet dans le navigateur : match ouvert → caisse 1 ouverte avec 150 € de fond → ticket de 24,00 € au tarif abonné 15 % = 20,40 €, 50 € donnés, 29,60 € rendus, TVA 0,18 € (5,5 %) et 1,54 € (10 %) → ticket carte de 7,00 € avec 1 € offert → annulation de ce ticket (le ticket d'origine demeure, marqué « Annulé », l'annulation porte le numéro suivant) → intégrité des chaînes « Intègre » → clôture de caisse : 170,40 € d'espèces attendues → match clos. Deux défauts trouvés et corrigés : colonnes coupées sur un écran de portable dans « Mes caisses » ; lignes du détail d'un ticket affichées après remise alors que la remise était aussi listée (lecture ambiguë, désormais montant brut par ligne puis remise, offert et total).
+
+### 15.95 Retour de la démonstration au directeur — trop d'informations ; encaissement sur le TPE du lieu (2026-09-29) — PROPOSITION, à valider
+
+**Message de Rémi (verbatim, extraits)** : *« j'ai présenté la démo au directeur. Et je me suis un petit peu perdu. Je trouve qu'il y a beaucoup trop d'informations, que ça part un peu dans tous les sens. Que ce n'est pas bien structuré. […] Les clôtures doivent être dans d'autres modules, je pense qu'il faut mettre tout ce qui est résultat dans un module, tout ce qui est paramètres dans un module. Pour le moment, mon système d'encaissement ne fait aucun encaissement via Stripe, je ne gère pas les encaissements, tout est fait sur un TPE à part, à eux. »* Trois images de référence jointes (un tableau de bord d'administration, deux tableaux de bord « fitness ») : menu latéral court à icônes, quatre chiffres clés en cartes avec mini-graphique, un graphique principal, un panneau latéral avec calendrier et événements à venir, beaucoup d'espace.
+
+**1. Encaissement — fait acté** : aucun encaissement ne passe par Stripe ni par FlaiX Expert ; le paiement carte se fait sur le **TPE bancaire du lieu, non relié**. Conséquences appliquées aux documents le jour même : `decisions-architecture-production.md` § 6 (Stripe sans objet pour la caisse), § 7 (phase Stripe retirée), § 8 point 1 ; `questions-expert-comptable.md` (contexte et question 2 réécrits) ; CLAUDE.md. Ce que la caisse faisait déjà reste juste : « carte » est déclaré par la caissière. **Proposition nouvelle, à valider** : dans la clôture, saisir le total du ticket de fin de journée du TPE de chaque caisse et l'afficher face au total carte enregistré (écart carte), ce qui couvre le risque « validé sans être payé » (§15.9 point 5, §7 du dossier). Stripe ne reste utile que pour le Click & Collect de l'application Break Eat (moteur de prix du module 13, inchangé).
+
+**2. Diagnostic de la surcharge** : deux causes, distinctes. (a) Le prototype présenté porte beaucoup de texte de maquette (avertissements « jeu de test », références « §15.xx », sous-titres « Modules fusionnés : … ») : ce texte n'existe pas en production (§3, « trois registres »). (b) Mais même sans lui, l'organisation validée au §15.81 donne 9 sections et jusqu'à 7 sous-modules par section, et mélange dans une même section des résultats, des réglages et des clôtures (« Clôture & Pilotage » contient à la fois l'écart de caisse, les clôtures, l'optimisation et les marges). Le retour de Rémi vise juste.
+
+**3. Organisation proposée — 6 entrées, rangées par ce que fait le directeur** :
+
+| Entrée | Question à laquelle elle répond | Onglets | Modules validés qu'elle reprend |
+|---|---|---|---|
+| **Résultats** (page d'accueil) | « Comment s'est passé le match ? » | Vue d'ensemble · Ventes · Finances · Marges · Rapports de soirée | Ventes & CA (2, y compris la comparaison entre deux matchs §15.89), Gestion financière (11), Marges & ratios (5), Optimisation (6, recommandations dans l'onglet Marges), Reporting de soirée (9), Centre d'alertes (18, en encadré « À surveiller » de la vue d'ensemble, liste complète en un clic) |
+| **Caisses** | « Qu'est-ce qui se vend en ce moment ? » | En direct · Tickets du match | Mes caisses (§15.73), Ma caisse (1, l'écran de vente), Journal / Tickets (3) ; l'ouverture du match du jour se fait ici |
+| **Stock** | « Qu'est-ce que j'envoie, qu'est-ce qu'il reste ? » | Mise en place · Pendant le match · Comptage · Réserve & livraisons | Stock (4) |
+| **Équipe** | « Qui travaille, combien ça coûte ? » | Planning · Fiches · Masse salariale | Personnel et planning (14) |
+| **Clôtures** | « Est-ce que tout est bouclé et conforme ? » | Clôture du match · Mois & année · Archives & contrôle | Écart de caisse (7) et Clôture d'événement (10) réunis en un seul assistant (ventes → restes → espèces et carte → clôture), Clôtures mensuelle & annuelle (§15.85), archives et accès vérificateur de Conformité (16) |
+| **Paramètres** | « Comment est réglé mon lieu ? » | Le lieu · Stands & caisses · Produits & prix · Click & Collect · Saison · Objectifs & coûts · Accès · Conformité | Identité et réglages de caisse, Gestion des stands & caisses (§15.88), Config produits (15b, avec catégories et recettes), Click & Collect (13, prix app), Calendrier des matchs, Configuration cible & marge (§15.79) et cibles par produit (§15.78), Coûts par buvette (8), comptes, journal technique et attestation (16) |
+| *Plus tard* | | | Fidélité (19, 20) et Facturation (12a, 12b) : ajoutés au menu le jour où ils sont construits, pas avant |
+
+**Retiré du menu, proposé** : « Lexique des règles » (§15.58, que Rémi avait accepté « on verra plus tard si on la garde ») — chaque écran garde son bloc « Règles » repliable, qui dit la même chose au bon endroit.
+
+**4. Règles d'écran proposées, pour tous les modules** :
+1. Un écran répond à une question. En haut, quatre chiffres au plus, avec leur évolution par rapport au match précédent ; le détail vient en dessous.
+2. Une phrase de sous-titre au plus. Toute explication va dans le bloc « Règles », fermé par défaut.
+3. Cinq onglets au plus par entrée du menu.
+4. Aucun texte technique à l'écran : ni numéro de module, ni référence au dossier, ni nom interne.
+5. Une action principale visible par écran ; les actions secondaires sont dans le détail.
+6. Charte inchangée (violet FlaiX, Raleway pour les titres, Plus Jakarta Sans), mise en page reprise des références de Rémi : menu à icônes court, cartes de chiffres avec mini-graphique, un graphique principal, panneau de droite avec le calendrier des matchs.
+
+**Statut** : proposition écrite avant tout code, maquette visuelle publiée pour Rémi. **Rien n'est modifié dans les écrans déjà construits tant que Rémi ne l'a pas validée.**

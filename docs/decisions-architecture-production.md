@@ -15,7 +15,7 @@ Le prototype est un fichier HTML sans serveur : rien n'est enregistré, tout dis
 | Numérotation sans trou ni doublon | Un numéro de ticket attribué par le serveur, avec contrainte d'unicité en base | §15.12, test A8 |
 | Confidentialité par rôle | Un opérateur ne doit jamais *recevoir* les marges, coûts et salaires — pas seulement ne pas les voir | §15.50 |
 | Isolation entre lieux | Chaque lieu est un assujetti distinct ; ses données ne sont jamais visibles d'un autre lieu | §15.12 |
-| Stripe | Les confirmations de paiement arrivent sur un serveur ; les accès au compte Stripe du lieu ne doivent jamais être dans le navigateur | §15.17 |
+| Paiements (plus tard) | Si un lieu choisit un jour un terminal piloté par la caisse, les confirmations de paiement arriveront sur un serveur. *(Depuis le 2026-09-29, la carte passe par le TPE du lieu, non relié : § 6.)* | §15.17 |
 
 S'y ajoute le défaut structurel relevé en §15.91 : dans le prototype, chaque module a sa propre chaîne de tickets et son propre jeu de données. En production il y a **un seul journal**, et tous les écrans (Journal, Ventes & CA, Clôtures, Marges…) le lisent.
 
@@ -112,7 +112,11 @@ Toute connexion, ouverture et fermeture de caisse est inscrite au journal techni
 
 ---
 
-## 6. Stripe — décision ouverte, à prendre avant la brique d'encaissement
+## 6. Stripe — ~~décision ouverte~~ sans objet pour la caisse (corrigé le 2026-09-29)
+
+> **Précision de Rémi du 2026-09-29** : *« mon système d'encaissement ne fait aucun encaissement via Stripe. Je ne gère pas les encaissements. Tout est fait sur un TPE à eux. »* Le paiement carte se fait sur le **TPE bancaire du lieu, non relié** au logiciel ; la caissière indique « carte » une fois le paiement accepté. C'est la situation « V1 caisse » déjà décrite au dossier (§7) : le risque « validé sans être payé » se couvre par un **rapprochement du total carte de chaque caisse avec le ticket de fin de journée du TPE**, proposé dans le module Clôtures (§15.95). Stripe ne concerne plus que le Click & Collect de l'application Break Eat. Le texte ci-dessous est conservé pour mémoire, pour le jour où un lieu voudrait un TPE piloté par la caisse.
+
+*Recommandation d'origine (pour mémoire) :*
 
 Recommandation, à confirmer auprès de Stripe :
 - **Lecteur Stripe piloté par la caisse** : le montant part de FlaiX Expert vers le lecteur, la confirmation revient automatiquement dans le ticket. Un terminal Stripe séparé, sur lequel la caissière retape le montant, recrée le risque « validé sans être payé » et supprime le rapprochement automatique (§15.9 point 5, §15.17 A).
@@ -128,7 +132,7 @@ Recommandation, à confirmer auprès de Stripe :
 | **0 — Socle** | dépôt, base, serveur, connexion, lieux, journal technique, moteur de calcul testé | tout le reste en dépend |
 | **1 — Configuration d'un lieu vide** | identité du lieu (raison sociale, SIRET, n° TVA, adresse — mentions du ticket), stands, caisses, produits **avec bouton d'ajout**, TVA, prix datés, comptes | débloque tout (brief §4) |
 | **2 — Ma caisse + Journal** | tickets, remises et offerts avec motif, tarif abonné, ouverture et clôture de caisse, Z journalier, journal consolidé, mode formation | **se développe dès maintenant ; mise en service réelle seulement après la réponse écrite de l'expert-comptable** (`questions-expert-comptable.md`) |
-| **3 — Stripe** | lecteur, rapprochement journal / Stripe | après la décision § 6 |
+| ~~**3 — Stripe**~~ | ~~lecteur, rapprochement journal / Stripe~~ | **retiré le 2026-09-29** : paiement carte sur le TPE du lieu (§ 6) ; le rapprochement carte / TPE rejoint le module Clôtures |
 | **4 — Dashboard** | Ventes & CA, Gestion financière, clôtures mensuelle et annuelle, archive d'exercice | lit le journal |
 | **5 — Stock, Personnel & planning** | | |
 | **6 — Clôture & pilotage** | marges, optimisation, alertes, reporting de soirée, coûts par buvette | n'a de sens qu'avec de vraies ventes |
@@ -140,7 +144,7 @@ Chaque phase suit la méthode du projet : décision écrite → code → tests �
 
 ## 8. Ce qui est fragile aujourd'hui — par ordre d'importance
 
-1. **La question NF525 n'a jamais été posée par écrit, et un point nouveau s'y ajoute.** La dispense du BOFiP §35-37 vise les lieux dont tous les paiements passent par « l'intermédiation directe d'un établissement de crédit ». À ma connaissance, Stripe opère en Europe comme établissement de monnaie électronique agréé en Irlande, et non comme établissement de crédit — **à vérifier**. Si c'est exact, même un lieu 100 % carte via Stripe pourrait rester dans le champ du NF525. Ce n'est pas une conclusion juridique : c'est la question à poser. Liste prête à envoyer : `questions-expert-comptable.md`.
+1. **La question NF525 n'a jamais été posée par écrit.** Le logiciel enregistre chaque vente et son mode de règlement : c'est la fonction visée par l'article 286, même si le paiement carte passe par le TPE bancaire du lieu. La dispense du BOFiP §35-37 (paiements exclusivement par l'intermédiaire d'un établissement de crédit) pourrait concerner un lieu 100 % carte sur TPE bancaire, mais le texte ne vise pas explicitement ce cas. *(Ma remarque du 28/09 sur le statut de Stripe est sans objet depuis le 29/09 : la caisse n'utilise pas Stripe.)* Ce n'est pas une conclusion juridique : c'est la question à poser. Liste prête à envoyer : `questions-expert-comptable.md`.
 2. **Le ticket client.** Si une buvette relève de l'exception hôtellerie-restauration (§15.18), le ticket doit être émis par défaut. Une tablette sans imprimante ne le permet pas : il faut soit une imprimante par caisse (du matériel, alors que le brief l'exclut), soit un ticket dématérialisé (consentement explicite, et l'impression ne peut jamais être refusée). À trancher avant d'acheter le matériel.
 3. **Le réseau du stade.** Le brief exclut le hors-ligne. Mais un stade à la mi-temps sature souvent le réseau. Sans réseau : pas de ticket, donc une vente perdue ou notée sur papier — un trou dans le journal. Le paiement carte a de toute façon besoin du réseau. Recommandation : **tester le réseau réel de la patinoire un soir de match** avant de trancher. Le schéma prévoit dès maintenant ce qui permettra d'ajouter un mode dégradé plus tard sans reprise de données (numéro par caisse, identifiant unique par ticket).
 4. **La dispersion.** Le prototype compte une vingtaine de modules. Reconstruits avec une vraie base, une vraie sécurité et des tests, c'est plusieurs mois. Le vrai risque : arriver au premier match avec 20 modules à moitié finis au lieu de 5 solides. D'où le phasage du § 7 — Fidélité, Wallet et Facturation (ajoutés au périmètre le 12/09) passent en dernier.
@@ -195,7 +199,7 @@ Les décisions par défaut du § 9 restent en vigueur tant que Rémi ne les modi
 | Décision | Avant quelle phase |
 |---|---|
 | Réponse écrite de l'expert-comptable (NF525, TVA, ticket) | mise en service de Ma caisse (phase 2) |
-| Produit Stripe et mode de connexion (§ 6) | phase 3 |
+| ~~Produit Stripe~~ | sans objet depuis le 2026-09-29 (§ 6) |
 | Hébergeur en France | première mise en ligne |
 | Ticket papier ou dématérialisé (§ 8 point 2) | achat du matériel |
 | Hors-ligne (§ 8 point 3) | après le test réseau à la patinoire |
