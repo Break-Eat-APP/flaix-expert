@@ -4,13 +4,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Raleway:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 /* Mise en page : coquille d'application — menu court à icônes à gauche, contenu au centre,
-   panneau « calendrier + à surveiller » à droite (références de Rémi, 29/09). Charte FlaiX conservée. */
+   panneau « calendrier + à surveiller » à droite (références de Rémi, 29/09). Charte FlaiX conservée.
+   v2.1 (29/09) : graphiques modernisés à la demande de Rémi, onglets de Résultats actifs, Lexique supprimé. */
 :root {
   --violet: #4D04F4; --violet-doux: #EDE6FF; --violet-moyen: #7B4DF9;
   --encre: #141024; --papier: #F4F2FA; --surface: #FFFFFF; --bord: #E7E3F3;
   --texte: #1C1730; --discret: #767089;
   --vert: #0A9A70; --vert-doux: #E2F6EF; --ambre: #A86A0A; --ambre-doux: #FCF1DD; --rouge: #D93F45; --rouge-doux: #FBE7E8;
-  --cc: #E0602E; --piste: #EDEAF6; --ombre: 0 1px 2px rgba(20,16,36,.05), 0 8px 24px rgba(20,16,36,.05);
+  --piste: #EDEAF6; --ombre: 0 1px 2px rgba(20,16,36,.05), 0 8px 24px rgba(20,16,36,.05);
+  /* Graphiques : palette catégorielle validée (script du skill dataviz, fond blanc et fond sombre) */
+  --c1: #4D04F4; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4;
+  --cc: #eb6834; --gris-graph: #8F88A6; --heros-1: #4D04F4; --heros-2: #7A3CFF;
   --titre: "Raleway", "Plus Jakarta Sans", system-ui, sans-serif;
   --corps: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -18,16 +22,21 @@
   --violet: #8B6CFF; --violet-doux: #251D45; --violet-moyen: #B7A6FF;
   --encre: #F3F1FA; --papier: #141024; --surface: #1D1836; --bord: #332C55;
   --texte: #F0EDF9; --discret: #A198C4; --vert: #3FDBA3; --vert-doux: #173A30; --ambre: #F2B84B; --ambre-doux: #3A2C10; --rouge: #FF8189; --rouge-doux: #3B1B22;
-  --cc: #F07A48; --piste: #262040; --ombre: none; color-scheme: dark; } }
+  --piste: #262040; --ombre: none;
+  --c1: #8B6CFF; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181;
+  --cc: #d95926; --gris-graph: #6F6795; --heros-1: #4D04F4; --heros-2: #6A3BF5; color-scheme: dark; } }
 :root[data-theme="dark"] {
   --violet: #8B6CFF; --violet-doux: #251D45; --violet-moyen: #B7A6FF;
   --encre: #F3F1FA; --papier: #141024; --surface: #1D1836; --bord: #332C55;
   --texte: #F0EDF9; --discret: #A198C4; --vert: #3FDBA3; --vert-doux: #173A30; --ambre: #F2B84B; --ambre-doux: #3A2C10; --rouge: #FF8189; --rouge-doux: #3B1B22;
-  --cc: #F07A48; --piste: #262040; --ombre: none; color-scheme: dark; }
+  --piste: #262040; --ombre: none;
+  --c1: #8B6CFF; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181;
+  --cc: #d95926; --gris-graph: #6F6795; --heros-1: #4D04F4; --heros-2: #6A3BF5; color-scheme: dark; }
 
 * { box-sizing: border-box; }
 body { background: var(--papier); color: var(--texte); font-family: var(--corps); font-size: 14px; line-height: 1.45; padding-inline: 16px; padding-block: 16px 40px; }
 h1, h2, h3 { font-family: var(--titre); color: var(--encre); margin: 0; text-wrap: balance; }
+svg text { font-family: var(--corps); }
 .chiffre { font-variant-numeric: tabular-nums; }
 .discret { color: var(--discret); }
 button { font: inherit; color: inherit; }
@@ -62,29 +71,144 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--violet); outlin
 .onglet[aria-selected="true"] { background: var(--encre); color: var(--papier); border-color: var(--encre); }
 .carte { background: var(--surface); border: 1px solid var(--bord); border-radius: 20px; padding: 18px; box-shadow: var(--ombre); min-width: 0; }
 .carte h2 { font-size: 15px; font-weight: 700; }
-.carte-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+.carte-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 10px 16px; margin-bottom: 12px; flex-wrap: wrap; }
+.carte-tete .sous { font-size: 12px; color: var(--discret); }
 .lien { color: var(--violet); font-weight: 700; font-size: 12.5px; background: none; border: 0; cursor: pointer; padding: 0; }
+.note { font-size: 12.5px; color: var(--discret); margin: 12px 0 0; }
+
+/* ---------- Bulle d'information (survol des graphiques) ---------- */
+.bulle { position: fixed; z-index: 50; pointer-events: none; background: var(--encre); color: var(--papier); padding: 8px 11px; border-radius: 10px; font-size: 12px; line-height: 1.4; box-shadow: 0 10px 28px rgba(20,16,36,.22); max-width: 260px; }
+.bulle[hidden] { display: none; }
+.bulle b { display: block; font-weight: 700; margin-bottom: 2px; }
+.bulle .lb { display: flex; align-items: center; gap: 6px; }
+.bulle .lb i { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.bulle .lb strong { margin-left: auto; padding-left: 12px; font-variant-numeric: tabular-nums; }
 
 /* ---------- Résultats ---------- */
 .resultats { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
-.colonne { display: grid; gap: 16px; min-width: 0; }
+.colonne { min-width: 0; }
+.vue { display: grid; gap: 16px; min-width: 0; }
 .chiffres { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .chiffre-cle { background: var(--surface); border: 1px solid var(--bord); border-radius: 18px; padding: 14px 16px 10px; box-shadow: var(--ombre); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.chiffre-cle.mis-en-avant { background: var(--violet); color: #fff; border-color: var(--violet); }
+.chiffre-cle.mis-en-avant { background: linear-gradient(135deg, var(--heros-1), var(--heros-2)); color: #fff; border-color: transparent; box-shadow: 0 10px 26px rgba(77,4,244,.28); }
 .chiffre-cle .etiquette { font-size: 12.5px; font-weight: 600; opacity: .8; }
-.chiffre-cle .valeur { font-size: 25px; font-weight: 800; font-family: var(--corps); letter-spacing: -.01em; }
+.chiffre-cle .valeur { font-size: 25px; font-weight: 800; letter-spacing: -.01em; }
 .variation { font-size: 12px; font-weight: 700; }
 .hausse { color: var(--vert); } .baisse { color: var(--rouge); }
-.mis-en-avant .variation { color: #fff; opacity: .9; }
+.mis-en-avant .variation { color: #fff; opacity: .92; }
 .chiffre-cle svg { width: 100%; height: 34px; margin-top: 6px; }
-.deux { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; }
-.graphe svg { width: 100%; height: auto; display: block; }
+.deux { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; }
+.deux.egal { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.defile-graphe { overflow-x: auto; }
+.defile-graphe svg { display: block; width: 100%; height: auto; }
+.leg-inline { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--discret); }
+.leg-inline span { display: inline-flex; align-items: center; gap: 6px; }
+.trait { width: 18px; height: 0; border-top: 2.5px solid var(--violet); }
+.trait.tirets { border-top: 2px dashed var(--gris-graph); }
+.pastille { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+/* Anneau (camembert creux) + légende chiffrée */
+.carte-anneau { container-type: inline-size; }
+.anneau-bloc { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 18px; align-items: center; }
+.anneau-bloc svg { width: 168px; height: 168px; display: block; }
+.anneau-bloc .part { transition: opacity .15s; cursor: pointer; }
+.leg-liste { display: grid; gap: 2px; min-width: 0; }
+.leg-ligne { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 3.4em; gap: 9px; align-items: center; font-size: 13px; padding: 6px 8px; border-radius: 9px; cursor: default; }
+.leg-ligne.actif { background: var(--papier); }
+.leg-ligne .v { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.leg-ligne .p { color: var(--discret); font-variant-numeric: tabular-nums; text-align: right; font-size: 12px; }
+@container (max-width: 380px) { .anneau-bloc { grid-template-columns: 1fr; justify-items: center; } .leg-liste { width: 100%; } }
+
+/* Tableau avec barres intégrées */
+.defile { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 520px; }
+table.compact { min-width: 400px; }
+th { text-align: left; font-size: 11.5px; color: var(--discret); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--bord); }
+td { padding: 11px 10px; border-bottom: 1px solid var(--bord); }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: 0; }
+.db { display: inline-block; width: 56px; height: 6px; border-radius: 3px; background: var(--piste); margin-right: 10px; vertical-align: 1px; overflow: hidden; }
+.db i { display: block; height: 100%; border-radius: 3px; background: var(--violet); }
+
+/* Barres empilées (stands, encaissements) */
 .barres { display: grid; gap: 12px; }
 .barre-ligne { display: grid; grid-template-columns: 96px minmax(0, 1fr) 70px; gap: 10px; align-items: center; font-size: 13px; }
-.barre { height: 12px; border-radius: 999px; background: var(--piste); display: flex; overflow: hidden; }
+.barre { height: 12px; display: flex; gap: 2px; }
+.barre span { border-radius: 2px; min-width: 0; }
+.barre span:first-child { border-radius: 6px 2px 2px 6px; }
+.barre span:last-child { border-radius: 2px 6px 6px 2px; }
+.barre span:only-child { border-radius: 6px; }
 .barre .c { background: var(--violet); } .barre .a { background: var(--cc); }
-.legende { display: flex; gap: 14px; font-size: 12px; color: var(--discret); margin-top: 12px; }
-.legende i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.legende { display: flex; gap: 14px; font-size: 12px; color: var(--discret); margin-top: 12px; flex-wrap: wrap; }
+.legende span { display: inline-flex; align-items: center; gap: 6px; }
+.empile { display: flex; gap: 2px; height: 16px; margin: 4px 0 14px; }
+.empile span { border-radius: 2px; }
+.empile span:first-child { border-radius: 8px 2px 2px 8px; }
+.empile span:last-child { border-radius: 2px 8px 8px 2px; }
+
+/* Comparaison entre deux matchs */
+.puces { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 12.5px; color: var(--discret); }
+.puce { border: 1px solid var(--bord); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 600; background: var(--surface); cursor: pointer; }
+.puce[aria-pressed="true"] { background: var(--violet-doux); color: var(--violet); border-color: transparent; }
+.comparaison { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cmp { padding: 2px 16px; border-left: 1px solid var(--bord); display: grid; gap: 2px; min-width: 0; }
+.cmp:first-child { border-left: 0; padding-left: 0; }
+.cmp .etiquette { font-size: 12px; color: var(--discret); font-weight: 600; }
+.cmp .valeur { font-size: 22px; font-weight: 800; }
+.cmp .avant { font-size: 12px; color: var(--discret); }
+.duo { display: grid; gap: 16px; }
+.duo-ligne { display: grid; grid-template-columns: 96px minmax(0, 1fr) 128px; gap: 12px; align-items: center; font-size: 13px; }
+.duo-piste { position: relative; height: 22px; }
+.duo-piste::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px dashed var(--bord); }
+.duo-trait { position: absolute; top: calc(50% - 2px); height: 4px; border-radius: 2px; background: var(--violet-moyen); opacity: .4; }
+.duo-point { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; border: 2px solid var(--surface); cursor: pointer; }
+.duo-point::after { content: ""; position: absolute; inset: -9px; }
+.duo-point.avant { background: var(--gris-graph); }
+.duo-point.maintenant { background: var(--violet); }
+.duo-val { display: flex; justify-content: flex-end; align-items: baseline; gap: 8px; }
+.duo-val strong { font-variant-numeric: tabular-nums; }
+.duo-val em { font-style: normal; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 3.6em; text-align: right; }
+.duo-axe .duo-piste::before { display: none; }
+.duo-axe .tic { position: absolute; top: 0; transform: translateX(-50%); font-size: 11px; color: var(--discret); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Objectif de marge (anneau de progression) */
+.carte-objectif { container-type: inline-size; }
+.objectif { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 18px; align-items: center; }
+.objectif svg { width: 128px; height: 128px; display: block; }
+.faits { display: grid; gap: 9px; }
+.fait { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding-bottom: 9px; border-bottom: 1px solid var(--bord); }
+.fait:last-child { border-bottom: 0; padding-bottom: 0; }
+.fait strong { font-variant-numeric: tabular-nums; }
+.statut { display: flex; gap: 8px; align-items: center; font-size: 12.5px; font-weight: 700; color: var(--ambre); background: var(--ambre-doux); border-radius: 10px; padding: 7px 10px; margin-top: 12px; }
+.statut svg { width: 15px; height: 15px; flex: none; }
+@container (max-width: 330px) { .objectif { grid-template-columns: 1fr; justify-items: center; } .faits { width: 100%; } }
+
+/* Pistes d'amélioration */
+.pistes { display: grid; gap: 10px; }
+.piste-item { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; padding: 12px; border-radius: 14px; background: var(--papier); font-size: 13px; }
+.piste-item .ic { width: 34px; height: 34px; border-radius: 10px; background: var(--surface); color: var(--violet); display: grid; place-items: center; }
+.piste-item .ic svg { width: 17px; height: 17px; }
+.piste-item strong { display: block; }
+.piste-item span { color: var(--discret); display: block; }
+.piste-item em { font-style: normal; font-weight: 700; color: var(--violet); display: block; margin-top: 2px; }
+.idee { font-size: 10.5px; font-weight: 800; color: var(--violet); background: var(--violet-doux); padding: 2px 7px; border-radius: 999px; margin-left: 6px; vertical-align: 1px; white-space: nowrap; }
+
+/* Saison (colonnes) */
+.saison { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; align-items: end; height: 200px; }
+.col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%; min-width: 0; cursor: default; }
+.col .b { width: 70%; max-width: 46px; border-radius: 6px 6px 2px 2px; background: var(--violet); }
+.col.passe .b { opacity: .45; }
+.col.futur .b { background: transparent; border: 2px dashed var(--bord); height: 26px; }
+.col .v { font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.col small { font-size: 11px; color: var(--discret); white-space: nowrap; }
+.rapports { display: grid; gap: 8px; }
+.rapport { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px; border-radius: 14px; background: var(--papier); }
+.rapport .date { width: 46px; flex: none; text-align: center; border-radius: 10px; background: var(--surface); padding: 5px 0; font-weight: 800; font-size: 15px; line-height: 1.1; }
+.rapport .date small { display: block; font-size: 10px; font-weight: 600; color: var(--discret); text-transform: uppercase; }
+.rapport .quoi { flex: 1 1 180px; min-width: 0; }
+.rapport .quoi strong { display: block; font-size: 13.5px; }
+.rapport .quoi span { font-size: 12px; color: var(--discret); }
+.rapport .montant { font-weight: 800; font-variant-numeric: tabular-nums; }
 
 .panneau { display: grid; gap: 16px; }
 .calendrier { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 12.5px; }
@@ -116,14 +240,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--violet); outlin
 .caisse .ca { font-size: 22px; font-weight: 800; }
 .bouton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 12px; padding: 10px 16px; font-weight: 700; font-size: 13.5px; cursor: pointer; background: var(--violet); color: #fff; }
 .bouton.fantome { background: transparent; color: var(--violet); border: 1px solid var(--bord); }
-
-/* ---------- Tableaux simples ---------- */
-.defile { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 520px; }
-th { text-align: left; font-size: 11.5px; color: var(--discret); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--bord); }
-td { padding: 11px 10px; border-bottom: 1px solid var(--bord); }
-td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
-tr:last-child td { border-bottom: 0; }
+.bouton.petit { padding: 6px 12px; font-size: 12.5px; }
 
 /* ---------- Clôtures ---------- */
 .etapes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
@@ -133,7 +250,8 @@ tr:last-child td { border-bottom: 0; }
 .etape.faite b { color: var(--vert); }
 .etape.en-cours { border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-doux); }
 .ecart-ok { color: var(--vert); font-weight: 700; } .ecart-ko { color: var(--rouge); font-weight: 700; }
-.nouveau { font-size: 10.5px; font-weight: 800; color: var(--violet); background: var(--violet-doux); padding: 2px 7px; border-radius: 999px; margin-left: 6px; vertical-align: 1px; }
+.en-attente { font-size: 10.5px; font-weight: 800; color: var(--ambre); background: var(--ambre-doux); padding: 2px 7px; border-radius: 999px; margin-left: 6px; vertical-align: 1px; white-space: nowrap; }
+.col-proposee { background: var(--ambre-doux); }
 
 /* ---------- Paramètres ---------- */
 .tuiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
@@ -145,21 +263,23 @@ tr:last-child td { border-bottom: 0; }
 .tuile span { font-size: 12.5px; color: var(--discret); }
 .tuile em { font-style: normal; font-size: 12px; font-weight: 700; color: var(--violet); }
 
-.regles { margin-top: 16px; border: 1px dashed var(--bord); border-radius: 14px; padding: 11px 16px; font-weight: 700; font-size: 13px; display: flex; justify-content: space-between; color: var(--texte); background: var(--surface); }
+.regles { margin-top: 16px; border: 1px dashed var(--bord); border-radius: 14px; padding: 11px 16px; font-weight: 700; font-size: 13px; display: flex; justify-content: space-between; gap: 12px; color: var(--texte); background: var(--surface); }
 .regles span { color: var(--violet); font-size: 12px; }
 
 /* ---------- Correspondance (hors application) ---------- */
 .correspondance { max-width: 1320px; margin: 28px auto 0; }
 .correspondance h2 { font-size: 18px; margin-bottom: 4px; }
 .correspondance > p { color: var(--discret); margin: 0 0 12px; max-width: 70ch; }
+.barre-texte { text-decoration: line-through; color: var(--discret); }
 
 @media (max-width: 1180px) {
   .resultats { grid-template-columns: 1fr; }
   .panneau { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 }
 @media (max-width: 900px) {
-  .chiffres { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .deux { grid-template-columns: 1fr; }
+  .chiffres, .comparaison { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 14px; }
+  .cmp:nth-child(3) { border-left: 0; padding-left: 0; }
+  .deux, .deux.egal { grid-template-columns: 1fr; }
   .etapes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {
@@ -168,11 +288,15 @@ tr:last-child td { border-bottom: 0; }
   .marque { width: 100%; padding-bottom: 6px; }
   .entree { width: auto; padding: 9px 12px; font-size: 13px; }
   .plus-tard { width: 100%; margin-top: 4px; }
+  .defile-graphe svg.large { min-width: 600px; }
+  .duo-ligne { grid-template-columns: 76px minmax(0, 1fr) 104px; gap: 8px; }
+  .saison { gap: 4px; }
+  .col .v { font-size: 10px; }
 }
-@media (prefers-reduced-motion: no-preference) { .entree, .tuile, .onglet { transition: background .15s, border-color .15s; } }
+@media (prefers-reduced-motion: no-preference) { .entree, .tuile, .onglet, .puce { transition: background .15s, border-color .15s; } }
 </style>
 
-<div class="avertissement" role="note">Maquette de l'organisation proposée : chiffres d'exemple, aucune donnée réelle. Clique sur les entrées du menu.</div>
+<div class="avertissement" role="note">Maquette de l'organisation, v2.1 : chiffres d'exemple, aucune donnée réelle. Dans Résultats, les 5 onglets fonctionnent ; survole les graphiques pour le détail.</div>
 
 <div class="appli">
   <nav class="menu" aria-label="Menu principal">
@@ -191,41 +315,131 @@ tr:last-child td { border-bottom: 0; }
     <section class="ecran actif" id="resultats" aria-label="Résultats">
       <div class="entete">
         <div><h1>Bonsoir</h1><p>Voici le résultat du dernier match.</p></div>
-        <span class="pastille-match"><i></i>Match du samedi 3 octobre · clos</span>
+        <span class="pastille-match"><i></i>Match n° 4 · samedi 3 octobre · clos</span>
       </div>
-      <div class="onglets" role="tablist">
-        <button class="onglet" role="tab" aria-selected="true">Vue d'ensemble</button>
-        <button class="onglet" role="tab" aria-selected="false">Ventes</button>
-        <button class="onglet" role="tab" aria-selected="false">Finances</button>
-        <button class="onglet" role="tab" aria-selected="false">Marges</button>
-        <button class="onglet" role="tab" aria-selected="false">Rapports de soirée</button>
+      <div class="onglets" role="tablist" id="onglets-resultats">
+        <button class="onglet" role="tab" data-vue="ensemble" aria-selected="true">Vue d'ensemble</button>
+        <button class="onglet" role="tab" data-vue="ventes" aria-selected="false">Ventes</button>
+        <button class="onglet" role="tab" data-vue="finances" aria-selected="false">Finances</button>
+        <button class="onglet" role="tab" data-vue="marges" aria-selected="false">Marges</button>
+        <button class="onglet" role="tab" data-vue="rapports" aria-selected="false">Rapports de soirée</button>
       </div>
       <div class="resultats">
         <div class="colonne">
-          <div class="chiffres" id="chiffres"></div>
-          <div class="deux">
-            <div class="carte graphe">
-              <div class="carte-tete"><h2>Chiffre d'affaires par heure</h2><span class="discret" style="font-size:12px">TTC</span></div>
-              <svg id="courbe" viewBox="0 0 520 220" role="img" aria-label="Chiffre d'affaires par heure, pic à la mi-temps"></svg>
+
+          <!-- ---------- Vue d'ensemble ---------- -->
+          <div class="vue" id="vue-ensemble">
+            <div class="chiffres" id="chiffres"></div>
+            <div class="carte">
+              <div class="carte-tete">
+                <h2>Chiffre d'affaires par heure <span class="sous">TTC</span></h2>
+                <div class="leg-inline"><span><i class="trait"></i>Ce match · 3 oct.</span><span><i class="trait tirets"></i>Match précédent · 19 sept.</span></div>
+              </div>
+              <div class="defile-graphe"><svg id="courbe" class="large" viewBox="0 0 760 250" role="img" aria-label="Chiffre d'affaires par heure : pic de 5 200 € entre 21 h et 22 h, au-dessus du match précédent sur presque toute la soirée"></svg></div>
+            </div>
+            <div class="deux">
+              <div class="carte carte-anneau">
+                <div class="carte-tete"><h2>Ventes par famille</h2><span class="sous">part du CA TTC</span></div>
+                <div class="anneau-bloc">
+                  <svg id="donut" viewBox="0 0 200 200" role="img" aria-label="Ventes par famille : bières 38 %, restauration 35 %, softs et eau 14 %, café et sucré 8 %, vins et autres 5 %"></svg>
+                  <div class="leg-liste" id="leg-familles"></div>
+                </div>
+              </div>
+              <div class="carte">
+                <div class="carte-tete"><h2>Meilleurs produits du match</h2><button class="lien" data-aller="marges">Voir les marges</button></div>
+                <div class="defile"><table class="compact">
+                  <thead><tr><th>Produit</th><th class="n">Vendus</th><th class="n">CA TTC</th><th class="n">Marge / vente</th></tr></thead>
+                  <tbody id="top-produits"></tbody>
+                </table></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ---------- Ventes ---------- -->
+          <div class="vue" id="vue-ventes" hidden>
+            <div class="carte">
+              <div class="carte-tete">
+                <h2>Match n° 4 comparé à…</h2>
+                <div class="puces"><button class="puce" aria-pressed="true">19 sept.</button><button class="puce" aria-pressed="false">12 sept.</button><button class="puce" aria-pressed="false">5 sept.</button></div>
+              </div>
+              <div class="comparaison" id="comparaison"></div>
             </div>
             <div class="carte">
-              <div class="carte-tete"><h2>Par stand</h2><button class="lien">Détail</button></div>
+              <div class="carte-tete">
+                <h2>Par stand, d'un match à l'autre</h2>
+                <div class="leg-inline"><span><i class="pastille" style="background:var(--gris-graph);border-radius:50%"></i>19 sept.</span><span><i class="pastille" style="background:var(--violet);border-radius:50%"></i>3 oct.</span></div>
+              </div>
+              <div class="duo" id="duo"></div>
+            </div>
+            <div class="carte">
+              <div class="carte-tete"><h2>Comptoir et Click &amp; Collect</h2><span class="sous">3 oct., TTC</span></div>
               <div class="barres" id="stands"></div>
-              <div class="legende"><span><i style="background:var(--violet)"></i>Comptoir</span><span><i style="background:var(--cc)"></i>Click & Collect</span></div>
+              <div class="legende"><span><i class="pastille" style="background:var(--violet)"></i>Comptoir</span><span><i class="pastille" style="background:var(--cc)"></i>Click &amp; Collect</span></div>
             </div>
           </div>
-          <div class="carte">
-            <div class="carte-tete"><h2>Meilleurs produits du match</h2><button class="lien">Toutes les marges</button></div>
-            <div class="defile"><table>
-              <thead><tr><th>Produit</th><th class="n">Vendus</th><th class="n">CA TTC</th><th class="n">Marge par vente</th></tr></thead>
-              <tbody>
-                <tr><td>Hot-dog</td><td class="n">264</td><td class="n">1 848,00 €</td><td class="n">4,46 €</td></tr>
-                <tr><td>Bière 50 cl</td><td class="n">234</td><td class="n">1 638,00 €</td><td class="n">3,63 €</td></tr>
-                <tr><td>Burger + frites</td><td class="n">118</td><td class="n">1 534,00 €</td><td class="n">8,02 €</td></tr>
-              </tbody>
-            </table></div>
+
+          <!-- ---------- Finances ---------- -->
+          <div class="vue" id="vue-finances" hidden>
+            <div class="carte">
+              <div class="carte-tete">
+                <h2>De l'encaissé à la marge nette</h2>
+                <div class="leg-inline"><span><i class="pastille" style="background:var(--violet)"></i>Totaux</span><span><i class="pastille" style="background:var(--gris-graph)"></i>Ce qui est retiré</span></div>
+              </div>
+              <div class="defile-graphe"><svg id="cascade" class="large" viewBox="0 0 760 300" role="img" aria-label="De 18 640 € encaissés à 8 021 € de marge nette : TVA, coût matière, personnel, commission, frais et dépenses retirés"></svg></div>
+              <p class="note">Hors loyer, électricité, salaires permanents et assurance : ce sont des charges du mois, pas de la soirée.</p>
+            </div>
+            <div class="deux egal">
+              <div class="carte carte-objectif">
+                <div class="carte-tete"><h2>Objectif de marge nette</h2><span class="sous">% du CA HT</span></div>
+                <div class="objectif">
+                  <svg id="objectif" viewBox="0 0 160 160" role="img" aria-label="Marge nette 49,1 % pour une cible de 50 %"></svg>
+                  <div class="faits">
+                    <div class="fait"><span>Marge brute</span><strong>11 110 € · 68,0 %</strong></div>
+                    <div class="fait"><span>Marge nette</span><strong>8 021 €</strong></div>
+                    <div class="fait"><span>Par spectateur</span><strong>1,67 €</strong></div>
+                    <div class="fait"><span>Par ticket</span><strong>3,20 €</strong></div>
+                  </div>
+                </div>
+                <div class="statut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>0,9 point sous la cible de 50 % fixée pour la soirée</div>
+              </div>
+              <div class="carte">
+                <div class="carte-tete"><h2>Comment les clients ont payé</h2><span class="sous">18 640 € TTC</span></div>
+                <div class="empile" id="empile-paiements" role="img" aria-label="Carte 73,9 %, espèces 16,3 %, Click and Collect 9,8 %"></div>
+                <div class="leg-liste" id="leg-paiements"></div>
+                <p class="note">La carte passe par le TPE du lieu, non relié à FlaiX : la caisse enregistre « carte », sans encaisser. Le Click &amp; Collect est réglé dans l'application Break Eat.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ---------- Marges ---------- -->
+          <div class="vue" id="vue-marges" hidden>
+            <div class="carte">
+              <div class="carte-tete">
+                <h2>Ce qui se vend, ce qui rapporte</h2>
+                <span class="sous">Repères : médianes du match, 150 ventes et 3,23 €</span>
+              </div>
+              <div class="defile-graphe"><svg id="quadrant" class="large" viewBox="0 0 740 360" role="img" aria-label="Chaque produit placé selon ses ventes et sa marge par vente. À revoir : bière 25 cl, soda 33 cl, eau 50 cl, beaucoup vendus pour peu de marge"></svg></div>
+            </div>
+            <div class="carte">
+              <div class="carte-tete"><h2>Pistes pour le prochain match</h2><span class="sous">calculées sur tes ventes et tes coûts, à toi de décider</span></div>
+              <div class="pistes" id="pistes"></div>
+            </div>
+          </div>
+
+          <!-- ---------- Rapports de soirée ---------- -->
+          <div class="vue" id="vue-rapports" hidden>
+            <div class="carte">
+              <div class="carte-tete"><h2>La saison, match par match</h2><span class="sous">68 900 € sur 4 matchs · moyenne 17 225 €</span></div>
+              <div class="saison" id="saison"></div>
+            </div>
+            <div class="carte">
+              <div class="carte-tete"><h2>Rapports de soirée</h2><span class="sous">un rapport figé par match clos</span></div>
+              <div class="rapports" id="liste-rapports"></div>
+              <p class="note"><span class="idee">idée</span> Envoyer le rapport par e-mail, automatiquement à la clôture, aux personnes que tu choisis (président, comptable).</p>
+            </div>
           </div>
         </div>
+
         <aside class="panneau">
           <div class="carte">
             <div class="carte-tete"><h2>Octobre 2026</h2><button class="lien">Saison</button></div>
@@ -243,7 +457,7 @@ tr:last-child td { border-bottom: 0; }
             <div class="liste-courte">
               <div class="alerte forte"><div>Caisse 3 : écart carte de −14,00 €<span>Total carte ≠ ticket du TPE</span></div></div>
               <div class="alerte"><div>Bière 50 cl sous la cible de marge<span>69,6 % pour une cible de 70 %</span></div></div>
-              <div class="alerte"><div>Rupture de hot-dogs à la Buvette Nord<span>À 21 h 10, pendant la mi-temps</span></div></div>
+              <div class="alerte"><div>Rupture de hot-dogs à la Buvette Nord<span>À 21 h 10, pendant la pause</span></div></div>
             </div>
           </div>
         </aside>
@@ -262,10 +476,10 @@ tr:last-child td { border-bottom: 0; }
         <button class="onglet" role="tab" aria-selected="false">Tickets du match</button>
       </div>
       <div class="chiffres" style="margin-bottom:16px">
-        <div class="chiffre-cle mis-en-avant"><span class="etiquette">CA du match, en direct</span><span class="valeur chiffre">7 412 €</span><span class="variation">5 caisses ouvertes sur 6</span></div>
-        <div class="chiffre-cle"><span class="etiquette">Tickets</span><span class="valeur chiffre">1 004</span><span class="variation discret">dont 6 annulés</span></div>
-        <div class="chiffre-cle"><span class="etiquette">Panier moyen</span><span class="valeur chiffre">7,38 €</span><span class="variation hausse">+0,21 € vs match précédent</span></div>
-        <div class="chiffre-cle"><span class="etiquette">Carte / espèces</span><span class="valeur chiffre">82 %</span><span class="variation discret">de paiements carte (TPE)</span></div>
+        <div class="chiffre-cle mis-en-avant"><span class="etiquette">CA du match, en direct</span><span class="valeur">7 412 €</span><span class="variation">5 caisses ouvertes sur 6</span></div>
+        <div class="chiffre-cle"><span class="etiquette">Tickets</span><span class="valeur">1 004</span><span class="variation discret">dont 6 annulés</span></div>
+        <div class="chiffre-cle"><span class="etiquette">Panier moyen</span><span class="valeur">7,38 €</span><span class="variation hausse">+0,21 € vs match précédent</span></div>
+        <div class="chiffre-cle"><span class="etiquette">Carte / espèces</span><span class="valeur">82 %</span><span class="variation discret">de paiements carte (TPE)</span></div>
       </div>
       <div class="grille-caisses" id="grilleCaisses"></div>
     </section>
@@ -287,10 +501,10 @@ tr:last-child td { border-bottom: 0; }
         <div class="defile"><table>
           <thead><tr><th>Produit</th><th class="n">Mis en place</th><th class="n">Vendu</th><th class="n">Reste</th><th>État</th><th class="n">Réassort</th></tr></thead>
           <tbody>
-            <tr><td>Hot-dog</td><td class="n">180</td><td class="n">171</td><td class="n">9</td><td><span class="etat" style="background:var(--rouge-doux);color:var(--rouge)">Presque vide</span></td><td class="n"><button class="bouton fantome" style="padding:6px 10px">+ Réassort</button></td></tr>
-            <tr><td>Bière 50 cl (litres)</td><td class="n">60,0</td><td class="n">38,5</td><td class="n">21,5</td><td><span class="etat ouverte">Correct</span></td><td class="n"><button class="bouton fantome" style="padding:6px 10px">+ Réassort</button></td></tr>
-            <tr><td>Soda</td><td class="n">120</td><td class="n">74</td><td class="n">46</td><td><span class="etat ouverte">Correct</span></td><td class="n"><button class="bouton fantome" style="padding:6px 10px">+ Réassort</button></td></tr>
-            <tr><td>Nachos</td><td class="n">60</td><td class="n">49</td><td class="n">11</td><td><span class="etat" style="background:var(--ambre-doux);color:var(--ambre)">Faible</span></td><td class="n"><button class="bouton fantome" style="padding:6px 10px">+ Réassort</button></td></tr>
+            <tr><td>Hot-dog</td><td class="n">180</td><td class="n">171</td><td class="n">9</td><td><span class="etat" style="background:var(--rouge-doux);color:var(--rouge)">Presque vide</span></td><td class="n"><button class="bouton fantome petit">+ Réassort</button></td></tr>
+            <tr><td>Bière 50 cl (litres)</td><td class="n">60,0</td><td class="n">38,5</td><td class="n">21,5</td><td><span class="etat ouverte">Correct</span></td><td class="n"><button class="bouton fantome petit">+ Réassort</button></td></tr>
+            <tr><td>Soda</td><td class="n">120</td><td class="n">74</td><td class="n">46</td><td><span class="etat ouverte">Correct</span></td><td class="n"><button class="bouton fantome petit">+ Réassort</button></td></tr>
+            <tr><td>Nachos</td><td class="n">60</td><td class="n">49</td><td class="n">11</td><td><span class="etat" style="background:var(--ambre-doux);color:var(--ambre)">Faible</span></td><td class="n"><button class="bouton fantome petit">+ Réassort</button></td></tr>
           </tbody>
         </table></div>
       </div>
@@ -332,14 +546,14 @@ tr:last-child td { border-bottom: 0; }
       <div class="carte">
         <div class="carte-tete"><h2>Espèces et carte, caisse par caisse</h2><span class="discret" style="font-size:12px">Tolérance : 5,00 €</span></div>
         <div class="defile"><table>
-          <thead><tr><th>Caisse</th><th class="n">Espèces attendues</th><th class="n">Comptées</th><th class="n">Carte enregistrée</th><th class="n">Ticket TPE <span class="nouveau">nouveau</span></th><th>Écart</th></tr></thead>
+          <thead><tr><th>Caisse</th><th class="n">Espèces attendues</th><th class="n">Comptées</th><th class="n">Carte enregistrée</th><th class="n col-proposee">Ticket TPE <span class="en-attente">en attente</span></th><th>Écart</th></tr></thead>
           <tbody>
-            <tr><td>Caisse 1 · Buvette Nord</td><td class="n">612,40 €</td><td class="n">612,40 €</td><td class="n">1 482,00 €</td><td class="n">1 482,00 €</td><td class="ecart-ok">Juste</td></tr>
-            <tr><td>Caisse 2 · Buvette Nord</td><td class="n">—</td><td class="n">—</td><td class="n">1 106,50 €</td><td class="n">1 106,50 €</td><td class="ecart-ok">Juste</td></tr>
-            <tr><td>Caisse 3 · Bar</td><td class="n">488,00 €</td><td class="n">486,20 €</td><td class="n">1 640,00 €</td><td class="n">1 626,00 €</td><td class="ecart-ko">Carte −14,00 € · motif à saisir</td></tr>
+            <tr><td>Caisse 1 · Buvette Nord</td><td class="n">612,40 €</td><td class="n">612,40 €</td><td class="n">1 482,00 €</td><td class="n col-proposee">1 482,00 €</td><td class="ecart-ok">Juste</td></tr>
+            <tr><td>Caisse 2 · Buvette Nord</td><td class="n">—</td><td class="n">—</td><td class="n">1 106,50 €</td><td class="n col-proposee">1 106,50 €</td><td class="ecart-ok">Juste</td></tr>
+            <tr><td>Caisse 3 · Bar</td><td class="n">488,00 €</td><td class="n">486,20 €</td><td class="n">1 640,00 €</td><td class="n col-proposee">1 626,00 €</td><td class="ecart-ko">Carte −14,00 € · motif à saisir</td></tr>
           </tbody>
         </table></div>
-        <p class="discret" style="font-size:12.5px;margin:12px 0 0">Le ticket de fin de journée du TPE de chaque caisse est saisi ici : un paiement « carte » tapé en caisse mais jamais passé sur le TPE apparaît aussitôt.</p>
+        <p class="note"><strong>Colonne « Ticket TPE » : proposition en attente de ta décision.</strong> Le total du ticket de fin de journée du TPE de chaque caisse serait saisi ici : un paiement « carte » tapé en caisse mais jamais passé sur le TPE apparaîtrait aussitôt. Rien n'est construit tant que tu n'as pas tranché.</p>
       </div>
     </section>
 
@@ -355,19 +569,60 @@ tr:last-child td { border-bottom: 0; }
 
 <section class="correspondance" aria-label="Correspondance avec les modules validés">
   <h2>Où retrouver chaque module validé</h2>
-  <p>Aucun module ne disparaît : chacun change seulement de place. Seul le « Lexique des règles » quitte le menu, puisque chaque écran garde ses règles en bas de page.</p>
+  <p>Aucun module validé ne disparaît : chacun change seulement de place. Le « Lexique des règles » est supprimé, puisque chaque écran garde ses règles en bas de page. La Conformité reste, à deux endroits.</p>
   <div class="carte defile"><table>
     <thead><tr><th>Module validé</th><th>Nouvelle place</th></tr></thead>
     <tbody id="correspondance"></tbody>
   </table></div>
 </section>
 
+<div class="bulle" id="bulle" role="status" hidden></div>
+
 <script>
 (function () {
-  const eur = (n) => n.toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " €";
+  const fr = (n, d = 0) => n.toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/\u202f/g, "\u00a0");
+  const eur = (n, d = 0) => (n < 0 ? "−" : "") + fr(Math.abs(n), d) + " €";
+  const signe = (n, d = 1) => (n > 0 ? "+" : n < 0 ? "−" : "") + fr(Math.abs(n), d);
+  const attr = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  const txt = (x, y, s, o = {}) =>
+    `<text x="${x}" y="${y}" font-size="${o.taille || 11.5}"${o.gras ? ' font-weight="700"' : ""} text-anchor="${o.ancre || "start"}" fill="${o.couleur || "var(--discret)"}">${s}</text>`;
 
-  // ---- Chiffres clés du match (exemple) ----
-  const heures = [1200, 3400, 4900, 5200, 3100, 840];
+  // ---- Bulle d'information partagée ----
+  const bulle = document.getElementById("bulle");
+  function montrer(html, x, y) {
+    bulle.innerHTML = html; bulle.hidden = false;
+    const w = bulle.offsetWidth, h = bulle.offsetHeight;
+    bulle.style.left = Math.min(Math.max(x - w / 2, 8), window.innerWidth - w - 8) + "px";
+    bulle.style.top = (y - h - 12 < 8 ? y + 16 : y - h - 12) + "px";
+  }
+  function cacher() { bulle.hidden = true; }
+  document.addEventListener("pointerover", (e) => {
+    const el = e.target.closest && e.target.closest("[data-tip]"); if (!el) return;
+    const r = el.getBoundingClientRect(); montrer(el.dataset.tip, r.left + r.width / 2, r.top);
+  });
+  document.addEventListener("pointerout", (e) => {
+    const el = e.target.closest && e.target.closest("[data-tip]");
+    if (el && !(e.relatedTarget && el.contains(e.relatedTarget))) cacher();
+  });
+  window.addEventListener("scroll", cacher, { passive: true });
+
+  // ---- Courbe lissée sans dépassement (monotone) ----
+  function lisse(p) {
+    const n = p.length, dx = [], m = [], t = [];
+    for (let i = 0; i < n - 1; i++) { dx[i] = p[i + 1][0] - p[i][0]; m[i] = (p[i + 1][1] - p[i][1]) / dx[i]; }
+    t[0] = m[0]; t[n - 1] = m[n - 2];
+    for (let i = 1; i < n - 1; i++) t[i] = m[i - 1] * m[i] <= 0 ? 0 : (3 * (dx[i - 1] + dx[i])) / ((2 * dx[i] + dx[i - 1]) / m[i - 1] + (dx[i] + 2 * dx[i - 1]) / m[i]);
+    let d = `M${p[0][0].toFixed(1)} ${p[0][1].toFixed(1)}`;
+    for (let i = 0; i < n - 1; i++) {
+      const h = dx[i] / 3;
+      d += ` C${(p[i][0] + h).toFixed(1)} ${(p[i][1] + t[i] * h).toFixed(1)} ${(p[i + 1][0] - h).toFixed(1)} ${(p[i + 1][1] - t[i + 1] * h).toFixed(1)} ${p[i + 1][0].toFixed(1)} ${p[i + 1][1].toFixed(1)}`;
+    }
+    return d;
+  }
+
+  // ================= VUE D'ENSEMBLE (exemple) =================
+  const heures = [1200, 3400, 4900, 5200, 3100, 840];   // 3 oct. : 18 640 €
+  const avant = [1350, 3100, 4600, 5000, 3000, 840];     // 19 sept. : 17 890 €
   const chiffres = [
     { etiquette: "Chiffre d'affaires TTC", valeur: "18 640 €", variation: "+4,2 % vs match précédent", sens: "hausse", serie: heures, avant: true },
     { etiquette: "Tickets", valeur: "2 510", variation: "−2,1 % vs match précédent", sens: "baisse", serie: [160, 460, 650, 700, 420, 120] },
@@ -377,45 +632,127 @@ tr:last-child td { border-bottom: 0; }
   function tracePetite(serie, clair) {
     const max = Math.max(...serie), min = Math.min(...serie), l = 200, h = 34;
     const pts = serie.map((v, i) => [(i / (serie.length - 1)) * l, h - 3 - ((v - min) / (max - min || 1)) * (h - 8)]);
-    const d = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+    const d = lisse(pts);
     const trait = clair ? "rgba(255,255,255,.95)" : "var(--violet)";
-    const fond = clair ? "rgba(255,255,255,.18)" : "var(--violet-doux)";
+    const id = "spk" + Math.random().toString(36).slice(2, 8);
+    const haut = clair ? "rgba(255,255,255,.35)" : "var(--violet)";
     const der = pts[pts.length - 1];
-    return `<svg viewBox="0 0 200 34" preserveAspectRatio="none" aria-hidden="true"><path d="${d} L200 34 L0 34 Z" fill="${fond}"/><path d="${d}" fill="none" stroke="${trait}" stroke-width="2" vector-effect="non-scaling-stroke"/><circle cx="${der[0]}" cy="${der[1]}" r="2.5" fill="${trait}"/></svg>`;
+    return `<svg viewBox="0 0 200 34" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:${haut};stop-opacity:${clair ? 1 : 0.22}"/><stop offset="1" style="stop-color:${haut};stop-opacity:0"/></linearGradient></defs><path d="${d} L200 34 L0 34 Z" fill="url(#${id})"/><path d="${d}" fill="none" stroke="${trait}" stroke-width="2" vector-effect="non-scaling-stroke"/><circle cx="${der[0]}" cy="${der[1]}" r="2.5" fill="${trait}"/></svg>`;
   }
   document.getElementById("chiffres").innerHTML = chiffres.map((c) => `
     <div class="chiffre-cle${c.avant ? " mis-en-avant" : ""}">
       <span class="etiquette">${c.etiquette}</span>
-      <span class="valeur chiffre">${c.valeur}</span>
+      <span class="valeur">${c.valeur}</span>
       <span class="variation ${c.sens}">${c.variation}</span>
       ${tracePetite(c.serie, c.avant)}
     </div>`).join("");
 
-  // ---- Courbe du CA par heure (échelle 0 à 6 000 €) ----
+  // ---- CA par heure : aire en dégradé, match précédent en pointillé, viseur au survol ----
   (function () {
     const svg = document.getElementById("courbe");
-    const g = { x0: 48, x1: 505, y0: 186, y1: 16, max: 6000 };
+    const L = 760, H = 250, g = { x0: 52, x1: 744, y0: 212, y1: 22, max: 6000 };
     const x = (i) => g.x0 + (i / (heures.length - 1)) * (g.x1 - g.x0);
     const y = (v) => g.y0 - (v / g.max) * (g.y0 - g.y1);
-    let h = "";
+    let h = `<defs><linearGradient id="degrade-ca" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--violet);stop-opacity:.30"/><stop offset="1" style="stop-color:var(--violet);stop-opacity:0"/></linearGradient></defs>`;
     [0, 2000, 4000, 6000].forEach((t) => {
       h += `<line x1="${g.x0}" x2="${g.x1}" y1="${y(t)}" y2="${y(t)}" stroke="var(--bord)" stroke-width="1"/>`;
-      h += `<text x="${g.x0 - 8}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="var(--discret)" font-family="var(--corps)">${t === 0 ? "0" : t / 1000 + " k€"}</text>`;
+      h += txt(g.x0 - 10, y(t) + 4, t ? fr(t / 1000) + " k€" : "0", { ancre: "end" });
     });
-    const pts = heures.map((v, i) => [x(i), y(v)]);
-    const d = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
-    h += `<path d="${d} L${g.x1} ${g.y0} L${g.x0} ${g.y0} Z" fill="var(--violet-doux)"/>`;
-    h += `<path d="${d}" fill="none" stroke="var(--violet)" stroke-width="2.5" stroke-linejoin="round"/>`;
-    ["18 h", "19 h", "20 h", "21 h", "22 h", "23 h"].forEach((l, i) => {
-      h += `<text x="${x(i)}" y="${g.y0 + 20}" text-anchor="middle" font-size="11" fill="var(--discret)" font-family="var(--corps)">${l}</text>`;
-    });
-    const pic = pts[3];
-    h += `<circle cx="${pic[0]}" cy="${pic[1]}" r="5" fill="var(--surface)" stroke="var(--violet)" stroke-width="2.5"/>`;
-    h += `<text x="${pic[0]}" y="${pic[1] - 12}" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--encre)" font-family="var(--corps)">Mi-temps · 5 200 €</text>`;
+    const pc = heures.map((v, i) => [x(i), y(v)]), pp = avant.map((v, i) => [x(i), y(v)]);
+    const dc = lisse(pc);
+    h += `<path d="${dc} L${g.x1} ${g.y0} L${g.x0} ${g.y0} Z" fill="url(#degrade-ca)"/>`;
+    h += `<path d="${lisse(pp)}" fill="none" stroke="var(--gris-graph)" stroke-width="2" stroke-dasharray="5 5" stroke-linecap="round"/>`;
+    h += `<path d="${dc}" fill="none" stroke="var(--violet)" stroke-width="2.5" stroke-linecap="round"/>`;
+    ["18 h", "19 h", "20 h", "21 h", "22 h", "23 h"].forEach((l, i) => { h += txt(x(i), g.y0 + 22, l, { ancre: "middle" }); });
+    const pic = pc[3];
+    h += `<circle cx="${pic[0]}" cy="${pic[1]}" r="5" fill="var(--violet)" stroke="var(--surface)" stroke-width="2"/>`;
+    h += txt(pic[0], pic[1] - 13, "Pic de la soirée · 5 200 €", { gras: true, couleur: "var(--encre)", ancre: "middle", taille: 12 });
+    h += `<g id="viseur-ca" opacity="0"><line id="viseur-ca-l" y1="${g.y1}" y2="${g.y0}" stroke="var(--discret)" stroke-width="1" stroke-dasharray="3 3"/><circle id="viseur-ca-p" r="4.5" fill="var(--surface)" stroke="var(--gris-graph)" stroke-width="2"/><circle id="viseur-ca-c" r="5.5" fill="var(--violet)" stroke="var(--surface)" stroke-width="2"/></g>`;
+    h += `<rect id="zone-ca" x="${g.x0 - 24}" y="${g.y1}" width="${g.x1 - g.x0 + 48}" height="${g.y0 - g.y1 + 12}" fill="transparent"/>`;
     svg.innerHTML = h;
+    const viseur = svg.querySelector("#viseur-ca");
+    svg.querySelector("#zone-ca").addEventListener("pointermove", (e) => {
+      const r = svg.getBoundingClientRect();
+      const sx = ((e.clientX - r.left) / r.width) * L;
+      const i = Math.max(0, Math.min(heures.length - 1, Math.round(((sx - g.x0) / (g.x1 - g.x0)) * (heures.length - 1))));
+      const xi = x(i);
+      viseur.setAttribute("opacity", "1");
+      ["x1", "x2"].forEach((a) => svg.querySelector("#viseur-ca-l").setAttribute(a, xi));
+      svg.querySelector("#viseur-ca-c").setAttribute("cx", xi); svg.querySelector("#viseur-ca-c").setAttribute("cy", y(heures[i]));
+      svg.querySelector("#viseur-ca-p").setAttribute("cx", xi); svg.querySelector("#viseur-ca-p").setAttribute("cy", y(avant[i]));
+      const ecart = ((heures[i] - avant[i]) / avant[i]) * 100;
+      montrer(`<b>De ${18 + i} h à ${i === 5 ? "minuit" : 19 + i + " h"}</b>
+        <div class="lb"><i style="background:var(--violet)"></i>3 oct.<strong>${eur(heures[i])}</strong></div>
+        <div class="lb"><i style="background:var(--gris-graph)"></i>19 sept.<strong>${eur(avant[i])}</strong></div>
+        <div class="lb">Écart<strong>${signe(ecart)} %</strong></div>`,
+        r.left + (xi / L) * r.width, r.top + (y(Math.max(heures[i], avant[i])) / H) * r.height);
+    });
+    svg.querySelector("#zone-ca").addEventListener("pointerleave", () => { viseur.setAttribute("opacity", "0"); cacher(); });
   })();
 
-  // ---- CA par stand ----
+  // ---- Anneau générique (camembert creux, 2 px d'écart entre parts) ----
+  function anneau(svg, legende, parts, centre) {
+    const cx = 100, cy = 100, R = 94, r = 66, ecart = 2.5;
+    const total = parts.reduce((s, p) => s + p.v, 0);
+    const pt = (rad, a) => `${(cx + rad * Math.cos(a)).toFixed(2)} ${(cy + rad * Math.sin(a)).toFixed(2)}`;
+    let a = -Math.PI / 2, h = "";
+    parts.forEach((p, k) => {
+      const b = a + (p.v / total) * 2 * Math.PI, dR = ecart / 2 / R, dr = ecart / 2 / r, grand = b - a > Math.PI ? 1 : 0;
+      h += `<path class="part" data-k="${k}" d="M${pt(R, a + dR)} A${R} ${R} 0 ${grand} 1 ${pt(R, b - dR)} L${pt(r, b - dr)} A${r} ${r} 0 ${grand} 0 ${pt(r, a + dr)} Z" fill="${p.c}"/>`;
+      a = b;
+    });
+    h += `<text id="${svg.id}-v" x="100" y="102" text-anchor="middle" font-size="22" font-weight="800" fill="var(--encre)"></text>`;
+    h += `<text id="${svg.id}-l" x="100" y="123" text-anchor="middle" font-size="11.5" fill="var(--discret)"></text>`;
+    svg.innerHTML = h;
+    legende.innerHTML = parts.map((p, k) => `
+      <div class="leg-ligne" data-k="${k}"><i class="pastille" style="background:${p.c}"></i><span>${p.nom}</span><span class="v">${eur(p.v)}</span><span class="p">${fr((p.v / total) * 100)} %</span></div>`).join("");
+    const v = svg.querySelector(`#${svg.id}-v`), l = svg.querySelector(`#${svg.id}-l`);
+    function activer(k) {
+      svg.querySelectorAll(".part").forEach((el) => (el.style.opacity = k === null || +el.dataset.k === k ? "1" : ".28"));
+      legende.querySelectorAll(".leg-ligne").forEach((el) => el.classList.toggle("actif", +el.dataset.k === k));
+      if (k === null) { v.textContent = centre.valeur; l.textContent = centre.libelle; }
+      else { v.textContent = eur(parts[k].v); l.textContent = `${parts[k].nom} · ${fr((parts[k].v / total) * 100)} %`; }
+    }
+    [svg, legende].forEach((zone) => {
+      zone.addEventListener("pointerover", (e) => { const el = e.target.closest("[data-k]"); if (el) activer(+el.dataset.k); });
+      zone.addEventListener("pointerleave", () => activer(null));
+    });
+    activer(null);
+  }
+  anneau(document.getElementById("donut"), document.getElementById("leg-familles"), [
+    { nom: "Bières", v: 7080, c: "var(--c1)" },
+    { nom: "Restauration", v: 6520, c: "var(--c2)" },
+    { nom: "Softs & eau", v: 2610, c: "var(--c3)" },
+    { nom: "Café & sucré", v: 1490, c: "var(--c4)" },
+    { nom: "Vins & autres", v: 940, c: "var(--c5)" },
+  ], { valeur: "18 640 €", libelle: "CA TTC du match" });
+
+  // ---- Meilleurs produits, avec barre de CA intégrée ----
+  const produits = [["Hot-dog", 264, 1848, 4.46], ["Bière 50 cl", 234, 1638, 3.63], ["Burger + frites", 118, 1534, 8.02], ["Bière 25 cl", 312, 1248, 2.04], ["Soda 33 cl", 226, 904, 2.12], ["Nachos", 96, 480, 3.05], ["Eau 50 cl", 158, 395, 1.31]];
+  document.getElementById("top-produits").innerHTML = produits.map(([n, q, ca, m]) => `
+    <tr><td>${n}</td><td class="n">${q}</td><td class="n"><span class="db"><i style="width:${(ca / produits[0][2]) * 100}%"></i></span>${eur(ca)}</td><td class="n">${eur(m, 2)}</td></tr>`).join("");
+
+  // ================= VENTES =================
+  const comparaison = [
+    ["Chiffre d'affaires", "18 640 €", "17 890 €", 4.2],
+    ["Tickets", "2 510", "2 564", -2.1],
+    ["Panier moyen", "7,43 €", "6,98 €", 6.4],
+    ["Spectateurs", "4 804", "4 703", 2.1],
+  ];
+  document.getElementById("comparaison").innerHTML = comparaison.map(([e, v, a, d]) => `
+    <div class="cmp"><span class="etiquette">${e}</span><span class="valeur">${v}</span><span class="variation ${d >= 0 ? "hausse" : "baisse"}">${signe(d)} %</span><span class="avant">19 sept. : ${a}</span></div>`).join("");
+
+  const standsComp = [["Buvette Nord", 5640, 6120], ["Bar", 4700, 5010], ["Buvette Sud", 4950, 4980], ["Café", 2600, 2530]];
+  const pos = (v) => ((v - 2000) / 5000) * 100;
+  document.getElementById("duo").innerHTML = standsComp.map(([n, a, b]) => {
+    const d = ((b - a) / a) * 100, g = Math.min(pos(a), pos(b)), w = Math.abs(pos(b) - pos(a));
+    return `<div class="duo-ligne"><span>${n}</span>
+      <div class="duo-piste"><span class="duo-trait" style="left:${g}%;width:${w}%"></span>
+        <span class="duo-point avant" style="left:${pos(a)}%" data-tip="${attr(`<b>${n} · 19 sept.</b>${eur(a)}`)}"></span>
+        <span class="duo-point maintenant" style="left:${pos(b)}%" data-tip="${attr(`<b>${n} · 3 oct.</b>${eur(b)} (${signe(d)} %)`)}"></span></div>
+      <span class="duo-val"><strong>${eur(b)}</strong><em class="${d >= 0 ? "hausse" : "baisse"}">${signe(d)} %</em></span></div>`;
+  }).join("") + `<div class="duo-ligne duo-axe"><span></span><div class="duo-piste">${[2000, 4000, 6000].map((t) => `<span class="tic" style="left:${pos(t)}%">${fr(t / 1000)} k€</span>`).join("")}</div><span></span></div>`;
+
   const stands = [
     { nom: "Buvette Nord", c: 5200, a: 920 },
     { nom: "Bar", c: 4100, a: 910 },
@@ -426,11 +763,138 @@ tr:last-child td { border-bottom: 0; }
   document.getElementById("stands").innerHTML = stands.map((s) => `
     <div class="barre-ligne">
       <span>${s.nom}</span>
-      <div class="barre" role="img" aria-label="${s.nom} : ${eur(s.c)} comptoir, ${eur(s.a)} Click & Collect">
-        <span class="c" style="width:${(s.c / maxStand) * 100}%"></span><span class="a" style="width:${(s.a / maxStand) * 100}%"></span>
+      <div class="barre" role="img" aria-label="${s.nom} : ${eur(s.c)} au comptoir, ${eur(s.a)} en Click & Collect">
+        <span class="c" style="width:${(s.c / maxStand) * 100}%" data-tip="${attr(`<b>${s.nom} · comptoir</b>${eur(s.c)}`)}"></span>${s.a ? `<span class="a" style="width:${(s.a / maxStand) * 100}%" data-tip="${attr(`<b>${s.nom} · Click &amp; Collect</b>${eur(s.a)}`)}"></span>` : ""}
       </div>
       <strong class="chiffre" style="text-align:right">${eur(s.c + s.a)}</strong>
     </div>`).join("");
+
+  // ================= FINANCES =================
+  (function () {
+    const svg = document.getElementById("cascade");
+    const etapes = [
+      ["Encaissé", "TTC", 18640, 1, "Tout ce qui a été encaissé : carte, espèces, Click &amp; Collect"],
+      ["TVA", "", -2302, 0, "Collectée pour l'État"],
+      ["CA HT", "", 16338, 1, "Ce qui revient réellement au lieu"],
+      ["Coût", "matière", -5228, 0, "Ce qu'ont coûté les produits vendus"],
+      ["Marge", "brute", 11110, 1, "68,0 % du CA HT"],
+      ["Personnel", "", -2360, 0, "Planning de la soirée"],
+      ["Commission", "Break Eat", -165, 0, "Sur les ventes Click &amp; Collect"],
+      ["Frais de", "paiement", -214, 0, "Stripe (Click &amp; Collect) et frais du TPE s'ils sont saisis"],
+      ["Autres", "dépenses", -350, 0, "Dépenses de la soirée saisies par le directeur"],
+      ["Marge", "nette", 8021, 1, "49,1 % du CA HT"],
+    ];
+    const g = { x0: 60, x1: 748, y0: 244, y1: 26, max: 20000 };
+    const y = (v) => g.y0 - (v / g.max) * (g.y0 - g.y1);
+    const bande = (g.x1 - g.x0) / etapes.length, lb = 36;
+    let h = "";
+    [0, 5000, 10000, 15000, 20000].forEach((t) => {
+      h += `<line x1="${g.x0}" x2="${g.x1}" y1="${y(t)}" y2="${y(t)}" stroke="var(--bord)" stroke-width="1"/>`;
+      h += txt(g.x0 - 10, y(t) + 4, t ? fr(t / 1000) + " k€" : "0", { ancre: "end" });
+    });
+    let cumul = 0;
+    etapes.forEach(([l1, l2, v, total, aide], i) => {
+      const haut = total ? v : cumul, bas = total ? 0 : cumul + v;
+      const x = g.x0 + bande * i + (bande - lb) / 2;
+      const hauteur = Math.max(2, y(bas) - y(haut));
+      if (i > 0) {
+        const xPrec = g.x0 + bande * (i - 1) + (bande + lb) / 2;
+        h += `<line x1="${xPrec}" x2="${x}" y1="${y(cumul)}" y2="${y(cumul)}" stroke="var(--gris-graph)" stroke-width="1" stroke-dasharray="3 3"/>`;
+      }
+      h += `<g data-tip="${attr(`<b>${l1} ${l2}</b>${eur(v)} · ${aide}`)}"><rect x="${x - 8}" y="${g.y1}" width="${lb + 16}" height="${g.y0 - g.y1}" fill="transparent"/>`;
+      h += `<rect x="${x}" y="${y(haut)}" width="${lb}" height="${hauteur}" rx="4" fill="${total ? "var(--violet)" : "var(--gris-graph)"}"/></g>`;
+      h += txt(x + lb / 2, y(haut) - 8, total ? eur(v) : eur(v), { ancre: "middle", gras: !!total, couleur: total ? "var(--encre)" : "var(--discret)", taille: 11.5 });
+      h += txt(x + lb / 2, g.y0 + 19, l1, { ancre: "middle", couleur: "var(--texte)", taille: 11 });
+      if (l2) h += txt(x + lb / 2, g.y0 + 33, l2, { ancre: "middle", couleur: "var(--texte)", taille: 11 });
+      cumul = total ? v : cumul + v;
+    });
+    svg.innerHTML = h;
+  })();
+
+  // ---- Objectif : anneau de progression avec repère de cible ----
+  (function () {
+    const svg = document.getElementById("objectif");
+    const r = 62, C = 2 * Math.PI * r, taux = 49.09, cible = 50;
+    const a = (-90 + (cible / 100) * 360) * (Math.PI / 180);
+    const p = (rad) => `${(80 + rad * Math.cos(a)).toFixed(1)} ${(80 + rad * Math.sin(a)).toFixed(1)}`;
+    svg.innerHTML = `
+      <circle cx="80" cy="80" r="${r}" fill="none" stroke="var(--piste)" stroke-width="14"/>
+      <circle cx="80" cy="80" r="${r}" fill="none" stroke="var(--violet)" stroke-width="14" stroke-linecap="round" stroke-dasharray="${((taux / 100) * C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 80 80)"/>
+      <path d="M${p(50)} L${p(74)}" stroke="var(--encre)" stroke-width="3" stroke-linecap="round"/>
+      <text x="80" y="82" text-anchor="middle" font-size="24" font-weight="800" fill="var(--encre)">49,1 %</text>
+      <text x="80" y="101" text-anchor="middle" font-size="11" fill="var(--discret)">cible 50 %</text>`;
+  })();
+
+  // ---- Paiements : une barre empilée + légende chiffrée ----
+  const paiements = [["Carte (TPE du lieu)", 13780, "var(--c1)"], ["Espèces", 3030, "var(--c3)"], ["Click & Collect (application)", 1830, "var(--cc)"]];
+  const totalPaie = paiements.reduce((s, p) => s + p[1], 0);
+  document.getElementById("empile-paiements").innerHTML = paiements.map(([n, v, c]) =>
+    `<span style="width:${(v / totalPaie) * 100}%;background:${c}" data-tip="${attr(`<b>${n}</b>${eur(v)} · ${fr((v / totalPaie) * 100, 1)} %`)}"></span>`).join("");
+  document.getElementById("leg-paiements").innerHTML = paiements.map(([n, v, c]) =>
+    `<div class="leg-ligne"><i class="pastille" style="background:${c}"></i><span>${n}</span><span class="v">${eur(v)}</span><span class="p">${fr((v / totalPaie) * 100, 1)} %</span></div>`).join("");
+
+  // ================= MARGES : ventes × marge par vente =================
+  (function () {
+    const svg = document.getElementById("quadrant");
+    const g = { x0: 60, x1: 720, y0: 300, y1: 34, xmax: 350, ymax: 9 };
+    const x = (v) => g.x0 + (v / g.xmax) * (g.x1 - g.x0);
+    const y = (v) => g.y0 - (v / g.ymax) * (g.y0 - g.y1);
+    const repX = 150, repY = 3.23;
+    const produitsM = [
+      ["Hot-dog", 264, 4.46, "d"], ["Bière 50 cl", 234, 3.63, "d"], ["Burger + frites", 118, 8.02, "g"],
+      ["Bière 25 cl", 312, 2.04, "h"], ["Soda 33 cl", 226, 2.12, "h"], ["Eau 50 cl", 158, 1.31, "d"],
+      ["Café", 142, 1.18, "g"], ["Nachos", 96, 3.05, "d"], ["Crêpe", 74, 3.40, "h"], ["Verre de vin", 48, 3.90, "h"],
+    ];
+    let h = `<rect x="${x(repX)}" y="${y(repY)}" width="${g.x1 - x(repX)}" height="${g.y0 - y(repY)}" fill="var(--ambre-doux)"/>`;
+    [0, 3, 6, 9].forEach((t) => {
+      h += `<line x1="${g.x0}" x2="${g.x1}" y1="${y(t)}" y2="${y(t)}" stroke="var(--bord)" stroke-width="1"/>`;
+      h += txt(g.x0 - 10, y(t) + 4, t + " €", { ancre: "end" });
+    });
+    [0, 100, 200, 300].forEach((t) => { h += txt(x(t), g.y0 + 18, fr(t), { ancre: "middle" }); });
+    h += `<line x1="${x(repX)}" x2="${x(repX)}" y1="${g.y1}" y2="${g.y0}" stroke="var(--gris-graph)" stroke-width="1" stroke-dasharray="4 4"/>`;
+    h += `<line x1="${g.x0}" x2="${g.x1}" y1="${y(repY)}" y2="${y(repY)}" stroke="var(--gris-graph)" stroke-width="1" stroke-dasharray="4 4"/>`;
+    h += txt(g.x0 + 8, g.y1 + 16, "À mettre en avant", { gras: true, couleur: "var(--texte)" });
+    h += txt(g.x1 - 8, g.y1 + 16, "Locomotives", { gras: true, couleur: "var(--texte)", ancre: "end" });
+    h += txt(g.x0 + 8, g.y0 - 8, "Secondaires", { gras: true, couleur: "var(--texte)" });
+    h += txt(g.x1 - 8, g.y0 - 8, "⚠ À revoir", { gras: true, couleur: "var(--ambre)", ancre: "end" });
+    h += txt((g.x0 + g.x1) / 2, 350, "Ventes du match (unités)", { ancre: "middle" });
+    h += txt(8, 14, "Marge par vente", {});
+    produitsM.forEach(([n, q, m, cote]) => {
+      const cx = x(q), cy = y(m), revoir = q > repX && m < repY;
+      const lab = { d: [cx + 11, cy + 4, "start"], g: [cx - 11, cy + 4, "end"], h: [cx, cy - 12, "middle"], b: [cx, cy + 20, "middle"] }[cote];
+      h += `<g data-tip="${attr(`<b>${n}</b>${q} ventes · ${eur(m, 2)} de marge par vente<br>Marge totale : ${eur(q * m)}${revoir ? "<br>À revoir : beaucoup vendu, peu de marge" : ""}`)}">`;
+      h += `<circle cx="${cx}" cy="${cy}" r="14" fill="transparent"/>`;
+      h += `<circle cx="${cx}" cy="${cy}" r="6" fill="${revoir ? "var(--ambre)" : "var(--violet)"}" stroke="var(--surface)" stroke-width="2"/></g>`;
+      h += txt(lab[0], lab[1], n, { ancre: lab[2], couleur: "var(--texte)", taille: 11.5 });
+    });
+    svg.innerHTML = h;
+  })();
+
+  const icPiste = {
+    prix: '<path d="M20 12l-8 8-9-9V3h8l9 9z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+    avant: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3z"/>',
+    achat: '<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/>',
+  };
+  document.getElementById("pistes").innerHTML = [
+    ["prix", "Bière 25 cl", "Beaucoup vendue (312), peu de marge (2,04 € par vente).", "+0,50 € sur le prix = +156 € de marge par match, à volume égal"],
+    ["avant", "Burger + frites", "La meilleure marge par vente (8,02 €), mais seulement 118 ventes.", "Le mettre en avant : première touche de la caisse, visuel au Click & Collect"],
+    ["achat", "Soda 33 cl", "226 ventes pour 2,12 € de marge par vente.", "Vérifier le prix d'achat dans les livraisons (Stock)"],
+  ].map(([k, t, d, e]) => `<div class="piste-item"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icPiste[k]}</svg></span><div><strong>${t}</strong><span>${d}</span><em>${e}</em></div></div>`).join("");
+
+  // ================= RAPPORTS DE SOIRÉE =================
+  const saison = [["5 sept.", 15420], ["12 sept.", 16950], ["19 sept.", 17890], ["3 oct.", 18640], ["10 oct."], ["17 oct."], ["24 oct."], ["31 oct."]];
+  document.getElementById("saison").innerHTML = saison.map(([d, v], i) => v
+    ? `<div class="col${i < 3 ? " passe" : ""}" data-tip="${attr(`<b>Match n° ${i + 1} · ${d}</b>${eur(v)} TTC`)}"><span class="v">${fr(v / 1000, 1)} k€</span><span class="b" style="height:${(v / 20000) * 140}px"></span><small>${d}</small></div>`
+    : `<div class="col futur"><span class="v discret">à venir</span><span class="b"></span><small>${d}</small></div>`).join("");
+  document.getElementById("liste-rapports").innerHTML = [
+    ["3", "oct.", 4, 18640, "Clos le 4 oct. à 0 h 42"],
+    ["19", "sept.", 3, 17890, "Clos le 20 sept. à 0 h 15"],
+    ["12", "sept.", 2, 16950, "Clos le 13 sept. à 0 h 31"],
+    ["5", "sept.", 1, 15420, "Clos le 6 sept. à 0 h 08"],
+  ].map(([j, m, n, v, c]) => `
+    <div class="rapport"><div class="date">${j}<small>${m}</small></div>
+      <div class="quoi"><strong>Match n° ${n}</strong><span>${c}</span></div>
+      <span class="montant">${eur(v)}</span><button class="bouton fantome petit">Ouvrir</button></div>`).join("");
 
   // ---- Calendrier d'octobre 2026 (le 1er est un jeudi) ----
   const joues = [3], aVenir = [10, 17, 24, 31], aujourdhui = 6;
@@ -442,7 +906,7 @@ tr:last-child td { border-bottom: 0; }
   }
   document.getElementById("calendrier").innerHTML = cal;
 
-  // ---- Caisses en direct ----
+  // ================= CAISSES =================
   const caisses = [
     ["Caisse 1", "Buvette Nord", true, 1942, 262],
     ["Caisse 2", "Buvette Nord", true, 1408, 190],
@@ -455,27 +919,27 @@ tr:last-child td { border-bottom: 0; }
     <div class="caisse">
       <div class="haut"><strong>${n}</strong><span class="etat ${o ? "ouverte" : "fermee"}">${o ? "Ouverte" : "Fermée"}</span></div>
       <span class="discret" style="font-size:12.5px">${s}</span>
-      <span class="ca chiffre">${o ? eur(ca) : "—"}</span>
+      <span class="ca">${o ? eur(ca) : "—"}</span>
       <span class="discret" style="font-size:12.5px">${o ? t + " tickets" : "Pas encore ouverte"}</span>
       <button class="bouton ${o ? "fantome" : ""}">${o ? "Voir la caisse" : "Ouvrir"}</button>
     </div>`).join("");
 
-  // ---- Planning en frise ----
+  // ================= ÉQUIPE : planning en frise =================
   const planning = [
-    ["Responsable de stand", 17.5, 24.5], ["Caisse 1", 18, 24], ["Caisse 2", 18, 23.5], ["Caisse 3", 18, 24.25], ["Préparation Café", 17, 23], ["Renfort mi-temps", 20.5, 22.5],
+    ["Responsable de stand", 17.5, 24.5], ["Caisse 1", 18, 24], ["Caisse 2", 18, 23.5], ["Caisse 3", 18, 24.25], ["Préparation Café", 17, 23], ["Renfort des pauses", 20.5, 22.5],
   ];
   const debut = 17, fin = 25;
+  function fmtH(h) { const hh = Math.floor(h) % 24, mm = Math.round((h % 1) * 60); return `${hh} h${mm ? String(mm).padStart(2, "0") : ""}`; }
   document.getElementById("planning").innerHTML = planning.map(([r, a, b]) => `
     <div class="barre-ligne" style="grid-template-columns:150px minmax(0,1fr) 90px">
       <span>${r}</span>
-      <div class="barre" style="background:var(--piste);position:relative">
-        <span class="c" style="margin-left:${((a - debut) / (fin - debut)) * 100}%;width:${((b - a) / (fin - debut)) * 100}%"></span>
+      <div class="barre" style="background:var(--piste);border-radius:6px">
+        <span class="c" style="margin-left:${((a - debut) / (fin - debut)) * 100}%;width:${((b - a) / (fin - debut)) * 100}%;border-radius:6px"></span>
       </div>
       <span class="chiffre discret" style="text-align:right">${fmtH(a)}–${fmtH(b)}</span>
     </div>`).join("");
-  function fmtH(h) { const hh = Math.floor(h) % 24, mm = Math.round((h % 1) * 60); return `${hh} h${mm ? String(mm).padStart(2, "0") : ""}`; }
 
-  // ---- Paramètres ----
+  // ================= PARAMÈTRES =================
   const ic = {
     lieu: '<path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/>',
     stands: '<rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="8" height="6" rx="1.5"/><rect x="13" y="14" width="8" height="6" rx="1.5"/>',
@@ -492,7 +956,7 @@ tr:last-child td { border-bottom: 0; }
     ["produits", "Produits & prix", "Catalogue, prix datés, TVA, catégories, recettes", "25 produits"],
     ["cc", "Click & Collect", "Prix sur l'application, points de retrait", "2 points de retrait"],
     ["saison", "Saison", "Calendrier des matchs, spectateurs", "5 matchs à venir"],
-    ["objectifs", "Objectifs & coûts", "Cibles de marge, coûts par buvette", "Cibles à saisir"],
+    ["objectifs", "Objectifs & coûts", "Cibles de marge, coûts par buvette", "Cible de soirée : 50 %"],
     ["acces", "Accès", "Comptes du directeur et des caissières", "3 comptes"],
     ["conformite", "Conformité", "Journal technique, attestation, archives", "Chaînes intègres"],
   ];
@@ -500,9 +964,9 @@ tr:last-child td { border-bottom: 0; }
     <button class="tuile"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ic[k]}</svg></span>
       <strong>${t}</strong><span>${d}</span><em>${e}</em></button>`).join("");
 
-  // ---- Correspondance ----
+  // ================= CORRESPONDANCE =================
   const corr = [
-    ["Ventes & CA (avec la comparaison entre deux matchs)", "Résultats → Ventes"],
+    ["Ventes & CA (avec la comparaison entre deux matchs)", "Résultats → Vue d'ensemble et Ventes"],
     ["Gestion financière", "Résultats → Finances"],
     ["Marges & ratios, Optimisation", "Résultats → Marges"],
     ["Reporting de soirée", "Résultats → Rapports de soirée"],
@@ -512,30 +976,47 @@ tr:last-child td { border-bottom: 0; }
     ["Personnel et planning, masse salariale", "Équipe"],
     ["Écart de caisse, Clôture d'événement", "Clôtures → Clôture du match (un seul assistant en 4 étapes)"],
     ["Clôtures mensuelle & annuelle", "Clôtures → Mois & année"],
-    ["Conformité : archives, accès vérificateur", "Clôtures → Archives & contrôle"],
+    ["Conformité : archives, accès vérificateur", "Clôtures → Archives & contrôle (conservée)"],
     ["Identité du lieu, réglages de caisse", "Paramètres → Le lieu"],
     ["Gestion des stands & caisses", "Paramètres → Stands & caisses"],
     ["Config produits, recettes", "Paramètres → Produits & prix"],
     ["Click & Collect (prix sur l'application)", "Paramètres → Click & Collect"],
     ["Calendrier des matchs", "Paramètres → Saison (ouverture du match du jour depuis Caisses)"],
     ["Configuration cible & marge, Coûts par buvette", "Paramètres → Objectifs & coûts"],
-    ["Conformité : journal technique, attestation", "Paramètres → Conformité"],
+    ["Conformité : journal technique, attestation", "Paramètres → Conformité (conservée)"],
     ["Fidélité, Wallet, Facturation", "Ajoutés au menu quand ils seront construits"],
-    ["Lexique des règles", "Retiré du menu : chaque écran garde ses règles en bas de page"],
   ];
-  document.getElementById("correspondance").innerHTML = corr.map(([a, b]) => `<tr><td>${a}</td><td><strong>${b}</strong></td></tr>`).join("");
+  document.getElementById("correspondance").innerHTML = corr.map(([a, b]) => `<tr><td>${a}</td><td><strong>${b}</strong></td></tr>`).join("")
+    + `<tr><td class="barre-texte">Lexique des règles</td><td><strong>Supprimé</strong> <span class="discret">(29/09) : chaque écran garde ses règles en bas de page</span></td></tr>`;
 
-  // ---- Navigation ----
+  // ================= NAVIGATION =================
+  const vues = ["ensemble", "ventes", "finances", "marges", "rapports"];
+  const ongletsRes = document.querySelectorAll("#onglets-resultats .onglet");
+  function choisirVue(v) {
+    if (!vues.includes(v)) v = "ensemble";
+    vues.forEach((k) => (document.getElementById("vue-" + k).hidden = k !== v));
+    ongletsRes.forEach((o) => o.setAttribute("aria-selected", o.dataset.vue === v ? "true" : "false"));
+    cacher();
+  }
   const entrees = document.querySelectorAll(".entree");
   function afficher(id) {
-    if (!document.getElementById(id)) id = "resultats";
+    if (vues.includes(id)) { choisirVue(id); id = "resultats"; }
+    if (!document.getElementById(id) || !document.getElementById(id).classList.contains("ecran")) id = "resultats";
     document.querySelectorAll(".ecran").forEach((e) => e.classList.toggle("actif", e.id === id));
     entrees.forEach((b) => (b.dataset.ecran === id ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current")));
+    cacher();
   }
-  entrees.forEach((b) => b.addEventListener("click", () => { afficher(b.dataset.ecran); try { history.replaceState(null, "", "#" + b.dataset.ecran); } catch (e) {} }));
+  const memoriser = (h) => { try { history.replaceState(null, "", "#" + h); } catch (e) {} };
+  entrees.forEach((b) => b.addEventListener("click", () => { afficher(b.dataset.ecran); memoriser(b.dataset.ecran); }));
   document.querySelectorAll(".onglets").forEach((groupe) => groupe.addEventListener("click", (ev) => {
     const o = ev.target.closest(".onglet"); if (!o) return;
     groupe.querySelectorAll(".onglet").forEach((x) => x.setAttribute("aria-selected", x === o ? "true" : "false"));
+    if (o.dataset.vue) { choisirVue(o.dataset.vue); memoriser(o.dataset.vue); }
+  }));
+  document.querySelectorAll("[data-aller]").forEach((b) => b.addEventListener("click", () => { choisirVue(b.dataset.aller); memoriser(b.dataset.aller); }));
+  document.querySelectorAll(".puces").forEach((groupe) => groupe.addEventListener("click", (ev) => {
+    const p = ev.target.closest(".puce"); if (!p) return;
+    groupe.querySelectorAll(".puce").forEach((x) => x.setAttribute("aria-pressed", x === p ? "true" : "false"));
   }));
   afficher(location.hash.slice(1));
 })();

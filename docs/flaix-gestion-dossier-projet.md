@@ -3929,3 +3929,34 @@ Le module 15c (recettes/sous-recettes) était en pause depuis le 25/08 (§15.25)
 6. Charte inchangée (violet FlaiX, Raleway pour les titres, Plus Jakarta Sans), mise en page reprise des références de Rémi : menu à icônes court, cartes de chiffres avec mini-graphique, un graphique principal, panneau de droite avec le calendrier des matchs.
 
 **Statut** : proposition écrite avant tout code, maquette visuelle publiée pour Rémi. **Rien n'est modifié dans les écrans déjà construits tant que Rémi ne l'a pas validée.**
+
+**Réponse de Rémi (2026-09-29, verbatim)** : *« ah oui beaucoup mieux, une question que verrais-tu à rajouter ? vois-tu des problèmes ? peux-tu faire encore plus moderne sur certaines stats et camembert, je reviens sur la clôture à la fin de journée sur TPE et caisse, tu peux supprimer lexique par contre conformité pas encore »*
+
+**Décisions actées** :
+1. **Organisation en 6 entrées validée** (« beaucoup mieux ») : Résultats, Caisses, Stock, Équipe, Clôtures, Paramètres.
+2. **« Lexique des règles » supprimé du menu** ; chaque écran garde son bloc « Règles ».
+3. **Conformité conservée** (« conformité pas encore ») : elle reste dans l'organisation (journal technique et attestation dans Paramètres, archives et accès vérificateur dans Clôtures). *Lecture retenue : ne pas la retirer. Si Rémi voulait dire « ne pas la construire tout de suite », c'est compatible : elle reste en place, construite plus tard dans l'ordre prévu.*
+4. **Saisie du ticket TPE à la clôture : en attente**, Rémi y reviendra. Reste affichée dans la maquette comme proposition, rien n'est construit.
+5. Demande : graphiques plus modernes (statistiques, camemberts) dans la maquette, et l'avis de Claude sur ce qu'il faudrait ajouter et sur les problèmes.
+
+**Maquette v2.1 (2026-09-29), même lien** (`docs/maquettes/organisation-v2.html`) — ce qui a changé :
+- Les 5 onglets de Résultats fonctionnent. **Vue d'ensemble** : courbe du CA par heure lissée, en dégradé, avec le match précédent en pointillé et un viseur au survol ; anneau « ventes par famille » (5 parts maximum, montant et % écrits à côté de chaque couleur) ; meilleurs produits avec barre intégrée. **Ventes** : comparaison de deux matchs au choix, écart par stand (point gris = avant, point violet = ce match). **Finances** : cascade de l'encaissé TTC jusqu'à la marge nette (TVA, matière, personnel, commission, frais, dépenses), anneau « marge nette vs cible », barre unique des moyens de paiement. **Marges** : chaque produit placé selon ses ventes et sa marge par vente (zone « à revoir » mise en évidence), avec 3 pistes chiffrées. **Rapports** : la saison match par match et la liste des rapports figés.
+- Règle appliquée : pas de camembert pour 2 ou 3 valeurs proches de la moitié (une barre se lit mieux), jamais plus de 6 parts, chaque couleur toujours accompagnée de son libellé et de son montant (palette vérifiée pour les daltoniens, en clair et en sombre).
+- « Lexique des règles » affiché comme supprimé ; Conformité conservée à ses deux places ; colonne « Ticket TPE » marquée « en attente de ta décision ».
+- Vocabulaire : « mi-temps » remplacé par « pause » / « pic de la soirée ». Le lieu pilote est une patinoire (hockey sur glace, rapprochement fait au §15.26), où il n'y a pas de mi-temps mais deux pauses entre les tiers-temps. *Terme exact employé par l'équipe à confirmer par Rémi.*
+- Tous les chiffres de la maquette sont des exemples cohérents entre eux (CA par heure = CA par stand = CA par famille = 18 640 €), jamais des données réelles.
+
+**Avis de Claude demandé par Rémi — propositions, rien n'est décidé ni construit** :
+
+*Problèmes, du plus grave au moins grave :*
+1. **Réseau de la patinoire** (déjà signalé, `decisions-architecture-production.md` § 8 point 3) : la caisse est une page web ; si le réseau sature pendant les pauses, plus aucun ticket ne s'enregistre. C'est le premier risque avant un vrai soir de match. Le paiement carte passant par le TPE du lieu (sa propre connexion), un mode « caisse sans réseau » devient d'autant plus utile. À trancher après un test du réseau un soir de match.
+2. **Premier écran vide** : la version test démarre sans aucune donnée ; un tableau de bord vide sans explication donne l'impression d'un logiciel cassé. Chaque écran doit dire quoi faire en premier (« Aucun match clos : ouvre ton premier match dans Caisses »).
+3. **Marges fausses si les coûts ne sont pas saisis** : sans prix d'achat, une marge s'afficherait à 100 %. Il faut afficher « coût manquant », jamais un chiffre trompeur. Même chose pour le CA par spectateur sans nombre de spectateurs.
+4. **« Carte » déclaratif** : une caissière peut taper « carte » et garder des espèces ; seul le rapprochement avec le ticket du TPE le révèle. C'est l'argument principal pour la décision en attente (Rémi tranche).
+5. **Comparaison « vs match précédent »** trompeuse d'un adversaire ou d'une affluence à l'autre : d'où le choix du match de comparaison et les chiffres par spectateur.
+
+*Ajouts proposés, par ordre d'utilité :*
+1. Vue « soir de match » sur téléphone pour le directeur : CA en direct, caisses ouvertes, ruptures.
+2. Rapport de soirée envoyé automatiquement par e-mail à la clôture.
+3. Export mensuel pour l'expert-comptable (CA par taux de TVA et par moyen de paiement) — format à demander au comptable.
+4. Alerte de rupture en direct (mise en place − ventes, par stand).
