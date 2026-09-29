@@ -294,9 +294,44 @@ tr:last-child td { border-bottom: 0; }
   .col .v { font-size: 10px; }
 }
 @media (prefers-reduced-motion: no-preference) { .entree, .tuile, .onglet, .puce { transition: background .15s, border-color .15s; } }
+
+/* ---------- Assistant FlaiX : lecture seule (dossier §15.95, décision du 29/09) ---------- */
+.entree.assistant { margin-top: 10px; border: 1px dashed var(--violet-moyen); color: var(--violet); }
+.entree.assistant:hover { background: var(--violet-doux); }
+.ia-voile { position: fixed; inset: 0; background: rgba(20,16,36,.3); z-index: 40; }
+.ia-tiroir { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 100%); z-index: 41; background: var(--surface); border-left: 1px solid var(--bord); box-shadow: -12px 0 32px rgba(20,16,36,.16); display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.ia-tiroir[hidden], .ia-voile[hidden] { display: none; }
+.ia-tete { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--bord); }
+.ia-tete .ic { width: 36px; height: 36px; border-radius: 11px; background: var(--violet-doux); color: var(--violet); display: grid; place-items: center; flex: none; }
+.ia-tete .ic svg { width: 18px; height: 18px; }
+.ia-tete strong { font-family: var(--titre); font-size: 16px; color: var(--encre); display: block; }
+.ia-tete small { font-size: 12px; color: var(--discret); }
+.ia-lecture { font-size: 11px; font-weight: 800; color: var(--vert); background: var(--vert-doux); padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.ia-fermer { margin-left: auto; border: 0; background: var(--piste); color: var(--texte); width: 34px; height: 34px; border-radius: 10px; cursor: pointer; font-size: 18px; line-height: 1; flex: none; }
+.ia-fil { flex: 1; overflow-y: auto; padding: 16px 18px; display: grid; gap: 12px; align-content: start; }
+.ia-suggestions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ia-suggestion { border: 1px solid var(--bord); background: var(--papier); color: var(--texte); border-radius: 999px; padding: 6px 11px; font-size: 12.5px; cursor: pointer; text-align: left; }
+.ia-suggestion:hover { border-color: var(--violet-moyen); }
+.ia-echange { display: grid; gap: 8px; border-radius: 14px; scroll-margin-top: 12px; }
+.ia-eclair { outline: 2px solid var(--violet); outline-offset: 4px; }
+.ia-q { justify-self: end; max-width: 85%; background: var(--violet); color: #fff; padding: 9px 12px; border-radius: 14px 14px 4px 14px; font-size: 13px; }
+.ia-r { max-width: 96%; background: var(--papier); padding: 11px 13px; border-radius: 14px 14px 14px 4px; font-size: 13px; display: grid; gap: 8px; min-width: 0; }
+.ia-r p { margin: 0; }
+.ia-r .defile { overflow-x: auto; }
+.ia-r table { min-width: 340px; font-size: 12.5px; }
+.ia-r td, .ia-r th { padding: 6px 8px; }
+.ia-source { display: flex; flex-wrap: wrap; gap: 5px; font-size: 11px; color: var(--discret); align-items: center; }
+.ia-source span { border: 1px solid var(--bord); border-radius: 999px; padding: 2px 8px; background: var(--surface); }
+.ia-refus { border-left: 3px solid var(--ambre); }
+.ia-manque { color: var(--ambre); font-weight: 600; }
+.ia-pied { border-top: 1px solid var(--bord); padding: 12px 18px 16px; display: grid; gap: 8px; }
+.ia-saisie { display: flex; gap: 8px; }
+.ia-saisie input { flex: 1; min-width: 0; border: 1px solid var(--bord); border-radius: 12px; padding: 10px 12px; font: inherit; background: var(--papier); color: var(--texte); }
+.ia-pied p { margin: 0; font-size: 11.5px; color: var(--discret); }
+.bouton:disabled { opacity: .5; cursor: not-allowed; }
 </style>
 
-<div class="avertissement" role="note">Maquette de l'organisation, v2.1 : chiffres d'exemple, aucune donnée réelle. Dans Résultats, les 5 onglets fonctionnent ; survole les graphiques pour le détail.</div>
+<div class="avertissement" role="note">Maquette de l'organisation, v2.2 : chiffres d'exemple, aucune donnée réelle. Dans Résultats, les 5 onglets fonctionnent ; survole les graphiques pour le détail. Nouveau : « Demander à FlaiX », l'assistant en lecture seule.</div>
 
 <div class="appli">
   <nav class="menu" aria-label="Menu principal">
@@ -307,6 +342,7 @@ tr:last-child td { border-bottom: 0; }
     <button class="entree" data-ecran="equipe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.8c1.9.8 3 2.6 3.5 5.2"/></svg>Équipe</button>
     <button class="entree" data-ecran="clotures"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Clôtures</button>
     <button class="entree" data-ecran="parametres"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Paramètres</button>
+    <button class="entree assistant" data-assistant><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.8L12 16.5l-1.8-5L5 9.7l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>Demander à FlaiX</button>
     <div class="plus-tard"><b>Plus tard</b>Fidélité · Facturation</div>
   </nav>
 
@@ -315,7 +351,10 @@ tr:last-child td { border-bottom: 0; }
     <section class="ecran actif" id="resultats" aria-label="Résultats">
       <div class="entete">
         <div><h1>Bonsoir</h1><p>Voici le résultat du dernier match.</p></div>
-        <span class="pastille-match"><i></i>Match n° 4 · samedi 3 octobre · clos</span>
+        <div class="en-ligne" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="bouton fantome petit" data-assistant>✦ Demander à FlaiX</button>
+          <span class="pastille-match"><i></i>Match n° 4 · samedi 3 octobre · clos</span>
+        </div>
       </div>
       <div class="onglets" role="tablist" id="onglets-resultats">
         <button class="onglet" role="tab" data-vue="ensemble" aria-selected="true">Vue d'ensemble</button>
@@ -566,6 +605,69 @@ tr:last-child td { border-bottom: 0; }
     </section>
   </main>
 </div>
+
+<!-- ================= ASSISTANT (lecture seule) ================= -->
+<div class="ia-voile" id="ia-voile" hidden></div>
+<aside class="ia-tiroir" id="assistant" aria-label="Assistant FlaiX" hidden>
+  <div class="ia-tete">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.8L12 16.5l-1.8-5L5 9.7l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span>
+    <div><strong>Assistant FlaiX</strong><small>Répond avec tes données. Ne modifie rien.</small></div>
+    <span class="ia-lecture">Lecture seule</span>
+    <button class="ia-fermer" id="fermer-assistant" aria-label="Fermer l'assistant">×</button>
+  </div>
+
+  <div class="ia-fil">
+    <div class="ia-suggestions" aria-label="Exemples de questions">
+      <button class="ia-suggestion" data-cible="ia-1">Quel stand a le plus progressé ?</button>
+      <button class="ia-suggestion" data-cible="ia-2">Pourquoi la marge est sous la cible ?</button>
+      <button class="ia-suggestion" data-cible="ia-3">Augmente la bière 25 cl de 50 centimes</button>
+    </div>
+
+    <div class="ia-echange" id="ia-1">
+      <div class="ia-q">Quel stand a le plus progressé par rapport au 19 septembre ?</div>
+      <div class="ia-r">
+        <p><strong>La Buvette Nord</strong> : 6 120 € contre 5 640 € le 19 septembre, soit <strong>+480 € (+8,5 %)</strong>. Suivent le Bar (+310 €) et la Buvette Sud (+30 €). Le Café recule de 70 €.</p>
+        <div class="defile"><table>
+          <thead><tr><th>Stand</th><th class="n">19 sept.</th><th class="n">3 oct.</th><th class="n">Écart</th></tr></thead>
+          <tbody>
+            <tr><td>Buvette Nord</td><td class="n">5 640 €</td><td class="n">6 120 €</td><td class="n">+8,5 %</td></tr>
+            <tr><td>Bar</td><td class="n">4 700 €</td><td class="n">5 010 €</td><td class="n">+6,6 %</td></tr>
+            <tr><td>Buvette Sud</td><td class="n">4 950 €</td><td class="n">4 980 €</td><td class="n">+0,6 %</td></tr>
+            <tr><td>Café</td><td class="n">2 600 €</td><td class="n">2 530 €</td><td class="n">−2,7 %</td></tr>
+          </tbody>
+        </table></div>
+        <div class="ia-source">Sources : <span>Ventes du match n° 4</span><span>Ventes du match n° 3</span></div>
+      </div>
+    </div>
+
+    <div class="ia-echange" id="ia-2">
+      <div class="ia-q">Pourquoi la marge nette est sous la cible au dernier match ?</div>
+      <div class="ia-r">
+        <p>Au match n° 4, la marge nette est de <strong>8 021 €, soit 49,1 % du CA HT</strong>, pour une cible de 50 % : il manque 0,9 point, environ 150 €.</p>
+        <p>Les deux plus gros postes : le coût matière, 5 228 € (32,0 % du CA HT), et le personnel, 2 360 € (14,4 %).</p>
+        <p class="ia-manque">Je ne peux pas dire lequel a augmenté : les coûts du match précédent ne sont pas saisis.</p>
+        <div class="ia-source">Sources : <span>Finances du match n° 4</span><span>Cible de soirée (Paramètres)</span></div>
+      </div>
+    </div>
+
+    <div class="ia-echange" id="ia-3">
+      <div class="ia-q">Augmente la bière 25 cl de 50 centimes.</div>
+      <div class="ia-r ia-refus">
+        <p><strong>Je ne peux rien modifier</strong> : je lis seulement tes données. Pour changer un prix : Paramètres → Produits &amp; prix.</p>
+        <p>Pour t'aider à décider : au match n° 4, la bière 25 cl s'est vendue 312 fois. À volume égal, +0,50 € représenterait +156 € de marge par match.</p>
+        <div class="ia-source">Source : <span>Ventes du match n° 4</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ia-pied">
+    <div class="ia-saisie">
+      <input type="text" placeholder="Pose une question sur tes chiffres…" aria-label="Question" disabled>
+      <button class="bouton" disabled>Demander</button>
+    </div>
+    <p>Exemple de conversation (maquette). Chaque chiffre vient de ta base, avec sa source ; s'il manque une donnée, l'assistant le dit au lieu d'estimer. Noms et salaires du personnel exclus. Chaque question est inscrite au journal technique. Fournisseur d'IA : à choisir.</p>
+  </div>
+</aside>
 
 <section class="correspondance" aria-label="Correspondance avec les modules validés">
   <h2>Où retrouver chaque module validé</h2>
@@ -998,7 +1100,7 @@ tr:last-child td { border-bottom: 0; }
     ongletsRes.forEach((o) => o.setAttribute("aria-selected", o.dataset.vue === v ? "true" : "false"));
     cacher();
   }
-  const entrees = document.querySelectorAll(".entree");
+  const entrees = document.querySelectorAll(".entree:not(.assistant)");
   function afficher(id) {
     if (vues.includes(id)) { choisirVue(id); id = "resultats"; }
     if (!document.getElementById(id) || !document.getElementById(id).classList.contains("ecran")) id = "resultats";
@@ -1019,5 +1121,26 @@ tr:last-child td { border-bottom: 0; }
     groupe.querySelectorAll(".puce").forEach((x) => x.setAttribute("aria-pressed", x === p ? "true" : "false"));
   }));
   afficher(location.hash.slice(1));
+
+  // ---- Assistant FlaiX (lecture seule) ----
+  const tiroir = document.getElementById("assistant");
+  const voile = document.getElementById("ia-voile");
+  function assistant(ouvert) {
+    tiroir.hidden = !ouvert;
+    voile.hidden = !ouvert;
+    cacher();
+    if (ouvert) document.getElementById("fermer-assistant").focus();
+  }
+  document.querySelectorAll("[data-assistant]").forEach((b) => b.addEventListener("click", () => assistant(true)));
+  document.getElementById("fermer-assistant").addEventListener("click", () => assistant(false));
+  voile.addEventListener("click", () => assistant(false));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !tiroir.hidden) assistant(false); });
+  document.querySelectorAll(".ia-suggestion").forEach((s) => s.addEventListener("click", () => {
+    const cible = document.getElementById(s.dataset.cible);
+    cible.scrollIntoView({ behavior: "smooth", block: "start" });
+    cible.classList.add("ia-eclair");
+    setTimeout(() => cible.classList.remove("ia-eclair"), 1400);
+  }));
+  if (location.hash === "#assistant") assistant(true);
 })();
 </script>
