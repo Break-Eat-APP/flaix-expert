@@ -14,7 +14,7 @@ export function Identite() {
 
   useEffect(() => {
     if (lieu.data) {
-      const { id: _id, ...identite } = lieu.data;
+      const { id: _id, remiseAbonnePb: _r, ...identite } = lieu.data;
       setForm(Object.fromEntries(Object.entries(identite).map(([k, v]) => [k, v ?? ""])) as IdentiteLieu);
     }
   }, [lieu.data]);
@@ -83,13 +83,66 @@ export function Identite() {
           </div>
         </Carte>
       </form>
+      <ReglagesCaisse lieu={lieu.data!} />
       <Regles>
         <ul>
+          <li><strong>Remise abonné</strong> : taux contractuel accordé aux abonnés du lieu. Tant qu'il n'est pas réglé, la pastille « Abonné » de la caisse reste inactive. Le caissier l'applique, il ne le négocie pas.</li>
           <li>Le ticket de caisse doit porter l'identité de l'exploitant : raison sociale, adresse, SIRET, n° de TVA (BOFiP, données obligatoires d'une opération d'encaissement).</li>
           <li>Le SIRET compte 14 chiffres ; le n° de TVA intracommunautaire commence par le code du pays (FR…). Les espaces saisis sont retirés.</li>
           <li>Chaque modification est inscrite au journal technique du lieu, avec la valeur avant, la valeur après, son auteur et l'heure.</li>
         </ul>
       </Regles>
     </>
+  );
+}
+
+function ReglagesCaisse({ lieu }: { lieu: Lieu }) {
+  const client = useQueryClient();
+  const [taux, setTaux] = useState(lieu.remiseAbonnePb !== null ? String(lieu.remiseAbonnePb / 100).replace(".", ",") : "");
+  const [ok, setOk] = useState(false);
+  const sauver = useMutation({
+    mutationFn: (remiseAbonnePb: number | null) => api.put<Lieu>("/lieu/reglages-caisse", { remiseAbonnePb }),
+    onSuccess: (l) => {
+      client.setQueryData(["lieu"], l);
+      client.invalidateQueries({ queryKey: ["ecran-caisse"] });
+      setOk(true);
+    },
+  });
+  const texte = taux.trim().replace(",", ".").replace("%", "").trim();
+  const valeur = texte === "" ? null : Number(texte);
+  const valide = valeur === null || (Number.isFinite(valeur) && valeur > 0 && valeur <= 100 && Math.round(valeur * 100) === valeur * 100);
+
+  return (
+    <Carte titre="Réglages de caisse" description="Paramètres du lieu appliqués par toutes les caisses.">
+      <form
+        className="en-ligne"
+        style={{ alignItems: "flex-end" }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (valide) sauver.mutate(valeur === null ? null : Math.round(valeur * 100));
+        }}
+      >
+        <label className="champ" style={{ width: 240 }}>
+          <span>Remise abonné (%)</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={taux}
+            onChange={(e) => {
+              setOk(false);
+              setTaux(e.target.value);
+            }}
+            placeholder="Non réglée"
+            aria-invalid={!valide}
+          />
+        </label>
+        <button className="btn" disabled={!valide || sauver.isPending}>
+          Enregistrer
+        </button>
+      </form>
+      {!valide && <div className="message message-erreur">Taux en %, entre 0,01 et 100.</div>}
+      <MessageErreur erreur={sauver.error} />
+      {ok && <div className="message message-ok">Enregistré et inscrit au journal technique.</div>}
+    </Carte>
   );
 }

@@ -12,7 +12,7 @@ interface Verification {
 }
 
 const PAGE = 50;
-const COLONNES = "70px 150px minmax(160px, 1.2fr) 140px minmax(200px, 2fr) 110px";
+const COLONNES = "60px 130px minmax(140px, 1.2fr) 120px minmax(180px, 2fr) 100px";
 
 function valeur(v: unknown): string {
   if (v === null || v === undefined || v === "") return "vide";

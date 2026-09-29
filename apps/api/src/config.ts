@@ -12,8 +12,18 @@ function lire(nom: string, parDefautDev?: string): string {
   throw new Error(`Variable d'environnement manquante : ${nom}`);
 }
 
+const environnement = lire("FLAIX_ENVIRONNEMENT", "developpement");
+if (!["developpement", "test", "production"].includes(environnement)) {
+  throw new Error(`FLAIX_ENVIRONNEMENT invalide : ${environnement}`);
+}
+if (production && environnement === "developpement") {
+  throw new Error("FLAIX_ENVIRONNEMENT doit valoir « test » ou « production » sur un serveur.");
+}
+
 export const config = {
   production,
+  /** « test » : serveur de la version test (bandeau permanent, aucune vente réelle). */
+  environnement: environnement as "developpement" | "test" | "production",
   port: Number(lire("PORT", "3001")),
   /** Connexion du serveur : rôle `flaix_app`, droits restreints (db/migrations/0001_socle.sql). */
   databaseUrl: lire("DATABASE_URL", "postgres://flaix_app:flaix_app_dev@localhost:5433/flaix"),

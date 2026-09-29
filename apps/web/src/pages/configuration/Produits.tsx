@@ -17,7 +17,7 @@ import {
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 
-const COLONNES = "minmax(170px, 2fr) minmax(90px, 1fr) minmax(140px, 2fr) 90px 60px 90px 120px 24px";
+const COLONNES = "minmax(150px, 2fr) minmax(80px, 1fr) minmax(130px, 2fr) minmax(70px, 0.8fr) minmax(50px, 0.6fr) minmax(80px, 0.9fr) minmax(100px, 1.2fr) 24px";
 
 function Marge({ produit }: { produit: Produit }) {
   const t = produit.tarifEnVigueur;

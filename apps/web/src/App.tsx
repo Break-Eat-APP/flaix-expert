@@ -9,6 +9,9 @@ import { Identite } from "./pages/configuration/Identite.tsx";
 import { StandsCaisses } from "./pages/configuration/StandsCaisses.tsx";
 import { Produits } from "./pages/configuration/Produits.tsx";
 import { JournalTechnique } from "./pages/conformite/JournalTechnique.tsx";
+import { Matchs } from "./pages/configuration/Matchs.tsx";
+import { MesCaisses } from "./pages/caisse/MesCaisses.tsx";
+import { EcranCaisse } from "./pages/caisse/EcranCaisse.tsx";
 
 export function App() {
   const session = useSession();
@@ -33,6 +36,9 @@ export function App() {
       <Routes>
         <Route element={<Coquille session={session.data} />}>
           <Route index element={<Demarrage session={session.data} />} />
+          <Route path="caisses" element={<MesCaisses />} />
+          <Route path="caisses/:caisseId" element={<EcranCaisse />} />
+          <Route path="configuration/matchs" element={<Matchs />} />
           <Route path="configuration/identite" element={<Identite />} />
           <Route path="configuration/stands" element={<StandsCaisses />} />
           <Route path="configuration/produits" element={<Produits />} />

@@ -103,6 +103,7 @@ export async function routesAuth(app: FastifyInstance, { base }: { base: Base })
         utilisateur: { id: compte.id, nom: compte.nom, email: compte.email },
         lieu: { id: membre.lieu_id, nom: await nomDuLieu(base, membre.lieu_id, compte.id) },
         role: membre.role,
+        environnement: config.environnement,
       };
     },
   );
@@ -113,6 +114,7 @@ export async function routesAuth(app: FastifyInstance, { base }: { base: Base })
       utilisateur: { id: auth.utilisateurId, nom: auth.nom, email: auth.email },
       lieu: { id: auth.lieuId, nom: await nomDuLieu(base, auth.lieuId, auth.utilisateurId) },
       role: auth.role,
+      environnement: config.environnement,
     };
   });
 

@@ -31,13 +31,15 @@ interface Section {
   id: string;
   libelle: string;
   icone: ComponentType<{ size?: number }>;
+  /** Section à un seul écran, ouverte directement. */
+  route?: string;
   modules?: Module[];
 }
 
 // Ordre et regroupement validés par Rémi le 2026-09-28 (dossier §15.81, §15.84, §15.85).
 const MENU: Section[] = [
   { id: "dashboard", libelle: "Dashboard", icone: LayoutDashboard, modules: [{ libelle: "Ventes & CA" }, { libelle: "Gestion financière" }] },
-  { id: "caisses", libelle: "Mes caisses", icone: Receipt },
+  { id: "caisses", libelle: "Mes caisses", icone: Receipt, route: "/caisses" },
   {
     id: "configuration",
     libelle: "Configuration",
@@ -46,6 +48,7 @@ const MENU: Section[] = [
       { libelle: "Identité du lieu", route: "/configuration/identite" },
       { libelle: "Gestion des stands & caisses", route: "/configuration/stands" },
       { libelle: "Config produits", route: "/configuration/produits" },
+      { libelle: "Calendrier des matchs", route: "/configuration/matchs" },
       { libelle: "Click & Collect" },
       { libelle: "Configuration cible & marge" },
       { libelle: "Coûts par buvette" },
@@ -143,6 +146,13 @@ export function Coquille({ session }: { session: SessionInfo }) {
           </NavLink>
           {MENU.map((section) => {
             const Icone = section.icone;
+            if (section.route) {
+              return (
+                <NavLink key={section.id} to={section.route} className={({ isActive }) => `nav-section${isActive ? " active" : ""}`}>
+                  <Icone size={17} /> {section.libelle}
+                </NavLink>
+              );
+            }
             const construits = section.modules?.filter((m) => m.route) ?? [];
             if (construits.length === 0) {
               return (
@@ -200,9 +210,18 @@ export function Coquille({ session }: { session: SessionInfo }) {
         </div>
       </aside>
 
-      <main className="contenu">
-        <Outlet />
-      </main>
+      <div>
+        {session.environnement !== "production" && (
+          <div className="bandeau-test" role="note">
+            {session.environnement === "test"
+              ? "VERSION DE TEST — aucune vente réelle, aucun encaissement : les chiffres saisis ici servent uniquement à essayer le logiciel."
+              : "DÉVELOPPEMENT LOCAL — base de données de développement, aucune vente réelle."}
+          </div>
+        )}
+        <main className="contenu">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

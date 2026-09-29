@@ -23,6 +23,14 @@ export const TYPES_JET = {
   produit_modifie: "Produit modifié",
   produit_stands_modifies: "Stands d'un produit modifiés",
   tarif_cree: "Nouveau tarif",
+  reglages_caisse_modifies: "Réglages de caisse modifiés",
+  evenement_cree: "Match créé",
+  evenement_modifie: "Match modifié",
+  evenement_ouvert: "Match ouvert",
+  evenement_clos: "Match clos",
+  caisse_ouverte: "Ouverture de caisse",
+  caisse_cloturee: "Clôture de caisse",
+  ticket_annule: "Ticket annulé",
   verification_integrite: "Vérification d'intégrité",
 } as const;
 

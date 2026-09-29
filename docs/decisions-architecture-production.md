@@ -176,6 +176,16 @@ Validées le 2026-09-28 (questions posées une par une, réponses de Rémi) :
 | 3 | Modèle produit | **Une fiche produit au niveau du lieu, un prix, un historique ; le directeur coche les stands qui le vendent** (§ 8 point 5, retour au modèle §3/§5 du dossier) |
 | 4 | Dépôt de code | **`C:\Users\notta\dev\flaix-expert`, hors OneDrive, versionné avec Git** ; ce dépôt devient la référence pour CLAUDE.md et `docs/`, le dossier OneDrive reste intact comme archive |
 
+Validées le 2026-09-28, suite :
+
+| # | Décision | Choix de Rémi |
+|---|---|---|
+| 5 | Dépôt GitHub | Privé, dans l'organisation **Break-Eat-APP** (`Break-Eat-APP/flaix-expert`), à côté de `breakeat-admin`. Garde-fou d'envoi : aucun envoi possible vers un autre dépôt (`.githooks/pre-push`) |
+| 6 | Hébergement | **Serveur et écrans en France, chez le même hébergeur** (pas Vercel). Break Eat reste sur Vercel/Railway : produits distincts, hébergements distincts |
+| 7 | Version test | **VPS OVHcloud VPS-1** (≈ 4,57 € TTC/mois relevé le 2026-09-28), application + PostgreSQL sur le même serveur, base de test séparée de la future production. Production ensuite sur base gérée avec sauvegardes (Clever Cloud exclu : sa base n'autorise pas la création du rôle restreint `flaix_app`, vérifié dans sa documentation ; Scaleway l'autorise) |
+| 8 | Contenu de la version test | **Le logiciel complet** (tous les modules validés du prototype), construit dans l'ordre des dépendances, chaque module relu en entier dans son prototype validé avant d'être construit, et déployé sur le serveur de test dès qu'il est prêt |
+| 9 | Qui tape les ventes en test | **Le directeur lui-même** peut ouvrir n'importe quelle caisse ; chaque ticket porte le nom de qui l'a saisi |
+
 Les décisions par défaut du § 9 restent en vigueur tant que Rémi ne les modifie pas.
 
 ---

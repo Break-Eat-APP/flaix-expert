@@ -189,6 +189,10 @@ export async function routesStands(app: FastifyInstance, { base }: { base: Base 
       const modifications = differences(avant, demande);
       if (Object.keys(modifications).length === 0) return listerStands(c, auth.lieuId);
       const apres = { ...avant, ...Object.fromEntries(Object.entries(demande).filter(([, v]) => v !== undefined)) };
+      if ("actif" in modifications || "standId" in modifications) {
+        const { rows: ouverte } = await c.query("SELECT 1 FROM session_caisse WHERE caisse_id = $1 AND fermee_le IS NULL", [id]);
+        if (ouverte[0]) throw new ErreurMetier(409, "Cette caisse est ouverte : clôture-la avant de la désactiver ou de la déplacer.");
+      }
       const cible = await lireStand(c, auth.lieuId, apres.standId);
       if (apres.actif && !cible.actif) {
         throw new ErreurMetier(409, "Une caisse active ne peut pas être rattachée à un stand désactivé.");
