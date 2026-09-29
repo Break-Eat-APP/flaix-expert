@@ -35,4 +35,9 @@ export const config = {
   originesAutorisees: lire("ORIGINES_AUTORISEES", "http://localhost:5173,http://127.0.0.1:5173").split(","),
   dureeSessionHeures: Number(lire("DUREE_SESSION_HEURES", "12")),
   cookieSecurise: production,
+  /**
+   * Adresse du relais https de confiance (ex. « 127.0.0.1 » quand Caddy tourne sur le même serveur).
+   * Seul ce relais peut indiquer l'adresse réelle du visiteur ; vide = aucun relais, on ne croit personne.
+   */
+  relaisDeConfiance: process.env.RELAIS_DE_CONFIANCE || null,
 } as const;

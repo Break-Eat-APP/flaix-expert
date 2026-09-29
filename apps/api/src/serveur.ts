@@ -18,7 +18,9 @@ import { routesCaisse } from "./routes/caisse.ts";
 const METHODES_MODIFIANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export async function construireServeur(base: Base, options: { journaliser?: boolean } = {}): Promise<FastifyInstance> {
-  const app = Fastify({ logger: options.journaliser ?? true, bodyLimit: 256 * 1024 });
+  // Derrière le relais https du serveur (Caddy), l'adresse du visiteur est celle transmise par le
+  // relais — sinon tout le monde partagerait la même limite de tentatives de connexion.
+  const app = Fastify({ logger: options.journaliser ?? true, bodyLimit: 256 * 1024, trustProxy: config.relaisDeConfiance ?? false });
 
   await app.register(cookie);
   await app.register(rateLimit, { global: false });
