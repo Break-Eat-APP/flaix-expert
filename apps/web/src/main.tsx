@@ -17,6 +17,14 @@ const client: QueryClient = new QueryClient({
   }),
 });
 
+// Garde les fichiers de l'application sur l'appareil : un écran de caisse rechargé sans réseau s'ouvre encore (§15.97).
+// Seulement sur la version construite : en développement, le rechargement à chaud de Vite suffit.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+  });
+}
+
 createRoot(document.getElementById("racine")!).render(
   <StrictMode>
     <QueryClientProvider client={client}>

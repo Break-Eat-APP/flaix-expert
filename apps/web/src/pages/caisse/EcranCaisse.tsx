@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Banknote, CreditCard, Lock } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Banknote, CreditCard, Lock, ReceiptText, RefreshCw } from "lucide-react";
 import {
   MOTIFS_AJUSTEMENT,
   PALIERS_REMISE_PB,
@@ -9,17 +9,33 @@ import {
   erreurAjustement,
   formaterMontant,
   lireMontant,
+  scellerAnnulation,
+  scellerVente,
   type Ajustement,
   type EcranCaisse as Ecran,
   type MotifAjustement,
   type ModeReglement,
-  type TicketVue,
+  type RepriseCaisse,
 } from "@flaix/domain";
-import { api, formaterDateHeure } from "../../api.ts";
+import { api, ErreurApi, formaterDateHeure } from "../../api.ts";
 import { Chargement, MessageErreur, Regles } from "../../composants/communs.tsx";
+import {
+  effacerEtat,
+  ecrireEtat,
+  envoyer,
+  heureCaisse,
+  initialiserEtat,
+  lireEtat,
+  memoriserTicket,
+  useCaisseLocale,
+  useEnvoiAutomatique,
+  type EtatCaisseLocale,
+  type StatutEnvoi,
+} from "./memoire.ts";
 
 const pct = (pb: number) => `${(pb / 100).toLocaleString("fr-FR")} %`;
 const SANS_CATEGORIE = "__autres";
+const heure = new Intl.DateTimeFormat("fr-FR", { timeStyle: "short", timeZone: "Europe/Paris" });
 
 interface Cloture {
   nbVentes: number;
@@ -31,16 +47,52 @@ interface Cloture {
   especesAttendues: number | null;
 }
 
-export function EcranCaisse() {
-  const { caisseId } = useParams();
-  const client = useQueryClient();
-  const ecran = useQuery({ queryKey: ["ecran-caisse", caisseId], queryFn: () => api.get<Ecran>(`/caisses/${caisseId}/ecran`) });
-  const [cloture, setCloture] = useState<Cloture | null>(null);
-  const rafraichir = () => client.invalidateQueries({ queryKey: ["ecran-caisse", caisseId] });
+/** Absence de réseau (et non refus du serveur) : fetch impossible, ou serveur injoignable derrière le relais. */
+const horsLigne = (e: unknown) => !(e instanceof ErreurApi) || e.statut === 502 || e.statut === 504;
 
-  if (ecran.isPending) return <Chargement />;
-  if (ecran.error) return <MessageErreur erreur={ecran.error} />;
-  const e = ecran.data!;
+/**
+ * Écran de caisse (§15.26, §15.97). Une caisse ouverte sur cet appareil fonctionne d'abord avec
+ * sa mémoire locale : elle vend, scelle et garde ses tickets même sans réseau, puis les envoie.
+ */
+export function EcranCaisse() {
+  const caisseId = useParams().caisseId!;
+  const client = useQueryClient();
+  const { etat, statut } = useCaisseLocale(caisseId);
+  const [cloture, setClotureBrute] = useState<Cloture | "sans-totaux" | null>(null);
+  const setCloture = (c: Cloture | "sans-totaux" | null) => {
+    setClotureBrute(c);
+    // Après la clôture, l'écran relit l'état du serveur (caisse fermée, prête à rouvrir).
+    if (c) void client.invalidateQueries({ queryKey: ["ecran-caisse", caisseId] });
+  };
+  // Dernier écran du serveur : catalogue et prix à jour dès que le réseau est là.
+  const ecran = useQuery({ queryKey: ["ecran-caisse", caisseId], queryFn: () => api.get<Ecran>(`/caisses/${caisseId}/ecran`), refetchInterval: 60_000, retry: false });
+  useEnvoiAutomatique(caisseId, etat !== null);
+
+  useEffect(() => {
+    const courant = lireEtat(caisseId);
+    if (courant && ecran.data?.session?.id === courant.reprise.contexte.sessionId && JSON.stringify(ecran.data) !== JSON.stringify(courant.ecran)) {
+      ecrireEtat({ ...courant, ecran: ecran.data });
+    }
+  }, [ecran.data, caisseId]);
+
+  // Le résumé de clôture s'affiche même si l'écran du serveur n'a pas encore été relu.
+  if (cloture) return <ResumeCloture cloture={cloture} fermer={() => setCloture(null)} />;
+
+  const e = etat?.ecran ?? ecran.data;
+  if (!e) {
+    if (ecran.isPending || ecran.isFetching) return <Chargement />;
+    return horsLigne(ecran.error) ? (
+      <div className="cmd-gate">
+        <h3>Pas de réseau</h3>
+        <p>Cette caisse n'est pas ouverte sur cet appareil. Elle pourra être ouverte dès que le réseau reviendra.</p>
+        <button className="cmd-encaisser" onClick={() => void ecran.refetch()}>
+          Réessayer
+        </button>
+      </div>
+    ) : (
+      <MessageErreur erreur={ecran.error} />
+    );
+  }
 
   return (
     <>
@@ -52,11 +104,8 @@ export function EcranCaisse() {
           Caisse {e.caisse.numero}
           {e.caisse.nom ? ` — ${e.caisse.nom}` : ""} · {e.caisse.standNom}
         </strong>
-        {e.session ? (
-          <span className="puce puce-vert">Ouverte · {e.session.evenementLibelle}</span>
-        ) : (
-          <span className="puce">Fermée</span>
-        )}
+        {etat ? <span className="puce puce-vert">Ouverte · {e.session?.evenementLibelle ?? "session en cours"}</span> : <span className="puce">{e.session ? "Ouverte ailleurs" : "Fermée"}</span>}
+        {etat && <PuceEnvoi statut={statut} enAttente={etat.attente.length} />}
         <span className="discret" style={{ marginLeft: "auto", fontSize: 12 }}>
           {e.session
             ? `Ouverte par ${e.session.ouvertePar} le ${formaterDateHeure(e.session.ouverteLe)}${e.session.fond !== null ? ` · fond ${formaterMontant(e.session.fond)}` : " · carte uniquement"}`
@@ -65,30 +114,122 @@ export function EcranCaisse() {
               : "Carte uniquement"}
         </span>
       </div>
+      {etat && statut.etat === "refus" && (
+        <div className="message message-erreur">
+          Envoi refusé par le serveur : {statut.message} Les {etat.attente.length} ticket(s) en attente restent sur cette tablette : ne vide pas le navigateur et préviens Break Eat.{" "}
+          <button className="btn-lien" onClick={() => void envoyer(caisseId)}>
+            Réessayer
+          </button>
+        </div>
+      )}
 
-      {cloture && <ResumeCloture cloture={cloture} fermer={() => setCloture(null)} />}
-      {!cloture && (e.session ? <Vente ecran={e} apresCloture={(c) => { setCloture(c); rafraichir(); }} /> : <Ouverture ecran={e} ouverte={rafraichir} />)}
+      {etat ? (
+        <Vente etat={etat} apresCloture={setCloture} />
+      ) : e.session ? (
+        <AutreAppareil caisseId={caisseId} ecran={e} />
+      ) : (
+        <Ouverture ecran={e} />
+      )}
 
       <Regles>
         <ul>
-          <li><strong>Ouverture de caisse</strong> : obligatoire avant le premier ticket, et seulement pendant un match ouvert. Le fond de caisse n'est demandé que si la caisse accepte les espèces.</li>
-          <li><strong>Prix</strong> : chaque ligne est facturée au tarif en vigueur à l'instant de la vente, lu par le serveur. Changer un prix ensuite ne modifie jamais un ticket déjà émis.</li>
+          <li><strong>Ouverture de caisse</strong> : obligatoire avant le premier ticket, et seulement pendant un match ouvert. Le fond de caisse n'est demandé que si la caisse accepte les espèces. Elle demande le réseau.</li>
+          <li><strong>Vente sans réseau</strong> : chaque ticket est numéroté, scellé et gardé dans la mémoire de cette tablette avant d'afficher « encaissé », puis envoyé au serveur — tout de suite, ou au retour du réseau, dans l'ordre. L'indicateur en haut de l'écran dit combien de tickets attendent. Ne pas utiliser de navigation privée ni vider le navigateur pendant un match.</li>
+          <li><strong>Prix</strong> : ceux du catalogue chargé sur la caisse, remis à jour dès que le réseau est là. Le serveur contrôle chaque ticket reçu : un prix différent du tarif en vigueur à l'heure de la vente est inscrit (la vente a eu lieu) et signalé dans Caisses → Tickets du match.</li>
           <li><strong>Total du ticket</strong> = montant brut − remise − offert, jamais négatif. La remise (en %) s'applique à chaque ligne ; l'offert (en €) est réparti sur les lignes au prorata. La TVA est calculée sur le montant réellement payé.</li>
           <li><strong>Motif obligatoire</strong> dès qu'il y a une remise ou un offert : le bouton Encaisser reste grisé tant qu'il manque.</li>
           <li><strong>Tarif abonné</strong> : remise contractuelle au taux fixé par le lieu (Paramètres → Le lieu → Réglages de caisse), jamais négociée à la caisse. Le n° d'abonné ou de carte est obligatoire et enregistré avec la vente.</li>
           <li><strong>Espèces</strong> : saisis le montant donné par le client ; le rendu monnaie est calculé. <strong>Carte</strong> : valide une fois le paiement accepté sur le terminal (en version test, le paiement carte est déclaré, pas vérifié).</li>
-          <li><strong>Numérotation</strong> : chaque caisse numérote ses propres tickets (ex. 2026-C3-000125), sans trou ni doublon, jamais remis à zéro. Chaque ticket est scellé et chaîné au précédent de la même caisse.</li>
-          <li><strong>Clôture de caisse</strong> : fige les totaux de la session (tickets, annulations, espèces, carte, TVA par taux) et calcule les espèces attendues dans le tiroir = fond + espèces encaissées. Le comptage du tiroir se fera ensuite dans Clôtures (étape « Espèces et carte », à venir).</li>
+          <li><strong>Numérotation</strong> : chaque caisse numérote ses propres tickets (ex. 2026-C3-000125), sans trou ni doublon, jamais remis à zéro, même sans réseau. Chaque ticket est scellé et chaîné au précédent de la même caisse ; le serveur refait tous les calculs avant de l'inscrire.</li>
+          <li><strong>Annulation</strong> : se fait ici, depuis « Tickets de la session », tant que la caisse est ouverte, avec un motif. Le ticket d'origine demeure ; un ticket inverse le référence.</li>
+          <li><strong>Une caisse ouverte appartient à un seul appareil.</strong> Si la tablette casse, « Reprendre la caisse sur cet appareil » depuis un autre : les tickets que l'ancienne n'avait pas encore envoyés ne pourront plus être inscrits.</li>
+          <li><strong>Clôture de caisse</strong> : demande le réseau ; tous les tickets en attente partent d'abord. Elle fige les totaux de la session (tickets, annulations, espèces, carte, TVA par taux) et calcule les espèces attendues dans le tiroir = fond + espèces encaissées. Le comptage du tiroir se fera ensuite dans Clôtures (étape « Espèces et carte », à venir).</li>
         </ul>
       </Regles>
     </>
   );
 }
 
-function Ouverture({ ecran, ouverte }: { ecran: Ecran; ouverte: () => void }) {
+function PuceEnvoi({ statut, enAttente }: { statut: StatutEnvoi; enAttente: number }) {
+  if (statut.etat === "envoi") return <span className="puce puce-violet">Envoi…</span>;
+  if (statut.etat === "reconnexion") return <span className="puce puce-ambre">Reconnecte-toi pour envoyer {enAttente} ticket(s)</span>;
+  if (statut.etat === "refus") return <span className="puce puce-rouge">Envoi refusé</span>;
+  if (enAttente === 0) return <span className="puce puce-vert">Tout est envoyé</span>;
+  if (statut.etat === "hors_ligne") return <span className="puce puce-ambre">Hors ligne · {enAttente} en attente</span>;
+  return <span className="puce puce-ambre">{enAttente} en attente d'envoi</span>;
+}
+
+/** Ouvre ou reprend la caisse sur cet appareil, puis garde en mémoire tout ce qu'il faut pour vendre seul. */
+async function preparerAppareil(caisseId: string, reprise: RepriseCaisse): Promise<void> {
+  const ecran = await api.get<Ecran>(`/caisses/${caisseId}/ecran`);
+  initialiserEtat(caisseId, reprise, ecran);
+}
+
+function AutreAppareil({ caisseId, ecran }: { caisseId: string; ecran: Ecran }) {
+  const client = useQueryClient();
+  const [confirmer, setConfirmer] = useState(false);
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState<unknown>(null);
+  async function reprendre() {
+    setEnCours(true);
+    setErreur(null);
+    try {
+      await preparerAppareil(caisseId, await api.post<RepriseCaisse>(`/caisses/${caisseId}/reprise`));
+      await client.invalidateQueries({ queryKey: ["ecran-caisse", caisseId] });
+    } catch (e) {
+      setErreur(e);
+    } finally {
+      setEnCours(false);
+    }
+  }
+  return (
+    <div className="cmd-gate">
+      <h3>Caisse ouverte sur un autre appareil</h3>
+      <p>
+        Caisse {ecran.caisse.numero} · {ecran.caisse.standNom}
+        {ecran.session ? <> — ouverte par {ecran.session.ouvertePar} le {formaterDateHeure(ecran.session.ouverteLe)}</> : null}
+      </p>
+      <div className="message message-alerte" style={{ textAlign: "left" }}>
+        Une caisse ouverte n'appartient qu'à un seul appareil. Reprends-la ici seulement si l'autre appareil est cassé, perdu ou a perdu sa mémoire : les tickets qu'il n'a pas encore envoyés ne pourront plus être inscrits.
+      </div>
+      <MessageErreur erreur={erreur} />
+      {confirmer ? (
+        <div className="ligne-actions" style={{ justifyContent: "center" }}>
+          <button className="btn btn-danger" disabled={enCours} onClick={() => void reprendre()}>
+            Confirmer : reprendre la caisse ici
+          </button>
+          <button className="btn btn-fantome" onClick={() => setConfirmer(false)}>
+            Annuler
+          </button>
+        </div>
+      ) : (
+        <button className="cmd-encaisser" onClick={() => setConfirmer(true)}>
+          Reprendre la caisse sur cet appareil
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Ouverture({ ecran }: { ecran: Ecran }) {
+  const client = useQueryClient();
   const [fond, setFond] = useState("");
-  const ouvrir = useMutation({ mutationFn: (corps: unknown) => api.post(`/caisses/${ecran.caisse.id}/ouverture`, corps), onSuccess: ouverte });
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState<unknown>(null);
   const fondCentimes = lireMontant(fond);
+  async function ouvrirCaisse(corps: unknown) {
+    setEnCours(true);
+    setErreur(null);
+    try {
+      await preparerAppareil(ecran.caisse.id, await api.post<RepriseCaisse>(`/caisses/${ecran.caisse.id}/ouverture`, corps));
+      await client.invalidateQueries({ queryKey: ["ecran-caisse", ecran.caisse.id] });
+    } catch (e) {
+      setErreur(e);
+    } finally {
+      setEnCours(false);
+    }
+  }
+  const ouvrir = { isPending: enCours, error: erreur, mutate: (c: unknown) => void ouvrirCaisse(c) };
   const bloquant = !ecran.caisse.actif || !ecran.standActif ? "Cette caisse ou son stand est désactivé." : !ecran.evenementOuvert ? "Aucun match n'est ouvert." : null;
   const pret = !bloquant && (!ecran.caisse.especesAutorisees || fondCentimes !== null);
 
@@ -129,7 +270,9 @@ function Ouverture({ ecran, ouverte }: { ecran: Ecran; ouverte: () => void }) {
   );
 }
 
-function Vente({ ecran, apresCloture }: { ecran: Ecran; apresCloture: (c: Cloture) => void }) {
+function Vente({ etat, apresCloture }: { etat: EtatCaisseLocale; apresCloture: (c: Cloture | "sans-totaux") => void }) {
+  const ecran = etat.ecran;
+  const caisseId = etat.caisseId;
   const produits = ecran.produits;
   const categories = useMemo(() => {
     const vues = new Map<string, string>();
@@ -148,8 +291,9 @@ function Vente({ ecran, apresCloture }: { ecran: Ecran; apresCloture: (c: Clotur
   const [donneSaisi, setDonneSaisi] = useState("");
   const [flash, setFlash] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [idTicket, setIdTicket] = useState(() => crypto.randomUUID());
+  const [erreurMemoire, setErreurMemoire] = useState<string | null>(null);
   const [confirmerCloture, setConfirmerCloture] = useState(false);
+  const [voirTickets, setVoirTickets] = useState(false);
 
   const categorieActive = cat && categories.some(([id]) => id === cat) ? cat : (categories[0]?.[0] ?? null);
   const abonne = motif === "abonne";
@@ -174,29 +318,77 @@ function Vente({ ecran, apresCloture }: { ecran: Ecran; apresCloture: (c: Clotur
   const especesOk = paiement !== "especes" || donne >= ticket.total;
   const pret = nbArticles > 0 && paiement !== null && especesOk && !erreurAj;
 
-  const encaisser = useMutation({
-    mutationFn: () =>
-      api.post<TicketVue>(`/caisses/${ecran.caisse.id}/ventes`, {
-        id: idTicket,
-        lignes: panier,
-        ajustement,
-        modeReglement: paiement,
-        montantDonne: paiement === "especes" ? donne : null,
-      }),
-    onSuccess: (t) => {
-      setToast(`✓ ${formaterMontant(t.totalTtc)} encaissé · ${t.numeroJustificatif}${t.rendu ? ` · rendu ${formaterMontant(t.rendu)}` : ""}`);
-      setPanier([]);
-      setRemisePb(0);
-      setOffertSaisi("");
-      setMotif(null);
-      setMotifTexte("");
-      setReference("");
-      setPaiement(null);
-      setDonneSaisi("");
-      setIdTicket(crypto.randomUUID()); // le même identifiant est réutilisé tant que la vente n'est pas confirmée
-    },
-  });
-  const cloturer = useMutation({ mutationFn: () => api.post<Cloture>(`/caisses/${ecran.caisse.id}/cloture`), onSuccess: apresCloture });
+  /**
+   * Encaisser : le ticket est scellé et écrit dans la mémoire de la tablette AVANT d'être affiché
+   * comme encaissé (§15.97). L'envoi au serveur suit, tout de suite ou au retour du réseau.
+   */
+  function encaisser() {
+    if (!pret || !paiement) return;
+    const courant = lireEtat(caisseId);
+    if (!courant) return;
+    const { evenement, tete } = scellerVente(courant.reprise.contexte, courant.tete, {
+      id: crypto.randomUUID(),
+      lignes,
+      ajustement,
+      modeReglement: paiement,
+      montantDonne: paiement === "especes" ? donne : null,
+      horodatage: heureCaisse(courant),
+    });
+    try {
+      memoriserTicket(courant, evenement, tete);
+    } catch {
+      setErreurMemoire("La mémoire de la tablette refuse l'enregistrement : cette vente n'est PAS enregistrée. Vérifie que la navigation privée n'est pas activée.");
+      return;
+    }
+    setErreurMemoire(null);
+    const rendu = paiement === "especes" ? donne - evenement.totalTtc : 0;
+    setToast(`✓ ${formaterMontant(evenement.totalTtc)} encaissé · ${evenement.numeroJustificatif}${rendu ? ` · rendu ${formaterMontant(rendu)}` : ""}`);
+    setPanier([]);
+    setRemisePb(0);
+    setOffertSaisi("");
+    setMotif(null);
+    setMotifTexte("");
+    setReference("");
+    setPaiement(null);
+    setDonneSaisi("");
+    void envoyer(caisseId);
+  }
+
+  // Clôture : réseau nécessaire ; tout ce qui attend part d'abord, puis le serveur vérifie qu'il ne manque rien.
+  const [clotureEnCours, setClotureEnCours] = useState(false);
+  const [erreurCloture, setErreurCloture] = useState<string | null>(null);
+  async function lancerCloture() {
+    setClotureEnCours(true);
+    setErreurCloture(null);
+    try {
+      await envoyer(caisseId);
+      const courant = lireEtat(caisseId);
+      if (!courant) return;
+      if (courant.attente.length > 0) {
+        setErreurCloture(`${courant.attente.length} ticket(s) pas encore envoyé(s) : la clôture demande le réseau. Réessaie dès qu'il revient.`);
+        return;
+      }
+      try {
+        const totaux = await api.post<Cloture>(`/caisses/${caisseId}/cloture`, { jeton: courant.reprise.jeton, derniereSequence: courant.tete.sequence });
+        effacerEtat(caisseId);
+        apresCloture(totaux);
+      } catch (e) {
+        // Réponse perdue alors que la clôture a été faite (test F4) : le serveur dit que la caisse est fermée.
+        if (e instanceof ErreurApi && e.statut === 409 && e.message.includes("n'est pas ouverte")) {
+          const serveur = await api.get<Ecran>(`/caisses/${caisseId}/ecran`).catch(() => null);
+          if (serveur && !serveur.session) {
+            effacerEtat(caisseId);
+            apresCloture("sans-totaux");
+            return;
+          }
+        }
+        setErreurCloture(horsLigne(e) ? "Pas de réseau : la clôture de caisse demande le réseau. Réessaie dès qu'il revient." : e instanceof Error ? e.message : String(e));
+      }
+    } finally {
+      setClotureEnCours(false);
+    }
+  }
+  const cloturer = { lancer: () => void lancerCloture(), enCours: clotureEnCours, erreur: erreurCloture };
 
   function ajouter(id: string) {
     setPanier((p) => (p.some((l) => l.produitId === id) ? p.map((l) => (l.produitId === id ? { ...l, quantite: l.quantite + 1 } : l)) : [...p, { produitId: id, quantite: 1 }]));
@@ -244,6 +436,19 @@ function Vente({ ecran, apresCloture }: { ecran: Ecran; apresCloture: (c: Clotur
   }
 
   return (
+    <>
+    <div className="ligne-actions" style={{ marginTop: 0, marginBottom: 10 }}>
+      <button className="btn btn-fantome" onClick={() => setVoirTickets(!voirTickets)}>
+        <ReceiptText size={15} /> Tickets de la session ({etat.tickets.filter((t) => t.type === "vente").length})
+      </button>
+      {etat.attente.length > 0 && (
+        <button className="btn btn-fantome" onClick={() => void envoyer(caisseId)}>
+          <RefreshCw size={15} /> Envoyer maintenant
+        </button>
+      )}
+    </div>
+    {voirTickets && <TicketsSession etat={etat} />}
+    {erreurMemoire && <div className="message message-erreur">{erreurMemoire}</div>}
     <div className="cmd-layout">
       <div>
         <div className="cmd-cats">
@@ -380,15 +585,90 @@ function Vente({ ecran, apresCloture }: { ecran: Ecran; apresCloture: (c: Clotur
         )}
         {paiement === "carte" && <div className="aide" style={{ marginBottom: 10 }}>Paiement carte sur le terminal — valider une fois le paiement accepté.</div>}
 
-        <button className="cmd-encaisser" disabled={!pret || encaisser.isPending} onClick={() => encaisser.mutate()}>
-          {encaisser.isPending ? "Enregistrement…" : paiement === "carte" ? "Valider le paiement" : "Encaisser"}
+        <button className="cmd-encaisser" disabled={!pret} onClick={encaisser}>
+          {paiement === "carte" ? "Valider le paiement" : "Encaisser"}
         </button>
         {nbArticles > 0 && erreurAj && <div className="cmd-blockmsg">{erreurAj}</div>}
-        <MessageErreur erreur={encaisser.error} />
 
         <ClotureBouton confirmer={confirmerCloture} setConfirmer={setConfirmerCloture} cloturer={cloturer} />
       </div>
       {toast && <div className="toast" role="status">{toast}</div>}
+    </div>
+    </>
+  );
+}
+
+/** Tickets scellés sur cet appareil pendant la session ; c'est ici qu'une vente s'annule (§15.97 point 7). */
+function TicketsSession({ etat }: { etat: EtatCaisseLocale }) {
+  const [cible, setCible] = useState<string | null>(null);
+  const [motif, setMotif] = useState("");
+  const [erreur, setErreur] = useState<string | null>(null);
+  const annulees = new Map(etat.tickets.filter((t) => t.type === "annulation").map((t) => [t.refEvenement, t.numeroJustificatif]));
+  const enAttente = new Set(etat.attente);
+  const tickets = [...etat.tickets].reverse();
+
+  function annuler(id: string) {
+    const courant = lireEtat(etat.caisseId);
+    const origine = courant?.tickets.find((t) => t.id === id);
+    if (!courant || !origine) return;
+    const { evenement, tete } = scellerAnnulation(courant.reprise.contexte, courant.tete, origine, { id: crypto.randomUUID(), motif, horodatage: heureCaisse(courant) });
+    try {
+      memoriserTicket(courant, evenement, tete);
+    } catch {
+      setErreur("La mémoire de la tablette refuse l'enregistrement : l'annulation n'est PAS enregistrée.");
+      return;
+    }
+    setCible(null);
+    setMotif("");
+    setErreur(null);
+    void envoyer(etat.caisseId);
+  }
+
+  return (
+    <div className="carte" style={{ marginBottom: 12 }}>
+      <div className="carte-entete">
+        <div>
+          <h2>Tickets de la session</h2>
+          <p>Les plus récents en premier. Une vente s'annule ici tant que la caisse est ouverte ; le ticket d'origine demeure.</p>
+        </div>
+      </div>
+      {tickets.length === 0 ? (
+        <div className="discret">Aucun ticket sur cet appareil pour l'instant.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 320, overflowY: "auto" }}>
+          {tickets.map((t) => (
+            <div key={t.id} className="caisse">
+              <strong className="chiffre">{t.numeroJustificatif}</strong>
+              <span className="discret">{heure.format(new Date(t.horodatage))}</span>
+              <span className="chiffre">{formaterMontant(t.totalTtc)}</span>
+              <span>{t.modeReglement === "especes" ? "Espèces" : "Carte"}</span>
+              {t.type === "annulation" && <span className="puce puce-rouge">Annulation</span>}
+              {t.type === "vente" && annulees.has(t.id) && <span className="puce puce-ambre">Annulé ({annulees.get(t.id)})</span>}
+              {enAttente.has(t.id) && <span className="puce puce-ambre">En attente d'envoi</span>}
+              <div className="actions">
+                {t.type === "vente" &&
+                  !annulees.has(t.id) &&
+                  (cible === t.id ? (
+                    <>
+                      <input type="text" value={motif} onChange={(e) => setMotif(e.target.value)} placeholder="Motif (obligatoire)" maxLength={200} autoFocus style={{ width: 200 }} />
+                      <button className="btn btn-danger" disabled={motif.trim().length < 3} onClick={() => annuler(t.id)}>
+                        Confirmer l'annulation
+                      </button>
+                      <button className="btn btn-fantome" onClick={() => setCible(null)}>
+                        Retour
+                      </button>
+                    </>
+                  ) : (
+                    <button className="btn btn-danger" onClick={() => { setCible(t.id); setMotif(""); }}>
+                      Annuler
+                    </button>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {erreur && <div className="message message-erreur">{erreur}</div>}
     </div>
   );
 }
@@ -400,16 +680,16 @@ function ClotureBouton({
 }: {
   confirmer: boolean;
   setConfirmer: (v: boolean) => void;
-  cloturer: { mutate: () => void; isPending: boolean; error: unknown };
+  cloturer: { lancer: () => void; enCours: boolean; erreur: string | null };
 }) {
   return (
     <div style={{ marginTop: 14 }}>
       {confirmer ? (
         <div className="message message-alerte">
-          Clôturer la caisse ? Les totaux de la session seront figés.
+          Clôturer la caisse ? Les tickets en attente partent d'abord, puis les totaux de la session sont figés. Demande le réseau.
           <div className="ligne-actions" style={{ marginTop: 8 }}>
-            <button className="btn" onClick={() => cloturer.mutate()} disabled={cloturer.isPending}>
-              Oui, clôturer
+            <button className="btn" onClick={cloturer.lancer} disabled={cloturer.enCours}>
+              {cloturer.enCours ? "Clôture…" : "Oui, clôturer"}
             </button>
             <button className="btn btn-fantome" onClick={() => setConfirmer(false)}>
               Annuler
@@ -421,12 +701,23 @@ function ClotureBouton({
           <Lock size={15} /> Clôturer la caisse
         </button>
       )}
-      <MessageErreur erreur={cloturer.error} />
+      {cloturer.erreur && <div className="message message-erreur">{cloturer.erreur}</div>}
     </div>
   );
 }
 
-function ResumeCloture({ cloture, fermer }: { cloture: Cloture; fermer: () => void }) {
+function ResumeCloture({ cloture, fermer }: { cloture: Cloture | "sans-totaux"; fermer: () => void }) {
+  if (cloture === "sans-totaux") {
+    return (
+      <div className="cmd-gate">
+        <h3>Caisse clôturée</h3>
+        <p>La clôture a bien été enregistrée par le serveur. Ses totaux sont consultables dans Caisses.</p>
+        <button className="cmd-encaisser" onClick={fermer}>
+          OK
+        </button>
+      </div>
+    );
+  }
   return (
     <div className="cmd-gate" style={{ textAlign: "left" }}>
       <h3 style={{ textAlign: "center" }}>Caisse clôturée</h3>

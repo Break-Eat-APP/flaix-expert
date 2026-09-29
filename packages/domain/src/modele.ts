@@ -5,6 +5,7 @@
 import type { Centimes } from "./argent.ts";
 import type { TauxTvaPb } from "./tva.ts";
 import type { TypeJet } from "./journal-technique.ts";
+import type { ContexteScellement, TeteChaine } from "./caisse-scellee.ts";
 
 export type Role = "directeur" | "operateur" | "verificateur";
 
@@ -173,6 +174,40 @@ export interface TicketVue {
   /** Pour une vente annulée : le justificatif de l'annulation. Pour une annulation : le justificatif annulé. */
   lie: { id: string; numeroJustificatif: string } | null;
   empreinte: string;
+  /** Heure de réception par le serveur (null : reçu à l'instant de la vente, avant le §15.97). */
+  recuLe: string | null;
+  /** Contrôles signalés à la réception, sans refus (§15.97 point 4). */
+  controle: ControleTicket | null;
+}
+
+/** Ce que le serveur a remarqué en recevant un ticket scellé par la tablette — signalé, jamais refusé. */
+export interface ControleTicket {
+  /** Reçu plus d'une minute après sa création : enregistré pendant une coupure de réseau. */
+  horsLigne?: boolean;
+  delaiSecondes?: number;
+  /** Prix ou taux de TVA différent du tarif en vigueur à l'heure de la vente. */
+  ecartTarif?: { produitId: string; libelle: string; prixVendu: Centimes; tauxVendu: number; prixTarif: Centimes | null; tauxTarif: number | null }[];
+  /** Produits qui ne sont plus vendus à ce stand. */
+  horsStand?: string[];
+  /** Remise abonné à un autre taux que celui du lieu. */
+  remiseAbonneEcart?: { applique: number; lieu: number | null };
+  /** Heure de vente antérieure à l'ouverture de la caisse ou postérieure à la réception. */
+  horodatageIncoherent?: boolean;
+}
+
+/** Remis à la tablette à l'ouverture ou à la reprise d'une caisse : de quoi sceller seule (§15.97). */
+export interface RepriseCaisse {
+  contexte: ContexteScellement;
+  tete: TeteChaine;
+  /** Jeton d'appareil, remis une seule fois ; le serveur n'en garde que l'empreinte. */
+  jeton: string;
+  heureServeur: string;
+}
+
+export interface ReponseSynchro {
+  tete: TeteChaine;
+  recus: number;
+  deja: number;
 }
 
 export interface StatsCaisse {

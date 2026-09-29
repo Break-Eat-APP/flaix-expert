@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, ShieldCheck } from "lucide-react";
-import { formaterMontant, libelleTauxTva, MOTIFS_AJUSTEMENT, type Evenement, type StatsCaisse, type TicketVue, type VerificationCaisses } from "@flaix/domain";
+import { formaterMontant, libelleTauxTva, MOTIFS_AJUSTEMENT, type Evenement, type StatsCaisse, type TauxTvaPb, type TicketVue, type VerificationCaisses } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 
@@ -77,7 +77,8 @@ export function MesCaisses() {
           <li><strong>Match du jour</strong> : un seul match peut être ouvert à la fois, et les caisses ne s'ouvrent que pendant un match ouvert. L'ouverture est définitive (un match ne revient jamais à « à venir ») ; il se clôt ensuite dans <strong>Clôtures</strong>, une fois toutes ses caisses clôturées.</li>
           <li><strong>En direct</strong> : pour chaque caisse, sur le match choisi, le nombre de tickets, le chiffre d'affaires net (ventes moins annulations), le panier moyen (CA net ÷ tickets non annulés), la part espèces et carte, et l'heure du dernier ticket. L'état « ouverte » est en direct, quel que soit le match affiché.</li>
           <li><strong>Tickets du match</strong> : tous les tickets du match, toutes caisses confondues, en lecture seule. Filtres par stand, caisse, opérateur, mode de règlement, n° de justificatif ou produit.</li>
-          <li><strong>Annuler un ticket</strong> : le ticket d'origine n'est jamais modifié ni supprimé ; un ticket d'annulation, de montant opposé, le référence, avec son motif et son auteur. Possible seulement tant que la caisse du ticket est ouverte : après sa clôture, une correction passe par une rectification tracée.</li>
+          <li><strong>Annuler un ticket</strong> : sur l'écran de sa caisse (« Tickets de la session »), tant qu'elle est ouverte — la caisse est seule à écrire sa chaîne pendant la session, condition de la vente sans réseau. Le ticket d'origine n'est jamais modifié ni supprimé ; un ticket d'annulation, de montant opposé, le référence, avec son motif et son auteur. Après la clôture, une correction passe par une rectification tracée.</li>
+          <li><strong>Signalements</strong> : le serveur contrôle chaque ticket reçu d'une caisse. Sans le refuser (la vente a eu lieu), il signale un ticket <strong>enregistré hors ligne</strong> (reçu plus d'une minute après la vente), un <strong>écart de prix</strong> avec le tarif en vigueur à l'heure de la vente, un produit <strong>hors stand</strong>, un <strong>taux abonné</strong> différent de celui du lieu, ou une <strong>heure incohérente</strong>.</li>
           <li><strong>Vérifier l'intégrité</strong> : relit la chaîne de chaque caisse dans son ordre réel d'enregistrement (jamais dans l'ordre d'affichage) et contrôle chaque empreinte. Toute modification, suppression ou insertion frauduleuse est localisée à l'événement près.</li>
         </ul>
       </Regles>
@@ -364,7 +365,7 @@ function JournalTickets({ evenementId, matchOuvert }: { evenementId: string; mat
                   <strong className="chiffre">
                     {t.numeroJustificatif}{" "}
                     {t.type === "annulation" && <span className="puce puce-rouge">Annulation</span>}
-                    {t.type === "vente" && t.lie && <span className="puce puce-ambre">Annulé</span>}
+                    {t.type === "vente" && t.lie && <span className="puce puce-ambre">Annulé</span>} <Signalements ticket={t} />
                   </strong>
                   <span>
                     {t.standNom} <span className="discret">· C{t.caisseNumero}</span>
@@ -380,7 +381,7 @@ function JournalTickets({ evenementId, matchOuvert }: { evenementId: string; mat
                   <span className="chiffre">{formaterDateHeure(t.horodatage)}</span>
                   <span className="discret">{ouvert === t.id ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</span>
                 </div>
-                {ouvert === t.id && <DetailTicket ticket={t} matchOuvert={matchOuvert} evenementId={evenementId} />}
+                {ouvert === t.id && <DetailTicket ticket={t} matchOuvert={matchOuvert} />}
               </div>
             ))}
           </div>
@@ -390,18 +391,44 @@ function JournalTickets({ evenementId, matchOuvert }: { evenementId: string; mat
   );
 }
 
-function DetailTicket({ ticket: t, matchOuvert, evenementId }: { ticket: TicketVue; matchOuvert: boolean; evenementId: string }) {
-  const client = useQueryClient();
-  const [motif, setMotif] = useState("");
-  const [annuler, setAnnuler] = useState(false);
-  const annulation = useMutation({
-    mutationFn: () => api.post<TicketVue>(`/tickets/${t.id}/annulation`, { motif }),
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: ["tickets", evenementId] });
-      client.invalidateQueries({ queryKey: ["tableau-caisses", evenementId] });
-      setAnnuler(false);
-    },
-  });
+/** Signalements faits par le serveur à la réception d'un ticket (§15.97) : la vente est inscrite, l'écart est montré. */
+function Signalements({ ticket: t, detail = false }: { ticket: TicketVue; detail?: boolean }) {
+  const c = t.controle;
+  if (!c) return null;
+  const minutes = c.delaiSecondes ? Math.round(c.delaiSecondes / 60) : 0;
+  const puces = [
+    c.horsLigne && <span key="hl" className="puce puce-ambre" title={`Reçu ${minutes} min après la vente`}>Hors ligne</span>,
+    c.ecartTarif && <span key="et" className="puce puce-rouge">Écart de prix</span>,
+    c.horsStand && <span key="hs" className="puce puce-ambre">Hors stand</span>,
+    c.remiseAbonneEcart && <span key="ra" className="puce puce-ambre">Taux abonné</span>,
+    c.horodatageIncoherent && <span key="hi" className="puce puce-rouge">Heure incohérente</span>,
+  ].filter(Boolean);
+  if (!detail) return <>{puces}</>;
+  return (
+    <div className="message message-alerte">
+      <strong>Signalé à la réception, sans refus (la vente a eu lieu) :</strong>
+      <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
+        {c.horsLigne && <li>Enregistré hors ligne : reçu par le serveur {minutes} min après la vente{t.recuLe ? ` (le ${formaterDateHeure(t.recuLe)})` : ""}.</li>}
+        {c.ecartTarif?.map((e) => (
+          <li key={e.produitId}>
+            {e.libelle} : vendu {formaterMontant(e.prixVendu)} (TVA {libelleTauxTva(e.tauxVendu as TauxTvaPb)}), tarif en vigueur à l'heure de la vente :{" "}
+            {e.prixTarif !== null ? `${formaterMontant(e.prixTarif)} (TVA ${libelleTauxTva(e.tauxTarif as TauxTvaPb)})` : "aucun"}.
+          </li>
+        ))}
+        {c.horsStand && <li>Produits qui ne sont pas vendus à ce stand : {c.horsStand.join(", ")}.</li>}
+        {c.remiseAbonneEcart && (
+          <li>
+            Remise abonné appliquée à {(c.remiseAbonneEcart.applique / 100).toLocaleString("fr-FR")} % ; taux du lieu :{" "}
+            {c.remiseAbonneEcart.lieu !== null ? `${(c.remiseAbonneEcart.lieu / 100).toLocaleString("fr-FR")} %` : "non réglé"}.
+          </li>
+        )}
+        {c.horodatageIncoherent && <li>Heure de vente antérieure à l'ouverture de la caisse ou postérieure à sa réception : horloge de la tablette à vérifier.</li>}
+      </ul>
+    </div>
+  );
+}
+
+function DetailTicket({ ticket: t, matchOuvert }: { ticket: TicketVue; matchOuvert: boolean }) {
   const motifLibelle = t.motif && t.motif in MOTIFS_AJUSTEMENT ? MOTIFS_AJUSTEMENT[t.motif as keyof typeof MOTIFS_AJUSTEMENT].libelle : t.motif;
 
   return (
@@ -447,28 +474,11 @@ function DetailTicket({ ticket: t, matchOuvert, evenementId }: { ticket: TicketV
         {t.montantDonne !== null && ` · Donné ${formaterMontant(t.montantDonne)}, rendu ${formaterMontant(t.rendu ?? 0)}`}
       </div>
       <div className="empreinte" style={{ marginTop: 6 }}>Empreinte {t.empreinte}</div>
+      <Signalements ticket={t} detail />
       {t.type === "vente" && t.lie && <div className="message message-info">Annulé par le ticket {t.lie.numeroJustificatif}.</div>}
       {t.type === "vente" && !t.lie && matchOuvert && (
-        <div style={{ marginTop: 10 }}>
-          {annuler ? (
-            <div className="en-ligne" style={{ alignItems: "flex-end" }}>
-              <label className="champ" style={{ flex: "1 1 260px" }}>
-                <span>Motif de l'annulation (obligatoire)</span>
-                <input type="text" value={motif} onChange={(e) => setMotif(e.target.value)} maxLength={200} autoFocus />
-              </label>
-              <button className="btn btn-danger" disabled={motif.trim().length < 3 || annulation.isPending} onClick={() => annulation.mutate()}>
-                Confirmer l'annulation
-              </button>
-              <button className="btn btn-fantome" onClick={() => setAnnuler(false)}>
-                Retour
-              </button>
-            </div>
-          ) : (
-            <button className="btn btn-danger" onClick={() => setAnnuler(true)}>
-              Annuler ce ticket
-            </button>
-          )}
-          <MessageErreur erreur={annulation.error} />
+        <div className="aide" style={{ marginTop: 8 }}>
+          Pour annuler ce ticket : sur l'écran de sa caisse, tant qu'elle est ouverte, bouton « Tickets de la session ».
         </div>
       )}
     </div>

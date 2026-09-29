@@ -32,6 +32,8 @@ export const TYPES_JET = {
   caisse_cloturee: "Clôture de caisse",
   ticket_annule: "Ticket annulé",
   verification_integrite: "Vérification d'intégrité",
+  caisse_reprise: "Caisse reprise sur un autre appareil",
+  tickets_hors_ligne_recus: "Tickets enregistrés hors ligne reçus",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

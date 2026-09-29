@@ -4,7 +4,11 @@ import {
   empreinteCaisse,
   numeroJustificatif,
   verifierChaine,
+  type ContexteScellement,
+  type ControleTicket,
   type EvenementCaisse,
+  type EvenementTablette,
+  type TeteChaine,
   type TypeEvenementCaisse,
   type VerificationCaisses,
 } from "@flaix/domain";
@@ -95,6 +99,68 @@ export async function inscrireCaisse(
     ],
   );
   return { sequence: evenement.sequence, numeroJustificatif: justificatif, horodatage, empreinte };
+}
+
+/** Tête de la chaîne d'une caisse : dernier rang, dernière empreinte, dernier numéro de ticket (§15.97). */
+export async function teteChaine(client: Client, caisseId: string): Promise<TeteChaine> {
+  const { rows } = await client.query<{ sequence: string | null; empreinte: string | null; horodatage: Date | null; dernier_ticket: number }>(
+    `SELECT d.sequence, d.empreinte, d.horodatage,
+            (SELECT coalesce(max(numero_ticket), 0) FROM journal_caisse WHERE caisse_id = $1)::int AS dernier_ticket
+       FROM (SELECT 1) x
+       LEFT JOIN LATERAL (SELECT sequence, empreinte, horodatage FROM journal_caisse WHERE caisse_id = $1 ORDER BY sequence DESC LIMIT 1) d ON true`,
+    [caisseId],
+  );
+  const r = rows[0]!;
+  return {
+    sequence: r.sequence === null ? 0 : Number(r.sequence),
+    empreinte: r.empreinte ?? EMPREINTE_INITIALE,
+    dernierTicket: r.dernier_ticket,
+    horodatage: r.horodatage ? r.horodatage.toISOString() : null,
+  };
+}
+
+/**
+ * Inscrit un ticket scellé par la tablette, APRÈS son contrôle (controlerEvenementTablette et
+ * contrôles de la base, dans la route). Rien n'est recalculé ici : l'empreinte inscrite est
+ * celle de la tablette, que le contrôle a recalculée à l'identique. Le verrou de la caisse doit
+ * déjà être pris par l'appelant.
+ */
+export async function inscrireEvenementTablette(
+  client: Client,
+  ctx: ContexteScellement,
+  e: EvenementTablette,
+  recuLe: Date,
+  controle: ControleTicket | null,
+): Promise<void> {
+  await client.query(
+    `INSERT INTO journal_caisse
+       (id, lieu_id, caisse_id, sequence, type, numero_ticket, numero_justificatif, horodatage, stand_id, evenement_id,
+        session_id, utilisateur_id, ref_evenement, mode_reglement, total_ttc_centimes, details, empreinte_precedente, empreinte,
+        recu_le, controle)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
+    [
+      e.id,
+      ctx.lieuId,
+      ctx.caisseId,
+      e.sequence,
+      e.type,
+      e.numeroTicket,
+      e.numeroJustificatif,
+      new Date(e.horodatage),
+      ctx.standId,
+      ctx.evenementId,
+      ctx.sessionId,
+      ctx.utilisateurId,
+      e.refEvenement,
+      e.modeReglement,
+      e.totalTtc,
+      JSON.stringify(e.details),
+      e.empreintePrecedente,
+      e.empreinte,
+      recuLe,
+      controle ? JSON.stringify(controle) : null,
+    ],
+  );
 }
 
 interface LigneJournal {

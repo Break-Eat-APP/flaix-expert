@@ -6,3 +6,4 @@ export * from "./journal-technique.ts";
 export * from "./modele.ts";
 export * from "./ticket.ts";
 export * from "./journal-caisse.ts";
+export * from "./caisse-scellee.ts";
