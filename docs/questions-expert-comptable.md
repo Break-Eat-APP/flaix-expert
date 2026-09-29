@@ -60,3 +60,5 @@ Fonctionnement prévu :
 ## Question à poser à la DGCCRF (ou à l'organisation professionnelle du secteur)
 
 13. Une buvette de stade relève-t-elle de l'exception « hôtellerie-restauration » de l'article D541-371 du code de l'environnement, qui maintient l'**obligation de remettre un ticket** à chaque client ? *(Réponse nécessaire avant l'achat du matériel : imprimante par caisse ou ticket dématérialisé.)*
+
+**G.18 — Ticket client sur demande seulement (décision de Rémi du 2026-09-30).** Les caisses n'impriment aucun ticket ; sur demande, le directeur produit le ticket depuis le logiciel. L'article D541-371 du code de l'environnement garde-t-il le ticket obligatoire pour une buvette de patinoire (exception « hôtellerie-restauration ») ? Une réédition doit-elle porter la mention « duplicata » et être comptée ?
