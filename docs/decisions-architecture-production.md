@@ -202,7 +202,8 @@ Les décisions par défaut du § 9 restent en vigueur tant que Rémi ne les modi
 | ~~Produit Stripe~~ | sans objet depuis le 2026-09-29 (§ 6) |
 | Hébergeur en France | première mise en ligne |
 | Ticket papier ou dématérialisé (§ 8 point 2) | achat du matériel |
-| Hors-ligne (§ 8 point 3) | après le test réseau à la patinoire |
+| ~~Hors-ligne (§ 8 point 3)~~ | **décidé le 2026-09-29 par Rémi : la vente sans réseau est construite avant le premier vrai match** (dossier §15.95). Le test réseau à la patinoire reste utile pour dimensionner le Wi-Fi des caisses |
+| Plateforme agréée de facturation électronique à laquelle FlaiX se raccorde | module Factures (dossier §15.95) |
 
 ---
 

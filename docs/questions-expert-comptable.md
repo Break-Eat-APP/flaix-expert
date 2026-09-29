@@ -43,6 +43,17 @@ Fonctionnement prévu :
 
 11. Le format d'archive annuelle prévu — fichiers texte CSV (UTF-8, séparateur `;`), une notice explicative en français, et les empreintes SHA-256 de chaque fichier — répond-il à l'exigence de « format ouvert » du BOFiP (§220 à §260) ?
 12. Les données sont hébergées en France par un prestataire. Confirmez-vous que le lieu doit **déclarer le lieu de stockage** à son service des impôts (LPF art. L102 C) ?
+12 bis. **Vente sans réseau** : pendant une coupure, les tickets seront numérotés, scellés (chaînage SHA-256) et conservés sur la tablette de la caisse, puis envoyés au serveur au retour du réseau. Ce fonctionnement vous paraît-il compatible avec les conditions d'inaltérabilité et de sécurisation, et que doit en dire l'attestation ?
+
+## E. Gobelets consignés (option pour certains lieux)
+
+14. Une consigne de gobelet réutilisable encaissée à la buvette (par exemple 1 €, rendue au retour du gobelet) est-elle hors du champ de la TVA ? Doit-elle figurer sur le ticket, et comment traiter les gobelets **non rendus** en fin de match ou de saison ?
+
+## F. Facture électronique et e-reporting
+
+15. La patinoire (préciser : association ou société, assujettie ou non à la TVA) a-t-elle désigné la **plateforme agréée** par laquelle elle reçoit ses factures fournisseurs depuis le 1er septembre 2026 ? Laquelle ?
+16. Ses ventes aux particuliers à la buvette entrent-elles dans l'**e-reporting** à partir du 1er septembre 2027 ? Quelles données et à quelle fréquence (annexe II au CGI, art. 242 nonies M à P) ?
+17. Sous quel format souhaitez-vous recevoir les données de FlaiX Expert : ventes par jour, par taux de TVA et par moyen de paiement ; factures fournisseurs ; et avec quel logiciel comptable travaillez-vous ?
 
 ---
 
