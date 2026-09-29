@@ -1,109 +1,40 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Calculator,
-  ChevronRight,
-  Flag,
-  KeyRound,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Package,
-  Receipt,
-  Rocket,
-  Settings2,
-  ShieldCheck,
-  Ticket,
-  Users,
-  X,
-} from "lucide-react";
+import { ChartLine, KeyRound, Lock, LogOut, Menu, Package, Receipt, SlidersHorizontal, Users, X } from "lucide-react";
 import type { SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
 import { useDeconnexion } from "../session.tsx";
 
-interface Module {
-  libelle: string;
-  /** Absent = module pas encore construit en production (affiché « à venir »). */
-  route?: string;
-}
-interface Section {
+interface Entree {
   id: string;
   libelle: string;
   icone: ComponentType<{ size?: number }>;
-  /** Section à un seul écran, ouverte directement. */
+  /** Absent = entrée pas encore construite en production (affichée « à venir »). */
   route?: string;
-  modules?: Module[];
 }
 
-// Ordre et regroupement validés par Rémi le 2026-09-28 (dossier §15.81, §15.84, §15.85).
-const MENU: Section[] = [
-  { id: "dashboard", libelle: "Dashboard", icone: LayoutDashboard, modules: [{ libelle: "Ventes & CA" }, { libelle: "Gestion financière" }] },
-  { id: "caisses", libelle: "Mes caisses", icone: Receipt, route: "/caisses" },
-  {
-    id: "configuration",
-    libelle: "Configuration",
-    icone: Settings2,
-    modules: [
-      { libelle: "Identité du lieu", route: "/configuration/identite" },
-      { libelle: "Gestion des stands & caisses", route: "/configuration/stands" },
-      { libelle: "Config produits", route: "/configuration/produits" },
-      { libelle: "Calendrier des matchs", route: "/configuration/matchs" },
-      { libelle: "Click & Collect" },
-      { libelle: "Configuration cible & marge" },
-      { libelle: "Coûts par buvette" },
-    ],
-  },
+// Organisation en 6 entrées validée par Rémi le 2026-09-29 (dossier §15.95), appliquée au §15.96.
+// Chaque entrée ouvre un seul écran ; les sous-parties sont des onglets ou des tuiles dans l'écran.
+const MENU: Entree[] = [
+  { id: "resultats", libelle: "Résultats", icone: ChartLine, route: "/" },
+  { id: "caisses", libelle: "Caisses", icone: Receipt, route: "/caisses" },
   { id: "stock", libelle: "Stock", icone: Package },
-  { id: "personnel", libelle: "Personnel et planning", icone: Users },
-  {
-    id: "cloture",
-    libelle: "Clôture & Pilotage",
-    icone: Flag,
-    modules: [
-      { libelle: "Optimisation" },
-      { libelle: "Centre d'alertes" },
-      { libelle: "Écart de caisse" },
-      { libelle: "Écart de clôture d'événement" },
-      { libelle: "Clôtures mensuelle & annuelle" },
-      { libelle: "Reporting de soirée" },
-      { libelle: "Marges & ratios" },
-    ],
-  },
-  { id: "fidelite", libelle: "Fidélité", icone: Ticket },
-  { id: "facturation", libelle: "Facturation", icone: Calculator },
-  {
-    id: "conformite",
-    libelle: "Conformité & Lexique",
-    icone: ShieldCheck,
-    modules: [{ libelle: "Journal technique", route: "/conformite/journal" }, { libelle: "Attestation & archives" }, { libelle: "Lexique des règles" }],
-  },
+  { id: "equipe", libelle: "Équipe", icone: Users },
+  { id: "clotures", libelle: "Clôtures", icone: Lock, route: "/clotures" },
+  { id: "parametres", libelle: "Paramètres", icone: SlidersHorizontal, route: "/parametres" },
 ];
-
-function sectionDeLaRoute(chemin: string): string | undefined {
-  return MENU.find((s) => s.modules?.some((m) => m.route && chemin.startsWith(m.route)))?.id;
-}
 
 export function Coquille({ session }: { session: SessionInfo }) {
   const { pathname } = useLocation();
   const deconnecter = useDeconnexion();
   const [mobileVisible, setMobileVisible] = useState(false);
-  // L'ouverture d'une section ne dépend pas de l'écran affiché : un second clic la referme (correctif §15.49).
-  const [ouvertes, setOuvertes] = useState<Set<string>>(() => new Set([sectionDeLaRoute(pathname) ?? "configuration"]));
   const stands = useQuery({ queryKey: ["stands"], queryFn: () => api.get<Stand[]>("/stands"), enabled: session.role === "directeur" });
 
   useEffect(() => setMobileVisible(false), [pathname]);
 
   const actifs = stands.data?.filter((s) => s.actif) ?? [];
   const nbCaisses = actifs.reduce((n, s) => n + s.caisses.filter((c) => c.actif).length, 0);
-
-  const basculer = (id: string) =>
-    setOuvertes((o) => {
-      const n = new Set(o);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
 
   return (
     <div className="coquille">
@@ -141,59 +72,24 @@ export function Coquille({ session }: { session: SessionInfo }) {
         </NavLink>
 
         <nav className="nav" aria-label="Menu principal">
-          <NavLink to="/" end className={({ isActive }) => `nav-section${isActive ? " active" : ""}`}>
-            <Rocket size={17} /> Démarrage du lieu
-          </NavLink>
-          {MENU.map((section) => {
-            const Icone = section.icone;
-            if (section.route) {
-              return (
-                <NavLink key={section.id} to={section.route} className={({ isActive }) => `nav-section${isActive ? " active" : ""}`}>
-                  <Icone size={17} /> {section.libelle}
-                </NavLink>
-              );
-            }
-            const construits = section.modules?.filter((m) => m.route) ?? [];
-            if (construits.length === 0) {
-              return (
-                <button key={section.id} className="nav-section" disabled>
-                  <Icone size={17} /> {section.libelle}
-                  <span className="etiquette-a-venir" title="Pas encore construit en production">
-                    à venir
-                  </span>
-                </button>
-              );
-            }
-            const ouverte = ouvertes.has(section.id);
-            const active = sectionDeLaRoute(pathname) === section.id;
-            return (
-              <div key={section.id}>
-                <button
-                  className={`nav-section${ouverte ? " ouverte" : ""}${active ? " active" : ""}`}
-                  onClick={() => basculer(section.id)}
-                  aria-expanded={ouverte}
-                >
-                  <Icone size={17} /> {section.libelle}
-                  <ChevronRight size={15} className="chevron" />
-                </button>
-                {ouverte && (
-                  <div className="nav-sous">
-                    {section.modules!.map((m) =>
-                      m.route ? (
-                        <NavLink key={m.libelle} to={m.route} className={({ isActive }) => `nav-module${isActive ? " active" : ""}`}>
-                          {m.libelle}
-                        </NavLink>
-                      ) : (
-                        <span key={m.libelle} className="nav-module a-venir" title="Pas encore construit en production">
-                          {m.libelle} <span className="etiquette-a-venir">à venir</span>
-                        </span>
-                      ),
-                    )}
-                  </div>
-                )}
-              </div>
+          {MENU.map((entree) => {
+            const Icone = entree.icone;
+            return entree.route ? (
+              <NavLink key={entree.id} to={entree.route} end={entree.route === "/"} className={({ isActive }) => `nav-section${isActive ? " active" : ""}`}>
+                <Icone size={17} /> {entree.libelle}
+              </NavLink>
+            ) : (
+              <button key={entree.id} className="nav-section" disabled>
+                <Icone size={17} /> {entree.libelle}
+                <span className="etiquette-a-venir" title="Pas encore construit en production">
+                  à venir
+                </span>
+              </button>
             );
           })}
+          <div className="plus-tard">
+            <b>Plus tard</b>Fidélité · Facturation
+          </div>
         </nav>
 
         <div className="laterale-pied">

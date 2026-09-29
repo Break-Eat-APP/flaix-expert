@@ -3,15 +3,17 @@ import { useSession } from "./session.tsx";
 import { Coquille } from "./composants/Coquille.tsx";
 import { Chargement, MessageErreur } from "./composants/communs.tsx";
 import { Connexion } from "./pages/Connexion.tsx";
-import { Demarrage } from "./pages/Demarrage.tsx";
+import { Resultats } from "./pages/Resultats.tsx";
 import { Compte } from "./pages/Compte.tsx";
-import { Identite } from "./pages/configuration/Identite.tsx";
-import { StandsCaisses } from "./pages/configuration/StandsCaisses.tsx";
-import { Produits } from "./pages/configuration/Produits.tsx";
-import { JournalTechnique } from "./pages/conformite/JournalTechnique.tsx";
-import { Matchs } from "./pages/configuration/Matchs.tsx";
+import { Parametres } from "./pages/parametres/Parametres.tsx";
+import { Identite } from "./pages/parametres/Identite.tsx";
+import { StandsCaisses } from "./pages/parametres/StandsCaisses.tsx";
+import { Produits } from "./pages/parametres/Produits.tsx";
+import { Saison } from "./pages/parametres/Saison.tsx";
+import { JournalTechnique } from "./pages/parametres/JournalTechnique.tsx";
 import { MesCaisses } from "./pages/caisse/MesCaisses.tsx";
 import { EcranCaisse } from "./pages/caisse/EcranCaisse.tsx";
+import { Clotures } from "./pages/clotures/Clotures.tsx";
 
 export function App() {
   const session = useSession();
@@ -35,14 +37,17 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<Coquille session={session.data} />}>
-          <Route index element={<Demarrage session={session.data} />} />
+          {/* Organisation en 6 entrées (dossier §15.96) : Résultats, Caisses, Stock, Équipe, Clôtures, Paramètres. */}
+          <Route index element={<Resultats session={session.data} />} />
           <Route path="caisses" element={<MesCaisses />} />
           <Route path="caisses/:caisseId" element={<EcranCaisse />} />
-          <Route path="configuration/matchs" element={<Matchs />} />
-          <Route path="configuration/identite" element={<Identite />} />
-          <Route path="configuration/stands" element={<StandsCaisses />} />
-          <Route path="configuration/produits" element={<Produits />} />
-          <Route path="conformite/journal" element={<JournalTechnique />} />
+          <Route path="clotures" element={<Clotures />} />
+          <Route path="parametres" element={<Parametres />} />
+          <Route path="parametres/lieu" element={<Identite />} />
+          <Route path="parametres/stands" element={<StandsCaisses />} />
+          <Route path="parametres/produits" element={<Produits />} />
+          <Route path="parametres/saison" element={<Saison />} />
+          <Route path="parametres/conformite" element={<JournalTechnique />} />
           <Route path="compte" element={<Compte />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

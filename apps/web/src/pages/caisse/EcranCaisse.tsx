@@ -46,7 +46,7 @@ export function EcranCaisse() {
     <>
       <div className="cmd-topbar">
         <Link to="/caisses" className="btn btn-fantome">
-          <ArrowLeft size={15} /> Mes caisses
+          <ArrowLeft size={15} /> Caisses
         </Link>
         <strong style={{ fontSize: 15 }}>
           Caisse {e.caisse.numero}
@@ -75,10 +75,10 @@ export function EcranCaisse() {
           <li><strong>Prix</strong> : chaque ligne est facturée au tarif en vigueur à l'instant de la vente, lu par le serveur. Changer un prix ensuite ne modifie jamais un ticket déjà émis.</li>
           <li><strong>Total du ticket</strong> = montant brut − remise − offert, jamais négatif. La remise (en %) s'applique à chaque ligne ; l'offert (en €) est réparti sur les lignes au prorata. La TVA est calculée sur le montant réellement payé.</li>
           <li><strong>Motif obligatoire</strong> dès qu'il y a une remise ou un offert : le bouton Encaisser reste grisé tant qu'il manque.</li>
-          <li><strong>Tarif abonné</strong> : remise contractuelle au taux fixé par le lieu (Identité du lieu → Réglages de caisse), jamais négociée à la caisse. Le n° d'abonné ou de carte est obligatoire et enregistré avec la vente.</li>
+          <li><strong>Tarif abonné</strong> : remise contractuelle au taux fixé par le lieu (Paramètres → Le lieu → Réglages de caisse), jamais négociée à la caisse. Le n° d'abonné ou de carte est obligatoire et enregistré avec la vente.</li>
           <li><strong>Espèces</strong> : saisis le montant donné par le client ; le rendu monnaie est calculé. <strong>Carte</strong> : valide une fois le paiement accepté sur le terminal (en version test, le paiement carte est déclaré, pas vérifié).</li>
           <li><strong>Numérotation</strong> : chaque caisse numérote ses propres tickets (ex. 2026-C3-000125), sans trou ni doublon, jamais remis à zéro. Chaque ticket est scellé et chaîné au précédent de la même caisse.</li>
-          <li><strong>Clôture de caisse</strong> : fige les totaux de la session (tickets, annulations, espèces, carte, TVA par taux) et calcule les espèces attendues dans le tiroir = fond + espèces encaissées. Le comptage du tiroir se fait ensuite dans « Écart de caisse ».</li>
+          <li><strong>Clôture de caisse</strong> : fige les totaux de la session (tickets, annulations, espèces, carte, TVA par taux) et calcule les espèces attendues dans le tiroir = fond + espèces encaissées. Le comptage du tiroir se fera ensuite dans Clôtures (étape « Espèces et carte », à venir).</li>
         </ul>
       </Regles>
     </>
@@ -109,7 +109,7 @@ function Ouverture({ ecran, ouverte }: { ecran: Ecran; ouverte: () => void }) {
         <div className="message message-alerte" style={{ textAlign: "left" }}>
           {bloquant}{" "}
           {!ecran.evenementOuvert && (
-            <Link to="/configuration/matchs">Ouvrir un match dans le calendrier</Link>
+            <Link to="/caisses">Ouvrir le match du jour dans Caisses</Link>
           )}
         </div>
       ) : (
@@ -236,7 +236,7 @@ function Vente({ ecran, apresCloture }: { ecran: Ecran; apresCloture: (c: Clotur
       <div className="carte">
         <div className="etat-vide">
           <strong>Aucun produit vendu à ce stand</strong>
-          Coche ce stand sur tes produits dans <Link to="/configuration/produits">Config produits</Link>.
+          Coche ce stand sur tes produits dans <Link to="/parametres/produits">Paramètres → Produits & prix</Link>.
         </div>
         <ClotureBouton confirmer={confirmerCloture} setConfirmer={setConfirmerCloture} cloturer={cloturer} />
       </div>
@@ -292,7 +292,7 @@ function Vente({ ecran, apresCloture }: { ecran: Ecran; apresCloture: (c: Clotur
             className={`cmd-pill abo${abonne ? " on" : ""}`}
             onClick={basculerAbonne}
             disabled={ecran.remiseAbonnePb === null}
-            title={ecran.remiseAbonnePb === null ? "Règle d'abord le taux abonné dans Identité du lieu → Réglages de caisse" : undefined}
+            title={ecran.remiseAbonnePb === null ? "Règle d'abord le taux abonné dans Paramètres → Le lieu → Réglages de caisse" : undefined}
           >
             Abonné{ecran.remiseAbonnePb !== null ? ` · ${pct(ecran.remiseAbonnePb)}` : ""}
           </button>

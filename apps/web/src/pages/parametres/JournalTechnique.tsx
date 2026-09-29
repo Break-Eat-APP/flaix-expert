@@ -65,7 +65,8 @@ export function JournalTechnique() {
   return (
     <>
       <EntetePage
-        fil="Conformité & Lexique"
+        fil="Paramètres · Conformité"
+        filLien="/parametres"
         titre="Journal technique"
         description="Tout ce qui s'est passé sur ce lieu : connexions, créations, modifications, changements de prix. Rien ne s'y efface."
         actions={

@@ -26,7 +26,7 @@ Confirmé avec Rémi le 2026-09-28 : le module **Ma caisse** (création de ticke
 ## Avant de commencer à coder
 
 1. Lire les documents `docs/` en entier.
-2. ~~Écrire et faire valider les décisions d'architecture~~ — **fait le 2026-09-28** (`docs/decisions-architecture-production.md` § 10). Restent ouverts : hébergeur de production, ticket papier/dématérialisé, hors-ligne, et la nouvelle organisation des écrans (dossier §15.95) (§ 11 du même document).
+2. ~~Écrire et faire valider les décisions d'architecture~~ — **fait le 2026-09-28** (`docs/decisions-architecture-production.md` § 10). Restent ouverts : hébergeur de production, ticket papier/dématérialisé, plateforme agréée de facture électronique (§ 11 du même document). Tranchés le 2026-09-29 : **vente sans réseau** à construire avant le premier vrai match, **organisation en 6 entrées** appliquée (Résultats, Caisses, Stock, Équipe, Clôtures, Paramètres — dossier §15.96), **assistant IA en lecture seule** (dossier §15.95, fournisseur à choisir).
 3. ~~Construire la configuration d'un lieu vide~~ — **socle + phase 1 livrés le 2026-09-28** (dossier §15.93), en attente de validation visuelle par Rémi.
 4. Ensuite, reprendre la méthode déjà éprouvée sur ce projet : un module à la fois, décision → code → vérification → validation visuelle par Rémi → module suivant.
 

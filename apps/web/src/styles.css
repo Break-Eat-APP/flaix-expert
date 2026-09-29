@@ -104,7 +104,7 @@ a { color: var(--violet); }
 }
 .nav-section:hover:not(:disabled), .nav-module:hover { background: var(--track); }
 .nav-section:disabled { color: var(--muted); cursor: default; opacity: 0.7; }
-.nav-section.active { color: var(--violet); }
+.nav-section.active { color: var(--violet); background: var(--violet-soft); }
 .nav-section .chevron { margin-left: auto; transition: transform 0.15s; }
 .nav-section.ouverte .chevron { transform: rotate(90deg); }
 .nav-sous { display: flex; flex-direction: column; gap: 1px; margin: 2px 0 6px 28px; }
@@ -116,6 +116,8 @@ a { color: var(--violet); }
   margin-left: auto; font-size: 10px; font-weight: 700; color: var(--muted);
   border: 1px solid var(--border); border-radius: 999px; padding: 1px 7px; white-space: nowrap;
 }
+.plus-tard { margin: 10px 10px 0; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+.plus-tard b { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
 .laterale-pied { margin-top: auto; border-top: 1px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 4px; }
 .laterale-pied .utilisateur { padding: 0 10px 6px; font-size: 12.5px; }
 .laterale-pied .utilisateur strong { display: block; }
@@ -124,6 +126,8 @@ a { color: var(--violet); }
 .entete-page { margin-bottom: 20px; display: flex; gap: 16px; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; }
 .entete-page p { margin: 4px 0 0; color: var(--muted); }
 .fil { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+.fil-lien { display: inline-flex; align-items: center; gap: 2px; text-decoration: none; }
+.fil-lien:hover { color: var(--violet); }
 
 .barre-mobile { display: none; }
 @media (max-width: 900px) {
@@ -241,6 +245,21 @@ input[aria-invalid="true"] { border-color: var(--red); }
 .caisse-numero { font-weight: 800; color: var(--ink); min-width: 74px; }
 .caisse .actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
 .en-ligne { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* Paramètres : une tuile par réglage (organisation en 6 entrées, dossier §15.96) */
+.tuiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.tuile {
+  display: grid; gap: 6px; align-content: start; padding: 16px; border-radius: 14px;
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--ombre);
+  color: var(--text); text-decoration: none;
+}
+.tuile:hover { border-color: var(--violet-dim); }
+.tuile-icone { width: 36px; height: 36px; border-radius: 11px; background: var(--violet-soft); color: var(--violet); display: grid; place-items: center; }
+.tuile strong { font-family: "Raleway", sans-serif; font-size: 14.5px; color: var(--ink); }
+.tuile-texte { font-size: 12.5px; color: var(--muted); }
+.tuile em { font-style: normal; font-size: 12px; font-weight: 700; color: var(--violet); }
+.tuile.a-venir { opacity: 0.6; box-shadow: none; cursor: default; }
+.tuile.a-venir:hover { border-color: var(--border); }
 .etapes { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
 .etape { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
 .etape-rond {

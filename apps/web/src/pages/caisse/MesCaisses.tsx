@@ -8,9 +8,12 @@ import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "
 
 const ETAT = { a_venir: "à venir", ouvert: "ouvert", clos: "clos" } as const;
 
-/** Match affiché par défaut : celui qui est ouvert, sinon le plus récent déjà commencé, sinon le premier. */
+/** Match affiché par défaut : celui qui est ouvert, sinon le plus récent déjà clos, sinon le prochain à venir. */
 function matchParDefaut(evts: Evenement[]): string | null {
-  return (evts.find((e) => e.etat === "ouvert") ?? evts.find((e) => e.etat === "clos") ?? evts[0])?.id ?? null;
+  const date = (e: Evenement) => new Date(e.debut).getTime();
+  const clos = evts.filter((e) => e.etat === "clos").sort((a, b) => date(b) - date(a))[0];
+  const prochain = evts.filter((e) => e.etat === "a_venir").sort((a, b) => date(a) - date(b))[0];
+  return (evts.find((e) => e.etat === "ouvert") ?? clos ?? prochain ?? evts[0])?.id ?? null;
 }
 
 export function MesCaisses() {
@@ -27,8 +30,8 @@ export function MesCaisses() {
   return (
     <>
       <EntetePage
-        titre="Mes caisses"
-        description="Toutes les caisses du lieu, en direct, et les tickets du match choisi."
+        titre="Caisses"
+        description="Le match du jour, toutes les caisses du lieu en direct, et les tickets du match choisi."
         actions={
           evts.length > 0 && (
             <label className="champ" style={{ minWidth: 260 }}>
@@ -46,23 +49,24 @@ export function MesCaisses() {
       />
       {evts.length === 0 ? (
         <Carte>
-          <EtatVide titre="Aucun match dans le calendrier">
-            Crée un match dans <Link to="/configuration/matchs">Configuration → Calendrier des matchs</Link>, ouvre-le, puis ouvre une caisse.
+          <EtatVide titre="Aucun match dans la saison">
+            Crée un match dans <Link to="/parametres/saison">Paramètres → Saison</Link>, puis ouvre-le ici le jour du match.
           </EtatVide>
         </Carte>
       ) : (
         <>
+          <MatchDuJour evts={evts} />
           {evt && evt.etat !== "ouvert" && (
             <div className="message message-info">
-              Ce match est {ETAT[evt.etat]}. {evt.etat === "a_venir" ? "Les caisses s'ouvriront quand tu l'auras ouvert dans le calendrier." : "Ses chiffres sont définitifs."}
+              Ce match est {ETAT[evt.etat]}. {evt.etat === "a_venir" ? "Ses caisses s'ouvriront quand tu l'auras ouvert ci-dessus." : "Ses chiffres sont définitifs."}
             </div>
           )}
           <div className="onglets">
             <button className={`onglet${onglet === "caisses" ? " actif" : ""}`} onClick={() => { setOnglet("caisses"); setParams({ match: evenementId ?? "", vue: "caisses" }); }}>
-              Mes caisses
+              En direct
             </button>
             <button className={`onglet${onglet === "tickets" ? " actif" : ""}`} onClick={() => { setOnglet("tickets"); setParams({ match: evenementId ?? "", vue: "tickets" }); }}>
-              Détail des tickets — toutes caisses
+              Tickets du match
             </button>
           </div>
           {evenementId && (onglet === "caisses" ? <TableauCaisses evenementId={evenementId} /> : <JournalTickets evenementId={evenementId} matchOuvert={evt?.etat === "ouvert"} />)}
@@ -70,13 +74,92 @@ export function MesCaisses() {
       )}
       <Regles>
         <ul>
-          <li><strong>Mes caisses</strong> : pour chaque caisse, sur le match choisi, le nombre de tickets, le chiffre d'affaires net (ventes moins annulations), le panier moyen (CA net ÷ tickets non annulés), la part espèces et carte, et l'heure du dernier ticket. L'état « ouverte » est en direct, quel que soit le match affiché.</li>
-          <li><strong>Détail des tickets</strong> : tous les tickets du match, toutes caisses confondues, en lecture seule. Filtres par stand, caisse, opérateur, mode de règlement, n° de justificatif ou produit.</li>
+          <li><strong>Match du jour</strong> : un seul match peut être ouvert à la fois, et les caisses ne s'ouvrent que pendant un match ouvert. L'ouverture est définitive (un match ne revient jamais à « à venir ») ; il se clôt ensuite dans <strong>Clôtures</strong>, une fois toutes ses caisses clôturées.</li>
+          <li><strong>En direct</strong> : pour chaque caisse, sur le match choisi, le nombre de tickets, le chiffre d'affaires net (ventes moins annulations), le panier moyen (CA net ÷ tickets non annulés), la part espèces et carte, et l'heure du dernier ticket. L'état « ouverte » est en direct, quel que soit le match affiché.</li>
+          <li><strong>Tickets du match</strong> : tous les tickets du match, toutes caisses confondues, en lecture seule. Filtres par stand, caisse, opérateur, mode de règlement, n° de justificatif ou produit.</li>
           <li><strong>Annuler un ticket</strong> : le ticket d'origine n'est jamais modifié ni supprimé ; un ticket d'annulation, de montant opposé, le référence, avec son motif et son auteur. Possible seulement tant que la caisse du ticket est ouverte : après sa clôture, une correction passe par une rectification tracée.</li>
           <li><strong>Vérifier l'intégrité</strong> : relit la chaîne de chaque caisse dans son ordre réel d'enregistrement (jamais dans l'ordre d'affichage) et contrôle chaque empreinte. Toute modification, suppression ou insertion frauduleuse est localisée à l'événement près.</li>
         </ul>
       </Regles>
     </>
+  );
+}
+
+/**
+ * Match du jour : l'ouverture du match se fait ici depuis le 2026-09-29 (déplacée du
+ * calendrier, dossier §15.96). Elle est définitive, d'où l'étape de confirmation.
+ */
+function MatchDuJour({ evts }: { evts: Evenement[] }) {
+  const client = useQueryClient();
+  const [aConfirmer, setAConfirmer] = useState<string | null>(null);
+  const ouvrir = useMutation({
+    mutationFn: (id: string) => api.post<Evenement[]>(`/evenements/${id}/ouverture`),
+    onSuccess: (l) => {
+      client.setQueryData(["evenements"], l);
+      client.invalidateQueries({ queryKey: ["tableau-caisses"] });
+      setAConfirmer(null);
+    },
+  });
+
+  const ouvert = evts.find((e) => e.etat === "ouvert");
+  if (ouvert) {
+    return (
+      <div className="message message-ok en-ligne" style={{ justifyContent: "space-between" }}>
+        <span>
+          Match ouvert : <strong>{ouvert.libelle}</strong> · {formaterDateHeure(ouvert.debut)} · {ouvert.caissesOuvertes} caisse{ouvert.caissesOuvertes > 1 ? "s" : ""} ouverte{ouvert.caissesOuvertes > 1 ? "s" : ""}
+        </span>
+        <Link className="btn btn-fantome" to="/clotures">
+          Clôturer le match
+        </Link>
+      </div>
+    );
+  }
+
+  const aVenir = evts.filter((e) => e.etat === "a_venir").sort((a, b) => new Date(a.debut).getTime() - new Date(b.debut).getTime());
+  if (aVenir.length === 0) {
+    return (
+      <div className="message message-info">
+        Aucun match à venir. Ajoute le prochain dans <Link to="/parametres/saison">Paramètres → Saison</Link>.
+      </div>
+    );
+  }
+  return (
+    <Carte titre="Match du jour" description="Ouvre le match avant d'ouvrir les caisses. Un seul match peut être ouvert à la fois, et l'ouverture est définitive.">
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {aVenir.slice(0, 3).map((e) => (
+          <div key={e.id} className="caisse">
+            <div style={{ flex: 1 }}>
+              <strong>{e.libelle}</strong>
+              <div className="discret" style={{ fontSize: 12.5 }}>
+                {formaterDateHeure(e.debut)}
+              </div>
+            </div>
+            <div className="actions">
+              {aConfirmer === e.id ? (
+                <>
+                  <button className="btn" disabled={ouvrir.isPending} onClick={() => ouvrir.mutate(e.id)}>
+                    Confirmer l'ouverture
+                  </button>
+                  <button className="btn btn-fantome" onClick={() => setAConfirmer(null)}>
+                    Annuler
+                  </button>
+                </>
+              ) : (
+                <button className="btn" onClick={() => setAConfirmer(e.id)}>
+                  Ouvrir le match
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      {aVenir.length > 3 && (
+        <p className="aide">
+          Et {aVenir.length - 3} autre{aVenir.length - 3 > 1 ? "s" : ""} dans <Link to="/parametres/saison">Paramètres → Saison</Link>.
+        </p>
+      )}
+      <MessageErreur erreur={ouvrir.error} />
+    </Carte>
   );
 }
 
@@ -90,7 +173,7 @@ function TableauCaisses({ evenementId }: { evenementId: string }) {
   if (liste.length === 0) {
     return (
       <Carte>
-        <EtatVide titre="Aucune caisse">Crée tes stands et leurs caisses dans <Link to="/configuration/stands">Gestion des stands & caisses</Link>.</EtatVide>
+        <EtatVide titre="Aucune caisse">Crée tes stands et leurs caisses dans <Link to="/parametres/stands">Paramètres → Stands & caisses</Link>.</EtatVide>
       </Carte>
     );
   }

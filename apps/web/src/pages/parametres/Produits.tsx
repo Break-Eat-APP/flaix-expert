@@ -63,8 +63,9 @@ export function Produits() {
   return (
     <>
       <EntetePage
-        fil="Configuration"
-        titre="Config produits"
+        fil="Paramètres"
+        filLien="/parametres"
+        titre="Produits & prix"
         description={`${actifs} produit${actifs > 1 ? "s" : ""} actif${actifs > 1 ? "s" : ""}. Une fiche par produit ; tu coches les stands qui le vendent.`}
         actions={
           <>
@@ -95,7 +96,7 @@ export function Produits() {
         {produits.data!.length === 0 ? (
           <EtatVide titre="Aucun produit pour l'instant">
             {listeStands.length === 0
-              ? "Commence par créer tes stands (Configuration → Gestion des stands & caisses), puis ajoute tes produits ici."
+              ? "Commence par créer tes stands (Paramètres → Stands & caisses), puis ajoute tes produits ici."
               : "Clique sur « Ajouter un produit » pour construire ton catalogue."}
           </EtatVide>
         ) : (

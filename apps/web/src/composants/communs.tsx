@@ -1,11 +1,19 @@
 import { useState, type ReactNode } from "react";
-import { ChevronDown, ChevronUp, BookOpen } from "lucide-react";
+import { Link } from "react-router";
+import { ChevronDown, ChevronUp, BookOpen, ChevronLeft } from "lucide-react";
 
-export function EntetePage({ fil, titre, description, actions }: { fil?: string; titre: string; description?: ReactNode; actions?: ReactNode }) {
+export function EntetePage({ fil, filLien, titre, description, actions }: { fil?: string; filLien?: string; titre: string; description?: ReactNode; actions?: ReactNode }) {
   return (
     <header className="entete-page">
       <div>
-        {fil && <div className="fil">{fil}</div>}
+        {fil &&
+          (filLien ? (
+            <Link to={filLien} className="fil fil-lien">
+              <ChevronLeft size={13} /> {fil}
+            </Link>
+          ) : (
+            <div className="fil">{fil}</div>
+          ))}
         <h1 className="titre-page">{titre}</h1>
         {description && <p>{description}</p>}
       </div>

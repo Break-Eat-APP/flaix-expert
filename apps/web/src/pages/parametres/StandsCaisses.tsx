@@ -52,8 +52,9 @@ export function StandsCaisses() {
   return (
     <>
       <EntetePage
-        fil="Configuration"
-        titre="Gestion des stands & caisses"
+        fil="Paramètres"
+        filLien="/parametres"
+        titre="Stands & caisses"
         description={`${actifs.length} stand${actifs.length > 1 ? "s" : ""} actif${actifs.length > 1 ? "s" : ""} · ${nbCaisses} caisse${nbCaisses > 1 ? "s" : ""} active${nbCaisses > 1 ? "s" : ""}`}
       />
 

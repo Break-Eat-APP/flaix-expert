@@ -19,7 +19,11 @@ function versChampLocal(iso: string): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-export function Matchs() {
+/**
+ * Saison (ex-« Calendrier des matchs ») : on y prépare les matchs. Depuis le 2026-09-29
+ * (dossier §15.96), l'ouverture du match se fait dans Caisses et sa clôture dans Clôtures.
+ */
+export function Saison() {
   const client = useQueryClient();
   const evenements = useQuery({ queryKey: ["evenements"], queryFn: () => api.get<Evenement[]>("/evenements") });
   const maj = (l: Evenement[]) => {
@@ -38,11 +42,6 @@ export function Matchs() {
       setSpectateurs("");
     },
   });
-  const action = useMutation({
-    mutationFn: ({ id, quoi }: { id: string; quoi: "ouverture" | "cloture" }) => api.post<Evenement[]>(`/evenements/${id}/${quoi}`),
-    onSuccess: maj,
-  });
-
   if (evenements.isPending) return <Chargement />;
   if (evenements.error) return <MessageErreur erreur={evenements.error} />;
   const liste = evenements.data!;
@@ -57,7 +56,12 @@ export function Matchs() {
 
   return (
     <>
-      <EntetePage fil="Configuration" titre="Calendrier des matchs" description="Chaque match ou événement du lieu : c'est à lui que se rattachent les ventes, le stock et le personnel de la soirée." />
+      <EntetePage
+        fil="Paramètres"
+        filLien="/parametres"
+        titre="Saison"
+        description="Le calendrier des matchs du lieu : c'est à chaque match que se rattachent les ventes, le stock et le personnel de la soirée."
+      />
       <Carte titre="Ajouter un match" description="Tu peux préparer les matchs de la saison à l'avance.">
         <form onSubmit={soumettre}>
           <div className="grille-champs">
@@ -83,14 +87,13 @@ export function Matchs() {
         </form>
       </Carte>
 
-      <MessageErreur erreur={action.error} />
       <Carte titre="Matchs">
         {liste.length === 0 ? (
           <EtatVide titre="Aucun match pour l'instant" />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {liste.map((e) => (
-              <LigneMatch key={e.id} evenement={e} occupe={action.isPending} agir={(quoi) => action.mutate({ id: e.id, quoi })} maj={maj} />
+              <LigneMatch key={e.id} evenement={e} maj={maj} />
             ))}
           </div>
         )}
@@ -98,7 +101,7 @@ export function Matchs() {
 
       <Regles>
         <ul>
-          <li><strong>Un match suit toujours le même chemin</strong> : à venir → ouvert → clos. Il ne revient jamais en arrière.</li>
+          <li><strong>Un match suit toujours le même chemin</strong> : à venir → ouvert (le jour du match, depuis <strong>Caisses</strong>) → clos (depuis <strong>Clôtures</strong>). Il ne revient jamais en arrière.</li>
           <li><strong>Un seul match ouvert à la fois</strong> : chaque ticket sait ainsi, sans ambiguïté, à quel match il appartient.</li>
           <li>Les caisses ne s'ouvrent que pendant un match ouvert. Un match ne se clôt qu'une fois toutes ses caisses clôturées ; sa clôture est définitive.</li>
           <li>Le libellé et la date se modifient tant que le match est à venir. Le <strong>nombre de spectateurs</strong> peut être complété à tout moment (il sert au CA par spectateur, il n'est pas une donnée fiscale).</li>
@@ -109,12 +112,11 @@ export function Matchs() {
   );
 }
 
-function LigneMatch({ evenement: e, occupe, agir, maj }: { evenement: Evenement; occupe: boolean; agir: (q: "ouverture" | "cloture") => void; maj: (l: Evenement[]) => void }) {
+function LigneMatch({ evenement: e, maj }: { evenement: Evenement; maj: (l: Evenement[]) => void }) {
   const [edition, setEdition] = useState(false);
   const [libelle, setLibelle] = useState(e.libelle);
   const [debut, setDebut] = useState(versChampLocal(e.debut));
   const [spectateurs, setSpectateurs] = useState(e.spectateurs?.toString() ?? "");
-  const [confirmer, setConfirmer] = useState(false);
   const modifier = useMutation({
     mutationFn: (corps: unknown) => api.patch<Evenement[]>(`/evenements/${e.id}`, corps),
     onSuccess: (l) => {
@@ -171,27 +173,18 @@ function LigneMatch({ evenement: e, occupe, agir, maj }: { evenement: Evenement;
               Modifier
             </button>
             {e.etat === "a_venir" && (
-              <button className="btn" disabled={occupe} onClick={() => agir("ouverture")}>
-                Ouvrir le match
-              </button>
+              <Link className="btn btn-fantome" to="/caisses" title="Le match s'ouvre le jour J depuis Caisses">
+                S'ouvre depuis Caisses
+              </Link>
             )}
             {e.etat === "ouvert" && (
               <>
                 <Link className="btn btn-fantome" to={`/caisses?match=${e.id}`}>
-                  Mes caisses
+                  Caisses
                 </Link>
-                {confirmer ? (
-                  <>
-                    <button className="btn btn-danger" disabled={occupe} onClick={() => { agir("cloture"); setConfirmer(false); }}>
-                      Confirmer la clôture définitive
-                    </button>
-                    <button className="btn btn-fantome" onClick={() => setConfirmer(false)}>Retour</button>
-                  </>
-                ) : (
-                  <button className="btn btn-danger" onClick={() => setConfirmer(true)}>
-                    Clore le match
-                  </button>
-                )}
+                <Link className="btn btn-fantome" to="/clotures">
+                  Clôturer
+                </Link>
               </>
             )}
             {e.etat === "clos" && (

@@ -58,7 +58,7 @@ export function Identite() {
 
   return (
     <>
-      <EntetePage fil="Configuration" titre="Identité du lieu" description="Qui exploite ce lieu : ces informations figureront sur chaque ticket et sur l'attestation de conformité." />
+      <EntetePage fil="Paramètres" filLien="/parametres" titre="Le lieu" description="Qui exploite ce lieu : ces informations figureront sur chaque ticket et sur l'attestation de conformité." />
       <form onSubmit={soumettre}>
         <Carte titre="Le lieu">
           <div className="grille-champs">{champ("nom", "Nom affiché du lieu", { requis: true, aide: "Ex. le nom du club ou de la salle." })}</div>
