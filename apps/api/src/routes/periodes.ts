@@ -217,8 +217,8 @@ export async function exigerMoisOuvert(c: Client, lieuId: string, debutIso: stri
   if (rows[0]) throw new ErreurMetier(409, `${libelleMois(mois)} est clôturé : aucun match ne peut plus y être ajouté ni ouvert.`);
 }
 
-async function moisDebutExercice(c: Client, lieuId: string): Promise<number> {
-  const { rows } = await c.query<{ m: number }>("SELECT mois_debut_exercice AS m FROM lieu WHERE id = $1", [lieuId]);
+async function moisDebutExercice(c: Client, lieuId: string): Promise<number | null> {
+  const { rows } = await c.query<{ m: number | null }>("SELECT mois_debut_exercice AS m FROM lieu WHERE id = $1", [lieuId]);
   return rows[0]!.m;
 }
 
@@ -268,13 +268,14 @@ async function etatClotures(c: Client, lieuId: string): Promise<EtatClotures> {
     };
   });
 
-  const clesExercices = [...new Set(mois.filter((m) => m.matchs.length > 0).map((m) => exerciceDe(m.cle, mDebut).premierMois))].sort();
+  // Premier mois de l'exercice non réglé : aucun exercice n'est proposé (§15.108).
+  const clesExercices = mDebut === null ? [] : [...new Set(mois.filter((m) => m.matchs.length > 0).map((m) => exerciceDe(m.cle, mDebut).premierMois))].sort();
   const exercices: PeriodeACloturer[] = clesExercices.map((premier) => {
-    const ex = exerciceDe(premier, mDebut);
+    const ex = exerciceDe(premier, mDebut!);
     const sesMois = mois.filter((m) => moisDeLExercice(ex.premierMois).includes(m.cle) && m.matchs.length > 0);
     const cloture = clotureDe("exercice", ex.debut);
     const moisOuverts = sesMois.filter((m) => m.etat !== "clos").length;
-    const precedentOuvert = clesExercices.find((k) => k < premier && !clotureDe("exercice", exerciceDe(k, mDebut).debut));
+    const precedentOuvert = clesExercices.find((k) => k < premier && !clotureDe("exercice", exerciceDe(k, mDebut!).debut));
     const raison = cloture
       ? null
       : !moisTermine(ex.dernierMois)
@@ -282,7 +283,7 @@ async function etatClotures(c: Client, lieuId: string): Promise<EtatClotures> {
         : moisOuverts
           ? `${moisOuverts} mois pas encore clôturé${moisOuverts > 1 ? "s" : ""}.`
           : precedentOuvert
-            ? `Clôture d'abord ${exerciceDe(precedentOuvert, mDebut).libelle.toLowerCase()}.`
+            ? `Clôture d'abord ${exerciceDe(precedentOuvert, mDebut!).libelle.toLowerCase()}.`
             : null;
     return {
       cle: ex.premierMois,
@@ -339,6 +340,7 @@ export async function routesPeriodes(app: FastifyInstance, { base }: { base: Bas
     return base.transaction(contexte(auth), async (c) => {
       await verrouiller(c, `clotures:${auth.lieuId}`);
       const etat = await etatClotures(c, auth.lieuId);
+      if (etat.moisDebutExercice === null) throw new ErreurMetier(409, "Règle d'abord le premier mois de l'exercice comptable du lieu (Paramètres → Le lieu).");
       const periode = etat.exercices.find((x) => x.cle === premierMois);
       if (!periode) throw new ErreurMetier(404, "Aucun match sur cet exercice.");
       if (periode.etat === "clos") throw new ErreurMetier(409, `${periode.libelle} est déjà clôturé.`);

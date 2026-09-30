@@ -89,7 +89,7 @@ export function Identite() {
       <Regles>
         <ul>
           <li><strong>Remise abonné</strong> : taux contractuel accordé aux abonnés du lieu. Tant qu'il n'est pas réglé, la pastille « Abonné » de la caisse reste inactive. Le caissier l'applique, il ne le négocie pas.</li>
-          <li><strong>Exercice comptable</strong> : premier mois des 12 mois clôturés ensemble dans Clôtures → Mois & année (janvier par défaut). À vérifier avec l'expert-comptable du lieu ; il ne se change plus une fois un exercice clôturé.</li>
+          <li><strong>Exercice comptable</strong> : premier mois des 12 mois clôturés ensemble dans Clôtures → Mois & année. Vide tant que tu ne l'as pas réglé (il varie d'un lieu à l'autre : à demander à l'expert-comptable du lieu) ; la clôture d'un exercice est refusée d'ici là. Il ne se change plus une fois un exercice clôturé.</li>
           <li><strong>Tolérance d'écart d'espèces</strong> : au comptage d'un tiroir (Clôtures → Clôture du match), un écart plus grand que ce montant demande un motif. 5,00 € par défaut. La clôture n'est jamais bloquée.</li>
           <li>Le ticket de caisse doit porter l'identité de l'exploitant : raison sociale, adresse, SIRET, n° de TVA (BOFiP, données obligatoires d'une opération d'encaissement).</li>
           <li>Le SIRET compte 14 chiffres ; le n° de TVA intracommunautaire commence par le code du pays (FR…). Les espaces saisis sont retirés.</li>
@@ -217,13 +217,18 @@ function ExerciceComptable() {
       <label className="champ" style={{ width: 240 }}>
         <span>Premier mois de l'exercice</span>
         <select
-          value={e.moisDebutExercice}
+          value={e.moisDebutExercice ?? ""}
           disabled={!e.exerciceModifiable || sauver.isPending}
           onChange={(ev) => {
             setOk(false);
             sauver.mutate(Number(ev.target.value));
           }}
         >
+          {e.moisDebutExercice === null && (
+            <option value="" disabled>
+              À régler
+            </option>
+          )}
           {NOMS_MOIS.map((nom, i) => (
             <option key={nom} value={i + 1}>
               {nom}

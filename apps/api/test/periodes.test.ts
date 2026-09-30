@@ -51,6 +51,17 @@ beforeAll(async () => {
   biere = (await appel<Produit[]>("POST", "/api/produits", { nom: "Bière", prixTtc: 700, tauxTva: 2000, standIds: [s.id] })).corps[0]!;
 });
 
+describe("premier mois de l'exercice : à régler par le directeur (§15.108)", () => {
+  it("vide sur un lieu neuf : aucun exercice proposé, clôture d'exercice refusée ; puis réglé à janvier", async () => {
+    expect((await etat()).moisDebutExercice).toBeNull();
+    expect((await etat()).exercices).toEqual([]);
+    const r = await appel<{ erreur: string }>("POST", "/api/clotures/exercice", { premierMois: "2025-01" });
+    expect(r.statut).toBe(409);
+    expect(r.corps.erreur).toContain("Règle d'abord");
+    expect((await appel<EtatClotures>("PUT", "/api/lieu/exercice", { moisDebut: 1 })).corps.moisDebutExercice).toBe(1);
+  });
+});
+
 afterAll(async () => {
   await serveur.close();
   await proprietaire.fermer();

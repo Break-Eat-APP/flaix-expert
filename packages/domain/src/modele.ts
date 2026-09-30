@@ -649,7 +649,8 @@ export interface PeriodeACloturer {
 }
 
 export interface EtatClotures {
-  moisDebutExercice: number;
+  /** Premier mois de l'exercice (1 = janvier) ; null tant que le directeur ne l'a pas réglé. */
+  moisDebutExercice: number | null;
   exerciceModifiable: boolean;
   perpetuel: Centimes;
   mois: PeriodeACloturer[];

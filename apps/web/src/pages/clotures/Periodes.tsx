@@ -96,7 +96,9 @@ export function Periodes() {
         </div>
         <div className="kpi">
           <div className="kpi-libelle">Exercice comptable</div>
-          <div className="kpi-valeur" style={{ fontSize: 18 }}>à partir de {MOIS[e.moisDebutExercice - 1]}</div>
+          <div className="kpi-valeur" style={{ fontSize: 18, color: e.moisDebutExercice === null ? "var(--amber)" : undefined }}>
+            {e.moisDebutExercice === null ? "à régler" : `à partir de ${MOIS[e.moisDebutExercice - 1]}`}
+          </div>
           <div className="aide">
             <Link to="/parametres/lieu">réglage du lieu</Link>
           </div>
@@ -113,7 +115,11 @@ export function Periodes() {
       </Carte>
 
       <Carte titre="Exercices" description="Un exercice se clôture une fois terminé et tous ses mois clôturés.">
-        {e.exercices.length === 0 ? <EtatVide titre="Aucun exercice avec des matchs" /> : <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{e.exercices.map((x) => ligne(x, "exercice"))}</div>}
+        {e.moisDebutExercice === null ? (
+          <div className="message message-alerte" style={{ margin: 0 }}>
+            Premier mois de l'exercice comptable pas encore réglé : il se règle dans <Link to="/parametres/lieu">Paramètres → Le lieu</Link>, avec l'expert-comptable du lieu. Les mois se clôturent en attendant.
+          </div>
+        ) : e.exercices.length === 0 ? <EtatVide titre="Aucun exercice avec des matchs" /> : <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{e.exercices.map((x) => ligne(x, "exercice"))}</div>}
       </Carte>
 
       <Carte
