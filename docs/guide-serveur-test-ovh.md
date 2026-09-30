@@ -57,7 +57,7 @@ La connexion au logiciel exige une adresse sécurisée (https) sur un serveur : 
 - **Logiciels** (`infra/vps/installer-socle.sh`) : PostgreSQL 17, Caddy (https), Node.js 24 depuis nodejs.org (empreinte vérifiée).
 - **Application** (`infra/vps/deployer.sh`) : chaque version dans `/srv/flaix/versions/…`, `/srv/flaix/app` pointe sur la version en service (retour arrière possible). Service `flaix-api` sous un compte système sans shell. Mode serveur, environnement **test** (bandeau permanent).
 - **Base de données** : deux rôles (`flaix_owner` pour les migrations, `flaix_app` pour le serveur), mots de passe tirés au hasard sur le serveur, jamais affichés : `/etc/flaix/admin.env` (root seul), `/etc/flaix/flaix.env` (le serveur, qui ne connaît que `flaix_app`).
-- **Sauvegarde** : copie complète de la base chaque nuit à 4 h 15 dans `/var/backups/flaix`, 14 jours gardés. **À compléter** : une copie hors du serveur, et un essai de restauration.
+- **Sauvegarde** : copie complète de la base chaque nuit à 4 h 15 dans `/var/backups/flaix`, 14 jours gardés ; **celle du 1er de chaque mois est gardée sans limite** (décision du 2026-09-30 : tickets conservés sans limite de durée, dossier §15.106). **À compléter** : une copie hors du serveur, et un essai de restauration.
 - **Administration** : `sudo flaix-admin creer-lieu` et `sudo flaix-admin nouveau-mot-de-passe` (`infra/vps/flaix-admin.sh`) posent leurs questions à l'écran ; le mot de passe provisoire ne s'affiche que dans la fenêtre de celui qui lance la commande.
 - **Mettre à jour l'application** : archive du dépôt (`git archive`), copie sur le serveur, `sudo deployer-flaix.sh archive.tar.gz` (applique les nouvelles migrations, redémarre le service).
 
