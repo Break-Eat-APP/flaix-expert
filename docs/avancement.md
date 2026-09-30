@@ -1,6 +1,6 @@
 # Avancement — reprise après coupure
 
-Mis à jour le 2026-09-30 (6 étapes + coffre + clôtures de période). Pour reprendre : lire ce fichier, puis le dossier §15.99.
+Mis à jour le 2026-09-30 (6 étapes + coffre + clôtures de période + copie chiffrée des sauvegardes). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.108.
 
 ## Ordre de construction (dossier §15.99)
 
@@ -8,24 +8,68 @@ Mis à jour le 2026-09-30 (6 étapes + coffre + clôtures de période). Pour rep
 |---|---|---|
 | 1 | Comptes des caissières (code personnel) + tablette enregistrée comme appareil de caisse | **fait le 2026-09-30** (dossier §15.100) |
 | 2 | Ticket sur demande (édition par le directeur, duplicata tracé) | **fait le 2026-09-30** (dossier §15.101) |
-| 3 | Clôtures : assistant de clôture du match | **fait le 2026-09-30** (dossier §15.102) — étape « Restes » en attente du module Stock |
+| 3 | Clôtures : assistant de clôture du match | **fait le 2026-09-30** (dossier §15.102) |
 | 4 | Résultats : tableaux (vue d'ensemble, ventes, comparaison, coût manquant) | **fait le 2026-09-30** (dossier §15.103) |
 | 5 | Équipe : fiches, planning, masse salariale | **fait le 2026-09-30** (dossier §15.104) |
-| 6 | Stock : mise en place, comptage, réserve et livraisons | **fait le 2026-09-30** (dossier §15.105) — matières premières au poids et recettes reportées |
+| 6 | Stock : mise en place, comptage, réserve et livraisons | **fait le 2026-09-30** (dossier §15.105) — matières premières au poids et recettes en pause |
 
-## Les 6 étapes demandées le 2026-09-30 sont faites
+Fait ensuite le 2026-09-30 : remontées au coffre et Z du coffre (§15.106) ; clôtures mensuelle et annuelle, Z du match, total perpétuel (§15.107) ; exercice comptable à régler par lieu, copie chiffrée des sauvegardes chez OVH (§15.108).
 
-Fait ensuite le 2026-09-30 : remontées au coffre et Z du coffre (§15.106) ; clôtures mensuelle et annuelle, Z du match, total perpétuel (§15.107). Reste dans Clôtures : l'onglet « Archives & contrôle » (archive annuelle en format ouvert, accès vérificateur, module 16).
+## Inventaire : modules validés du prototype → logiciel réel (2026-09-30)
 
-Prochaines pistes, à valider avec Rémi : validation visuelle de chaque module sur le serveur de test ; matières premières et recettes (Paramètres → Produits & prix, puis Stock) ; rapport de soirée imprimable et envoyé par e-mail ; alerte de rupture en direct sur téléphone ; export mensuel pour l'expert-comptable ; assistant IA en lecture seule (fournisseur à choisir).
+Chaque module repris l'a été après relecture de son prototype validé, avec ce que le prototype ne pouvait pas avoir (vraie base, rôles, vente sans réseau, inaltérabilité imposée par la base, tests). Numéros = journal des modules du dossier (§14).
+
+**Repris**
+
+| Prototype | Dans le logiciel | Reste |
+|---|---|---|
+| 1 Commande | Caisses → poste de la caissière (tablette, sans réseau, code personnel) | — |
+| 2 Ventes & CA | Résultats ; Clôtures → Mois & année | — |
+| 3 Journal / Tickets | Caisses → Tickets (vérification d'intégrité, ticket sur demande) | — |
+| 4 Stock | Stock | matières premières et recettes (en pause, décision de Rémi) ; alerte de rupture en direct |
+| 7 Contrôle & Espèces | Clôtures (Z du tiroir, rectification, coffre) | e-mail de notification d'une rectification (envoi d'e-mails à mettre en place) |
+| 10 Clôture d'événement | Clôtures → assistant de clôture du match | — |
+| 14 Masse salariale | Équipe (fiches, planning, masse salariale, accès caisse) | — |
+| 15 Configuration du lieu / produits | Paramètres (lieu, saison, stands & caisses, produits & prix) | — |
+
+**Repris en partie**
+
+| Prototype | Déjà dans le logiciel | Manque |
+|---|---|---|
+| 5 Marges & ratios | Résultats → marge produit par produit (coût matière CUMP du Stock) | cibles de marge par catégorie et par produit (§15.78) |
+| 6 Optimisation | Résultats → « Pistes pour le prochain match » | croisement volume × marge complet, écarts entre stands, coût des ruptures, actions classées par impact |
+| 9 Reporting de soirée | les chiffres sont dans Résultats | rapport figé du match, imprimable, envoyé par e-mail à la clôture |
+| 11 Gestion financière | Résultats → TVA collectée, moyens de paiement, personnel | dépenses catégorisées, commission Break Eat, cascade marge brute → nette, cible de marge nette de la soirée (écran « Configuration cible & marge ») |
+| 16 Conformité / Profil & documentation | journal technique, vérification des chaînes, clôtures scellées | attestation, registre des versions, connexions par caisse, archive annuelle en format ouvert, accès vérificateur |
+| 18 Centre d'alertes | Résultats → « À surveiller » | le centre et ses 6 alertes (dépend des cibles de marge et des prix fournisseurs) |
+
+**Pas encore commencé**
+
+| Travail | Remarque |
+|---|---|
+| Mode formation « FACTICE » | décidé (`decisions-architecture-production.md` § 4.5, tests B3/B4) ; **préalable aux vrais chiffres** (§15.108) |
+| Export mensuel pour l'expert-comptable | à définir avec lui |
+| 13 Click & Collect | règles de prix à revoir d'abord (§15.20) |
+| Vue téléphone du directeur, alerte de rupture en direct | — |
+| 8 Coûts par buvette | jamais prototypé ; laissé tel quel par Rémi |
+
+**Plus tard (décidé par Rémi)** : 19 Fidélité, 20 Wallet & campagnes, Facturation (facture Break Eat, rapprochement fournisseur), 17 Back-office éditeur, assistant IA, recettes et matières premières.
+
+## Ordre proposé pour finir « de A à Z » (à valider par Rémi)
+
+1. **Mode formation « FACTICE »** — pour que les essais ne se mélangent jamais aux vrais chiffres.
+2. **Conformité** : attestation, registre des versions, connexions par caisse, archive annuelle, accès vérificateur, export pour l'expert-comptable.
+3. **Passage en production** : vraie base neuve, seule la configuration du directeur recopiée, sous-domaine Break Eat. Préalables : réponse écrite de l'expert-comptable (NF525), décision d'hébergement (§15.108), copie OVH réglée et essai de restauration réussi.
+4. **Gestion financière complète + cibles de marge**.
+5. **Reporting de soirée** figé, imprimable, envoyé par e-mail (choisir un service d'envoi d'e-mails ; sert aussi à la notification des rectifications).
+6. **Centre d'alertes + Optimisation complète**.
+7. **Click & Collect**, après révision des règles de prix.
+8. Puis les modules « plus tard ».
 
 ## Reste à faire hors modules
 
-- Résultats : rapport de soirée figé et imprimable, envoi par e-mail à la clôture ; historique des coûts matière (avec le Stock).
-
-- Clôtures : e-mail de notification d'une rectification de Z (quand l'envoi d'e-mails existera). Remontées au coffre et Z du coffre : faits le 2026-09-30 (§15.106).
-- Conservation des tickets sans limite : décidée (§15.106) ; question RGPD posée (G.19) ; copie des sauvegardes hors du serveur toujours à faire.
-
+- **Copie des sauvegardes chez OVH** : scripts en service et essayés sur le serveur le 2026-09-30 (faux stockage, clé jetable : chiffrement, envoi, mauvaise clé refusée, restauration complète). **Attend Rémi** : créer le stockage OVH puis lancer `sudo flaix-admin sauvegarde-externe` (guide serveur, « Copie des sauvegardes chez OVH »), puis `sudo flaix-admin essai-restauration`.
+- Premier mois de l'exercice : à régler par le directeur de chaque lieu (Paramètres → Le lieu), avec son expert-comptable.
 - Recharger la page sans réseau sur le vrai serveur (service worker) : à essayer.
-- Copie de la sauvegarde hors du serveur + essai de restauration.
 - Sous-domaine Break Eat à la place de sslip.io (Rémi).
+- Conservation des tickets sans limite : décidée (§15.106) ; question RGPD posée (G.19).
