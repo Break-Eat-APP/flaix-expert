@@ -20,7 +20,7 @@ import {
 } from "@flaix/domain";
 import { verrouiller, type Base, type Client } from "../base.ts";
 import { config } from "../config.ts";
-import { exigerDirecteur, type Authentification } from "../auth/contexte.ts";
+import { exigerAccesCaisse, exigerDirecteur, type Authentification } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { inscrireCaisse, inscrireEvenementTablette, teteChaine, verifierCaisses } from "../journal-caisse.ts";
@@ -28,8 +28,9 @@ import { ParamId, Uuid, contexte, corps } from "./outils.ts";
 
 /*
  * Ma caisse, Mes caisses, journal des tickets (modules 1 et 3, dossier §14, §15.26, §15.62,
- * §15.73, §15.94). En version test, c'est le directeur qui ouvre les caisses et tape les
- * ventes (décision 9) ; les comptes opérateurs viendront avec la tablette enregistrée.
+ * §15.73, §15.94). Le directeur peut ouvrir n'importe quelle caisse et taper des ventes
+ * (décision 9) ; une caissière n'accède qu'à la caisse de la tablette enregistrée où elle
+ * est connectée (§15.100), et jamais à la reprise d'une caisse sur un autre appareil.
  *
  * Vente sans réseau (§15.97) : pendant une session, la tablette scelle elle-même ses ventes et
  * ses annulations ; le serveur les vérifie à la réception (/journal) avant de les inscrire.
@@ -47,6 +48,8 @@ const EvenementRecu = z.object({
   numeroJustificatif: z.string().max(40),
   horodatage: z.string().max(40),
   type: z.enum(["vente", "annulation"]),
+  /** Personne connectée au moment de la vente (§15.100) ; absente sur les tickets plus anciens. */
+  utilisateurId: Uuid.optional(),
   refEvenement: Uuid.nullable(),
   modeReglement: z.enum(["especes", "carte"]),
   totalTtc: z.number().int().min(-10_000_000).max(10_000_000),
@@ -341,8 +344,8 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
 
   // ---------- Écran de caisse ----------
   app.get("/api/caisses/:id/ecran", async (req): Promise<EcranCaisse> => {
-    const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);
+    const auth = await exigerAccesCaisse(req, base, id);
     return base.transaction(contexte(auth), async (c) => {
       const k = await lireCaisse(c, auth.lieuId, id);
       const session = await sessionOuverte(c, id);
@@ -372,8 +375,8 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
 
   // ---------- Ouverture de caisse (§15.26 point 3) ----------
   app.post("/api/caisses/:id/ouverture", async (req): Promise<RepriseCaisse> => {
-    const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);
+    const auth = await exigerAccesCaisse(req, base, id);
     const { fond } = corps(Ouverture, req);
     return base.transaction(contexte(auth), async (c) => {
       const k = await lireCaisse(c, auth.lieuId, id);
@@ -441,8 +444,8 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
   // ---------- Réception des tickets scellés par la tablette (§15.97) ----------
   // Le lot est inscrit en entier ou pas du tout : au premier écart de structure, rien n'est inscrit.
   app.post("/api/caisses/:id/journal", async (req): Promise<ReponseSynchro> => {
-    const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);
+    const auth = await exigerAccesCaisse(req, base, id);
     const s = corps(Synchro, req);
     return base.transaction(contexte(auth), async (c) => {
       const k = await lireCaisse(c, auth.lieuId, id);
@@ -454,8 +457,15 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
       if (!jetonValide(s.jeton, session.appareil_jeton_empreinte)) {
         throw new ErreurMetier(409, "Cette caisse a été reprise sur un autre appareil : les tickets de cet appareil ne sont plus acceptés.");
       }
-      const { rows: membre } = await c.query("SELECT 1 FROM membre WHERE lieu_id = $1 AND utilisateur_id = $2", [auth.lieuId, s.utilisateurId]);
-      if (!membre[0]) throw new ErreurMetier(409, "Les tickets ont été enregistrés par une personne inconnue de ce lieu.");
+      // Chaque ticket porte la personne connectée au moment de la vente : elle doit appartenir au lieu.
+      const personnesConnues = new Set<string>();
+      const exigerPersonneDuLieu = async (utilisateurId: string, justificatif: string) => {
+        if (personnesConnues.has(utilisateurId)) return;
+        const { rows } = await c.query("SELECT 1 FROM membre WHERE lieu_id = $1 AND utilisateur_id = $2 AND role IN ('directeur', 'operateur')", [auth.lieuId, utilisateurId]);
+        if (!rows[0]) throw new ErreurMetier(409, `Ticket ${justificatif} refusé : enregistré par une personne inconnue de ce lieu.`);
+        personnesConnues.add(utilisateurId);
+      };
+      await exigerPersonneDuLieu(s.utilisateurId, "du lot");
 
       const ctx: ContexteScellement = {
         lieuId: auth.lieuId,
@@ -511,6 +521,8 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
           };
         }
 
+        const vendeur = e.utilisateurId ?? s.utilisateurId;
+        await exigerPersonneDuLieu(vendeur, e.numeroJustificatif);
         const raison = controlerEvenementTablette(ctx, tete, e, origine);
         if (raison) throw new ErreurMetier(409, `Ticket ${e.numeroJustificatif} refusé : ${raison}.`);
         if (e.modeReglement === "especes" && !k.especes_autorisees) throw new ErreurMetier(409, `Ticket ${e.numeroJustificatif} refusé : cette caisse n'accepte pas les espèces.`);
@@ -547,14 +559,14 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
           if (d.ajustement.motif === "abonne" && d.ajustement.remisePb !== remiseAbonneLieu) controle.remiseAbonneEcart = { applique: d.ajustement.remisePb, lieu: remiseAbonneLieu };
         }
 
-        await inscrireEvenementTablette(c, ctx, e, maintenant, Object.keys(controle).length ? controle : null);
+        await inscrireEvenementTablette(c, { ...ctx, utilisateurId: vendeur }, e, maintenant, Object.keys(controle).length ? controle : null);
         await insererLignes(c, auth.lieuId, e.id, e.details.lignes);
         if (e.type === "annulation") {
           const d = e.details as DetailsAnnulation;
           await inscrireJet(c, {
             lieuId: auth.lieuId,
             type: "ticket_annule",
-            utilisateurId: s.utilisateurId,
+            utilisateurId: vendeur,
             standId: session.stand_id,
             caisseId: id,
             details: { ticket: d.ticketAnnule, montant: formaterMontant(-e.totalTtc), motif: d.motifAnnulation },
@@ -590,8 +602,8 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
   // Réseau nécessaire. La tablette envoie d'abord tout ce qui attend et annonce son dernier rang :
   // la caisse n'est clôturée que si le serveur a bien tout reçu. Une seule transaction (test F4).
   app.post("/api/caisses/:id/cloture", async (req) => {
-    const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);
+    const auth = await exigerAccesCaisse(req, base, id);
     const { jeton, derniereSequence } = corps(ClotureCaisse, req);
     return base.transaction(contexte(auth), async (c) => {
       const k = await lireCaisse(c, auth.lieuId, id);

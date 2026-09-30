@@ -20,6 +20,7 @@ const DOUBLONS: Record<string, string> = {
   caisse_numero_unique: "Ce numéro de caisse est déjà utilisé.",
   produit_tarif_date_unique: "Un tarif existe déjà à cette date d'effet exacte pour ce produit.",
   utilisateur_email_unique: "Un compte existe déjà avec cette adresse e-mail.",
+  caissiere_nom_unique: "Une fiche porte déjà ce nom : ajoute l'initiale du nom de famille pour les distinguer sur la tablette.",
 };
 
 export function traduireErreurBase(erreur: unknown): ErreurMetier | null {

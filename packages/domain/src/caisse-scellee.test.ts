@@ -83,6 +83,34 @@ describe("vente sans réseau — la tablette scelle (§15.97)", () => {
   });
 });
 
+describe("comptes des caissières — chaque ticket porte la personne connectée (§15.100)", () => {
+  const julie = "88888888-8888-4888-8888-888888888888";
+
+  it("la caissière connectée est scellée sur son ticket, à la place de celle qui a ouvert la caisse", () => {
+    const a = vendre(ouverture, 1, { utilisateurId: julie });
+    expect(a.evenement.utilisateurId).toBe(julie);
+    expect(versEvenementCaisse(ctx, a.evenement).utilisateurId).toBe(julie);
+    expect(controlerEvenementTablette(ctx, ouverture, a.evenement, null)).toBeNull();
+    // Sans personne précisée (tickets d'avant les comptes), c'est celle de l'ouverture.
+    expect(versEvenementCaisse(ctx, vendre(ouverture, 1).evenement).utilisateurId).toBe(ctx.utilisateurId);
+  });
+
+  it("[F] attribuer après coup un ticket à une autre personne casse l'empreinte", () => {
+    const a = vendre(ouverture, 1, { utilisateurId: julie });
+    expect(controlerEvenementTablette(ctx, ouverture, { ...a.evenement, utilisateurId: ctx.utilisateurId }, null)).toBe("empreinte invalide");
+    const sansNom = { ...a.evenement };
+    delete sansNom.utilisateurId;
+    expect(controlerEvenementTablette(ctx, ouverture, sansNom, null)).toBe("empreinte invalide");
+  });
+
+  it("une annulation porte la personne qui annule, pas celle qui a vendu", () => {
+    const a = vendre(ouverture, 1, { utilisateurId: julie });
+    const x = scellerAnnulation(ctx, a.tete, a.evenement, { id: "99999999-9999-4999-8999-999999999999", motif: "Erreur de saisie", horodatage: heure(2), utilisateurId: ctx.utilisateurId });
+    expect(x.evenement.utilisateurId).toBe(ctx.utilisateurId);
+    expect(controlerEvenementTablette(ctx, a.tete, x.evenement, a.evenement)).toBeNull();
+  });
+});
+
 describe("vente sans réseau — le serveur refuse ce qui a été trafiqué [F]", () => {
   const a = vendre(ouverture, 1);
   const refus = (e: EvenementTablette, tete: TeteChaine = ouverture) => controlerEvenementTablette(ctx, tete, e, null);

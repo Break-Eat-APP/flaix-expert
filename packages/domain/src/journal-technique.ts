@@ -34,6 +34,12 @@ export const TYPES_JET = {
   verification_integrite: "Vérification d'intégrité",
   caisse_reprise: "Caisse reprise sur un autre appareil",
   tickets_hors_ligne_recus: "Tickets enregistrés hors ligne reçus",
+  caissiere_creee: "Fiche de caissière créée",
+  caissiere_modifiee: "Fiche de caissière modifiée",
+  code_caissiere_renouvele: "Nouveau code de caissière",
+  connexion_bloquee: "Connexion bloquée (trop de codes erronés)",
+  appareil_enregistre: "Tablette enregistrée comme caisse",
+  appareil_retire: "Tablette retirée",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

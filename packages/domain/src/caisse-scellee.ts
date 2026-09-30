@@ -66,6 +66,11 @@ export interface DetailsAnnulation {
 /** Un ticket scellé par la tablette, tel qu'il est gardé en mémoire et envoyé au serveur. */
 export interface EvenementTablette {
   id: string;
+  /**
+   * Personne connectée sur la tablette au moment de la vente (§15.100) ; absente, c'est celle
+   * qui a ouvert la caisse (tickets scellés avant les comptes des caissières).
+   */
+  utilisateurId?: string;
   sequence: number;
   numeroTicket: number;
   numeroJustificatif: string;
@@ -98,7 +103,7 @@ export function versEvenementCaisse(ctx: ContexteScellement, e: Omit<EvenementTa
     standId: ctx.standId,
     caisseId: ctx.caisseId,
     evenementId: ctx.evenementId,
-    utilisateurId: ctx.utilisateurId,
+    utilisateurId: e.utilisateurId ?? ctx.utilisateurId,
     refEvenement: e.refEvenement,
     modeReglement: e.modeReglement,
     totalTtc: e.totalTtc,
@@ -109,7 +114,7 @@ export function versEvenementCaisse(ctx: ContexteScellement, e: Omit<EvenementTa
 function sceller(
   ctx: ContexteScellement,
   tete: TeteChaine,
-  partiel: Pick<EvenementTablette, "id" | "type" | "refEvenement" | "modeReglement" | "totalTtc" | "details"> & { horodatage: Date },
+  partiel: Pick<EvenementTablette, "id" | "type" | "refEvenement" | "modeReglement" | "totalTtc" | "details"> & { horodatage: Date; utilisateurId?: string },
 ): { evenement: EvenementTablette; tete: TeteChaine } {
   // L'heure d'un ticket ne précède jamais celle du ticket précédent de la même caisse.
   const avant = tete.horodatage ? Date.parse(tete.horodatage) : 0;
@@ -117,6 +122,7 @@ function sceller(
   const numeroTicket = tete.dernierTicket + 1;
   const sansEmpreinte = {
     id: partiel.id,
+    ...(partiel.utilisateurId ? { utilisateurId: partiel.utilisateurId } : {}),
     sequence: tete.sequence + 1,
     numeroTicket,
     numeroJustificatif: numeroJustificatif(anneeParis(horodatage), ctx.numeroCaisse, numeroTicket),
@@ -137,6 +143,8 @@ function sceller(
 
 export interface EntreeVente {
   id: string;
+  /** Personne connectée qui encaisse (§15.100). */
+  utilisateurId?: string;
   lignes: LigneTarifee[];
   ajustement: Ajustement;
   modeReglement: ModeReglement;
@@ -171,7 +179,7 @@ function detailsDeVente(v: Omit<EntreeVente, "id" | "horodatage">): { details: D
 /** Scelle une vente sur la tablette. Les contrôles de saisie (motif, espèces suffisantes…) sont faits avant, à l'écran. */
 export function scellerVente(ctx: ContexteScellement, tete: TeteChaine, v: EntreeVente): { evenement: EvenementTablette; tete: TeteChaine } {
   const { details, total } = detailsDeVente(v);
-  return sceller(ctx, tete, { id: v.id, type: "vente", refEvenement: null, modeReglement: v.modeReglement, totalTtc: total, details, horodatage: v.horodatage });
+  return sceller(ctx, tete, { id: v.id, utilisateurId: v.utilisateurId, type: "vente", refEvenement: null, modeReglement: v.modeReglement, totalTtc: total, details, horodatage: v.horodatage });
 }
 
 function detailsInverses(origine: EvenementTablette, motif: string): DetailsAnnulation {
@@ -192,10 +200,11 @@ export function scellerAnnulation(
   ctx: ContexteScellement,
   tete: TeteChaine,
   origine: EvenementTablette,
-  a: { id: string; motif: string; horodatage: Date },
+  a: { id: string; motif: string; horodatage: Date; utilisateurId?: string },
 ): { evenement: EvenementTablette; tete: TeteChaine } {
   return sceller(ctx, tete, {
     id: a.id,
+    utilisateurId: a.utilisateurId,
     type: "annulation",
     refEvenement: origine.id,
     modeReglement: origine.modeReglement,

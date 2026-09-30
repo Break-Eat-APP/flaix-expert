@@ -14,6 +14,7 @@ import { routesProduits } from "./routes/produits.ts";
 import { routesJournal } from "./routes/journal.ts";
 import { routesEvenements } from "./routes/evenements.ts";
 import { routesCaisse } from "./routes/caisse.ts";
+import { routesEquipe } from "./routes/equipe.ts";
 
 const METHODES_MODIFIANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -46,7 +47,15 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
     const jeton = req.cookies[NOM_COOKIE];
     if (!jeton) return;
     const session = await base.transaction({}, async (c) => {
-      const { rows } = await c.query<{ utilisateur_id: string; lieu_id: string; role: "directeur" | "operateur" | "verificateur"; nom: string; email: string }>(
+      const { rows } = await c.query<{
+        utilisateur_id: string;
+        lieu_id: string;
+        role: "directeur" | "operateur" | "verificateur";
+        nom: string;
+        email: string | null;
+        appareil_id: string | null;
+        appareil_caisse_id: string | null;
+      }>(
         "SELECT * FROM session_valide($1)",
         [empreinteJeton(jeton)],
       );
@@ -60,6 +69,8 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
         nom: session.nom,
         email: session.email,
         jetonEmpreinte: empreinteJeton(jeton),
+        appareilId: session.appareil_id,
+        appareilCaisseId: session.appareil_caisse_id,
       };
     }
   });
@@ -88,6 +99,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesJournal, { base });
   await app.register(routesEvenements, { base });
   await app.register(routesCaisse, { base });
+  await app.register(routesEquipe, { base });
 
   return app;
 }

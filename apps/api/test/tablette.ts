@@ -42,7 +42,7 @@ export const ligne = (p: Produit, quantite = 1) => ({
 export function vendreHorsLigne(
   t: Tablette,
   lignes: ReturnType<typeof ligne>[],
-  extra: { modeReglement?: ModeReglement; montantDonne?: number | null; ajustement?: Partial<Ajustement>; horodatage?: Date } = {},
+  extra: { modeReglement?: ModeReglement; montantDonne?: number | null; ajustement?: Partial<Ajustement>; horodatage?: Date; utilisateurId?: string } = {},
 ): EvenementTablette {
   const { evenement, tete } = scellerVente(t.reprise.contexte, t.tete, {
     id: randomUUID(),
@@ -51,6 +51,7 @@ export function vendreHorsLigne(
     modeReglement: extra.modeReglement ?? "carte",
     montantDonne: extra.montantDonne ?? null,
     horodatage: extra.horodatage ?? new Date(),
+    utilisateurId: extra.utilisateurId,
   });
   t.tete = tete;
   t.tickets.push(evenement);
@@ -58,8 +59,8 @@ export function vendreHorsLigne(
   return evenement;
 }
 
-export function annulerHorsLigne(t: Tablette, origine: EvenementTablette, motif: string): EvenementTablette {
-  const { evenement, tete } = scellerAnnulation(t.reprise.contexte, t.tete, origine, { id: randomUUID(), motif, horodatage: new Date() });
+export function annulerHorsLigne(t: Tablette, origine: EvenementTablette, motif: string, utilisateurId?: string): EvenementTablette {
+  const { evenement, tete } = scellerAnnulation(t.reprise.contexte, t.tete, origine, { id: randomUUID(), motif, horodatage: new Date(), utilisateurId });
   t.tete = tete;
   t.tickets.push(evenement);
   t.attente.push(evenement);

@@ -207,14 +207,14 @@ describe("produits et tarifs datés", () => {
 });
 
 describe("droits", () => {
-  it("B2 [F] — un opérateur n'accède pas à la configuration, et la tentative est journalisée", async () => {
+  it("[F] — un compte caissière ne se connecte jamais par e-mail, même avec le bon mot de passe (§15.100)", async () => {
     const op = await ajouterMembre(proprietaire, lieu.lieuId, "operateur");
-    const { cookie: cookieOp } = await connecter(op.email);
-    expect((await appel("GET", "/api/stands", undefined, cookieOp)).statut).toBe(403);
-    expect((await appel("POST", "/api/stands", { nom: "Stand pirate" }, cookieOp)).statut).toBe(403);
-    const jet = (await appel<EntreeJournalTechnique[]>("GET", "/api/journal-technique")).corps;
-    expect(jet.filter((e) => e.type === "acces_refuse").length).toBeGreaterThanOrEqual(2);
+    const { r, cookie: cookieOp } = await connecter(op.email);
+    expect(r.statusCode).toBe(403);
+    expect(r.json().erreur).toContain("code");
+    expect(cookieOp).toBe("");
   });
+  // B2 (une caissière n'accède pas à la configuration, tentative journalisée) : test/caissieres.test.ts.
 
   it("[F] — le directeur d'un autre lieu ne peut ni lire ni modifier ce lieu", async () => {
     const autre = await creerLieuDeTest(proprietaire);

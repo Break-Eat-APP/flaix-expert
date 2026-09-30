@@ -10,9 +10,12 @@ import type { ContexteScellement, TeteChaine } from "./caisse-scellee.ts";
 export type Role = "directeur" | "operateur" | "verificateur";
 
 export interface SessionInfo {
-  utilisateur: { id: string; nom: string; email: string };
+  /** E-mail absent pour une caissière, qui se connecte avec un code (dossier §15.100). */
+  utilisateur: { id: string; nom: string; email: string | null };
   lieu: { id: string; nom: string };
   role: Role;
+  /** Caissière : la tablette enregistrée où elle s'est connectée, et la seule caisse qu'elle peut utiliser. */
+  appareil: { id: string; caisseId: string } | null;
   /** Hors production, l'écran affiche un bandeau permanent (aucune vente réelle). */
   environnement: "developpement" | "test" | "production";
 }
@@ -232,4 +235,44 @@ export interface StatsCaisse {
 export interface VerificationCaisses {
   ok: boolean;
   caisses: { caisseId: string; numero: number; ok: boolean; maillons: number; rupture: { sequence: number; raison: string } | null }[];
+}
+
+// ---------------------------------------------------------------------------
+// Caissières et tablettes enregistrées (dossier §15.100)
+// ---------------------------------------------------------------------------
+
+export interface Caissiere {
+  id: string;
+  nom: string;
+  actif: boolean;
+  /** Fiche bloquée après 5 codes erronés, jusqu'à cette heure (ou un nouveau code). */
+  bloqueeJusqua: string | null;
+  derniereConnexion: string | null;
+}
+
+/** Réponse à la création d'une fiche ou à un nouveau code : le code n'est remis qu'une seule fois. */
+export interface CodeCaissiere {
+  caissiere: Caissiere;
+  code: string;
+}
+
+export interface AppareilCaisse {
+  id: string;
+  caisseId: string;
+  caisseNumero: number;
+  caisseNom: string | null;
+  standNom: string;
+  enregistrePar: string;
+  enregistreLe: string;
+  retireLe: string | null;
+  derniereConnexion: string | null;
+  /** C'est l'appareil d'où vient la requête. */
+  cetAppareil: boolean;
+}
+
+/** Ce que montre une tablette enregistrée avant toute connexion : sa caisse et les caissières du lieu. */
+export interface AccueilTablette {
+  lieuNom: string;
+  caisse: { id: string; numero: number; nom: string | null; standNom: string };
+  caissieres: { id: string; nom: string }[];
 }
