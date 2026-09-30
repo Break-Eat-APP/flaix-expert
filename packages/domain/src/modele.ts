@@ -275,14 +275,45 @@ export interface SessionACloturer {
   /** null : caisse « carte uniquement », pas de tiroir à compter. */
   fond: Centimes | null;
   attendu: Centimes | null;
+  /** Espèces retirées du tiroir et portées au coffre pendant le match (§15.106). */
+  remontees: RemonteeCoffre[];
+  /** Total net des remontées (annulations déduites). */
+  totalRemonte: Centimes;
   comptage: ComptageEspeces | null;
   rectifications: ComptageEspeces[];
+}
+
+export interface RemonteeCoffre {
+  id: string;
+  montant: Centimes;
+  par: string;
+  le: string;
+  /** Remontée annulée par une écriture inverse (jamais effacée). */
+  annulee: { motif: string; par: string; le: string } | null;
+}
+
+/** Z du coffre de la soirée (§15.106) : attendu = total des remontées du match. */
+export interface ComptageCoffre {
+  id: string;
+  type: "comptage" | "rectification";
+  refComptage: string | null;
+  coupures: Record<string, number>;
+  attendu: Centimes;
+  compte: Centimes;
+  ecart: Centimes;
+  seuil: Centimes;
+  motif: string | null;
+  signature: string | null;
+  par: string;
+  le: string;
 }
 
 export interface ClotureMatch {
   evenement: Evenement;
   seuilEcartEspeces: Centimes;
   sessions: SessionACloturer[];
+  /** Coffre de la soirée : à compter dès qu'il y a eu une remontée. */
+  coffre: { requis: boolean; attendu: Centimes; comptage: ComptageCoffre | null; rectifications: ComptageCoffre[] };
   etapes: {
     /** Toutes les caisses du match sont clôturées. */
     ventes: boolean;

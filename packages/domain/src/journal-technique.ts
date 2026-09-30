@@ -54,6 +54,10 @@ export const TYPES_JET = {
   livraison_recue: "Livraison fournisseur (coût matière recalculé)",
   inventaire_reserve_valide: "Inventaire de la réserve validé",
   comptage_stock_corrige: "Comptage de stock corrigé",
+  remontee_coffre: "Espèces remontées au coffre",
+  remontee_coffre_annulee: "Remontée au coffre annulée",
+  z_coffre_clos: "Z du coffre clôturé (coffre compté)",
+  z_coffre_rectifie: "Rectification du Z du coffre",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

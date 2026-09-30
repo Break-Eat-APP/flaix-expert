@@ -151,6 +151,15 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
       if (sansZ[0]!.n > 0) {
         throw new ErreurMetier(409, `${sansZ[0]!.n} tiroir(s) sans Z : compte les espèces dans Clôtures → Clôture du match avant de clore le match.`);
       }
+      // Espèces remontées au coffre pendant le match : le coffre doit avoir son Z (§15.106).
+      const { rows: coffre } = await c.query<{ remonte: number; compte: boolean }>(
+        `SELECT coalesce((SELECT sum(montant_centimes) FROM sortie_especes WHERE lieu_id = $1 AND evenement_id = $2), 0)::int AS remonte,
+                EXISTS (SELECT 1 FROM comptage_coffre WHERE lieu_id = $1 AND evenement_id = $2 AND type = 'comptage') AS compte`,
+        [auth.lieuId, id],
+      );
+      if (coffre[0]!.remonte !== 0 && !coffre[0]!.compte) {
+        throw new ErreurMetier(409, "Des espèces ont été remontées au coffre : compte le coffre dans Clôtures → Clôture du match avant de clore le match.");
+      }
       // Match avec une mise en place ou un réassort : chaque produit concerné doit être compté (§15.105).
       const restes = await restesDuMatch(c, auth.lieuId, (await listerEvenements(c, auth.lieuId)).find((x) => x.id === id)!);
       if (restes.requis && restes.manquants > 0) {
