@@ -9,6 +9,7 @@ import {
   type DetailsAnnulation,
   type DetailsVente,
   type EcranCaisse,
+  type EditionTicket,
   type EvenementTablette,
   type LigneCalculee,
   type LigneTicketVue,
@@ -325,6 +326,45 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
         [auth.lieuId, evenementId],
       );
       return rows.map(versTicket);
+    });
+  });
+
+  // ---------- Ticket client, sur demande (dossier §15.99) ----------
+  // Aucune caisse n'imprime : le directeur édite le ticket quand un client le demande. Chaque
+  // édition est inscrite au journal technique et numérotée ; à partir de la 2e, c'est un duplicata.
+  app.post("/api/tickets/:id/edition", async (req): Promise<EditionTicket> => {
+    const auth = await exigerDirecteur(req, base);
+    const { id } = ParamId.parse(req.params);
+    return base.transaction(contexte(auth), async (c) => {
+      const { rows } = await c.query<LigneJournalVue>(`${SELECT_TICKET} WHERE j.lieu_id = $1 AND j.id = $2 AND j.type IN ('vente', 'annulation')`, [auth.lieuId, id]);
+      if (!rows[0]) throw introuvable("Ticket");
+      const ticket = versTicket(rows[0]);
+      await verrouiller(c, `edition:${id}`);
+      const { rows: deja } = await c.query<{ n: number }>(
+        "SELECT count(*)::int AS n FROM journal_technique WHERE lieu_id = $1 AND type = 'ticket_edite' AND details->>'ticketId' = $2",
+        [auth.lieuId, id],
+      );
+      const edition = (deja[0]?.n ?? 0) + 1;
+      await inscrireJet(c, {
+        lieuId: auth.lieuId,
+        type: "ticket_edite",
+        utilisateurId: auth.utilisateurId,
+        standId: ticket.standId,
+        caisseId: ticket.caisseId,
+        details: { ticketId: id, ticket: ticket.numeroJustificatif, edition, duplicata: edition > 1 },
+      });
+      const { rows: lieu } = await c.query<{ nom: string; raison_sociale: string | null; siret: string | null; tva_intracom: string | null; adresse: string | null; code_postal: string | null; ville: string | null }>(
+        "SELECT nom, raison_sociale, siret, tva_intracom, adresse, code_postal, ville FROM lieu WHERE id = $1",
+        [auth.lieuId],
+      );
+      const l = lieu[0]!;
+      return {
+        edition,
+        editeLe: new Date().toISOString(),
+        editePar: auth.nom,
+        lieu: { nom: l.nom, raisonSociale: l.raison_sociale, siret: l.siret, tvaIntracom: l.tva_intracom, adresse: l.adresse, codePostal: l.code_postal, ville: l.ville },
+        ticket,
+      };
     });
   });
 

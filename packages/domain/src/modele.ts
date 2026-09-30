@@ -232,6 +232,19 @@ export interface StatsCaisse {
   dernierTicket: string | null;
 }
 
+/**
+ * Ticket client produit par le directeur, à la demande du client (dossier §15.99) : aucune caisse
+ * n'imprime de ticket. Chaque édition est inscrite au journal technique ; à partir de la
+ * deuxième, le ticket porte « DUPLICATA n° N ».
+ */
+export interface EditionTicket {
+  edition: number;
+  editeLe: string;
+  editePar: string;
+  lieu: IdentiteLieu;
+  ticket: TicketVue;
+}
+
 export interface VerificationCaisses {
   ok: boolean;
   caisses: { caisseId: string; numero: number; ok: boolean; maillons: number; rupture: { sequence: number; raison: string } | null }[];

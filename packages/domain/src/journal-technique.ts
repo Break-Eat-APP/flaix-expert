@@ -40,6 +40,7 @@ export const TYPES_JET = {
   connexion_bloquee: "Connexion bloquée (trop de codes erronés)",
   appareil_enregistre: "Tablette enregistrée comme caisse",
   appareil_retire: "Tablette retirée",
+  ticket_edite: "Ticket client édité (sur demande)",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

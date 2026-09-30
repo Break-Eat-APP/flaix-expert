@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, ShieldCheck } from "lucide-react";
 import { formaterMontant, libelleTauxTva, MOTIFS_AJUSTEMENT, type Evenement, type StatsCaisse, type TauxTvaPb, type TicketVue, type VerificationCaisses } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
+import { BoutonTicketClient } from "./TicketClient.tsx";
 
 const ETAT = { a_venir: "à venir", ouvert: "ouvert", clos: "clos" } as const;
 
@@ -475,6 +476,7 @@ function DetailTicket({ ticket: t, matchOuvert }: { ticket: TicketVue; matchOuve
       </div>
       <div className="empreinte" style={{ marginTop: 6 }}>Empreinte {t.empreinte}</div>
       <Signalements ticket={t} detail />
+      <BoutonTicketClient ticket={t} />
       {t.type === "vente" && t.lie && <div className="message message-info">Annulé par le ticket {t.lie.numeroJustificatif}.</div>}
       {t.type === "vente" && !t.lie && matchOuvert && (
         <div className="aide" style={{ marginTop: 8 }}>

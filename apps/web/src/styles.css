@@ -373,3 +373,21 @@ input[aria-invalid="true"] { border-color: var(--red); }
 .code-remis { border: 2px dashed var(--violet); border-radius: 14px; padding: 14px 16px; background: var(--violet-soft); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
 .code-remis .code { font-size: 30px; font-weight: 800; letter-spacing: 0.3em; color: var(--violet); font-variant-numeric: tabular-nums; }
 .code-remis p { margin: 0; font-size: 12.5px; flex: 1; min-width: 200px; }
+
+/* Ticket client édité sur demande (dossier §15.99) : à l'écran dans une fenêtre, et seul à l'impression. */
+.voile { position: fixed; inset: 0; background: rgba(20, 16, 36, 0.45); display: grid; place-items: center; padding: 16px; z-index: 50; overflow-y: auto; }
+.fenetre-ticket { background: var(--surface); border-radius: 16px; padding: 18px; width: 100%; max-width: 380px; max-height: calc(100vh - 32px); overflow-y: auto; overflow-x: hidden; }
+.ticket-impression { overflow-wrap: anywhere; background: #fff; color: #111; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px; line-height: 1.45; padding: 14px 12px; border: 1px solid var(--border); border-radius: 8px; }
+.ticket-impression hr { border: 0; border-top: 1px dashed #999; margin: 8px 0; }
+.ticket-centre { text-align: center; }
+.ticket-ligne { display: flex; justify-content: space-between; gap: 10px; }
+.ticket-detail { font-size: 10.5px; color: #555; }
+.ticket-duplicata, .ticket-essai { font-weight: 800; letter-spacing: 0.08em; }
+.ticket-tva { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 2px 8px; font-size: 11px; text-align: right; }
+.ticket-tva > span:nth-child(4n + 1) { text-align: left; }
+@media print {
+  body * { visibility: hidden; }
+  .ticket-impression, .ticket-impression * { visibility: visible; }
+  .ticket-impression { position: absolute; left: 0; top: 0; width: 72mm; border: 0; padding: 0; }
+  .non-imprime { display: none !important; }
+}

@@ -4,7 +4,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
-import type { AccueilTablette, AppareilCaisse, Caissiere, CodeCaissiere, EntreeJournalTechnique, Evenement, Produit, RepriseCaisse, SessionInfo, Stand, TicketVue } from "@flaix/domain";
+import type { AccueilTablette, AppareilCaisse, Caissiere, CodeCaissiere, EditionTicket, EntreeJournalTechnique, Evenement, Produit, RepriseCaisse, SessionInfo, Stand, TicketVue } from "@flaix/domain";
 import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { MOT_DE_PASSE_TEST, basesDeTest, codeErreur, creerLieuDeTest } from "./aide.ts";
@@ -293,5 +293,31 @@ describe("[F] la base elle-même refuse ce que le serveur ne doit pas faire", ()
     expect(await codeErreur(app.transaction(ctx(), (c) => c.query("UPDATE appareil_caisse SET retire_le = NULL, retire_par = NULL WHERE id = $1", [id])))).toBe("23514");
     expect(await codeErreur(app.transaction(ctx(), (c) => c.query("DELETE FROM appareil_caisse WHERE id = $1", [id])))).toBe("42501");
     expect(await codeErreur(proprietaire.transaction({}, (c) => c.query("DELETE FROM appareil_caisse WHERE id = $1", [id])))).toBe("42501");
+  });
+});
+
+describe("ticket client sur demande (dossier §15.99)", () => {
+  it("le directeur édite le ticket ; chaque édition est journalisée et numérotée, la 2e est un duplicata", async () => {
+    const t = (await parDirecteur<TicketVue[]>("GET", `/api/tickets?evenementId=${match.id}`)).corps.find((x) => x.operateur === "Marc D.")!;
+    const e1 = await parDirecteur<EditionTicket>("POST", `/api/tickets/${t.id}/edition`);
+    expect(e1.statut).toBe(200);
+    expect(e1.corps).toMatchObject({ edition: 1, ticket: { numeroJustificatif: t.numeroJustificatif, operateur: "Marc D.", totalTtc: 1200 } });
+    expect(e1.corps.lieu.nom).toContain("Lieu de test");
+    const e2 = await parDirecteur<EditionTicket>("POST", `/api/tickets/${t.id}/edition`);
+    expect(e2.corps.edition).toBe(2);
+    const editions = (await jet()).filter((e) => e.type === "ticket_edite");
+    expect(editions.map((e) => e.details.edition).sort()).toEqual([1, 2]);
+    expect(editions.find((e) => e.details.edition === 2)!.details.duplicata).toBe(true);
+  });
+
+  it("[F] une caissière ne peut pas éditer de ticket, et un ticket d'un autre lieu est introuvable", async () => {
+    const t = (await parDirecteur<TicketVue[]>("GET", `/api/tickets?evenementId=${match.id}`)).corps[0]!;
+    const julieSession = joindre((await connecterCaissiere(tablette1, julie.caissiere.id, julie.code)).session, tablette1);
+    // La tablette a été retirée plus haut : la caissière ne peut même plus se connecter ; sans session, refus.
+    expect((await requete(julieSession, "POST", `/api/tickets/${t.id}/edition`)).statut).toBe(401);
+    const autre = await creerLieuDeTest(proprietaire);
+    const r = await serveur.inject({ method: "POST", url: "/api/auth/connexion", headers: EN_TETES, payload: { email: autre.email, motDePasse: MOT_DE_PASSE_TEST } });
+    const autreDirecteur = `fx_session=${r.cookies.find((k) => k.name === "fx_session")!.value}`;
+    expect((await requete(autreDirecteur, "POST", `/api/tickets/${t.id}/edition`)).statut).toBe(404);
   });
 });
