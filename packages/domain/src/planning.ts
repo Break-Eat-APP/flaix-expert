@@ -30,8 +30,9 @@ export function coutPlage(debut: string, fin: string, tauxHoraire: number | null
   return tauxHoraire === null ? null : Math.round((dureeMinutes(debut, fin) * tauxHoraire) / 60);
 }
 
-/** 375 minutes → « 6 h 15 ». */
+/** 375 minutes → « 6 h 15 » ; 15 minutes → « 15 min ». */
 export function formaterDuree(minutes: number): string {
   const h = Math.floor(minutes / 60), m = minutes % 60;
+  if (h === 0) return `${m} min`;
   return m ? `${h} h ${String(m).padStart(2, "0")}` : `${h} h`;
 }

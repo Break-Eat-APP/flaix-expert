@@ -2,69 +2,57 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { KeyRound, Tablet, UserPlus } from "lucide-react";
-import type { AppareilCaisse, Caissiere, CodeCaissiere } from "@flaix/domain";
+import { ROLES_EQUIPE, formaterMontant, lireMontant, montantPourSaisie, type AppareilCaisse, type Employe, type EmployeCree, type RoleEquipe } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
+import { MasseSalarialeVue, PlanningVue } from "./Planning.tsx";
 
-type Onglet = "fiches" | "tablettes" | "planning" | "masse";
-
+type Onglet = "fiches" | "planning" | "masse" | "tablettes";
 const heure = new Intl.DateTimeFormat("fr-FR", { timeStyle: "short", timeZone: "Europe/Paris" });
+const libelleStatut = (e: Pick<Employe, "statut" | "agence">) => (e.statut === "interimaire" ? `Intérimaire${e.agence ? ` · ${e.agence}` : ""}` : "Salarié");
 
 /**
- * Équipe (organisation en 6 entrées, dossier §15.95). Construit : les fiches des caissières et
- * leur code personnel, les tablettes enregistrées comme caisse (§15.100). Planning et masse
- * salariale viendront avec le module Personnel (étape 5).
+ * Équipe (organisation en 6 entrées, dossier §15.95) : fiches employés et leur accès caisse
+ * (§15.100, §15.104), planning par match, masse salariale, tablettes enregistrées comme caisse.
  */
 export function Equipe() {
   const [onglet, setOnglet] = useState<Onglet>("fiches");
-  const bouton = (id: Onglet, libelle: string, aVenir = false) => (
+  const bouton = (id: Onglet, libelle: string) => (
     <button className={`onglet${onglet === id ? " actif" : ""}`} onClick={() => setOnglet(id)}>
       {libelle}
-      {aVenir && <span className="etiquette-a-venir" style={{ marginLeft: 8 }}>à venir</span>}
     </button>
   );
   return (
     <>
-      <EntetePage titre="Équipe" description="Qui encaisse, sur quelle tablette." />
+      <EntetePage titre="Équipe" description="Qui travaille, où, et combien ça coûte." />
       <div className="onglets">
         {bouton("fiches", "Fiches")}
+        {bouton("planning", "Planning")}
+        {bouton("masse", "Masse salariale")}
         {bouton("tablettes", "Tablettes")}
-        {bouton("planning", "Planning", true)}
-        {bouton("masse", "Masse salariale", true)}
       </div>
-      {onglet === "fiches" ? (
-        <Fiches />
-      ) : onglet === "tablettes" ? (
-        <Tablettes />
-      ) : (
-        <Carte>
-          <EtatVide titre="Pas encore construit">
-            {onglet === "planning" ? "Le planning des matchs (qui travaille où, à quelle heure)" : "Le coût du personnel par match"} arrivera avec le module Personnel.
-          </EtatVide>
-        </Carte>
-      )}
+      {onglet === "fiches" ? <Fiches /> : onglet === "planning" ? <PlanningVue /> : onglet === "masse" ? <MasseSalarialeVue /> : <Tablettes />}
       <Regles>
         <ul>
-          <li><strong>Fiche de caissière</strong> : un prénom et un nom, sans e-mail ni mot de passe. Deux fiches ne peuvent pas porter le même nom : la caissière se reconnaît dans la liste de la tablette.</li>
-          <li><strong>Code personnel</strong> : 4 chiffres tirés au hasard, affichés une seule fois à la création ou avec « Nouveau code ». Donne-le à la personne concernée seulement. FlaiX ne le garde pas : s'il est oublié, donne un nouveau code (l'ancien cesse de fonctionner).</li>
-          <li><strong>Le code ne marche que sur une tablette enregistrée</strong> comme caisse. Une caissière connectée ne voit que l'écran de vente de cette caisse : ni résultats, ni coûts, ni paramètres.</li>
-          <li><strong>Blocage</strong> : 5 codes faux de suite bloquent la fiche 15 minutes. Un nouveau code la débloque aussitôt.</li>
-          <li><strong>Désactiver</strong> une fiche la retire des tablettes et ferme ses connexions ouvertes. Elle n'est jamais supprimée : ses tickets portent son nom.</li>
-          <li><strong>Enregistrer une tablette</strong> : sur la tablette posée au stand, connecte-toi avec ton e-mail, ouvre Caisses → la caisse, puis « Enregistrer cet appareil ». Déconnecte-toi : la tablette affiche alors la liste des caissières.</li>
-          <li><strong>Retirer</strong> une tablette (perdue, remplacée) : les caissières qui y sont connectées sont déconnectées et le code n'y fonctionne plus.</li>
-          <li>Chaque création, modification, nouveau code, connexion, code refusé, blocage, enregistrement et retrait de tablette est inscrit au journal technique.</li>
+          <li><strong>Fiche employé</strong> : nom, statut (salarié ou intérimaire et son agence), rôle habituel, <strong>taux horaire</strong> — coût horaire chargé pour un salarié, taux facturé par l'agence pour un intérimaire. Un employé ne se supprime pas : il devient inactif, son nom et son taux restent sur les matchs passés.</li>
+          <li><strong>Accès caisse</strong> (facultatif) : un code personnel à 4 chiffres, affiché une seule fois, qui ne fonctionne que sur une tablette enregistrée comme caisse. La personne ne voit que l'écran de vente de cette caisse, jamais les coûts ni les salaires. 5 codes faux bloquent l'accès 15 minutes ; un nouveau code le débloque. Désactiver la fiche coupe l'accès.</li>
+          <li><strong>Planning</strong> : chaque affectation place un employé sur un match, à un stand et une caisse (ou un autre poste), avec des heures <strong>prévues</strong>. Les heures <strong>réelles</strong> valent les prévues tant qu'elles ne sont pas corrigées ; une correction garde son auteur et son heure. Une fin avant le début = après minuit.</li>
+          <li><strong>Coût</strong> = durée réelle × taux horaire. Le taux est <strong>figé sur l'affectation</strong> à sa création : changer le taux d'une fiche ne réécrit pas les matchs déjà planifiés. Sans taux : « taux manquant », jamais zéro.</li>
+          <li><strong>Masse salariale</strong> = somme des coûts réels du planning, par match, par statut, par rôle. Elle est déduite dans Résultats → Finances.</li>
+          <li><strong>Tablettes</strong> : sur la tablette du stand, connecte-toi avec ton e-mail, ouvre Caisses → la caisse, puis « Enregistrer cet appareil ». Retirer une tablette déconnecte les caissières qui y sont.</li>
+          <li>Chaque création, modification, accès donné ou retiré, affectation, correction d'heures et retrait est inscrit au journal technique.</li>
         </ul>
       </Regles>
     </>
   );
 }
 
-function CodeRemis({ remis, fermer }: { remis: CodeCaissiere; fermer: () => void }) {
+function CodeRemis({ remis, fermer }: { remis: { nom: string; code: string }; fermer: () => void }) {
   return (
     <div className="code-remis" role="status">
       <span className="code">{remis.code}</span>
       <p>
-        Code de <strong>{remis.caissiere.nom}</strong>. Donne-le-lui maintenant : <strong>il ne sera plus jamais affiché</strong>.
+        Code de caisse de <strong>{remis.nom}</strong>. Donne-le-lui maintenant : <strong>il ne sera plus jamais affiché</strong>.
       </p>
       <button className="btn" onClick={fermer}>
         C'est noté
@@ -73,103 +61,209 @@ function CodeRemis({ remis, fermer }: { remis: CodeCaissiere; fermer: () => void
   );
 }
 
+interface Brouillon {
+  nom: string;
+  statut: "salarie" | "interimaire";
+  agence: string;
+  role: RoleEquipe;
+  taux: string;
+  acces: boolean;
+}
+const VIDE: Brouillon = { nom: "", statut: "salarie", agence: "", role: "Caissier", taux: "", acces: false };
+const versBrouillon = (e: Employe): Brouillon => ({ nom: e.nom, statut: e.statut, agence: e.agence ?? "", role: e.role, taux: e.tauxHoraire === null ? "" : montantPourSaisie(e.tauxHoraire), acces: false });
+
+function ChampsFiche({ b, changer, avecAcces }: { b: Brouillon; changer: (b: Brouillon) => void; avecAcces: boolean }) {
+  const tauxInvalide = b.taux.trim() !== "" && lireMontant(b.taux) === null;
+  return (
+    <div className="grille-champs">
+      <label className="champ">
+        <span>Nom *</span>
+        <input type="text" value={b.nom} onChange={(e) => changer({ ...b, nom: e.target.value })} maxLength={60} placeholder="Prénom et initiale (ex. Julie B.)" required />
+      </label>
+      <label className="champ">
+        <span>Statut</span>
+        <select value={b.statut} onChange={(e) => changer({ ...b, statut: e.target.value as Brouillon["statut"] })}>
+          <option value="salarie">Salarié</option>
+          <option value="interimaire">Intérimaire</option>
+        </select>
+      </label>
+      {b.statut === "interimaire" && (
+        <label className="champ">
+          <span>Agence</span>
+          <input type="text" value={b.agence} onChange={(e) => changer({ ...b, agence: e.target.value })} maxLength={80} />
+        </label>
+      )}
+      <label className="champ">
+        <span>Rôle habituel</span>
+        <select value={b.role} onChange={(e) => changer({ ...b, role: e.target.value as RoleEquipe })}>
+          {ROLES_EQUIPE.map((r) => (
+            <option key={r}>{r}</option>
+          ))}
+        </select>
+      </label>
+      <label className="champ">
+        <span>{b.statut === "interimaire" ? "Taux facturé par l'agence (€/h)" : "Coût horaire chargé (€/h)"}</span>
+        <input type="text" inputMode="decimal" value={b.taux} onChange={(e) => changer({ ...b, taux: e.target.value })} placeholder="ex. 17,40" aria-invalid={tauxInvalide} />
+        <small className="aide">Vide = taux manquant (coût non calculé).</small>
+      </label>
+      {avecAcces && (
+        <label className="champ" style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <input type="checkbox" checked={b.acces} onChange={(e) => changer({ ...b, acces: e.target.checked })} />
+          <span style={{ fontSize: 13, color: "var(--text)" }}>Accès caisse (code personnel)</span>
+        </label>
+      )}
+    </div>
+  );
+}
+
+function corpsFiche(b: Brouillon) {
+  return {
+    nom: b.nom.trim(),
+    statut: b.statut,
+    agence: b.statut === "interimaire" ? b.agence.trim() || null : null,
+    role: b.role,
+    tauxHoraire: b.taux.trim() === "" ? null : lireMontant(b.taux),
+  };
+}
+
 function Fiches() {
   const client = useQueryClient();
-  const fiches = useQuery({ queryKey: ["caissieres"], queryFn: () => api.get<Caissiere[]>("/equipe/caissieres") });
-  const [nom, setNom] = useState("");
-  const [remis, setRemis] = useState<CodeCaissiere | null>(null);
-  const [renommer, setRenommer] = useState<{ id: string; nom: string } | null>(null);
-  const actualiser = () => client.invalidateQueries({ queryKey: ["caissieres"] });
+  const fiches = useQuery({ queryKey: ["employes"], queryFn: () => api.get<Employe[]>("/equipe/employes") });
+  const [nouveau, setNouveau] = useState<Brouillon>(VIDE);
+  const [remis, setRemis] = useState<{ nom: string; code: string } | null>(null);
+  const [edition, setEdition] = useState<{ id: string; b: Brouillon } | null>(null);
+  const actualiser = () => client.invalidateQueries({ queryKey: ["employes"] });
+  const apresCode = (r: EmployeCree | { caissiere: { nom: string }; code: string }) => {
+    const nom = "employe" in r ? r.employe.nom : r.caissiere.nom;
+    if (r.code) setRemis({ nom, code: r.code });
+    void actualiser();
+  };
 
   const creer = useMutation({
-    mutationFn: (n: string) => api.post<CodeCaissiere>("/equipe/caissieres", { nom: n }),
+    mutationFn: (b: Brouillon) => api.post<EmployeCree>("/equipe/employes", { ...corpsFiche(b), accesCaisse: b.acces }),
     onSuccess: (r) => {
-      setRemis(r);
-      setNom("");
-      void actualiser();
-    },
-  });
-  const nouveauCode = useMutation({
-    mutationFn: (id: string) => api.post<CodeCaissiere>(`/equipe/caissieres/${id}/code`),
-    onSuccess: (r) => {
-      setRemis(r);
-      void actualiser();
+      apresCode(r);
+      setNouveau(VIDE);
     },
   });
   const modifier = useMutation({
-    mutationFn: ({ id, ...m }: { id: string; nom?: string; actif?: boolean }) => api.patch<Caissiere[]>(`/equipe/caissieres/${id}`, m),
+    mutationFn: ({ id, ...m }: { id: string } & Record<string, unknown>) => api.patch<Employe[]>(`/equipe/employes/${id}`, m),
     onSuccess: (l) => {
-      client.setQueryData(["caissieres"], l);
-      setRenommer(null);
+      client.setQueryData(["employes"], l);
+      setEdition(null);
     },
+  });
+  const donnerAcces = useMutation({ mutationFn: (id: string) => api.post<EmployeCree>(`/equipe/employes/${id}/acces`), onSuccess: apresCode });
+  const nouveauCode = useMutation({
+    mutationFn: (caissiereId: string) => api.post<{ caissiere: { nom: string }; code: string }>(`/equipe/caissieres/${caissiereId}/code`),
+    onSuccess: apresCode,
+  });
+  const retirerAcces = useMutation({
+    mutationFn: (id: string) => api.post<Employe[]>(`/equipe/employes/${id}/acces/retrait`),
+    onSuccess: (l) => client.setQueryData(["employes"], l),
   });
 
   function ajouter(e: FormEvent) {
     e.preventDefault();
-    if (nom.trim()) creer.mutate(nom.trim());
+    if (nouveau.nom.trim()) creer.mutate(nouveau);
   }
 
   if (fiches.isPending) return <Chargement />;
   if (fiches.error) return <MessageErreur erreur={fiches.error} />;
   const liste = fiches.data!;
+  const erreur = creer.error ?? modifier.error ?? donnerAcces.error ?? nouveauCode.error ?? retirerAcces.error;
 
   return (
     <>
       {remis && <CodeRemis remis={remis} fermer={() => setRemis(null)} />}
-      <Carte titre="Caissières" description="Chacune se connecte sur la tablette de sa caisse avec son code personnel.">
-        <form className="en-ligne" style={{ marginBottom: 14, flexWrap: "wrap" }} onSubmit={ajouter}>
-          <input type="text" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Prénom et initiale (ex. Julie M.)" maxLength={60} aria-label="Nom de la caissière" style={{ flex: "1 1 220px" }} />
-          <button className="btn" disabled={!nom.trim() || creer.isPending}>
-            <UserPlus size={15} /> Ajouter
-          </button>
+      <Carte titre="Nouvelle fiche" description="Une fiche par personne qui travaille les soirs de match.">
+        <form onSubmit={ajouter}>
+          <ChampsFiche b={nouveau} changer={setNouveau} avecAcces />
+          <div className="ligne-actions">
+            <button className="btn" disabled={!nouveau.nom.trim() || creer.isPending}>
+              <UserPlus size={15} /> Ajouter
+            </button>
+          </div>
         </form>
-        <MessageErreur erreur={creer.error ?? nouveauCode.error ?? modifier.error} />
+      </Carte>
+      <MessageErreur erreur={erreur} />
+      <Carte titre={`Équipe (${liste.filter((e) => e.actif).length} active${liste.filter((e) => e.actif).length > 1 ? "s" : ""})`}>
         {liste.length === 0 ? (
-          <EtatVide titre="Aucune caissière">Ajoute la première fiche : FlaiX lui donne un code à 4 chiffres.</EtatVide>
+          <EtatVide titre="Aucune fiche">Ajoute la première personne de l'équipe ci-dessus.</EtatVide>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {liste.map((c) => (
-              <div key={c.id} className="caisse" style={c.actif ? undefined : { opacity: 0.6 }}>
-                {renommer?.id === c.id ? (
-                  <form
-                    className="en-ligne"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (renommer.nom.trim()) modifier.mutate({ id: c.id, nom: renommer.nom.trim() });
-                    }}
-                  >
-                    <input type="text" value={renommer.nom} onChange={(e) => setRenommer({ id: c.id, nom: e.target.value })} maxLength={60} autoFocus aria-label="Nouveau nom" />
-                    <button className="btn" disabled={modifier.isPending}>Enregistrer</button>
-                    <button type="button" className="btn btn-fantome" onClick={() => setRenommer(null)}>Annuler</button>
-                  </form>
-                ) : (
-                  <strong>{c.nom}</strong>
-                )}
-                {!c.actif ? (
-                  <span className="puce">Désactivée</span>
-                ) : c.bloqueeJusqua ? (
-                  <span className="puce puce-rouge">Bloquée jusqu'à {heure.format(new Date(c.bloqueeJusqua))}</span>
-                ) : (
-                  <span className="puce puce-vert">Active</span>
-                )}
-                <span className="discret" style={{ fontSize: 12 }}>
-                  {c.derniereConnexion ? `Dernière connexion ${formaterDateHeure(c.derniereConnexion)}` : "Jamais connectée"}
-                </span>
-                <div className="actions">
-                  {c.actif && renommer?.id !== c.id && (
-                    <>
-                      <button className="btn btn-fantome" onClick={() => setRenommer({ id: c.id, nom: c.nom })}>Renommer</button>
-                      <button className="btn btn-fantome" disabled={nouveauCode.isPending} onClick={() => nouveauCode.mutate(c.id)}>
-                        <KeyRound size={14} /> Nouveau code
-                      </button>
-                    </>
+            {liste.map((e) =>
+              edition?.id === e.id ? (
+                <form
+                  key={e.id}
+                  className="carte"
+                  style={{ margin: 0, background: "var(--childbg)" }}
+                  onSubmit={(ev) => {
+                    ev.preventDefault();
+                    modifier.mutate({ id: e.id, ...corpsFiche(edition.b) });
+                  }}
+                >
+                  <ChampsFiche b={edition.b} changer={(b) => setEdition({ id: e.id, b })} avecAcces={false} />
+                  <div className="ligne-actions">
+                    <button className="btn" disabled={modifier.isPending || !edition.b.nom.trim()}>
+                      Enregistrer
+                    </button>
+                    <button type="button" className="btn btn-fantome" onClick={() => setEdition(null)}>
+                      Annuler
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div key={e.id} className="caisse" style={e.actif ? undefined : { opacity: 0.6 }}>
+                  <div style={{ minWidth: 150 }}>
+                    <strong>{e.nom}</strong>
+                    <div className="discret" style={{ fontSize: 12 }}>
+                      {libelleStatut(e)} · {e.role}
+                    </div>
+                  </div>
+                  <span className="chiffre" style={{ fontSize: 13 }}>
+                    {e.tauxHoraire === null ? <span className="cout-manquant">taux manquant</span> : `${formaterMontant(e.tauxHoraire)} / h`}
+                  </span>
+                  {!e.actif ? (
+                    <span className="puce">Inactive</span>
+                  ) : !e.acces?.actif ? (
+                    <span className="puce">Sans accès caisse</span>
+                  ) : e.acces.bloqueeJusqua ? (
+                    <span className="puce puce-rouge">Code bloqué jusqu'à {heure.format(new Date(e.acces.bloqueeJusqua))}</span>
+                  ) : (
+                    <span className="puce puce-vert" title={e.acces.derniereConnexion ? `Dernière connexion ${formaterDateHeure(e.acces.derniereConnexion)}` : "Jamais connectée"}>
+                      Accès caisse
+                    </span>
                   )}
-                  <button className={c.actif ? "btn btn-danger" : "btn btn-fantome"} disabled={modifier.isPending} onClick={() => modifier.mutate({ id: c.id, actif: !c.actif })}>
-                    {c.actif ? "Désactiver" : "Réactiver"}
-                  </button>
+                  <div className="actions">
+                    {e.actif && (
+                      <>
+                        <button className="btn btn-fantome" onClick={() => setEdition({ id: e.id, b: versBrouillon(e) })}>
+                          Modifier
+                        </button>
+                        {e.acces?.actif ? (
+                          <>
+                            <button className="btn btn-fantome" disabled={nouveauCode.isPending} onClick={() => nouveauCode.mutate(e.acces!.caissiereId)}>
+                              <KeyRound size={14} /> Nouveau code
+                            </button>
+                            <button className="btn btn-fantome" disabled={retirerAcces.isPending} onClick={() => retirerAcces.mutate(e.id)}>
+                              Retirer l'accès
+                            </button>
+                          </>
+                        ) : (
+                          <button className="btn btn-fantome" disabled={donnerAcces.isPending} onClick={() => donnerAcces.mutate(e.id)}>
+                            <KeyRound size={14} /> Donner un accès caisse
+                          </button>
+                        )}
+                      </>
+                    )}
+                    <button className={e.actif ? "btn btn-danger" : "btn btn-fantome"} disabled={modifier.isPending} onClick={() => modifier.mutate({ id: e.id, actif: !e.actif })}>
+                      {e.actif ? "Désactiver" : "Réactiver"}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ),
+            )}
           </div>
         )}
       </Carte>
@@ -221,11 +315,17 @@ function Tablettes() {
                   {aRetirer === a.id ? (
                     <>
                       <span className="discret" style={{ fontSize: 12 }}>Les caissières connectées dessus seront déconnectées.</span>
-                      <button className="btn btn-danger" disabled={retirer.isPending} onClick={() => retirer.mutate(a.id)}>Confirmer le retrait</button>
-                      <button className="btn btn-fantome" onClick={() => setARetirer(null)}>Annuler</button>
+                      <button className="btn btn-danger" disabled={retirer.isPending} onClick={() => retirer.mutate(a.id)}>
+                        Confirmer le retrait
+                      </button>
+                      <button className="btn btn-fantome" onClick={() => setARetirer(null)}>
+                        Annuler
+                      </button>
                     </>
                   ) : (
-                    <button className="btn btn-danger" onClick={() => setARetirer(a.id)}>Retirer</button>
+                    <button className="btn btn-danger" onClick={() => setARetirer(a.id)}>
+                      Retirer
+                    </button>
                   )}
                 </div>
               </div>

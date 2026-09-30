@@ -424,3 +424,24 @@ input[aria-invalid="true"] { border-color: var(--red); }
 .bilan-ligne.fort + .bilan-ligne.fort { border-top: 0; margin-top: 0; padding-top: 3px; }
 .z-clos { display: flex; gap: 10px; align-items: flex-start; background: var(--childbg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-top: 10px; }
 .rectification { margin-top: 12px; padding: 12px; border: 1px dashed var(--field-border); border-radius: 12px; }
+
+/* Équipe → Planning (dossier §15.104) : tableau éditable et frise horaire par stand. */
+.planning td { vertical-align: top; }
+.planning select { font-size: 12.5px; padding: 5px 6px; min-width: 130px; }
+.planning td:first-child { min-width: 120px; }
+.planning td:nth-child(3) select { min-width: 175px; }
+.empile-champs { display: grid; gap: 4px; justify-items: start; }
+.planning-groupe { font-size: 12.5px; font-weight: 800; color: var(--violet); padding-top: 14px !important; }
+.champ-heure { width: 96px; padding: 4px 6px; font-variant-numeric: tabular-nums; }
+.nouvelle-affectation { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; align-items: end; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border); }
+.frise { min-width: 560px; display: grid; gap: 4px; }
+.frise-groupe { display: grid; gap: 4px; }
+.frise-titre { font-size: 12.5px; font-weight: 800; color: var(--violet); margin-top: 8px; }
+.frise-ligne { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 12.5px; }
+.frise-nom { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.frise-piste { position: relative; height: 24px; }
+.frise-axe .frise-piste { height: 16px; }
+.frise-heure { position: absolute; top: 0; transform: translateX(-50%); font-size: 11px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.frise-repere { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--border); }
+.frise-barre { position: absolute; top: 3px; bottom: 3px; border-radius: 6px; background: var(--violet); color: var(--surface); font-size: 10.5px; font-weight: 700; display: flex; align-items: center; padding: 0 6px; overflow: hidden; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.frise-barre.corrigee { background: var(--amber); }

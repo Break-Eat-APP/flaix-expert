@@ -24,5 +24,6 @@ describe("planning — module 14 (§14, §15.104)", () => {
     expect(minutesHeure("07:30")).toBe(450);
     expect(formaterDuree(375)).toBe("6 h 15");
     expect(formaterDuree(360)).toBe("6 h");
+    expect(formaterDuree(15)).toBe("15 min");
   });
 });
