@@ -20,7 +20,7 @@ const MENU: Entree[] = [
   { id: "resultats", libelle: "Résultats", icone: ChartLine, route: "/" },
   { id: "caisses", libelle: "Caisses", icone: Receipt, route: "/caisses" },
   { id: "stock", libelle: "Stock", icone: Package },
-  { id: "equipe", libelle: "Équipe", icone: Users },
+  { id: "equipe", libelle: "Équipe", icone: Users, route: "/equipe" },
   { id: "clotures", libelle: "Clôtures", icone: Lock, route: "/clotures" },
   { id: "parametres", libelle: "Paramètres", icone: SlidersHorizontal, route: "/parametres" },
 ];
@@ -95,7 +95,7 @@ export function Coquille({ session }: { session: SessionInfo }) {
         <div className="laterale-pied">
           <div className="utilisateur">
             <strong>{session.utilisateur.nom}</strong>
-            <span className="discret">{session.role === "directeur" ? "Directeur" : session.role === "operateur" ? "Opérateur" : "Vérificateur"}</span>
+            <span className="discret">{session.role === "directeur" ? "Directeur" : session.role === "operateur" ? "Caissière" : "Vérificateur"}</span>
           </div>
           <NavLink to="/compte" className={({ isActive }) => `nav-module${isActive ? " active" : ""}`} style={{ marginLeft: 0 }}>
             <KeyRound size={15} /> Mon mot de passe

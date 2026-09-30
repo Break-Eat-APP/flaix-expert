@@ -9,7 +9,7 @@ export const TYPES_JET = {
   lieu_cree: "Lieu créé",
   lieu_identite_modifiee: "Identité du lieu modifiée",
   connexion: "Connexion",
-  connexion_refusee: "Connexion refusée (mot de passe erroné)",
+  connexion_refusee: "Connexion refusée (mot de passe ou code erroné)",
   deconnexion: "Déconnexion",
   mot_de_passe_modifie: "Mot de passe modifié",
   acces_refuse: "Accès refusé (droits insuffisants)",

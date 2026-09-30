@@ -4,7 +4,8 @@ import type { SessionInfo } from "@flaix/domain";
 import { api } from "../api.ts";
 import { MessageErreur } from "../composants/communs.tsx";
 
-export function Connexion() {
+/** Connexion par e-mail (directeur). Sur une tablette enregistrée, un lien ramène à l'écran des caissières. */
+export function Connexion({ versCaissieres }: { versCaissieres?: () => void }) {
   const client = useQueryClient();
   const [email, setEmail] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
@@ -51,6 +52,13 @@ export function Connexion() {
         <p className="aide" style={{ marginTop: 14 }}>
           Chaque connexion est inscrite au journal technique de ton lieu (date, heure, personne).
         </p>
+        {versCaissieres && (
+          <p className="aide" style={{ textAlign: "center" }}>
+            <button type="button" className="btn-lien" onClick={versCaissieres}>
+              ← Connexion des caissières (code)
+            </button>
+          </p>
+        )}
       </form>
     </div>
   );

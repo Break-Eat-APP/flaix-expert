@@ -349,3 +349,27 @@ input[aria-invalid="true"] { border-color: var(--red); }
 .onglets { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
 .onglet { padding: 9px 16px; border-radius: 10px; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
 .onglet.actif { border-color: var(--violet); background: var(--violet); color: #fff; }
+
+/* Connexion des caissières sur une tablette enregistrée (dossier §15.100). */
+.boite-caissiere { width: 100%; max-width: 520px; }
+.boite-caissiere .marque { justify-content: center; margin-bottom: 6px; }
+.tablette-caisse { text-align: center; color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+.tablette-caisse strong { color: var(--ink); }
+.code-noms { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.code-nom { padding: 18px 12px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.code-nom:hover { border-color: var(--violet-dim); background: var(--violet-soft); }
+.code-points { display: flex; justify-content: center; gap: 14px; margin: 10px 0 18px; }
+.code-points span { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--field-border); }
+.code-points span.plein { background: var(--violet); border-color: var(--violet); }
+.code-pave { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 320px; margin: 0 auto; }
+.code-touche { padding: 16px 0; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); font: inherit; font-size: 22px; font-weight: 700; cursor: pointer; font-variant-numeric: tabular-nums; }
+.code-touche:hover:not(:disabled) { background: var(--violet-soft); }
+.code-touche:disabled { opacity: 0.4; cursor: default; }
+.code-touche.discrete { font-size: 13px; font-weight: 600; color: var(--muted); }
+.poste-entete { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.poste-entete .marque-nom { font-size: 15px; }
+.poste-entete .qui { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.poste-contenu { padding: 14px 16px 24px; max-width: 1280px; margin: 0 auto; }
+.code-remis { border: 2px dashed var(--violet); border-radius: 14px; padding: 14px 16px; background: var(--violet-soft); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.code-remis .code { font-size: 30px; font-weight: 800; letter-spacing: 0.3em; color: var(--violet); font-variant-numeric: tabular-nums; }
+.code-remis p { margin: 0; font-size: 12.5px; flex: 1; min-width: 200px; }

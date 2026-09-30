@@ -71,7 +71,9 @@ export function useDeconnexion() {
   return async () => {
     await api.post("/auth/deconnexion").catch(() => undefined);
     oublierSession();
-    client.clear();
+    // La session d'abord (l'écran bascule sur la connexion), puis tout le reste est oublié.
+    // Vider tout le cache avant laissait l'écran affiché sur l'ancienne session.
     client.setQueryData(["session"], null);
+    client.removeQueries({ predicate: (q) => q.queryKey[0] !== "session" });
   };
 }

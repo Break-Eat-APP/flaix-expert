@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Banknote, CreditCard, Lock, ReceiptText, RefreshCw } from "lucide-react";
+import { ArrowLeft, Banknote, CreditCard, Lock, ReceiptText, RefreshCw, Tablet } from "lucide-react";
 import {
   MOTIFS_AJUSTEMENT,
   PALIERS_REMISE_PB,
@@ -15,10 +15,13 @@ import {
   type EcranCaisse as Ecran,
   type MotifAjustement,
   type ModeReglement,
+  type AccueilTablette,
+  type AppareilCaisse,
   type RepriseCaisse,
 } from "@flaix/domain";
 import { api, ErreurApi, formaterDateHeure } from "../../api.ts";
 import { Chargement, MessageErreur, Regles } from "../../composants/communs.tsx";
+import { useSession } from "../../session.tsx";
 import {
   effacerEtat,
   ecrireEtat,
@@ -53,9 +56,11 @@ const horsLigne = (e: unknown) => !(e instanceof ErreurApi) || e.statut === 502 
 /**
  * Écran de caisse (§15.26, §15.97). Une caisse ouverte sur cet appareil fonctionne d'abord avec
  * sa mémoire locale : elle vend, scelle et garde ses tickets même sans réseau, puis les envoie.
+ * `poste` : affiché à une caissière sur sa tablette (§15.100) — sans lien vers le reste du logiciel.
  */
-export function EcranCaisse() {
-  const caisseId = useParams().caisseId!;
+export function EcranCaisse({ caisseId: caisseImposee, poste = false }: { caisseId?: string; poste?: boolean } = {}) {
+  const parametre = useParams().caisseId;
+  const caisseId = (caisseImposee ?? parametre)!;
   const client = useQueryClient();
   const { etat, statut } = useCaisseLocale(caisseId);
   const [cloture, setClotureBrute] = useState<Cloture | "sans-totaux" | null>(null);
@@ -97,9 +102,11 @@ export function EcranCaisse() {
   return (
     <>
       <div className="cmd-topbar">
-        <Link to="/caisses" className="btn btn-fantome">
-          <ArrowLeft size={15} /> Caisses
-        </Link>
+        {!poste && (
+          <Link to="/caisses" className="btn btn-fantome">
+            <ArrowLeft size={15} /> Caisses
+          </Link>
+        )}
         <strong style={{ fontSize: 15 }}>
           Caisse {e.caisse.numero}
           {e.caisse.nom ? ` — ${e.caisse.nom}` : ""} · {e.caisse.standNom}
@@ -116,7 +123,7 @@ export function EcranCaisse() {
       </div>
       {etat && statut.etat === "refus" && (
         <div className="message message-erreur">
-          Envoi refusé par le serveur : {statut.message} Les {etat.attente.length} ticket(s) en attente restent sur cette tablette : ne vide pas le navigateur et préviens Break Eat.{" "}
+          Envoi refusé par le serveur : {statut.message} Les {etat.attente.length} ticket(s) en attente restent sur cette tablette : ne vide pas le navigateur et préviens {poste ? "le directeur" : "Break Eat"}.{" "}
           <button className="btn-lien" onClick={() => void envoyer(caisseId)}>
             Réessayer
           </button>
@@ -124,12 +131,14 @@ export function EcranCaisse() {
       )}
 
       {etat ? (
-        <Vente etat={etat} apresCloture={setCloture} />
+        <Vente etat={etat} apresCloture={setCloture} poste={poste} />
       ) : e.session ? (
-        <AutreAppareil caisseId={caisseId} ecran={e} />
+        <AutreAppareil caisseId={caisseId} ecran={e} poste={poste} />
       ) : (
-        <Ouverture ecran={e} />
+        <Ouverture ecran={e} poste={poste} />
       )}
+
+      {!poste && <TabletteDeCaisse caisseId={caisseId} numero={e.caisse.numero} />}
 
       <Regles>
         <ul>
@@ -142,7 +151,8 @@ export function EcranCaisse() {
           <li><strong>Espèces</strong> : saisis le montant donné par le client ; le rendu monnaie est calculé. <strong>Carte</strong> : valide une fois le paiement accepté sur le terminal (en version test, le paiement carte est déclaré, pas vérifié).</li>
           <li><strong>Numérotation</strong> : chaque caisse numérote ses propres tickets (ex. 2026-C3-000125), sans trou ni doublon, jamais remis à zéro, même sans réseau. Chaque ticket est scellé et chaîné au précédent de la même caisse ; le serveur refait tous les calculs avant de l'inscrire.</li>
           <li><strong>Annulation</strong> : se fait ici, depuis « Tickets de la session », tant que la caisse est ouverte, avec un motif. Le ticket d'origine demeure ; un ticket inverse le référence.</li>
-          <li><strong>Une caisse ouverte appartient à un seul appareil.</strong> Si la tablette casse, « Reprendre la caisse sur cet appareil » depuis un autre : les tickets que l'ancienne n'avait pas encore envoyés ne pourront plus être inscrits.</li>
+          <li><strong>Une caisse ouverte appartient à un seul appareil.</strong> Si la tablette casse, le directeur fait « Reprendre la caisse sur cet appareil » depuis un autre : les tickets que l'ancienne n'avait pas encore envoyés ne pourront plus être inscrits. Une caissière ne peut pas reprendre une caisse.</li>
+          <li><strong>Caissières</strong> : chacune se connecte avec son code sur la tablette enregistrée comme cette caisse ; chaque ticket porte le nom de la personne connectée au moment de la vente. « Changer de caissière » laisse la caisse ouverte, avec ses tickets en mémoire. La connexion demande le réseau ; une caissière déjà connectée continue de vendre sans réseau.</li>
           <li><strong>Clôture de caisse</strong> : demande le réseau ; tous les tickets en attente partent d'abord. Elle fige les totaux de la session (tickets, annulations, espèces, carte, TVA par taux) et calcule les espèces attendues dans le tiroir = fond + espèces encaissées. Le comptage du tiroir se fera ensuite dans Clôtures (étape « Espèces et carte », à venir).</li>
         </ul>
       </Regles>
@@ -165,7 +175,7 @@ async function preparerAppareil(caisseId: string, reprise: RepriseCaisse): Promi
   initialiserEtat(caisseId, reprise, ecran);
 }
 
-function AutreAppareil({ caisseId, ecran }: { caisseId: string; ecran: Ecran }) {
+function AutreAppareil({ caisseId, ecran, poste }: { caisseId: string; ecran: Ecran; poste: boolean }) {
   const client = useQueryClient();
   const [confirmer, setConfirmer] = useState(false);
   const [enCours, setEnCours] = useState(false);
@@ -189,11 +199,17 @@ function AutreAppareil({ caisseId, ecran }: { caisseId: string; ecran: Ecran }) 
         Caisse {ecran.caisse.numero} · {ecran.caisse.standNom}
         {ecran.session ? <> — ouverte par {ecran.session.ouvertePar} le {formaterDateHeure(ecran.session.ouverteLe)}</> : null}
       </p>
-      <div className="message message-alerte" style={{ textAlign: "left" }}>
-        Une caisse ouverte n'appartient qu'à un seul appareil. Reprends-la ici seulement si l'autre appareil est cassé, perdu ou a perdu sa mémoire : les tickets qu'il n'a pas encore envoyés ne pourront plus être inscrits.
-      </div>
+      {poste ? (
+        <div className="message message-alerte" style={{ textAlign: "left" }}>
+          Cette caisse est ouverte sur un autre appareil. Si cette tablette la remplace (autre tablette cassée ou perdue), seul le directeur peut la reprendre ici.
+        </div>
+      ) : (
+        <div className="message message-alerte" style={{ textAlign: "left" }}>
+          Une caisse ouverte n'appartient qu'à un seul appareil. Reprends-la ici seulement si l'autre appareil est cassé, perdu ou a perdu sa mémoire : les tickets qu'il n'a pas encore envoyés ne pourront plus être inscrits.
+        </div>
+      )}
       <MessageErreur erreur={erreur} />
-      {confirmer ? (
+      {poste ? null : confirmer ? (
         <div className="ligne-actions" style={{ justifyContent: "center" }}>
           <button className="btn btn-danger" disabled={enCours} onClick={() => void reprendre()}>
             Confirmer : reprendre la caisse ici
@@ -211,7 +227,7 @@ function AutreAppareil({ caisseId, ecran }: { caisseId: string; ecran: Ecran }) 
   );
 }
 
-function Ouverture({ ecran }: { ecran: Ecran }) {
+function Ouverture({ ecran, poste }: { ecran: Ecran; poste: boolean }) {
   const client = useQueryClient();
   const [fond, setFond] = useState("");
   const [enCours, setEnCours] = useState(false);
@@ -249,9 +265,8 @@ function Ouverture({ ecran }: { ecran: Ecran }) {
       {bloquant ? (
         <div className="message message-alerte" style={{ textAlign: "left" }}>
           {bloquant}{" "}
-          {!ecran.evenementOuvert && (
-            <Link to="/caisses">Ouvrir le match du jour dans Caisses</Link>
-          )}
+          {!ecran.evenementOuvert &&
+            (poste ? "Le directeur ouvre le match du jour ; réessaie ensuite." : <Link to="/caisses">Ouvrir le match du jour dans Caisses</Link>)}
         </div>
       ) : (
         ecran.caisse.especesAutorisees && (
@@ -270,8 +285,9 @@ function Ouverture({ ecran }: { ecran: Ecran }) {
   );
 }
 
-function Vente({ etat, apresCloture }: { etat: EtatCaisseLocale; apresCloture: (c: Cloture | "sans-totaux") => void }) {
+function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresCloture: (c: Cloture | "sans-totaux") => void; poste: boolean }) {
   const ecran = etat.ecran;
+  const vendeur = useSession().data?.utilisateur.id;
   const caisseId = etat.caisseId;
   const produits = ecran.produits;
   const categories = useMemo(() => {
@@ -333,6 +349,7 @@ function Vente({ etat, apresCloture }: { etat: EtatCaisseLocale; apresCloture: (
       modeReglement: paiement,
       montantDonne: paiement === "especes" ? donne : null,
       horodatage: heureCaisse(courant),
+      utilisateurId: vendeur,
     });
     try {
       memoriserTicket(courant, evenement, tete);
@@ -428,7 +445,7 @@ function Vente({ etat, apresCloture }: { etat: EtatCaisseLocale; apresCloture: (
       <div className="carte">
         <div className="etat-vide">
           <strong>Aucun produit vendu à ce stand</strong>
-          Coche ce stand sur tes produits dans <Link to="/parametres/produits">Paramètres → Produits & prix</Link>.
+          {poste ? "Préviens le directeur : aucun produit n'est coché pour ce stand." : <>Coche ce stand sur tes produits dans <Link to="/parametres/produits">Paramètres → Produits & prix</Link>.</>}
         </div>
         <ClotureBouton confirmer={confirmerCloture} setConfirmer={setConfirmerCloture} cloturer={cloturer} />
       </div>
@@ -447,7 +464,7 @@ function Vente({ etat, apresCloture }: { etat: EtatCaisseLocale; apresCloture: (
         </button>
       )}
     </div>
-    {voirTickets && <TicketsSession etat={etat} />}
+    {voirTickets && <TicketsSession etat={etat} vendeur={vendeur} />}
     {erreurMemoire && <div className="message message-erreur">{erreurMemoire}</div>}
     <div className="cmd-layout">
       <div>
@@ -599,7 +616,7 @@ function Vente({ etat, apresCloture }: { etat: EtatCaisseLocale; apresCloture: (
 }
 
 /** Tickets scellés sur cet appareil pendant la session ; c'est ici qu'une vente s'annule (§15.97 point 7). */
-function TicketsSession({ etat }: { etat: EtatCaisseLocale }) {
+function TicketsSession({ etat, vendeur }: { etat: EtatCaisseLocale; vendeur: string | undefined }) {
   const [cible, setCible] = useState<string | null>(null);
   const [motif, setMotif] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
@@ -611,7 +628,7 @@ function TicketsSession({ etat }: { etat: EtatCaisseLocale }) {
     const courant = lireEtat(etat.caisseId);
     const origine = courant?.tickets.find((t) => t.id === id);
     if (!courant || !origine) return;
-    const { evenement, tete } = scellerAnnulation(courant.reprise.contexte, courant.tete, origine, { id: crypto.randomUUID(), motif, horodatage: heureCaisse(courant) });
+    const { evenement, tete } = scellerAnnulation(courant.reprise.contexte, courant.tete, origine, { id: crypto.randomUUID(), motif, horodatage: heureCaisse(courant), utilisateurId: vendeur });
     try {
       memoriserTicket(courant, evenement, tete);
     } catch {
@@ -745,6 +762,80 @@ function ResumeCloture({ cloture, fermer }: { cloture: Cloture | "sans-totaux"; 
       <button className="cmd-encaisser" onClick={fermer}>
         OK
       </button>
+    </div>
+  );
+}
+
+/**
+ * Enregistrer l'appareil utilisé comme tablette de cette caisse (§15.100) : réservé au directeur,
+ * fait sur la tablette elle-même. Les caissières pourront ensuite s'y connecter avec leur code.
+ */
+function TabletteDeCaisse({ caisseId, numero }: { caisseId: string; numero: number }) {
+  const client = useQueryClient();
+  const appareil = useQuery({
+    queryKey: ["appareil"],
+    queryFn: () => api.get<AccueilTablette>("/appareil").catch((e) => (e instanceof ErreurApi && e.statut === 404 ? null : Promise.reject(e))),
+    retry: false,
+  });
+  const [confirmer, setConfirmer] = useState(false);
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState<unknown>(null);
+  if (appareil.isPending || appareil.error) return null;
+  const ici = appareil.data;
+
+  async function enregistrer() {
+    setEnCours(true);
+    setErreur(null);
+    try {
+      await api.post<AppareilCaisse[]>(`/caisses/${caisseId}/appareil`);
+      await client.invalidateQueries({ queryKey: ["appareil"] });
+      await client.invalidateQueries({ queryKey: ["appareils"] });
+      setConfirmer(false);
+    } catch (e) {
+      setErreur(e);
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  if (ici?.caisse.id === caisseId) {
+    return (
+      <div className="message message-ok" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Tablet size={16} /> Cet appareil est la tablette de la caisse {numero} : les caissières s'y connectent avec leur code après ta déconnexion.
+      </div>
+    );
+  }
+  return (
+    <div className="carte" style={{ marginTop: 12 }}>
+      <div className="carte-entete">
+        <div>
+          <h2>Tablette de caisse</h2>
+          <p>
+            {ici
+              ? `Cet appareil est la tablette de la caisse ${ici.caisse.numero}. Tu peux en faire plutôt la tablette de la caisse ${numero}.`
+              : `Pour que les caissières se connectent ici avec leur code, enregistre cet appareil comme tablette de la caisse ${numero}.`}
+          </p>
+        </div>
+        {!confirmer && (
+          <button className="btn btn-fantome" onClick={() => setConfirmer(true)}>
+            <Tablet size={15} /> Enregistrer cet appareil
+          </button>
+        )}
+      </div>
+      {confirmer && (
+        <div className="message message-alerte">
+          À faire sur la tablette posée au stand, pas sur ton ordinateur : les caissières pourront s'y connecter avec leur code et n'y verront que la caisse {numero}.
+          <div className="ligne-actions" style={{ marginTop: 8 }}>
+            <button className="btn" disabled={enCours} onClick={() => void enregistrer()}>
+              Oui, cet appareil devient la caisse {numero}
+            </button>
+            <button className="btn btn-fantome" onClick={() => setConfirmer(false)}>
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+      <MessageErreur erreur={erreur} />
     </div>
   );
 }
