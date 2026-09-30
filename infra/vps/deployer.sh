@@ -127,7 +127,9 @@ CADDY
 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 systemctl restart caddy
 
-etape "sauvegarde quotidienne de la base (14 jours gardés, celle du 1er de chaque mois gardée sans limite)"
+etape "sauvegarde quotidienne de la base (14 jours sur le serveur, 1er du mois sans limite ; copie chiffrée chez OVH si réglée)"
+command -v rclone >/dev/null && command -v age >/dev/null || DEBIAN_FRONTEND=noninteractive apt-get -y install rclone age
+install -m 750 -o root -g root "$VERSION/infra/vps/flaix-admin.sh" /usr/local/sbin/flaix-admin
 cat > /usr/local/sbin/sauvegarde-flaix.sh <<'SAUVE'
 #!/bin/bash
 set -euo pipefail
@@ -136,6 +138,20 @@ sudo -u postgres pg_dump -Fc flaix > "$fichier"
 chmod 600 "$fichier"
 # Tickets conservés sans limite (dossier §15.106) : la sauvegarde du 1er de chaque mois n'est jamais effacée.
 find /var/backups/flaix -name 'flaix-*.dump' ! -name 'flaix-??????01-*.dump' -mtime +14 -delete
+# Copie chiffrée hors du serveur, chez OVHcloud (dossier §15.108), une fois réglée par « flaix-admin sauvegarde-externe ».
+# La clé publique chiffre ; la clé de restauration n'est jamais sur ce serveur.
+if [ -f /etc/flaix/sauvegarde-externe.env ] && [ -f /etc/flaix/sauvegarde.age.pub ]; then
+  set -a; . /etc/flaix/sauvegarde-externe.env; set +a
+  chiffre="$(mktemp /var/backups/flaix/envoi-XXXXXX)"
+  trap 'rm -f "$chiffre"' EXIT
+  age -R /etc/flaix/sauvegarde.age.pub -o "$chiffre" "$fichier"
+  nom="$(basename "$fichier").age"
+  rclone copyto "$chiffre" "ovh:${FLAIX_S3_CONTENEUR}/quotidien/${nom}"
+  # Copie du 1er du mois gardée sans limite ; copies quotidiennes gardées 30 jours.
+  if [ "$(date +%d)" = "01" ]; then rclone copyto "$chiffre" "ovh:${FLAIX_S3_CONTENEUR}/mensuel/${nom}"; fi
+  rclone delete "ovh:${FLAIX_S3_CONTENEUR}/quotidien" --min-age 30d
+  echo "copie chiffrée envoyée chez OVH : ${nom}"
+fi
 SAUVE
 chmod 750 /usr/local/sbin/sauvegarde-flaix.sh
 cat > /etc/systemd/system/sauvegarde-flaix.service <<'UNIT'

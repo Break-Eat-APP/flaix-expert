@@ -6,7 +6,7 @@ etape() { echo "=== $(date -Is) $*"; }
 
 etape "PostgreSQL, Caddy, outils"
 apt-get update
-apt-get -y install postgresql caddy curl ca-certificates xz-utils git openssl
+apt-get -y install postgresql caddy curl ca-certificates xz-utils git openssl rclone age
 psql --version
 caddy version
 
