@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { IdentiteLieu, Lieu, SessionInfo } from "@flaix/domain";
+import { lireMontant, type IdentiteLieu, type Lieu, type SessionInfo } from "@flaix/domain";
 import { api } from "../../api.ts";
 import { Carte, Chargement, EntetePage, MessageErreur, Regles } from "../../composants/communs.tsx";
 
@@ -14,7 +14,7 @@ export function Identite() {
 
   useEffect(() => {
     if (lieu.data) {
-      const { id: _id, remiseAbonnePb: _r, ...identite } = lieu.data;
+      const { id: _id, remiseAbonnePb: _r, seuilEcartEspeces: _s, ...identite } = lieu.data;
       setForm(Object.fromEntries(Object.entries(identite).map(([k, v]) => [k, v ?? ""])) as IdentiteLieu);
     }
   }, [lieu.data]);
@@ -84,9 +84,11 @@ export function Identite() {
         </Carte>
       </form>
       <ReglagesCaisse lieu={lieu.data!} />
+      <ToleranceEspeces lieu={lieu.data!} />
       <Regles>
         <ul>
           <li><strong>Remise abonné</strong> : taux contractuel accordé aux abonnés du lieu. Tant qu'il n'est pas réglé, la pastille « Abonné » de la caisse reste inactive. Le caissier l'applique, il ne le négocie pas.</li>
+          <li><strong>Tolérance d'écart d'espèces</strong> : au comptage d'un tiroir (Clôtures → Clôture du match), un écart plus grand que ce montant demande un motif. 5,00 € par défaut. La clôture n'est jamais bloquée.</li>
           <li>Le ticket de caisse doit porter l'identité de l'exploitant : raison sociale, adresse, SIRET, n° de TVA (BOFiP, données obligatoires d'une opération d'encaissement).</li>
           <li>Le SIRET compte 14 chiffres ; le n° de TVA intracommunautaire commence par le code du pays (FR…). Les espaces saisis sont retirés.</li>
           <li>Chaque modification est inscrite au journal technique du lieu, avec la valeur avant, la valeur après, son auteur et l'heure.</li>
@@ -143,6 +145,52 @@ function ReglagesCaisse({ lieu }: { lieu: Lieu }) {
       {!valide && <div className="message message-erreur">Taux en %, entre 0,01 et 100.</div>}
       <MessageErreur erreur={sauver.error} />
       {ok && <div className="message message-ok">Enregistré et inscrit au journal technique.</div>}
+    </Carte>
+  );
+}
+
+function ToleranceEspeces({ lieu }: { lieu: Lieu }) {
+  const client = useQueryClient();
+  const [texte, setTexte] = useState(String(lieu.seuilEcartEspeces / 100).replace(".", ","));
+  const [ok, setOk] = useState(false);
+  const valeur = lireMontant(texte);
+  const sauver = useMutation({
+    mutationFn: (seuilCentimes: number) => api.put<Lieu>("/lieu/seuil-especes", { seuilCentimes }),
+    onSuccess: (l) => {
+      client.setQueryData(["lieu"], l);
+      client.invalidateQueries({ queryKey: ["cloture"] });
+      setOk(true);
+    },
+  });
+  return (
+    <Carte titre="Contrôle des espèces" description="Au comptage d'un tiroir, un écart au-delà de cette tolérance demande un motif.">
+      <form
+        className="en-ligne"
+        style={{ alignItems: "flex-end" }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (valeur !== null) sauver.mutate(valeur);
+        }}
+      >
+        <label className="champ" style={{ width: 240 }}>
+          <span>Tolérance d'écart (€)</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={texte}
+            onChange={(e) => {
+              setOk(false);
+              setTexte(e.target.value);
+            }}
+            aria-invalid={valeur === null}
+          />
+        </label>
+        <button className="btn" disabled={valeur === null || sauver.isPending}>
+          Enregistrer
+        </button>
+      </form>
+      <MessageErreur erreur={sauver.error} />
+      {ok && !sauver.isPending && <div className="message message-ok">Enregistré. La modification est inscrite au journal technique.</div>}
     </Carte>
   );
 }

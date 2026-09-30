@@ -391,3 +391,36 @@ input[aria-invalid="true"] { border-color: var(--red); }
   .ticket-impression { position: absolute; left: 0; top: 0; width: 72mm; border: 0; padding: 0; }
   .non-imprime { display: none !important; }
 }
+
+/* Clôture du match — assistant en 4 étapes et comptage des tiroirs (dossier §15.102). */
+.assistant-etapes { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 760px) { .assistant-etapes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.assistant-etape { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; min-width: 0; }
+.assistant-etape strong { display: block; font-size: 13.5px; }
+.assistant-etape small { display: block; font-size: 11.5px; color: var(--muted); }
+.assistant-rond { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12.5px; font-weight: 800; background: var(--track); color: var(--muted); }
+.assistant-etape.fait { border-color: var(--green-soft); }
+.assistant-etape.fait .assistant-rond { background: var(--green-soft); color: var(--green); }
+.assistant-etape.a_faire .assistant-rond { background: var(--violet-soft); color: var(--violet); }
+.assistant-etape.a_venir { opacity: 0.65; }
+.scroll-x { overflow-x: auto; }
+.tableau { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tableau th { text-align: left; font-size: 11.5px; font-weight: 600; color: var(--muted); padding: 7px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.tableau td { padding: 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.tableau .d { text-align: right; }
+.tiroir { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.tiroir-entete { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; font-size: 13px; }
+.tiroir-entete:focus-visible { outline: 2px solid var(--violet); outline-offset: -2px; border-radius: 12px; }
+.tiroir-chiffres { margin-left: auto; font-size: 12.5px; color: var(--muted); }
+.tiroir-corps { padding: 4px 12px 12px; border-top: 1px solid var(--border); }
+.coupures { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
+.coupure { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 10px; padding: 6px 9px; background: var(--childbg); }
+.coupure-libelle { width: 50px; flex: none; font-size: 12.5px; font-weight: 700; }
+.coupure input { width: 58px; text-align: right; font-variant-numeric: tabular-nums; }
+.coupure-total { margin-left: auto; font-size: 11px; color: var(--muted); }
+.tiroir-bilan { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 14px; }
+.bilan-ligne { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12.5px; }
+.bilan-ligne.fort { font-weight: 700; border-top: 1px solid var(--border); padding-top: 6px; margin-top: 3px; }
+.bilan-ligne.fort + .bilan-ligne.fort { border-top: 0; margin-top: 0; padding-top: 3px; }
+.z-clos { display: flex; gap: 10px; align-items: flex-start; background: var(--childbg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-top: 10px; }
+.rectification { margin-top: 12px; padding: 12px; border: 1px dashed var(--field-border); border-radius: 12px; }
