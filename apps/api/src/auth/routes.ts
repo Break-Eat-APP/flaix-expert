@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { FastifyReply } from "fastify";
 import type { AccueilTablette, Role, SessionInfo } from "@flaix/domain";
-import type { Base } from "../base.ts";
+import { changerLieu, type Base } from "../base.ts";
 import { config } from "../config.ts";
 import { ErreurMetier } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
@@ -38,8 +38,8 @@ const identifiantsIncorrects = () => new ErreurMetier(401, "E-mail ou mot de pas
 const codeIncorrect = () => new ErreurMetier(401, "Code incorrect.");
 const heureParis = new Intl.DateTimeFormat("fr-FR", { timeStyle: "short", timeZone: "Europe/Paris" });
 
-function infoSession(
-  a: Pick<Authentification, "utilisateurId" | "nom" | "email" | "lieuId" | "role" | "appareilId" | "appareilCaisseId">,
+export function infoSession(
+  a: Pick<Authentification, "utilisateurId" | "nom" | "email" | "lieuId" | "role" | "appareilId" | "appareilCaisseId" | "formation">,
   lieuNom: string,
 ): SessionInfo {
   return {
@@ -48,10 +48,11 @@ function infoSession(
     role: a.role,
     appareil: a.appareilId && a.appareilCaisseId ? { id: a.appareilId, caisseId: a.appareilCaisseId } : null,
     environnement: config.environnement,
+    formation: a.formation,
   };
 }
 
-function poserCookieSession(rep: FastifyReply, jeton: string, expire: Date) {
+export function poserCookieSession(rep: FastifyReply, jeton: string, expire: Date) {
   rep.setCookie(NOM_COOKIE, jeton, {
     path: "/",
     httpOnly: true,
@@ -61,7 +62,7 @@ function poserCookieSession(rep: FastifyReply, jeton: string, expire: Date) {
   });
 }
 
-async function nomDuLieu(base: Base, lieuId: string, utilisateurId: string): Promise<string> {
+export async function nomDuLieu(base: Base, lieuId: string, utilisateurId: string): Promise<string> {
   return base.transaction({ lieuId, utilisateurId }, async (c) => {
     const { rows } = await c.query<{ nom: string }>("SELECT nom FROM lieu WHERE id = $1", [lieuId]);
     return rows[0]?.nom ?? "";
@@ -90,8 +91,9 @@ export async function routesAuth(app: FastifyInstance, { base }: { base: Base })
       const motDePasseValide = compte.actif && (await verifierMotDePasse(compte.mot_de_passe_hash, motDePasse));
       const membres = await base.transaction({ utilisateurId: compte.id }, async (c) => {
         const { rows } = await c.query<{ lieu_id: string; role: Role }>(
+          // Jamais un lieu de formation : on y entre depuis le vrai lieu (dossier §15.109).
           `SELECT lieu_id, role FROM membre
-            WHERE utilisateur_id = $1 AND actif
+            WHERE utilisateur_id = $1 AND actif AND NOT est_lieu_formation(lieu_id)
             ORDER BY (role = 'directeur') DESC, cree_le`,
           [compte.id],
         );
@@ -129,7 +131,7 @@ export async function routesAuth(app: FastifyInstance, { base }: { base: Base })
 
       poserCookieSession(rep, jeton, expire);
       return infoSession(
-        { utilisateurId: compte.id, nom: compte.nom, email: compte.email, lieuId: membre.lieu_id, role: membre.role, appareilId: null, appareilCaisseId: null },
+        { utilisateurId: compte.id, nom: compte.nom, email: compte.email, lieuId: membre.lieu_id, role: membre.role, appareilId: null, appareilCaisseId: null, formation: false },
         await nomDuLieu(base, membre.lieu_id, compte.id),
       );
     },
@@ -152,7 +154,7 @@ export async function routesAuth(app: FastifyInstance, { base }: { base: Base })
         [appareil.lieuId],
       );
       const k = caisse[0]!;
-      return { lieuNom: lieu[0]?.nom ?? "", caisse: { id: k.id, numero: k.numero, nom: k.nom, standNom: k.stand_nom }, caissieres };
+      return { lieuNom: lieu[0]?.nom ?? "", formation: appareil.formation, caisse: { id: k.id, numero: k.numero, nom: k.nom, standNom: k.stand_nom }, caissieres };
     });
   });
 
@@ -165,7 +167,9 @@ export async function routesAuth(app: FastifyInstance, { base }: { base: Base })
       const appareil = await lireAppareil(base, req);
       if (!appareil) throw new ErreurMetier(403, "Cet appareil n'est pas une tablette de caisse enregistrée : la connexion par code n'y est pas possible.");
 
-      type Issue = { ok: true; jeton: string; expire: Date; nom: string; lieuNom: string } | { ok: false; erreur: ErreurMetier };
+      type Issue =
+        | { ok: true; jeton: string; expire: Date; nom: string; lieuNom: string; lieuId: string; caisseId: string }
+        | { ok: false; erreur: ErreurMetier };
       // Le refus est préparé DANS la transaction (compteur d'essais, journal) et levé APRÈS, pour qu'il soit bien enregistré.
       const issue = await base.transaction({ lieuId: appareil.lieuId, utilisateurId: caissiereId }, async (c): Promise<Issue> => {
         // Verrou sur la fiche : deux essais simultanés ne contournent pas le compteur.
@@ -226,10 +230,17 @@ export async function routesAuth(app: FastifyInstance, { base }: { base: Base })
         }
         const { jeton, empreinte } = nouveauJetonSession();
         const expire = new Date(Date.now() + config.dureeSessionHeures * 3_600_000);
+        const { rows: lieu } = await c.query<{ nom: string }>("SELECT nom FROM lieu WHERE id = $1", [appareil.lieuId]);
+        // Tablette mise en formation (§15.109) : session dans le lieu de formation, sur la caisse jumelle.
+        let cible = { lieuId: appareil.lieuId, caisseId: appareil.caisseId, nouveau: false };
+        if (appareil.formation) {
+          const { rows: f } = await c.query<{ o_lieu: string; o_nouveau: boolean; o_caisse: string }>("SELECT * FROM formation_pour_tablette($1)", [appareil.id]);
+          cible = { lieuId: f[0]!.o_lieu, caisseId: f[0]!.o_caisse, nouveau: f[0]!.o_nouveau };
+        }
         await c.query("INSERT INTO session (jeton_hash, utilisateur_id, lieu_id, role, expire_le, appareil_id) VALUES ($1, $2, $3, 'operateur', $4, $5)", [
           empreinte,
           caissiereId,
-          appareil.lieuId,
+          cible.lieuId,
           expire,
           appareil.id,
         ]);
@@ -238,16 +249,35 @@ export async function routesAuth(app: FastifyInstance, { base }: { base: Base })
           type: "connexion",
           utilisateurId: caissiereId,
           caisseId: appareil.caisseId,
-          details: { role: "operateur", mode: "code", caisse: numero },
+          details: { role: "operateur", mode: "code", caisse: numero, ...(appareil.formation ? { formation: true } : {}) },
         });
-        const { rows: lieu } = await c.query<{ nom: string }>("SELECT nom FROM lieu WHERE id = $1", [appareil.lieuId]);
-        return { ok: true, jeton, expire, nom: fiche.nom, lieuNom: lieu[0]?.nom ?? "" };
+        if (appareil.formation) {
+          await changerLieu(c, cible.lieuId);
+          if (cible.nouveau) await inscrireJet(c, { lieuId: cible.lieuId, type: "formation_ouverte", utilisateurId: caissiereId });
+          await inscrireJet(c, {
+            lieuId: cible.lieuId,
+            type: "connexion",
+            utilisateurId: caissiereId,
+            caisseId: cible.caisseId,
+            details: { role: "operateur", mode: "code", caisse: numero, formation: true },
+          });
+        }
+        return { ok: true, jeton, expire, nom: fiche.nom, lieuNom: lieu[0]?.nom ?? "", lieuId: cible.lieuId, caisseId: cible.caisseId };
       });
 
       if (!issue.ok) throw issue.erreur;
       poserCookieSession(rep, issue.jeton, issue.expire);
       return infoSession(
-        { utilisateurId: caissiereId, nom: issue.nom, email: null, lieuId: appareil.lieuId, role: "operateur", appareilId: appareil.id, appareilCaisseId: appareil.caisseId },
+        {
+          utilisateurId: caissiereId,
+          nom: issue.nom,
+          email: null,
+          lieuId: issue.lieuId,
+          role: "operateur",
+          appareilId: appareil.id,
+          appareilCaisseId: issue.caisseId,
+          formation: appareil.formation,
+        },
         issue.lieuNom,
       );
     },

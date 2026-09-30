@@ -15,6 +15,8 @@ export interface Authentification {
   /** Caissière : tablette enregistrée où elle s'est connectée, et la caisse de cette tablette. */
   appareilId: string | null;
   appareilCaisseId: string | null;
+  /** Session dans le lieu de formation jumeau (dossier §15.109). */
+  formation: boolean;
 }
 
 declare module "fastify" {

@@ -14,6 +14,8 @@ export interface AppareilConnu {
   id: string;
   lieuId: string;
   caisseId: string;
+  /** Mise en formation par le directeur (dossier §15.109). */
+  formation: boolean;
 }
 
 /** Durée maximale acceptée par les navigateurs pour un cookie (400 jours) : au-delà, réenregistrer la tablette. */
@@ -24,9 +26,11 @@ export async function lireAppareil(base: Base, req: FastifyRequest): Promise<App
   const jeton = req.cookies[NOM_COOKIE_APPAREIL];
   if (!jeton || jeton.length > 200) return null;
   return base.transaction({}, async (c) => {
-    const { rows } = await c.query<{ id: string; lieu_id: string; caisse_id: string }>("SELECT * FROM appareil_pour_connexion($1)", [empreinteJeton(jeton)]);
+    const { rows } = await c.query<{ id: string; lieu_id: string; caisse_id: string; formation: boolean }>("SELECT * FROM appareil_pour_connexion($1)", [
+      empreinteJeton(jeton),
+    ]);
     const r = rows[0];
-    return r ? { id: r.id, lieuId: r.lieu_id, caisseId: r.caisse_id } : null;
+    return r ? { id: r.id, lieuId: r.lieu_id, caisseId: r.caisse_id, formation: r.formation } : null;
   });
 }
 

@@ -47,6 +47,14 @@ export function ouvrirBase(connectionString: string, max = 10): Base {
   };
 }
 
+/**
+ * Change le lieu courant jusqu'à la fin de la transaction : seul usage, écrire au journal du
+ * lieu de formation et du vrai lieu dans la même transaction (dossier §15.109).
+ */
+export async function changerLieu(client: Client, lieuId: string): Promise<void> {
+  await client.query("SELECT set_config('app.lieu_id', $1, true)", [lieuId]);
+}
+
 /** Verrou exclusif le temps de la transaction, sur une clé texte (ex. « jet:<lieu> »). */
 export async function verrouiller(client: Client, cle: string): Promise<void> {
   await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [cle]);

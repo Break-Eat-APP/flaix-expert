@@ -147,8 +147,9 @@ async function lireAppareils(c: Client, lieuId: string, cetAppareil: string | nu
     enregistre_le: Date;
     retire_le: Date | null;
     derniere: Date | null;
+    formation: boolean;
   }>(
-    `SELECT a.id, a.caisse_id, k.numero, k.nom AS caisse_nom, s.nom AS stand_nom, u.nom AS enregistre_par, a.enregistre_le, a.retire_le,
+    `SELECT a.id, a.caisse_id, k.numero, k.nom AS caisse_nom, s.nom AS stand_nom, u.nom AS enregistre_par, a.enregistre_le, a.retire_le, a.formation,
             (SELECT max(se.cree_le) FROM session se WHERE se.appareil_id = a.id) AS derniere
        FROM appareil_caisse a
        JOIN caisse k ON k.lieu_id = a.lieu_id AND k.id = a.caisse_id
@@ -170,6 +171,7 @@ async function lireAppareils(c: Client, lieuId: string, cetAppareil: string | nu
     retireLe: r.retire_le ? r.retire_le.toISOString() : null,
     derniereConnexion: r.derniere ? r.derniere.toISOString() : null,
     cetAppareil: r.id === cetAppareil,
+    formation: r.formation,
   }));
 }
 
@@ -364,6 +366,39 @@ export async function routesEquipe(app: FastifyInstance, { base }: { base: Base 
     });
     poserCookieAppareil(rep, jeton);
     return resultat;
+  });
+
+  // Mode formation d'une tablette (§15.109) : la session en cours sur la tablette est fermée d'office
+  // (la base n'accepte plus qu'une session du nouveau mode) ; la caissière se reconnecte.
+  app.post("/api/appareils/:id/formation", async (req): Promise<AppareilCaisse[]> => {
+    const auth = await exigerDirecteur(req, base);
+    const { id } = ParamId.parse(req.params);
+    const { formation } = corps(z.object({ formation: z.boolean() }), req);
+    const ici = await idAppareil(base, req);
+    return base.transaction(contexte(auth), async (c) => {
+      const { rows } = await c.query<{ caisse_id: string; numero: number; formation: boolean; retire_le: Date | null; ouverte: boolean }>(
+        `SELECT a.caisse_id, k.numero, a.formation, a.retire_le,
+                EXISTS (SELECT 1 FROM session_caisse sc WHERE sc.lieu_id = a.lieu_id AND sc.caisse_id = a.caisse_id AND sc.fermee_le IS NULL) AS ouverte
+           FROM appareil_caisse a JOIN caisse k ON k.lieu_id = a.lieu_id AND k.id = a.caisse_id
+          WHERE a.lieu_id = $1 AND a.id = $2`,
+        [auth.lieuId, id],
+      );
+      const a = rows[0];
+      if (!a || a.retire_le) throw introuvable("Tablette");
+      if (a.formation !== formation) {
+        // Une caisse ouverte pour de vrai ne bascule pas en formation au milieu du service.
+        if (formation && a.ouverte) throw new ErreurMetier(409, `La caisse ${a.numero} est ouverte : clôture-la avant de mettre sa tablette en formation.`);
+        await c.query("UPDATE appareil_caisse SET formation = $3 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id, formation]);
+        await inscrireJet(c, {
+          lieuId: auth.lieuId,
+          type: formation ? "tablette_formation_activee" : "tablette_formation_desactivee",
+          utilisateurId: auth.utilisateurId,
+          caisseId: a.caisse_id,
+          details: { caisse: a.numero, appareil: id },
+        });
+      }
+      return lireAppareils(c, auth.lieuId, ici);
+    });
   });
 
   app.post("/api/appareils/:id/retrait", async (req, rep): Promise<AppareilCaisse[]> => {

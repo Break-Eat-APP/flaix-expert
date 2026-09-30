@@ -18,6 +18,21 @@ export interface SessionInfo {
   appareil: { id: string; caisseId: string } | null;
   /** Hors production, l'écran affiche un bandeau permanent (aucune vente réelle). */
   environnement: "developpement" | "test" | "production";
+  /**
+   * Mode formation « FACTICE » (BOFiP §150, dossier §15.109) : la session travaille dans le lieu de
+   * formation jumeau. Mention non masquable à l'écran et sur tout justificatif ; rien n'est réel.
+   */
+  formation: boolean;
+}
+
+/** Paramètres → Mode formation (dossier §15.109). */
+export interface EtatFormation {
+  /** La session en cours est-elle en formation ? */
+  enFormation: boolean;
+  /** Lieu de formation en service (null : il sera créé à la première entrée). */
+  lieuFormation: { creeLe: string } | null;
+  /** Tablettes du vrai lieu actuellement mises en formation. */
+  tablettesEnFormation: number;
 }
 
 export interface Lieu {
@@ -375,11 +390,15 @@ export interface AppareilCaisse {
   derniereConnexion: string | null;
   /** C'est l'appareil d'où vient la requête. */
   cetAppareil: boolean;
+  /** Mise en mode formation par le directeur : toute connexion y est une session de formation. */
+  formation: boolean;
 }
 
 /** Ce que montre une tablette enregistrée avant toute connexion : sa caisse et les caissières du lieu. */
 export interface AccueilTablette {
   lieuNom: string;
+  /** Tablette en mode formation : l'écran de connexion porte déjà la mention « FACTICE ». */
+  formation: boolean;
   caisse: { id: string; numero: number; nom: string | null; standNom: string };
   caissieres: { id: string; nom: string }[];
 }

@@ -20,8 +20,11 @@ import { routesResultats } from "./routes/resultats.ts";
 import { routesPlanning } from "./routes/planning.ts";
 import { routesStock } from "./routes/stock.ts";
 import { routesPeriodes } from "./routes/periodes.ts";
+import { routesFormation } from "./routes/formation.ts";
 
 const METHODES_MODIFIANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+/** Routes de configuration, en lecture seule en mode formation. */
+const CONFIGURATION = [/^\/api\/(stands|categories|produits|lieu|equipe|appareils)(\/|$)/, /^\/api\/caisses\/:id(\/appareil)?$/];
 
 export async function construireServeur(base: Base, options: { journaliser?: boolean } = {}): Promise<FastifyInstance> {
   // Derrière le relais https du serveur (Caddy), l'adresse du visiteur est celle transmise par le
@@ -60,6 +63,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
         email: string | null;
         appareil_id: string | null;
         appareil_caisse_id: string | null;
+        formation: boolean;
       }>(
         "SELECT * FROM session_valide($1)",
         [empreinteJeton(jeton)],
@@ -76,7 +80,13 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
         jetonEmpreinte: empreinteJeton(jeton),
         appareilId: session.appareil_id,
         appareilCaisseId: session.appareil_caisse_id,
+        formation: session.formation,
       };
+    }
+    // Mode formation (dossier §15.109) : la configuration est celle du vrai lieu, recopiée à chaque
+    // entrée ; elle ne se modifie pas dans le lieu de formation.
+    if (req.auth?.formation && METHODES_MODIFIANTES.has(req.method) && CONFIGURATION.some((r) => r.test(req.routeOptions.url ?? ""))) {
+      throw new ErreurMetier(409, "Mode formation : la configuration est celle du vrai lieu et ne se modifie pas ici. Quitte la formation pour la changer.");
     }
   });
 
@@ -110,6 +120,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesPlanning, { base });
   await app.register(routesStock, { base });
   await app.register(routesPeriodes, { base });
+  await app.register(routesFormation, { base });
 
   return app;
 }
