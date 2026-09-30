@@ -10,3 +10,4 @@ export * from "./caisse-scellee.ts";
 export * from "./especes.ts";
 export * from "./resultats.ts";
 export * from "./planning.ts";
+export * from "./stock.ts";

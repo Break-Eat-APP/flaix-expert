@@ -51,6 +51,9 @@ export const TYPES_JET = {
   affectation_creee: "Affectation ajoutée au planning",
   affectation_modifiee: "Affectation modifiée",
   affectation_retiree: "Affectation retirée du planning",
+  livraison_recue: "Livraison fournisseur (coût matière recalculé)",
+  inventaire_reserve_valide: "Inventaire de la réserve validé",
+  comptage_stock_corrige: "Comptage de stock corrigé",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

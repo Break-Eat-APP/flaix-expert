@@ -286,8 +286,8 @@ export interface ClotureMatch {
   etapes: {
     /** Toutes les caisses du match sont clôturées. */
     ventes: boolean;
-    /** Comptage des restes : attend le module Stock (§15.102), ne bloque pas. */
-    restes: "a_venir";
+    /** Comptage des restes (§15.105) : obligatoire dès que le match a une mise en place ou un réassort. */
+    restes: { requis: boolean; manquants: number };
     /** Chaque tiroir (session avec espèces) a son Z. */
     especes: boolean;
     /** Le match peut être clos définitivement. */
@@ -488,4 +488,91 @@ export interface MasseSalariale {
   total: Centimes;
   salaries: Centimes;
   interimaires: Centimes;
+}
+
+// ---------------------------------------------------------------------------
+// Stock suivi à l'unité (dossier §15.105, module 4)
+// ---------------------------------------------------------------------------
+
+export interface LigneStock {
+  produitId: string;
+  nom: string;
+  categorie: string | null;
+  /** Coût matière de la fiche (CUMP après livraisons) ; null = coût manquant. */
+  coutUnitaire: Centimes | null;
+  /** Reste compté au même stand au match précédent (0 s'il n'y en a pas). */
+  reste: number;
+  premierMatch: boolean;
+  miseEnPlace: number;
+  miseEnPlaceDerniere: { par: string; le: string } | null;
+  reassort: number;
+  vendu: number;
+  depart: number;
+  restant: number;
+  seuil: number;
+  alerte: import("./stock.ts").AlerteStock;
+  compte: number | null;
+  comptage: { par: string; le: string; motif: string | null } | null;
+  ecart: number | null;
+  ecartValeur: Centimes | null;
+  motifRequis: boolean;
+  /** Quantité suggérée pour la mise en place ; null sans historique. */
+  suggestion: number | null;
+}
+
+export interface StandStock {
+  standId: string;
+  nom: string;
+  lignes: LigneStock[];
+}
+
+export interface StockMatch {
+  evenement: Evenement;
+  stands: StandStock[];
+  /** Solde calculé de la réserve centrale, par produit. */
+  reserve: Record<string, number>;
+  /** Étape « Restes » de la clôture : obligatoire dès qu'il y a une mise en place ou un réassort. */
+  restes: { requis: boolean; manquants: number };
+}
+
+export interface MouvementStock {
+  id: string;
+  type: "livraison" | "mise_en_place" | "reassort";
+  produit: string;
+  stand: string | null;
+  match: string | null;
+  quantite: number;
+  prixUnitaire: Centimes | null;
+  fournisseur: string | null;
+  dateLivraison: string | null;
+  coutAvant: Centimes | null;
+  coutApres: Centimes | null;
+  par: string;
+  le: string;
+}
+
+export interface ProduitReserve {
+  produitId: string;
+  nom: string;
+  coutUnitaire: Centimes | null;
+  /** Dernier inventaire réserve validé de ce produit (point de départ du solde). */
+  inventaire: { date: string; compte: number } | null;
+  livreDepuis: number;
+  sortiDepuis: number;
+  /** Solde calculé : inventaire + livraisons − sorties vers les stands. */
+  solde: number;
+}
+
+export interface InventaireReserve {
+  id: string;
+  date: string;
+  par: string;
+  le: string;
+  lignes: { produit: string; calcule: number | null; compte: number; ecart: number | null; valeur: Centimes | null }[];
+}
+
+export interface EtatReserve {
+  produits: ProduitReserve[];
+  inventaires: InventaireReserve[];
+  mouvements: MouvementStock[];
 }

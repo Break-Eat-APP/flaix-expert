@@ -65,7 +65,7 @@ afterAll(async () => {
 describe("étape 1 — ventes : toutes les caisses clôturées", () => {
   it("tant qu'une caisse est ouverte, l'étape n'est pas faite et son tiroir ne se compte pas", async () => {
     const c = await cloture();
-    expect(c.etapes).toMatchObject({ ventes: false, especes: false, cloturable: false, restes: "a_venir" });
+    expect(c.etapes).toMatchObject({ ventes: false, especes: false, cloturable: false, restes: { requis: false, manquants: 0 } });
     const s = c.sessions.find((x) => x.caisseId === especes)!;
     expect(s).toMatchObject({ fond: 15000, especes: 1400, attendu: 16400, comptage: null });
     const r = await appel<{ erreur: string }>("POST", `/api/sessions-caisse/${s.sessionId}/comptage`, { coupures: { "5000": 3 } });

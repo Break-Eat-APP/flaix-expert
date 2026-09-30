@@ -17,6 +17,7 @@ import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { listerEvenements } from "./evenements.ts";
+import { restesDuMatch } from "./stock.ts";
 import { ParamId, Uuid, contexte, corps } from "./outils.ts";
 
 /*
@@ -144,11 +145,12 @@ export async function lireClotureMatch(c: Client, lieuId: string, evenementId: s
   });
   const ventes = vues.length > 0 && vues.every((s) => s.fermeeLe !== null);
   const especes = vues.every((s) => s.fond === null || s.comptage !== null);
+  const restes = await restesDuMatch(c, lieuId, evenement);
   return {
     evenement,
     seuilEcartEspeces: await seuilDuLieu(c, lieuId),
     sessions: vues,
-    etapes: { ventes, restes: "a_venir", especes, cloturable: evenement.etat === "ouvert" && ventes && especes },
+    etapes: { ventes, restes, especes, cloturable: evenement.etat === "ouvert" && ventes && especes && (!restes.requis || restes.manquants === 0) },
   };
 }
 

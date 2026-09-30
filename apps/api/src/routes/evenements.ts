@@ -5,6 +5,7 @@ import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
+import { restesDuMatch } from "./stock.ts";
 import { ParamId, contexte, corps, differences, texte } from "./outils.ts";
 
 // Calendrier des matchs (dossier §15.94) : une seule liste pour tout le lieu.
@@ -149,6 +150,11 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
       );
       if (sansZ[0]!.n > 0) {
         throw new ErreurMetier(409, `${sansZ[0]!.n} tiroir(s) sans Z : compte les espèces dans Clôtures → Clôture du match avant de clore le match.`);
+      }
+      // Match avec une mise en place ou un réassort : chaque produit concerné doit être compté (§15.105).
+      const restes = await restesDuMatch(c, auth.lieuId, (await listerEvenements(c, auth.lieuId)).find((x) => x.id === id)!);
+      if (restes.requis && restes.manquants > 0) {
+        throw new ErreurMetier(409, `${restes.manquants} produit(s) de stock pas encore compté(s) : fais le comptage dans Stock → Comptage avant de clore le match.`);
       }
       await c.query("UPDATE evenement SET etat = 'clos', clos_le = now() WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id]);
       await inscrireJet(c, { lieuId: auth.lieuId, type: "evenement_clos", utilisateurId: auth.utilisateurId, details: { evenementId: id, match: e.libelle } });
