@@ -72,6 +72,15 @@ describe("Groupe A — inaltérabilité, imposée par la base", () => {
     // Les cas sur des Z réels (écart faux, motif manquant, second Z, rectification) : test/clotures.test.ts.
   });
 
+  it("[F] — mouvements de stock et inventaires de la réserve (§15.105) : écriture seule, même pour le propriétaire", async () => {
+    expect(await codeErreur(app.transaction(ctxA(), (c) => c.query("UPDATE stock_mouvement SET quantite = 1")))).toBe("42501");
+    expect(await codeErreur(app.transaction(ctxA(), (c) => c.query("DELETE FROM stock_mouvement")))).toBe("42501");
+    expect(await codeErreur(proprietaire.transaction({}, (c) => c.query("TRUNCATE stock_mouvement")))).toBe("42501");
+    expect(await codeErreur(app.transaction(ctxA(), (c) => c.query("UPDATE inventaire_reserve_ligne SET compte = 0")))).toBe("42501");
+    expect(await codeErreur(app.transaction(ctxA(), (c) => c.query("DELETE FROM stock_comptage")))).toBe("42501");
+    // Comptage figé une fois le match clos, mise en place figée à l'ouverture : test/stock.test.ts.
+  });
+
   it("A8 [F] — deux événements ne peuvent pas porter le même numéro : contrainte d'unicité", async () => {
     const code = await codeErreur(
       app.transaction(ctxA(), (c) =>

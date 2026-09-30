@@ -19,7 +19,7 @@ interface Entree {
 const MENU: Entree[] = [
   { id: "resultats", libelle: "Résultats", icone: ChartLine, route: "/" },
   { id: "caisses", libelle: "Caisses", icone: Receipt, route: "/caisses" },
-  { id: "stock", libelle: "Stock", icone: Package },
+  { id: "stock", libelle: "Stock", icone: Package, route: "/stock" },
   { id: "equipe", libelle: "Équipe", icone: Users, route: "/equipe" },
   { id: "clotures", libelle: "Clôtures", icone: Lock, route: "/clotures" },
   { id: "parametres", libelle: "Paramètres", icone: SlidersHorizontal, route: "/parametres" },

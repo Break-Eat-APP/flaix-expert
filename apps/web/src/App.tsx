@@ -21,6 +21,7 @@ import { EcranCaisse } from "./pages/caisse/EcranCaisse.tsx";
 import { PosteCaissiere } from "./pages/caisse/PosteCaissiere.tsx";
 import { Clotures } from "./pages/clotures/Clotures.tsx";
 import { Equipe } from "./pages/equipe/Equipe.tsx";
+import { Stock } from "./pages/stock/Stock.tsx";
 
 export function App() {
   const session = useSession();
@@ -50,6 +51,7 @@ export function App() {
           <Route index element={<Resultats session={session.data} />} />
           <Route path="caisses" element={<MesCaisses />} />
           <Route path="caisses/:caisseId" element={<EcranCaisse />} />
+          <Route path="stock" element={<Stock />} />
           <Route path="equipe" element={<Equipe />} />
           <Route path="clotures" element={<Clotures />} />
           <Route path="parametres" element={<Parametres />} />

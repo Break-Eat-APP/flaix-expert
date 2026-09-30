@@ -291,7 +291,8 @@ export async function routesStock(app: FastifyInstance, { base }: { base: Base }
     return base.transaction(contexte(auth), async (c) => {
       const evts = await listerEvenements(c, auth.lieuId);
       const prochains = evts.filter((x) => x.etat === "a_venir").sort((a, b) => Date.parse(a.debut) - Date.parse(b.debut));
-      const e = evts.find((x) => x.id === evenementId) ?? evts.find((x) => x.etat === "ouvert") ?? prochains[0] ?? evts[0];
+      const joues = [...evts].sort((a, b) => jouerLe(b) - jouerLe(a));
+      const e = evts.find((x) => x.id === evenementId) ?? evts.find((x) => x.etat === "ouvert") ?? prochains[0] ?? joues[0];
       return e ? stockDuMatch(c, auth.lieuId, e) : null;
     });
   });

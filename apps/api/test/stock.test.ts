@@ -13,7 +13,7 @@ import { envoyer, ligne, tablette, vendreHorsLigne } from "./tablette.ts";
 let proprietaire: Base;
 let app: Base;
 let serveur: FastifyInstance;
-let lieu: { lieuId: string; utilisateurId: string };
+let lieu: { lieuId: string; utilisateurId: string; email: string };
 let cookie = "";
 let sud: Stand;
 let hotDog: Produit;
@@ -45,7 +45,7 @@ beforeAll(async () => {
   ({ proprietaire, app } = basesDeTest());
   serveur = await construireServeur(app, { journaliser: false });
   lieu = await creerLieuDeTest(proprietaire);
-  const r = await serveur.inject({ method: "POST", url: "/api/auth/connexion", headers: EN_TETES, payload: { email: (lieu as { email: string }).email, motDePasse: MOT_DE_PASSE_TEST } });
+  const r = await serveur.inject({ method: "POST", url: "/api/auth/connexion", headers: EN_TETES, payload: { email: lieu.email, motDePasse: MOT_DE_PASSE_TEST } });
   cookie = `fx_session=${r.cookies.find((k) => k.name === "fx_session")!.value}`;
   const s = (await appel<Stand[]>("POST", "/api/stands", { nom: "Buvette Sud" })).corps[0]!;
   sud = (await appel<Stand[]>("POST", `/api/stands/${s.id}/caisses`, {})).corps[0]!;

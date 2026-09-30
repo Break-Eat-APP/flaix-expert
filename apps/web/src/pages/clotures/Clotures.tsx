@@ -113,7 +113,7 @@ export function Clotures() {
 
       <Regles>
         <ul>
-          <li><strong>Quatre étapes, dans l'ordre</strong> : ventes (toutes les caisses clôturées, chacune depuis sa tablette), restes (comptage du stock, avec le module Stock — pas encore construit, l'étape ne bloque pas), espèces (le Z de chaque tiroir), puis la clôture définitive du match.</li>
+          <li><strong>Quatre étapes, dans l'ordre</strong> : ventes (toutes les caisses clôturées, chacune depuis sa tablette), restes (chaque produit mis en place ou réassorti, compté dans Stock → Comptage ; sans stock suivi sur le match, l'étape ne bloque pas), espèces (le Z de chaque tiroir), puis la clôture définitive du match.</li>
           <li><strong>Espèces attendues</strong> = fond de caisse + ventes encaissées en espèces (lues dans le journal de caisse, annulations déduites) − sorties vers le coffre (pas encore saisies : comptées à zéro). <strong>Compté</strong> = somme des coupures saisies. <strong>Écart</strong> = compté − attendu : négatif, il manque de l'argent ; positif, il y en a trop — tout aussi anormal, souvent une vente non enregistrée.</li>
           <li><strong>Compter par coupure</strong>, pas en montant global : c'est ainsi qu'on compte réellement un tiroir, et une erreur de saisie se voit tout de suite.</li>
           <li><strong>Tolérance</strong> (réglage du lieu, Paramètres → Le lieu ; 5,00 € par défaut) : en dessous, aucun motif. Au-delà, <strong>motif obligatoire</strong> (5 caractères au moins) — mais la clôture n'est jamais bloquée.</li>
@@ -158,7 +158,11 @@ function Assistant({ evenementId, apresCloture, retour }: { evenementId: string;
 
   const etapes: { titre: string; etat: "fait" | "a_faire" | "a_venir"; detail: string }[] = [
     { titre: "Ventes", etat: c.etapes.ventes ? "fait" : "a_faire", detail: `${closes} / ${c.sessions.length} caisse${c.sessions.length > 1 ? "s" : ""} clôturée${closes > 1 ? "s" : ""}` },
-    { titre: "Restes", etat: "a_venir", detail: "avec le module Stock" },
+    {
+      titre: "Restes",
+      etat: !c.etapes.restes.requis ? "fait" : c.etapes.restes.manquants === 0 ? "fait" : "a_faire",
+      detail: !c.etapes.restes.requis ? "pas de stock suivi sur ce match" : c.etapes.restes.manquants === 0 ? "tout est compté" : `${c.etapes.restes.manquants} produit${c.etapes.restes.manquants > 1 ? "s" : ""} à compter`,
+    },
     { titre: "Espèces", etat: c.etapes.especes ? "fait" : "a_faire", detail: tiroirs.length ? `${comptes.length} / ${tiroirs.length} tiroir${tiroirs.length > 1 ? "s" : ""} compté${comptes.length > 1 ? "s" : ""}` : "aucun tiroir" },
     { titre: "Clôture", etat: estClos ? "fait" : "a_faire", detail: estClos ? `close le ${formaterDateHeure(e.closLe!)}` : "définitive" },
   ];
@@ -256,11 +260,21 @@ function Assistant({ evenementId, apresCloture, retour }: { evenementId: string;
         </Carte>
       )}
 
-      {c.sessions.length > 0 && (
+      {(c.sessions.length > 0 || c.etapes.restes.requis) && (
         <Carte titre="2. Restes">
-          <div className="message message-info" style={{ margin: 0 }}>
-            Le comptage de ce qui reste (et l'écart avec ce qui devrait rester) arrivera avec le module Stock : il demande la mise en place de chaque stand. En attendant, cette étape ne bloque pas la clôture.
-          </div>
+          {!c.etapes.restes.requis ? (
+            <div className="message message-info" style={{ margin: 0 }}>
+              Aucune mise en place ni aucun réassort sur ce match : le stock n'y est pas suivi, cette étape ne bloque pas la clôture.
+            </div>
+          ) : c.etapes.restes.manquants > 0 ? (
+            <div className="message message-alerte" style={{ margin: 0 }}>
+              {c.etapes.restes.manquants} produit{c.etapes.restes.manquants > 1 ? "s" : ""} à compter dans les stands avant de clore le match. <Link to="/stock">Stock → Comptage</Link>
+            </div>
+          ) : (
+            <div className="message message-ok" style={{ margin: 0 }}>
+              Tous les produits suivis sont comptés. Les écarts sont dans <Link to="/stock">Stock → Comptage</Link>.
+            </div>
+          )}
         </Carte>
       )}
 
@@ -293,7 +307,12 @@ function Assistant({ evenementId, apresCloture, retour }: { evenementId: string;
           <>
             {!c.etapes.cloturable && (
               <div className="message message-alerte" style={{ marginTop: 0 }}>
-                {!c.etapes.ventes ? "Il reste des caisses ouvertes." : "Il reste des tiroirs à compter (étape 3)."} La clôture du match sera possible ensuite.
+                {!c.etapes.ventes
+                  ? "Il reste des caisses ouvertes."
+                  : c.etapes.restes.requis && c.etapes.restes.manquants > 0
+                    ? "Il reste des produits à compter (étape 2)."
+                    : "Il reste des tiroirs à compter (étape 3)."}{" "}
+                La clôture du match sera possible ensuite.
               </div>
             )}
             <div className="ligne-actions">

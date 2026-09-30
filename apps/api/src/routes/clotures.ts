@@ -143,7 +143,8 @@ export async function lireClotureMatch(c: Client, lieuId: string, evenementId: s
       rectifications: siens.filter((x) => x.type === "rectification").map(versComptage),
     };
   });
-  const ventes = vues.length > 0 && vues.every((s) => s.fermeeLe !== null);
+  // Sans aucune caisse ouverte sur le match (match annulé, essai), il n'y a rien à attendre.
+  const ventes = vues.every((s) => s.fermeeLe !== null);
   const especes = vues.every((s) => s.fond === null || s.comptage !== null);
   const restes = await restesDuMatch(c, lieuId, evenement);
   return {

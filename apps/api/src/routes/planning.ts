@@ -155,7 +155,8 @@ export async function routesPlanning(app: FastifyInstance, { base }: { base: Bas
       const evts = await listerEvenements(c, auth.lieuId);
       // Par défaut : le match ouvert, sinon le prochain à venir, sinon le plus récent.
       const prochains = evts.filter((e) => e.etat === "a_venir").sort((a, b) => Date.parse(a.debut) - Date.parse(b.debut));
-      const e = evts.find((x) => x.id === evenementId) ?? evts.find((x) => x.etat === "ouvert") ?? prochains[0] ?? evts[0];
+      const joues = [...evts].sort((a, b) => Date.parse(b.ouvertLe ?? b.debut) - Date.parse(a.ouvertLe ?? a.debut));
+      const e = evts.find((x) => x.id === evenementId) ?? evts.find((x) => x.etat === "ouvert") ?? prochains[0] ?? joues[0];
       return e ? planning(c, auth.lieuId, e) : null;
     });
   });
