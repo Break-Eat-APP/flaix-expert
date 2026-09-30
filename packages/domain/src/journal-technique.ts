@@ -41,6 +41,9 @@ export const TYPES_JET = {
   appareil_enregistre: "Tablette enregistrée comme caisse",
   appareil_retire: "Tablette retirée",
   ticket_edite: "Ticket client édité (sur demande)",
+  z_caisse_clos: "Z de caisse clôturé (espèces comptées)",
+  z_caisse_rectifie: "Rectification d'un Z de caisse",
+  seuil_especes_modifie: "Tolérance d'écart d'espèces modifiée",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

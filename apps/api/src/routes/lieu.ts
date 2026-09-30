@@ -25,7 +25,7 @@ const Identite = z.object({
 
 async function lireLieu(c: Client, lieuId: string): Promise<Lieu> {
   const { rows } = await c.query(
-    `SELECT id, nom, raison_sociale, siret, tva_intracom, adresse, code_postal, ville, remise_abonne_pb FROM lieu WHERE id = $1`,
+    `SELECT id, nom, raison_sociale, siret, tva_intracom, adresse, code_postal, ville, remise_abonne_pb, seuil_ecart_especes_centimes FROM lieu WHERE id = $1`,
     [lieuId],
   );
   const l = rows[0];
@@ -40,8 +40,12 @@ async function lireLieu(c: Client, lieuId: string): Promise<Lieu> {
     codePostal: l.code_postal,
     ville: l.ville,
     remiseAbonnePb: l.remise_abonne_pb,
+    seuilEcartEspeces: l.seuil_ecart_especes_centimes,
   };
 }
+
+// Tolérance d'écart au comptage du tiroir (module 7, §15.102) : au-delà, motif obligatoire.
+const SeuilEspeces = z.object({ seuilCentimes: z.number().int().min(0, "Tolérance invalide.").max(100_000, "Tolérance trop élevée (1 000 € au plus).") });
 
 // Réglage de caisse du lieu : la remise contractuelle des abonnés (§14 module 1, ajout du 11/09).
 const ReglagesCaisse = z.object({
@@ -58,7 +62,7 @@ export async function routesLieu(app: FastifyInstance, { base }: { base: Base })
     const auth = await exigerDirecteur(req, base);
     const identite = corps(Identite, req);
     return base.transaction(contexte(auth), async (c) => {
-      const { id: _id, remiseAbonnePb: _r, ...avant } = await lireLieu(c, auth.lieuId);
+      const { id: _id, remiseAbonnePb: _r, seuilEcartEspeces: _s, ...avant } = await lireLieu(c, auth.lieuId);
       const modifications = differences(avant, identite);
       if (Object.keys(modifications).length === 0) return lireLieu(c, auth.lieuId);
       await c.query(
@@ -89,6 +93,24 @@ export async function routesLieu(app: FastifyInstance, { base }: { base: Base })
           type: "reglages_caisse_modifies",
           utilisateurId: auth.utilisateurId,
           details: { modifications: { remiseAbonnePb: { avant: avant.remiseAbonnePb, apres: remiseAbonnePb } } },
+        });
+      }
+      return lireLieu(c, auth.lieuId);
+    });
+  });
+
+  app.put("/api/lieu/seuil-especes", async (req) => {
+    const auth = await exigerDirecteur(req, base);
+    const { seuilCentimes } = corps(SeuilEspeces, req);
+    return base.transaction(contexte(auth), async (c) => {
+      const avant = await lireLieu(c, auth.lieuId);
+      if (avant.seuilEcartEspeces !== seuilCentimes) {
+        await c.query("UPDATE lieu SET seuil_ecart_especes_centimes = $2 WHERE id = $1", [auth.lieuId, seuilCentimes]);
+        await inscrireJet(c, {
+          lieuId: auth.lieuId,
+          type: "seuil_especes_modifie",
+          utilisateurId: auth.utilisateurId,
+          details: { modifications: { seuilEcartEspeces: { avant: avant.seuilEcartEspeces, apres: seuilCentimes } } },
         });
       }
       return lireLieu(c, auth.lieuId);

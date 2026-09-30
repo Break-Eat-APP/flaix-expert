@@ -5,7 +5,7 @@
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { FastifyInstance } from "fastify";
-import type { EntreeJournalTechnique, Evenement, Produit, RepriseCaisse, StatsCaisse, Stand, TicketVue, VerificationCaisses } from "@flaix/domain";
+import type { ClotureMatch, EntreeJournalTechnique, Evenement, Produit, RepriseCaisse, StatsCaisse, Stand, TicketVue, VerificationCaisses } from "@flaix/domain";
 import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { MOT_DE_PASSE_TEST, basesDeTest, codeErreur, creerLieuDeTest } from "./aide.ts";
@@ -295,9 +295,18 @@ describe("Ma caisse — la tablette scelle, le serveur vérifie (§15.97)", () =
     expect(rows[0].n).toBe(1);
   });
 
-  it("un match ne se clôt pas tant qu'une caisse est ouverte, puis se clôt définitivement", async () => {
+  it("un match ne se clôt pas tant qu'une caisse est ouverte ni tant qu'un tiroir n'a pas son Z, puis se clôt définitivement", async () => {
     expect((await appel("POST", `/api/evenements/${match1.id}/cloture`)).statut).toBe(409);
     expect((await cloturer(tBar)).statut).toBe(200);
+    // Le tiroir de la caisse du Snack (espèces) doit être compté avant la clôture du match (§15.102).
+    const sansZ = await appel<{ erreur: string }>("POST", `/api/evenements/${match1.id}/cloture`);
+    expect(sansZ.statut).toBe(409);
+    expect(sansZ.corps.erreur).toContain("tiroir");
+    const cl = (await appel<ClotureMatch>("GET", `/api/clotures?evenementId=${match1.id}`)).corps;
+    const snackSession = cl.sessions.find((x) => x.caisseId === caisseSnack())!;
+    expect(snackSession.attendu).toBe(15700);
+    // 157,00 € : 3 billets de 50 €, 1 billet de 5 €, 1 pièce de 2 €.
+    expect((await appel("POST", `/api/sessions-caisse/${snackSession.sessionId}/comptage`, { coupures: { "5000": 3, "500": 1, "200": 1 } })).statut).toBe(200);
     expect((await appel("POST", `/api/evenements/${match1.id}/cloture`)).statut).toBe(200);
     expect(await codeErreur(proprietaire.transaction({}, (c) => c.query("UPDATE evenement SET etat = 'ouvert' WHERE id = $1", [match1.id])))).toBe("23514");
   });

@@ -64,6 +64,14 @@ describe("Groupe A — inaltérabilité, imposée par la base", () => {
     expect(await codeErreur(proprietaire.transaction({}, (c) => c.query("UPDATE produit_tarif SET prix_ttc_centimes = 1")))).toBe("42501");
   });
 
+  it("[F] — Z de caisse (comptage des espèces, §15.102) : écriture seule, même pour le propriétaire, et jamais vidé", async () => {
+    // Refus par les droits (serveur) et par déclencheur (propriétaire), avant même de toucher une ligne.
+    expect(await codeErreur(app.transaction(ctxA(), (c) => c.query("UPDATE comptage_especes SET ecart_centimes = 0")))).toBe("42501");
+    expect(await codeErreur(app.transaction(ctxA(), (c) => c.query("DELETE FROM comptage_especes")))).toBe("42501");
+    expect(await codeErreur(proprietaire.transaction({}, (c) => c.query("TRUNCATE comptage_especes")))).toBe("42501");
+    // Les cas sur des Z réels (écart faux, motif manquant, second Z, rectification) : test/clotures.test.ts.
+  });
+
   it("A8 [F] — deux événements ne peuvent pas porter le même numéro : contrainte d'unicité", async () => {
     const code = await codeErreur(
       app.transaction(ctxA(), (c) =>

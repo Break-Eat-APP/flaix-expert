@@ -31,9 +31,11 @@ export interface Lieu {
   ville: string | null;
   /** Remise contractuelle des abonnés, en points de base (1 500 = 15 %) ; null tant que non réglée. */
   remiseAbonnePb: number | null;
+  /** Tolérance d'écart d'espèces au comptage du tiroir, en centimes (module 7) ; au-delà, motif obligatoire. */
+  seuilEcartEspeces: Centimes;
 }
 
-export type IdentiteLieu = Omit<Lieu, "id" | "remiseAbonnePb">;
+export type IdentiteLieu = Omit<Lieu, "id" | "remiseAbonnePb" | "seuilEcartEspeces">;
 
 export interface Caisse {
   id: string;
@@ -230,6 +232,67 @@ export interface StatsCaisse {
   especes: Centimes;
   carte: Centimes;
   dernierTicket: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Clôture du match (dossier §15.102) : ventes, restes, espèces, clôture
+// ---------------------------------------------------------------------------
+
+/** Comptage du tiroir d'une session de caisse (le « Z »), ou rectification qui s'y ajoute. */
+export interface ComptageEspeces {
+  id: string;
+  type: "comptage" | "rectification";
+  refComptage: string | null;
+  coupures: Record<string, number>;
+  fond: Centimes;
+  especes: Centimes;
+  sorties: Centimes;
+  attendu: Centimes;
+  compte: Centimes;
+  ecart: Centimes;
+  seuil: Centimes;
+  motif: string | null;
+  signature: string | null;
+  par: string;
+  le: string;
+}
+
+/** Une session de caisse du match, vue depuis la clôture. */
+export interface SessionACloturer {
+  sessionId: string;
+  caisseId: string;
+  caisseNumero: number;
+  caisseNom: string | null;
+  standNom: string;
+  ouvertePar: string;
+  ouverteLe: string;
+  fermeeLe: string | null;
+  nbVentes: number;
+  nbAnnulations: number;
+  net: Centimes;
+  especes: Centimes;
+  carte: Centimes;
+  /** null : caisse « carte uniquement », pas de tiroir à compter. */
+  fond: Centimes | null;
+  attendu: Centimes | null;
+  comptage: ComptageEspeces | null;
+  rectifications: ComptageEspeces[];
+}
+
+export interface ClotureMatch {
+  evenement: Evenement;
+  seuilEcartEspeces: Centimes;
+  sessions: SessionACloturer[];
+  etapes: {
+    /** Toutes les caisses du match sont clôturées. */
+    ventes: boolean;
+    /** Comptage des restes : attend le module Stock (§15.102), ne bloque pas. */
+    restes: "a_venir";
+    /** Chaque tiroir (session avec espèces) a son Z. */
+    especes: boolean;
+    /** Le match peut être clos définitivement. */
+    cloturable: boolean;
+  };
 }
 
 /**

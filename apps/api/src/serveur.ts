@@ -15,6 +15,7 @@ import { routesJournal } from "./routes/journal.ts";
 import { routesEvenements } from "./routes/evenements.ts";
 import { routesCaisse } from "./routes/caisse.ts";
 import { routesEquipe } from "./routes/equipe.ts";
+import { routesClotures } from "./routes/clotures.ts";
 
 const METHODES_MODIFIANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -100,6 +101,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesEvenements, { base });
   await app.register(routesCaisse, { base });
   await app.register(routesEquipe, { base });
+  await app.register(routesClotures, { base });
 
   return app;
 }

@@ -140,6 +140,16 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
       if (e.caisses_ouvertes > 0) {
         throw new ErreurMetier(409, `${e.caisses_ouvertes} caisse(s) encore ouverte(s) sur ce match : clôture-les d'abord.`);
       }
+      // Chaque tiroir (session qui accepte les espèces) doit avoir son Z avant la clôture du match (§15.102).
+      const { rows: sansZ } = await c.query<{ n: number }>(
+        `SELECT count(*)::int AS n FROM session_caisse s
+          WHERE s.lieu_id = $1 AND s.evenement_id = $2 AND s.fond_centimes IS NOT NULL
+            AND NOT EXISTS (SELECT 1 FROM comptage_especes ce WHERE ce.session_id = s.id AND ce.type = 'comptage')`,
+        [auth.lieuId, id],
+      );
+      if (sansZ[0]!.n > 0) {
+        throw new ErreurMetier(409, `${sansZ[0]!.n} tiroir(s) sans Z : compte les espèces dans Clôtures → Clôture du match avant de clore le match.`);
+      }
       await c.query("UPDATE evenement SET etat = 'clos', clos_le = now() WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id]);
       await inscrireJet(c, { lieuId: auth.lieuId, type: "evenement_clos", utilisateurId: auth.utilisateurId, details: { evenementId: id, match: e.libelle } });
       return listerEvenements(c, auth.lieuId);
