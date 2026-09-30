@@ -4115,3 +4115,19 @@ Décision du §15.99 (aucun ticket imprimé à la caisse ; sur demande, le direc
 **Toujours à confirmer** (question G.18 de `questions-expert-comptable.md`) : l'exception « hôtellerie-restauration » du ticket obligatoire (§15.18), et la forme exacte attendue d'un duplicata.
 
 **Vérifié** : 2 tests serveur (éditions numérotées et journalisées, duplicata à la 2e ; édition refusée sans session de directeur, ticket d'un autre lieu introuvable) ; essai dans le navigateur sur le lieu d'essai local (ticket 2026-C1-000001 de Julie M. : 14,00 €, TVA 20 % 2,33 € sur 11,67 € HT, avertissement « identité du lieu incomplète » affiché hors du ticket).
+
+### 15.102 Clôtures — assistant de clôture du match : conception (2026-09-30)
+
+Demande de Rémi : *« la suite des Clôtures […] fait aussi »* (§15.99). Sources relues avant d'écrire : module 7 Contrôle & Espèces (§14, prototype isolé `58f197d5…` relu en entier le 2026-09-30) et module 10 Clôture d'événement (§14). **L'onglet « Clôture du match » devient l'assistant en 4 étapes validé**, pour le match ouvert :
+
+1. **Ventes** — plus d'import en production : les ventes sont déjà dans le journal de caisse. L'étape liste chaque caisse du match (tickets, total, espèces, carte) et **est faite quand toutes les caisses sont clôturées** (depuis leur tablette).
+2. **Restes** — le comptage de ce qui reste (module 10) demande la mise en place du module **Stock, pas encore construit**. L'étape est affichée « à venir » et **ne bloque pas** tant qu'aucune mise en place n'existe ; elle deviendra obligatoire avec le module Stock. *Écart signalé par rapport au module 10 validé.*
+3. **Espèces** (module 7, repris tel quel) — pour chaque session de caisse qui accepte les espèces : **comptage par coupure** (500 € à 1 c), attendu = **fond + ventes espèces nettes du journal** − sorties vers le coffre, écart = compté − attendu, **tolérance réglable par le lieu (5,00 € par défaut)**, motif obligatoire au-delà (5 caractères au moins) **sans jamais bloquer**, écart positif signalé comme le négatif. **« Clôturer le Z »** : définitif, attribué, horodaté, inscrit au journal technique qui le scelle. **Rectification** : jamais d'écrasement ; montant compté rectifié, motif, **signature en toutes lettres**, inscrite à côté du Z d'origine qui reste affiché inchangé. Les caisses « carte uniquement » n'ont pas de tiroir : leur total carte est affiché pour la comparaison avec le TPE, que le directeur fait lui-même (§15.95, décision 3 — aucune saisie du ticket TPE).
+4. **Clôture du match** — la clôture définitive existante, qui exige désormais aussi **que chaque tiroir ait son Z**.
+
+**Écarts signalés par rapport aux modules validés** :
+- **Sorties vers le coffre** pendant le match : pas encore de saisie ; comptées à zéro. À ajouter si le lieu fait des remontées d'espèces en cours de soirée (question pour Rémi).
+- **Notification par e-mail d'une rectification** : aucun envoi d'e-mail n'existe encore dans FlaiX. La rectification est enregistrée, signée et scellée, mais **pas notifiée** ; l'e-mail viendra avec le « rapport de soirée par e-mail » (ajout validé au §15.95).
+- **Clôture du lieu / grand total de période** : la clôture du match fige la soirée ; les totaux de période et l'archivage relèvent de l'onglet « Mois & année » (à venir).
+
+**Données** : nouvelle table en écriture seule `comptage_especes` (comptages et rectifications, jamais modifiés, un seul comptage par session), copie interrogeable de ce que scelle le journal technique (même principe que `ligne_ticket`). Tests [F] écrits avec le code.
