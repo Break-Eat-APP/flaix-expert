@@ -381,8 +381,8 @@ export interface StatsMatch {
   panierMoyen: Centimes | null;
   spectateurs: number | null;
   caParSpectateur: Centimes | null;
-  /** Heure de Paris (0-23) → CA TTC net. */
-  parHeure: { heure: number; ca: Centimes }[];
+  /** Heure de Paris (0-23) → CA TTC net et tickets (ventes moins annulations). */
+  parHeure: { heure: number; ca: Centimes; tickets: number }[];
   parCategorie: { nom: string; ca: Centimes }[];
   parStand: { standId: string; nom: string; ca: Centimes }[];
   parMode: { especes: Centimes; carte: Centimes };

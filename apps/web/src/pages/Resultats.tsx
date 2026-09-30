@@ -3,13 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2 } from "lucide-react";
 import type { Evenement, Lieu, Produit, SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
-import { Carte, Chargement, EntetePage, EtatVide, MessageErreur } from "../composants/communs.tsx";
+import { Carte, Chargement, EntetePage, MessageErreur } from "../composants/communs.tsx";
+import { Tableaux } from "./resultats/Tableaux.tsx";
 
 /**
- * Résultats — page d'accueil (organisation en 6 entrées, dossier §15.96).
- * Les tableaux de résultats ne sont pas encore construits : la page le dit, sans aucun
- * chiffre inventé. Elle reprend la mise en route d'un lieu qui démarre de zéro
- * (ex-« Démarrage du lieu », brief de production §1), tant qu'elle n'est pas terminée.
+ * Résultats — page d'accueil (organisation en 6 entrées, dossier §15.96). En tête, la mise en
+ * route d'un lieu qui démarre de zéro, tant qu'elle n'est pas terminée ; puis les tableaux
+ * calculés sur les vraies ventes (dossier §15.103).
  */
 export function Resultats({ session }: { session: SessionInfo }) {
   const lieu = useQuery({ queryKey: ["lieu"], queryFn: () => api.get<Lieu>("/lieu") });
@@ -27,7 +27,6 @@ export function Resultats({ session }: { session: SessionInfo }) {
   const produitsActifs = produits.data!.filter((p) => p.actif);
   const produitsVendus = produitsActifs.filter((p) => p.standIds.length > 0);
   const nbMatchs = evenements.data!.length;
-  const nbClos = evenements.data!.filter((e) => e.etat === "clos").length;
 
   const etapes = [
     {
@@ -97,13 +96,7 @@ export function Resultats({ session }: { session: SessionInfo }) {
           </ol>
         </Carte>
       )}
-      <Carte titre="Résultats des matchs">
-        <EtatVide titre="Bientôt ici">
-          {nbClos === 0 ? "Aucun match clos pour l'instant. " : `${nbClos} match${nbClos > 1 ? "s" : ""} clos. `}
-          Le chiffre d'affaires, les ventes, les finances, les marges et les rapports de soirée s'afficheront sur cette page : ce module n'est pas encore
-          construit dans cette version. En attendant, les chiffres de chaque match sont dans <Link to="/caisses">Caisses</Link>.
-        </EtatVide>
-      </Carte>
+      <Tableaux />
     </>
   );
 }

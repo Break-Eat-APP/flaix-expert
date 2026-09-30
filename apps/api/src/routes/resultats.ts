@@ -15,13 +15,13 @@ const Choix = z.object({ evenementId: Uuid.optional(), comparaison: Uuid.optiona
 
 async function resumeMatchs(c: Client, lieuId: string): Promise<MatchResume[]> {
   const { rows } = await c.query<{ id: string; libelle: string; debut: Date; etat: MatchResume["etat"]; spectateurs: number | null; ca: number; tickets: number }>(
-    `SELECT e.id, e.libelle, e.debut, e.etat, e.spectateurs,
+    `SELECT e.id, e.libelle, e.debut, e.etat, e.spectateurs, coalesce(e.ouvert_le, e.debut) AS joue_le,
             sum(j.total_ttc_centimes)::int AS ca,
             (count(*) FILTER (WHERE j.type = 'vente') - count(*) FILTER (WHERE j.type = 'annulation'))::int AS tickets
        FROM evenement e JOIN journal_caisse j ON j.lieu_id = e.lieu_id AND j.evenement_id = e.id AND j.type IN ('vente', 'annulation')
       WHERE e.lieu_id = $1
       GROUP BY e.id
-      ORDER BY e.debut DESC`,
+      ORDER BY coalesce(e.ouvert_le, e.debut) DESC`,
     [lieuId],
   );
   return rows.map((r) => ({ id: r.id, libelle: r.libelle, debut: r.debut.toISOString(), etat: r.etat, caTtc: r.ca, tickets: r.tickets, spectateurs: r.spectateurs }));
@@ -39,8 +39,9 @@ export async function statsMatch(c: Client, lieuId: string, e: Evenement): Promi
        FROM journal_caisse WHERE lieu_id = $1 AND evenement_id = $2 AND type IN ('vente', 'annulation')`,
     p,
   );
-  const { rows: heures } = await c.query<{ heure: number; ca: number }>(
-    `SELECT extract(hour FROM horodatage AT TIME ZONE 'Europe/Paris')::int AS heure, sum(total_ttc_centimes)::int AS ca
+  const { rows: heures } = await c.query<{ heure: number; ca: number; tickets: number }>(
+    `SELECT extract(hour FROM horodatage AT TIME ZONE 'Europe/Paris')::int AS heure, sum(total_ttc_centimes)::int AS ca,
+            (count(*) FILTER (WHERE type = 'vente') - count(*) FILTER (WHERE type = 'annulation'))::int AS tickets
        FROM journal_caisse WHERE lieu_id = $1 AND evenement_id = $2 AND type IN ('vente', 'annulation')
       GROUP BY 1`,
     p,
@@ -103,7 +104,7 @@ export async function statsMatch(c: Client, lieuId: string, e: Evenement): Promi
     panierMoyen: tickets > 0 ? Math.round(t.ca / tickets) : null,
     spectateurs: e.spectateurs,
     caParSpectateur: e.spectateurs ? Math.round(t.ca / e.spectateurs) : null,
-    parHeure: heures.sort((a, b) => rangHeure(a.heure) - rangHeure(b.heure)).map((h) => ({ heure: h.heure, ca: h.ca })),
+    parHeure: heures.sort((a, b) => rangHeure(a.heure) - rangHeure(b.heure)).map((h) => ({ heure: h.heure, ca: h.ca, tickets: h.tickets })),
     parCategorie: [...categories].map(([nom, ca]) => ({ nom, ca })).sort((a, b) => b.ca - a.ca),
     parStand: stands.map((s) => ({ standId: s.stand_id, nom: s.nom, ca: s.ca })),
     parMode: { especes: t.especes, carte: t.carte },
@@ -170,8 +171,9 @@ export async function routesResultats(app: FastifyInstance, { base }: { base: Ba
       const evenement = evenements.find((e) => e.id === choix.evenementId) ?? ouvert ?? evenements.find((e) => e.id === matchs[0]?.id) ?? null;
       if (!evenement) return { matchs, evenement: null, comparaison: null, actuel: null, precedent: null, alertes: [], prochains };
 
-      // Comparaison : celle demandée ; sinon le match précédent (dans le temps) qui a des ventes.
-      const anterieur = matchs.find((m) => m.id !== evenement.id && Date.parse(m.debut) < Date.parse(evenement.debut));
+      // Comparaison : celle demandée ; sinon le match joué juste avant qui a des ventes (liste déjà dans l'ordre où ils ont été joués).
+      const rang = matchs.findIndex((m) => m.id === evenement.id);
+      const anterieur = rang >= 0 ? matchs[rang + 1] : matchs.find((m) => m.id !== evenement.id);
       const comparaison = evenements.find((e) => e.id === choix.comparaison && e.id !== evenement.id) ?? evenements.find((e) => e.id === anterieur?.id) ?? null;
       const actuel = await statsMatch(c, auth.lieuId, evenement);
       const precedent = comparaison ? await statsMatch(c, auth.lieuId, comparaison) : null;

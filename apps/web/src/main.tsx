@@ -4,6 +4,7 @@ import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-qu
 import { App } from "./App.tsx";
 import { ErreurApi } from "./api.ts";
 import "./styles.css";
+import "./resultats.css";
 
 const client: QueryClient = new QueryClient({
   defaultOptions: {
