@@ -352,3 +352,72 @@ export interface AccueilTablette {
   caisse: { id: string; numero: number; nom: string | null; standNom: string };
   caissieres: { id: string; nom: string }[];
 }
+
+// ---------------------------------------------------------------------------
+// Résultats (dossier §15.103) : calculés sur les vraies ventes, jamais estimés
+// ---------------------------------------------------------------------------
+
+export interface ProduitVendu {
+  produitId: string;
+  nom: string;
+  categorie: string | null;
+  quantite: number;
+  caTtc: Centimes;
+  caHt: Centimes;
+  /** Coût matière HT par portion saisi sur la fiche produit ; null = coût manquant. */
+  coutUnitaire: Centimes | null;
+  /** caHt − quantité × coût ; null si le coût manque. */
+  marge: Centimes | null;
+}
+
+export interface StatsMatch {
+  evenementId: string;
+  caTtc: Centimes;
+  caHt: Centimes;
+  tva: Centimes;
+  /** Ventes moins annulations. */
+  tickets: number;
+  annulations: { nombre: number; montant: Centimes };
+  panierMoyen: Centimes | null;
+  spectateurs: number | null;
+  caParSpectateur: Centimes | null;
+  /** Heure de Paris (0-23) → CA TTC net. */
+  parHeure: { heure: number; ca: Centimes }[];
+  parCategorie: { nom: string; ca: Centimes }[];
+  parStand: { standId: string; nom: string; ca: Centimes }[];
+  parMode: { especes: Centimes; carte: Centimes };
+  parTaux: { tauxTva: TauxTvaPb; ht: Centimes; tva: Centimes; ttc: Centimes }[];
+  produits: ProduitVendu[];
+  /** null dès qu'un produit vendu n'a pas de coût. */
+  coutMatiere: Centimes | null;
+  margeBrute: Centimes | null;
+  produitsSansCout: string[];
+  caHtSansCout: Centimes;
+}
+
+export interface AlerteResultat {
+  niveau: "forte" | "normale";
+  titre: string;
+  detail: string;
+}
+
+export interface MatchResume {
+  id: string;
+  libelle: string;
+  debut: string;
+  etat: EtatEvenement;
+  caTtc: Centimes;
+  tickets: number;
+  spectateurs: number | null;
+}
+
+export interface Resultats {
+  /** Tous les matchs qui ont des ventes, du plus récent au plus ancien. */
+  matchs: MatchResume[];
+  evenement: Evenement | null;
+  comparaison: Evenement | null;
+  actuel: StatsMatch | null;
+  precedent: StatsMatch | null;
+  alertes: AlerteResultat[];
+  prochains: { id: string; libelle: string; debut: string }[];
+}

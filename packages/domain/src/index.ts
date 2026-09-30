@@ -8,3 +8,4 @@ export * from "./ticket.ts";
 export * from "./journal-caisse.ts";
 export * from "./caisse-scellee.ts";
 export * from "./especes.ts";
+export * from "./resultats.ts";
