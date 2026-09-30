@@ -451,3 +451,8 @@ input[aria-invalid="true"] { border-color: var(--red); }
 .stock td { vertical-align: middle; }
 details.inventaire { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
 details.inventaire summary { cursor: pointer; font-size: 13px; }
+
+/* Remontées au coffre et récapitulatif des espèces de la soirée (dossier §15.106). */
+.remontees { padding: 8px 12px; border-top: 1px solid var(--border); display: grid; gap: 4px; }
+.remontee { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; }
+.recap-especes { margin-top: 10px; padding: 12px 14px; border-radius: 12px; background: var(--childbg); border: 1px solid var(--border); display: grid; gap: 2px; max-width: 460px; }

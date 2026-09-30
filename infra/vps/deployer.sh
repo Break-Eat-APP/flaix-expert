@@ -127,14 +127,15 @@ CADDY
 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 systemctl restart caddy
 
-etape "sauvegarde quotidienne de la base (14 jours gardés)"
+etape "sauvegarde quotidienne de la base (14 jours gardés, celle du 1er de chaque mois gardée sans limite)"
 cat > /usr/local/sbin/sauvegarde-flaix.sh <<'SAUVE'
 #!/bin/bash
 set -euo pipefail
 fichier="/var/backups/flaix/flaix-$(date +%Y%m%d-%H%M).dump"
 sudo -u postgres pg_dump -Fc flaix > "$fichier"
 chmod 600 "$fichier"
-find /var/backups/flaix -name 'flaix-*.dump' -mtime +14 -delete
+# Tickets conservés sans limite (dossier §15.106) : la sauvegarde du 1er de chaque mois n'est jamais effacée.
+find /var/backups/flaix -name 'flaix-*.dump' ! -name 'flaix-??????01-*.dump' -mtime +14 -delete
 SAUVE
 chmod 750 /usr/local/sbin/sauvegarde-flaix.sh
 cat > /etc/systemd/system/sauvegarde-flaix.service <<'UNIT'

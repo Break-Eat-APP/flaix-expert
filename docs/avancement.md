@@ -21,7 +21,8 @@ Prochaines pistes, à valider avec Rémi : validation visuelle de chaque module 
 
 - Résultats : rapport de soirée figé et imprimable, envoi par e-mail à la clôture ; historique des coûts matière (avec le Stock).
 
-- Clôtures : sorties d'espèces vers le coffre pendant le match (question à Rémi) ; e-mail de notification d'une rectification de Z (quand l'envoi d'e-mails existera).
+- Clôtures : e-mail de notification d'une rectification de Z (quand l'envoi d'e-mails existera). Remontées au coffre et Z du coffre : faits le 2026-09-30 (§15.106).
+- Conservation des tickets sans limite : décidée (§15.106) ; question RGPD posée (G.19) ; copie des sauvegardes hors du serveur toujours à faire.
 
 - Recharger la page sans réseau sur le vrai serveur (service worker) : à essayer.
 - Copie de la sauvegarde hors du serveur + essai de restauration.
