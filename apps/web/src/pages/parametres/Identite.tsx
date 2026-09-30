@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { lireMontant, type IdentiteLieu, type Lieu, type SessionInfo } from "@flaix/domain";
+import { lireMontant, type EtatClotures, type IdentiteLieu, type Lieu, type SessionInfo } from "@flaix/domain";
 import { api } from "../../api.ts";
 import { Carte, Chargement, EntetePage, MessageErreur, Regles } from "../../composants/communs.tsx";
 
@@ -85,9 +85,11 @@ export function Identite() {
       </form>
       <ReglagesCaisse lieu={lieu.data!} />
       <ToleranceEspeces lieu={lieu.data!} />
+      <ExerciceComptable />
       <Regles>
         <ul>
           <li><strong>Remise abonné</strong> : taux contractuel accordé aux abonnés du lieu. Tant qu'il n'est pas réglé, la pastille « Abonné » de la caisse reste inactive. Le caissier l'applique, il ne le négocie pas.</li>
+          <li><strong>Exercice comptable</strong> : premier mois des 12 mois clôturés ensemble dans Clôtures → Mois & année (janvier par défaut). À vérifier avec l'expert-comptable du lieu ; il ne se change plus une fois un exercice clôturé.</li>
           <li><strong>Tolérance d'écart d'espèces</strong> : au comptage d'un tiroir (Clôtures → Clôture du match), un écart plus grand que ce montant demande un motif. 5,00 € par défaut. La clôture n'est jamais bloquée.</li>
           <li>Le ticket de caisse doit porter l'identité de l'exploitant : raison sociale, adresse, SIRET, n° de TVA (BOFiP, données obligatoires d'une opération d'encaissement).</li>
           <li>Le SIRET compte 14 chiffres ; le n° de TVA intracommunautaire commence par le code du pays (FR…). Les espaces saisis sont retirés.</li>
@@ -189,6 +191,47 @@ function ToleranceEspeces({ lieu }: { lieu: Lieu }) {
           Enregistrer
         </button>
       </form>
+      <MessageErreur erreur={sauver.error} />
+      {ok && !sauver.isPending && <div className="message message-ok">Enregistré. La modification est inscrite au journal technique.</div>}
+    </Carte>
+  );
+}
+
+const NOMS_MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+
+function ExerciceComptable() {
+  const client = useQueryClient();
+  const etat = useQuery({ queryKey: ["periodes"], queryFn: () => api.get<EtatClotures>("/clotures/periodes") });
+  const [ok, setOk] = useState(false);
+  const sauver = useMutation({
+    mutationFn: (moisDebut: number) => api.put<EtatClotures>("/lieu/exercice", { moisDebut }),
+    onSuccess: (e) => {
+      client.setQueryData(["periodes"], e);
+      setOk(true);
+    },
+  });
+  if (etat.isPending || etat.error) return null;
+  const e = etat.data!;
+  return (
+    <Carte titre="Exercice comptable" description="Les 12 mois clôturés ensemble dans Clôtures → Mois & année. À vérifier avec l'expert-comptable du lieu.">
+      <label className="champ" style={{ width: 240 }}>
+        <span>Premier mois de l'exercice</span>
+        <select
+          value={e.moisDebutExercice}
+          disabled={!e.exerciceModifiable || sauver.isPending}
+          onChange={(ev) => {
+            setOk(false);
+            sauver.mutate(Number(ev.target.value));
+          }}
+        >
+          {NOMS_MOIS.map((nom, i) => (
+            <option key={nom} value={i + 1}>
+              {nom}
+            </option>
+          ))}
+        </select>
+      </label>
+      {!e.exerciceModifiable && <div className="aide" style={{ marginTop: 6 }}>Un exercice est déjà clôturé : ce réglage est figé.</div>}
       <MessageErreur erreur={sauver.error} />
       {ok && !sauver.isPending && <div className="message message-ok">Enregistré. La modification est inscrite au journal technique.</div>}
     </Carte>

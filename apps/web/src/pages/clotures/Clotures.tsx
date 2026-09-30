@@ -16,6 +16,7 @@ import {
   type SessionACloturer,
 } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
+import { Periodes } from "./Periodes.tsx";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 
 type Onglet = "match" | "periode" | "archives";
@@ -51,7 +52,7 @@ export function Clotures() {
       <EntetePage titre="Clôtures" description="Boucler la soirée, puis le mois et l'année." />
       <div className="onglets">
         {bouton("match", "Clôture du match")}
-        {bouton("periode", "Mois & année", true)}
+        {bouton("periode", "Mois & année")}
         {bouton("archives", "Archives & contrôle", true)}
       </div>
 
@@ -101,13 +102,11 @@ export function Clotures() {
             )}
           </Carte>
         </>
+      ) : onglet === "periode" ? (
+        <Periodes />
       ) : (
         <Carte>
-          <EtatVide titre="Pas encore construit">
-            {onglet === "periode"
-              ? "Clôtures mensuelle et annuelle : les totaux de la période seront figés et scellés ici."
-              : "Archives annuelles et accès d'un vérificateur de l'administration : ils seront préparés ici."}
-          </EtatVide>
+          <EtatVide titre="Pas encore construit">Archives annuelles et accès d'un vérificateur de l'administration : ils seront préparés ici.</EtatVide>
         </Carte>
       )}
 
@@ -120,7 +119,8 @@ export function Clotures() {
           <li><strong>Tolérance</strong> (réglage du lieu, Paramètres → Le lieu ; 5,00 € par défaut) : en dessous, aucun motif. Au-delà, <strong>motif obligatoire</strong> (5 caractères au moins) — mais la clôture n'est jamais bloquée.</li>
           <li><strong>Un Z clôturé est définitif</strong> : attribué, horodaté, inscrit au journal technique qui le scelle ; la base refuse toute modification. <strong>Corriger = rectifier</strong> : montant compté rectifié, motif, signature en toutes lettres. La rectification s'ajoute ; le Z d'origine reste affiché inchangé. La notification par e-mail d'une rectification n'est pas encore en service.</li>
           <li><strong>Carte</strong> : une caisse « carte uniquement » n'a pas de tiroir. Son total carte s'affiche pour la comparaison avec le ticket de fin de journée du TPE.</li>
-          <li><strong>Clore le match est définitif</strong> : il faut toutes les caisses clôturées et chaque tiroir compté. Le serveur le vérifie lui-même. Chaque étape est inscrite au journal technique.</li>
+          <li><strong>Clore le match est définitif</strong> : il faut toutes les caisses clôturées et chaque tiroir compté. Le serveur le vérifie lui-même. Chaque étape est inscrite au journal technique. La clôture du match produit son <strong>Z</strong> (clôture journalière) : tickets, espèces, carte, TVA par taux, total de chaque caisse, grand total et total perpétuel, scellés.</li>
+          <li><strong>Mois & année</strong> : un mois se clôture une fois terminé (heure de Paris, selon la date des matchs), tous ses matchs clos, et après le mois précédent qui a des matchs. Grand total du mois = somme des Z de ses matchs ; total perpétuel = celui de la clôture précédente + grand total, jamais remis à zéro. Un mois clôturé ne reçoit plus de match. L'exercice (12 mois, premier mois réglé dans Paramètres → Le lieu) se clôture une fois terminé et tous ses mois clôturés. Chaque clôture est scellée et chaînée à la précédente ; « Vérifier l'intégrité » relit toute la chaîne.</li>
         </ul>
       </Regles>
     </>

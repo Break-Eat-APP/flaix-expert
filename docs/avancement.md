@@ -1,6 +1,6 @@
 # Avancement — reprise après coupure
 
-Mis à jour le 2026-09-30 (les 6 étapes faites). Pour reprendre : lire ce fichier, puis le dossier §15.99.
+Mis à jour le 2026-09-30 (6 étapes + coffre + clôtures de période). Pour reprendre : lire ce fichier, puis le dossier §15.99.
 
 ## Ordre de construction (dossier §15.99)
 
@@ -14,6 +14,8 @@ Mis à jour le 2026-09-30 (les 6 étapes faites). Pour reprendre : lire ce fichi
 | 6 | Stock : mise en place, comptage, réserve et livraisons | **fait le 2026-09-30** (dossier §15.105) — matières premières au poids et recettes reportées |
 
 ## Les 6 étapes demandées le 2026-09-30 sont faites
+
+Fait ensuite le 2026-09-30 : remontées au coffre et Z du coffre (§15.106) ; clôtures mensuelle et annuelle, Z du match, total perpétuel (§15.107). Reste dans Clôtures : l'onglet « Archives & contrôle » (archive annuelle en format ouvert, accès vérificateur, module 16).
 
 Prochaines pistes, à valider avec Rémi : validation visuelle de chaque module sur le serveur de test ; matières premières et recettes (Paramètres → Produits & prix, puis Stock) ; rapport de soirée imprimable et envoyé par e-mail ; alerte de rupture en direct sur téléphone ; export mensuel pour l'expert-comptable ; assistant IA en lecture seule (fournisseur à choisir).
 
