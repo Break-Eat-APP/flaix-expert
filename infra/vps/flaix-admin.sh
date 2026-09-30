@@ -50,11 +50,12 @@ RCLONE_CONFIG_OVH_REGION=${REGION}
 RCLONE_CONFIG_OVH_ACCESS_KEY_ID=${CLE}
 RCLONE_CONFIG_OVH_SECRET_ACCESS_KEY=${SECRET}
 RCLONE_CONFIG_OVH_NO_CHECK_BUCKET=true
+RCLONE_LOG_LEVEL=ERROR
 FLAIX_S3_CONTENEUR=${CONTENEUR}
 ENV
     unset SECRET
     chown root:root "$ENV_EXTERNE" && chmod 600 "$ENV_EXTERNE"
-    set -a; . "$ENV_EXTERNE"; set +a
+    set -a; . "$ENV_EXTERNE"; set +a; export RCLONE_LOG_LEVEL=ERROR
     echo "Vérification de l'accès au conteneur…"
     if ! echo "essai d'accès FlaiX" | rclone rcat "ovh:${CONTENEUR}/essai-acces.txt" 2>/dev/null || ! rclone deletefile "ovh:${CONTENEUR}/essai-acces.txt" 2>/dev/null; then
       rm -f "$ENV_EXTERNE"
@@ -84,7 +85,7 @@ ENV
 
   essai-restauration)
     [ -f "$ENV_EXTERNE" ] || { echo "La copie chez OVH n'est pas encore réglée : lance d'abord « flaix-admin sauvegarde-externe »."; exit 1; }
-    set -a; . "$ENV_EXTERNE"; set +a
+    set -a; . "$ENV_EXTERNE"; set +a; export RCLONE_LOG_LEVEL=ERROR
     DERNIER="$(rclone lsf "ovh:${FLAIX_S3_CONTENEUR}/quotidien" | sort | tail -1)"
     [ -n "$DERNIER" ] || { echo "Aucune copie trouvée chez OVH."; exit 1; }
     echo "Dernière copie chez OVH : $DERNIER"
