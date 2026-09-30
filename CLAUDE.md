@@ -45,3 +45,5 @@ Confirmé avec Rémi le 2026-09-28 : le module **Ma caisse** (création de ticke
 - **Équipe (dossier §15.104)** : le taux horaire est figé sur l'affectation à sa création ; taux et coûts ne sortent jamais vers une caissière.
 - **Clôtures de période (dossier §15.107)** : le Z du match est créé à la clôture du match (`zDuMatch`) ; mois et exercice se clôturent dans l'ordre ; `cloture_periode` est chaînée et la base impose perpétuel après = avant + grand total. Ne jamais recalculer un perpétuel ailleurs.
 - Docker Desktop sur ce poste : en cas de plantage au démarrage (« The file cannot be accessed by the system » sur un fichier `.sock`), voir la note dans `docs/decisions-architecture-production.md` § 13.
+
+- Mode formation (dossier §15.109) : lieu d'entraînement jumeau (`lieu.formation_de`), configuration recopiée par `synchroniser_formation` (migration 0012) à chaque entrée, en lecture seule (liste `CONFIGURATION` dans `apps/api/src/serveur.ts` : toute nouvelle route de configuration doit y figurer). Une session porte `formation` ; ne jamais filtrer « formation » dans les calculs : l'isolement vient du lieu.

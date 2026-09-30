@@ -4,6 +4,7 @@ import { Delete } from "lucide-react";
 import type { AccueilTablette, SessionInfo } from "@flaix/domain";
 import { api } from "../api.ts";
 import { MessageErreur } from "../composants/communs.tsx";
+import { BandeauFormation } from "../composants/Formation.tsx";
 
 /**
  * Accueil d'une tablette enregistrée comme caisse (dossier §15.100) : la caissière touche son nom,
@@ -42,6 +43,7 @@ export function ConnexionCaissiere({ accueil, versDirecteur }: { accueil: Accuei
 
   return (
     <div className="page-connexion">
+      {accueil.formation && <BandeauFormation />}
       <div className="carte boite-caissiere">
         <div className="marque">
           <div className="marque-logo">X</div>

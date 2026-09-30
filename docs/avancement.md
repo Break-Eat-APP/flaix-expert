@@ -1,6 +1,6 @@
 # Avancement — reprise après coupure
 
-Mis à jour le 2026-09-30 (6 étapes + coffre + clôtures de période + copie chiffrée des sauvegardes). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.108.
+Mis à jour le 2026-09-30 (6 étapes + coffre + clôtures de période + copie chiffrée des sauvegardes + mode formation). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.109.
 
 ## Ordre de construction (dossier §15.99)
 
@@ -47,7 +47,6 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 
 | Travail | Remarque |
 |---|---|
-| Mode formation « FACTICE » | décidé (`decisions-architecture-production.md` § 4.5, tests B3/B4) ; **préalable aux vrais chiffres** (§15.108) |
 | Export mensuel pour l'expert-comptable | à définir avec lui |
 | 13 Click & Collect | règles de prix à revoir d'abord (§15.20) |
 | Vue téléphone du directeur, alerte de rupture en direct | — |
@@ -55,7 +54,23 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 
 **Plus tard (décidé par Rémi)** : 19 Fidélité, 20 Wallet & campagnes, Facturation (facture Break Eat, rapprochement fournisseur), 17 Back-office éditeur, assistant IA, recettes et matières premières.
 
-## Ordre proposé pour finir « de A à Z » (à valider par Rémi)
+## Ordre fixé par Rémi le 2026-09-30 (dossier §15.109) — « développe, sans t'arrêter »
+
+| # | Module | État |
+|---|---|---|
+| 1 | Mode formation « FACTICE » | **fait le 2026-09-30** (§15.109) |
+| 2 | Export pour l'expert-comptable | **prochain** |
+| 3 | Click & Collect | à faire (règles de prix §15.20 : poser les questions nécessaires, construire le reste) |
+| 4 | Vue téléphone du directeur | à faire |
+| 5 | Coûts par buvette | à faire |
+| 6 | Fidélité | à faire |
+| 7 | Wallet & campagnes | à faire |
+| 8 | Facturation | à faire |
+| 9 | Back-office éditeur | à faire |
+
+**À voir avec Rémi, ne pas construire seul** : Conformité (dossier bien structuré à préparer ; y joindre les points prévus à revoir ensemble), recettes / matières premières, IA ; serveur de production (Rémi s'en occupe).
+
+## Ancienne proposition d'ordre (remplacée par le tableau ci-dessus)
 
 1. **Mode formation « FACTICE »** — pour que les essais ne se mélangent jamais aux vrais chiffres.
 2. **Conformité** : attestation, registre des versions, connexions par caisse, archive annuelle, accès vérificateur, export pour l'expert-comptable.

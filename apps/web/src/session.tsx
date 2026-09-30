@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SessionInfo } from "@flaix/domain";
 import { api, ErreurApi } from "./api.ts";
 
@@ -64,6 +64,21 @@ export function useSession() {
   }, [session]);
 
   return requete;
+}
+
+/**
+ * Entrée ou sortie du mode formation (§15.109) : le serveur ouvre une nouvelle session dans l'autre
+ * lieu ; toutes les données affichées appartiennent à l'ancien et sont oubliées.
+ */
+export function useBasculeFormation() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (sens: "entree" | "sortie") => api.post<SessionInfo>(`/formation/${sens}`),
+    onSuccess: (s) => {
+      client.setQueryData(["session"], s);
+      client.removeQueries({ predicate: (q) => q.queryKey[0] !== "session" });
+    },
+  });
 }
 
 export function useDeconnexion() {

@@ -40,6 +40,7 @@ export function Equipe() {
           <li><strong>Coût</strong> = durée réelle × taux horaire. Le taux est <strong>figé sur l'affectation</strong> à sa création : changer le taux d'une fiche ne réécrit pas les matchs déjà planifiés. Sans taux : « taux manquant », jamais zéro.</li>
           <li><strong>Masse salariale</strong> = somme des coûts réels du planning, par match, par statut, par rôle. Elle est déduite dans Résultats → Finances.</li>
           <li><strong>Tablettes</strong> : sur la tablette du stand, connecte-toi avec ton e-mail, ouvre Caisses → la caisse, puis « Enregistrer cet appareil ». Retirer une tablette déconnecte les caissières qui y sont.</li>
+          <li><strong>Mettre en formation</strong> : toute caissière qui se connecte sur la tablette vend alors en factice, dans le lieu d'entraînement (Paramètres → Mode formation) ; la caissière connectée est déconnectée. Pas possible pendant que la vraie caisse est ouverte.</li>
           <li>Chaque création, modification, accès donné ou retiré, affectation, correction d'heures et retrait est inscrit au journal technique.</li>
         </ul>
       </Regles>
@@ -275,6 +276,14 @@ function Tablettes() {
   const client = useQueryClient();
   const appareils = useQuery({ queryKey: ["appareils"], queryFn: () => api.get<AppareilCaisse[]>("/appareils") });
   const [aRetirer, setARetirer] = useState<string | null>(null);
+  const formation = useMutation({
+    mutationFn: (x: { id: string; formation: boolean }) => api.post<AppareilCaisse[]>(`/appareils/${x.id}/formation`, { formation: x.formation }),
+    onSuccess: (l) => {
+      client.setQueryData(["appareils"], l);
+      void client.invalidateQueries({ queryKey: ["appareil"] });
+      void client.invalidateQueries({ queryKey: ["formation"] });
+    },
+  });
   const retirer = useMutation({
     mutationFn: (id: string) => api.post<AppareilCaisse[]>(`/appareils/${id}/retrait`),
     onSuccess: (l) => {
@@ -307,6 +316,7 @@ function Tablettes() {
                 </strong>
                 <span className="discret">{a.standNom}</span>
                 {a.cetAppareil && <span className="puce puce-violet">Cet appareil</span>}
+                {a.formation && <span className="puce puce-ambre">Formation — factice</span>}
                 <span className="discret" style={{ fontSize: 12 }}>
                   Enregistrée par {a.enregistrePar} le {formaterDateHeure(a.enregistreLe)}
                   {a.derniereConnexion ? ` · dernière connexion ${formaterDateHeure(a.derniereConnexion)}` : " · aucune connexion"}
@@ -323,9 +333,18 @@ function Tablettes() {
                       </button>
                     </>
                   ) : (
-                    <button className="btn btn-danger" onClick={() => setARetirer(a.id)}>
-                      Retirer
-                    </button>
+                    <>
+                      <button
+                        className="btn btn-fantome"
+                        disabled={formation.isPending}
+                        onClick={() => formation.mutate({ id: a.id, formation: !a.formation })}
+                      >
+                        {a.formation ? "Sortir de la formation" : "Mettre en formation"}
+                      </button>
+                      <button className="btn btn-danger" onClick={() => setARetirer(a.id)}>
+                        Retirer
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -333,6 +352,7 @@ function Tablettes() {
           </div>
         )}
         <MessageErreur erreur={retirer.error} />
+        <MessageErreur erreur={formation.error} />
       </Carte>
       {retirees.length > 0 && (
         <Carte titre="Tablettes retirées" description="Conservées pour l'historique ; elles ne permettent plus aucune connexion.">

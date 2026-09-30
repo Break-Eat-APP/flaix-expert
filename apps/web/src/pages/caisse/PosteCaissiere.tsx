@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import type { SessionInfo } from "@flaix/domain";
 import { useDeconnexion } from "../../session.tsx";
 import { EcranCaisse } from "./EcranCaisse.tsx";
+import { BandeauFormation } from "../../composants/Formation.tsx";
 
 /**
  * Poste d'une caissière (dossier §15.100) : l'écran de vente de la caisse de cette tablette,
@@ -47,6 +48,7 @@ export function PosteCaissiere({ session }: { session: SessionInfo }) {
           )}
         </div>
       </div>
+      {session.formation && <BandeauFormation />}
       {session.environnement !== "production" && (
         <div className="bandeau-test" role="note">
           {session.environnement === "test" ? "VERSION DE TEST — aucune vente réelle, aucun encaissement." : "DÉVELOPPEMENT LOCAL — aucune vente réelle."}

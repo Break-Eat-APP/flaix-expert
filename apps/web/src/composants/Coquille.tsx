@@ -5,6 +5,7 @@ import { ChartLine, KeyRound, Lock, LogOut, Menu, Package, Receipt, SlidersHoriz
 import type { SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
 import { useDeconnexion } from "../session.tsx";
+import { BandeauFormation } from "./Formation.tsx";
 
 interface Entree {
   id: string;
@@ -64,6 +65,7 @@ export function Coquille({ session }: { session: SessionInfo }) {
 
         <NavLink to="/" className="lieu-actif" style={{ textDecoration: "none" }}>
           <strong>{session.lieu.nom}</strong>
+          {session.formation && <span className="puce puce-ambre" style={{ display: "table", margin: "4px 0" }}>Lieu d&apos;entraînement — factice</span>}
           <small>
             {stands.data
               ? `${actifs.length} stand${actifs.length > 1 ? "s" : ""} · ${nbCaisses} caisse${nbCaisses > 1 ? "s" : ""}`
@@ -107,6 +109,12 @@ export function Coquille({ session }: { session: SessionInfo }) {
       </aside>
 
       <div>
+        {session.formation && <BandeauFormation quitter={session.role === "directeur"} />}
+        {session.formation && pathname.startsWith("/parametres/") && !["/parametres/formation", "/parametres/saison"].includes(pathname) && (
+          <div className="message message-alerte" style={{ margin: "12px 24px 0" }}>
+            En formation, la configuration est celle du vrai lieu : consultation seulement. Elle se modifie après être sorti de la formation.
+          </div>
+        )}
         {session.environnement !== "production" && (
           <div className="bandeau-test" role="note">
             {session.environnement === "test"

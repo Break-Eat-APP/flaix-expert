@@ -276,6 +276,26 @@ input[aria-invalid="true"] { border-color: var(--red); }
   font-size: 12px; font-weight: 700; text-align: center; padding: 6px 12px;
 }
 
+/* ---------- Mode formation « FACTICE » (BOFiP §150, test B3, dossier §15.109) : non masquable ---------- */
+.bandeau-formation {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 40;
+  display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
+  padding: 7px 12px; border-bottom: 2px solid var(--amber); text-align: center; font-size: 12.5px; color: var(--text);
+  background: repeating-linear-gradient(135deg, var(--amber) 0 12px, var(--amber-soft) 12px 24px);
+}
+.bandeau-formation > span { background: var(--surface); border-radius: 8px; padding: 4px 10px; }
+.bandeau-formation strong { letter-spacing: 0.06em; }
+.bandeau-formation .message { margin: 0; }
+.bandeau-formation .btn { background: var(--surface); }
+.page-connexion > .bandeau-formation { position: fixed; top: 0; left: 0; right: 0; }
+@media print {
+  .bandeau-formation { position: static; }
+  body.mode-formation::after {
+    content: "FACTICE"; visibility: visible; position: fixed; top: 40%; left: 0; right: 0; text-align: center;
+    font-size: 96px; font-weight: 900; letter-spacing: 0.2em; color: rgba(0, 0, 0, 0.12); transform: rotate(-24deg);
+  }
+}
+
 /* ---------- Écran de caisse — repris du module Ma caisse validé (prototype, classes cmd-*) ---------- */
 .cmd-topbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
 .cmd-layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 16px; align-items: start; }

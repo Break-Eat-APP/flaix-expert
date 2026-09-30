@@ -1,8 +1,8 @@
 import type { ComponentType } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, CalendarDays, LayoutGrid, ShieldCheck, ShoppingBag, Tags, Target, UserCog } from "lucide-react";
-import type { Evenement, Lieu, Produit, Stand } from "@flaix/domain";
+import { Building2, CalendarDays, GraduationCap, LayoutGrid, ShieldCheck, ShoppingBag, Tags, Target, UserCog } from "lucide-react";
+import type { EtatFormation, Evenement, Lieu, Produit, Stand } from "@flaix/domain";
 import { api } from "../../api.ts";
 import { EntetePage } from "../../composants/communs.tsx";
 
@@ -21,6 +21,7 @@ export function Parametres() {
   const stands = useQuery({ queryKey: ["stands"], queryFn: () => api.get<Stand[]>("/stands") });
   const produits = useQuery({ queryKey: ["produits"], queryFn: () => api.get<Produit[]>("/produits") });
   const evenements = useQuery({ queryKey: ["evenements"], queryFn: () => api.get<Evenement[]>("/evenements") });
+  const formation = useQuery({ queryKey: ["formation"], queryFn: () => api.get<EtatFormation>("/formation") });
 
   const l = lieu.data;
   const standsActifs = stands.data?.filter((s) => s.actif) ?? [];
@@ -68,6 +69,17 @@ export function Parametres() {
       icone: ShieldCheck,
       route: "/parametres/conformite",
       etat: "Journal technique",
+    },
+    {
+      titre: "Mode formation",
+      texte: "S'entraîner et former les caissières : tout y est factice",
+      icone: GraduationCap,
+      route: "/parametres/formation",
+      etat: formation.data
+        ? formation.data.enFormation
+          ? "En cours"
+          : `${formation.data.lieuFormation ? "Lieu d'entraînement prêt" : "Jamais utilisé"} · ${pluriel(formation.data.tablettesEnFormation, "tablette")} en formation`
+        : undefined,
     },
     { titre: "Click & Collect", texte: "Prix sur l'application, points de retrait", icone: ShoppingBag },
     { titre: "Objectifs & coûts", texte: "Cibles de marge, coûts par buvette", icone: Target },

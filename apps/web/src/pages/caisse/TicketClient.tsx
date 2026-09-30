@@ -66,7 +66,10 @@ function FenetreTicket({ edition, fermer }: { edition: EditionTicket; fermer: ()
 }
 
 function Ticket({ edition }: { edition: EditionTicket }) {
-  const environnement = useSession().data?.environnement;
+  const session = useSession().data;
+  const environnement = session?.environnement;
+  // Mode formation (BOFiP §150, test B3) : la mention est imprimée sur le justificatif, en tête et en pied.
+  const factice = session?.formation ? <div className="ticket-centre ticket-essai">FACTICE — MODE FORMATION · SANS VALEUR</div> : null;
   const { lieu, ticket: t } = edition;
   const annulation = t.type === "annulation";
   const ligne = (gauche: string, droite: string, fort = false) => (
@@ -77,6 +80,7 @@ function Ticket({ edition }: { edition: EditionTicket }) {
   );
   return (
     <div className="ticket-impression">
+      {factice}
       {environnement !== "production" && <div className="ticket-centre ticket-essai">TICKET D'ESSAI — SANS VALEUR</div>}
       <div className="ticket-centre">
         <strong>{lieu.raisonSociale ?? lieu.nom}</strong>
@@ -127,6 +131,7 @@ function Ticket({ edition }: { edition: EditionTicket }) {
         <br />
         Empreinte {t.empreinte.slice(0, 16)}…
       </div>
+      {factice}
     </div>
   );
 }

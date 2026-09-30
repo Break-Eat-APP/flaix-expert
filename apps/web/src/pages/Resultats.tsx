@@ -73,12 +73,13 @@ export function Resultats({ session }: { session: SessionInfo }) {
         fil={session.lieu.nom}
         titre="Résultats"
         description={
-          miseEnRouteTerminee
+          miseEnRouteTerminee || session.formation
             ? `Bonjour ${session.utilisateur.nom}.`
             : `Bonjour ${session.utilisateur.nom}. Ton espace démarre vide : tu construis toi-même ta configuration, étape par étape.`
         }
       />
-      {!miseEnRouteTerminee && (
+      {/* En formation, la configuration est celle du vrai lieu : pas de mise en route à faire ici. */}
+      {!miseEnRouteTerminee && !session.formation && (
         <Carte titre={`Mise en route du lieu — ${faites} étape${faites > 1 ? "s" : ""} sur ${etapes.length}`}>
           <ol className="etapes">
             {etapes.map((e, i) => (

@@ -780,7 +780,9 @@ function TabletteDeCaisse({ caisseId, numero }: { caisseId: string; numero: numb
   const [confirmer, setConfirmer] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<unknown>(null);
-  if (appareil.isPending || appareil.error) return null;
+  const formation = useSession().data?.formation;
+  // En formation, les tablettes se règlent depuis le vrai lieu (Équipe → Tablettes, §15.109).
+  if (formation || appareil.isPending || appareil.error) return null;
   const ici = appareil.data;
 
   async function enregistrer() {

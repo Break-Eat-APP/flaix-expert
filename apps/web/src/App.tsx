@@ -22,6 +22,7 @@ import { PosteCaissiere } from "./pages/caisse/PosteCaissiere.tsx";
 import { Clotures } from "./pages/clotures/Clotures.tsx";
 import { Equipe } from "./pages/equipe/Equipe.tsx";
 import { Stock } from "./pages/stock/Stock.tsx";
+import { Formation } from "./pages/parametres/Formation.tsx";
 
 export function App() {
   const session = useSession();
@@ -60,6 +61,7 @@ export function App() {
           <Route path="parametres/produits" element={<Produits />} />
           <Route path="parametres/saison" element={<Saison />} />
           <Route path="parametres/conformite" element={<JournalTechnique />} />
+          <Route path="parametres/formation" element={<Formation />} />
           <Route path="compte" element={<Compte />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
