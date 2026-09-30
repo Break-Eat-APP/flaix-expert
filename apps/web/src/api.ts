@@ -31,6 +31,34 @@ export const api = {
   patch: <T>(chemin: string, corps?: unknown) => requete<T>("PATCH", chemin, corps),
 };
 
+/**
+ * Fichier produit par le serveur (export comptable) : envoyé en POST, enregistré sous le nom donné
+ * par le serveur. Une erreur renvoie le message en français, comme les autres appels.
+ */
+export async function telechargerFichier(chemin: string, corps: unknown): Promise<string> {
+  const reponse = await fetch(`/api${chemin}`, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(corps),
+  });
+  if (!reponse.ok) {
+    const texte = await reponse.text();
+    const message = (texte ? (JSON.parse(texte) as { erreur?: string }).erreur : null) ?? `Erreur ${reponse.status}`;
+    throw new ErreurApi(reponse.status, message);
+  }
+  const nom = /filename="([^"]+)"/.exec(reponse.headers.get("content-disposition") ?? "")?.[1] ?? "export.csv";
+  const url = URL.createObjectURL(await reponse.blob());
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.download = nom;
+  document.body.appendChild(lien);
+  lien.click();
+  lien.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  return nom;
+}
+
 const formatDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Paris" });
 export function formaterDateHeure(iso: string): string {
   return formatDate.format(new Date(iso));

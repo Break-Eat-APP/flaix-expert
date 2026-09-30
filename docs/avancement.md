@@ -1,6 +1,6 @@
 # Avancement — reprise après coupure
 
-Mis à jour le 2026-09-30 (6 étapes + coffre + clôtures de période + copie chiffrée des sauvegardes + mode formation). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.109.
+Mis à jour le 2026-09-30 (6 étapes + coffre + clôtures de période + copie chiffrée des sauvegardes + mode formation + export comptable). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.110.
 
 ## Ordre de construction (dossier §15.99)
 
@@ -47,7 +47,6 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 
 | Travail | Remarque |
 |---|---|
-| Export mensuel pour l'expert-comptable | à définir avec lui |
 | 13 Click & Collect | règles de prix à revoir d'abord (§15.20) |
 | Vue téléphone du directeur, alerte de rupture en direct | — |
 | 8 Coûts par buvette | jamais prototypé ; laissé tel quel par Rémi |
@@ -59,8 +58,8 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 | # | Module | État |
 |---|---|---|
 | 1 | Mode formation « FACTICE » | **fait le 2026-09-30** (§15.109) |
-| 2 | Export pour l'expert-comptable | **prochain** |
-| 3 | Click & Collect | à faire (règles de prix §15.20 : poser les questions nécessaires, construire le reste) |
+| 2 | Export pour l'expert-comptable | **fait le 2026-09-30** (§15.110) — format à confirmer par le comptable (G.20) |
+| 3 | Click & Collect | **prochain** (règles de prix §15.20 : poser les questions nécessaires, construire le reste) |
 | 4 | Vue téléphone du directeur | à faire |
 | 5 | Coûts par buvette | à faire |
 | 6 | Fidélité | à faire |

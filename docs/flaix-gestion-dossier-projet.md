@@ -4268,3 +4268,19 @@ Suite des Clôtures demandée par Rémi (§15.99). Sources relues : module 2, on
 **Vérifié** : 10 tests automatisés (`apps/api/test/formation.test.ts`), dont **B4** : vente, clôture de caisse et Z du match en formation → le vrai lieu n'a reçu ni ticket, ni match, ni ouverture de caisse, ni clôture, perpétuel à 0 ; tablette en formation ; vraie caisse inaccessible depuis la tablette en formation ; remise à zéro. Suite complète : 144 tests serveur. Parcours dans le navigateur : entrée, match d'entraînement créé et ouvert, bière vendue, ticket client imprimable avec « FACTICE — MODE FORMATION · SANS VALEUR » en tête et en pied, sortie, vrai lieu intact.
 
 **Limites assumées, dites** : le numéro de ticket d'entraînement a le même format qu'un vrai (`2026-C2-000001`) — c'est la mention FACTICE imprimée et le bandeau qui les distinguent ; changer le format toucherait la chaîne scellée, non justifié. Le lieu d'entraînement ne suit pas la configuration en direct : elle est recopiée à chaque entrée (ou reconnexion d'une caissière sur une tablette en formation).
+
+### 15.110 Export pour l'expert-comptable (2026-09-30)
+
+**Demande** : 2ᵉ module de l'ordre fixé par Rémi (§15.109) ; contenu déjà cadré (§15.95 : « export mensuel pour l'expert-comptable, CA par taux de TVA et par moyen de paiement — format à demander au comptable » ; module Factures : « ventes par jour, taux de TVA et moyen de paiement ; achats »).
+
+**Construit** (Clôtures → Export comptable) :
+- **Bâti sur les Z de match scellés**, jamais sur des chiffres recalculés : ce qui est exporté est exactement ce qui a été clôturé. Un match sans Z (pas encore clos) n'est pas exporté et il est listé comme tel. Tant que le mois n'est pas clôturé, l'export est « provisoire » (écrit dans le nom des fichiers).
+- **Journal des ventes** (CSV) : une pièce par Z (`Z000001`), équilibrée — débit caisse espèces et cartes à encaisser ; crédit ventes HT et TVA collectée par taux ; écart de caisse des tiroirs et du coffre (dernière rectification comprise) : manquant en charge, excédent en produit. Débit total = crédit total, contrôlé avant chaque téléchargement ; un déséquilibre bloque l'export au lieu d'être corrigé en silence.
+- **Récapitulatif par match** (CSV) : tickets, annulations, CA TTC, HT et TVA par taux présent, espèces, carte, écarts, empreinte du Z, ligne de total.
+- **Plan de comptes du lieu** (migration `0013`, `lieu.plan_comptes`) : valeurs proposées par défaut, modifiables ; **à faire valider par l'expert-comptable** (question G.20). Recopié dans le lieu de formation (fonction `synchroniser_reglages_formation`, à compléter pour chaque futur réglage du lieu).
+- Format : point-virgule, virgule décimale, date JJ/MM/AAAA, UTF-8 avec BOM (ouverture directe dans Excel), fins de ligne Windows. Chaque téléchargement et chaque changement du plan de comptes sont inscrits au journal technique.
+- **Mode formation** : fichiers nommés « -FACTICE » et chaque libellé commence par « FACTICE — » (la mention est dans le fichier, pas seulement dans son nom).
+
+**Ce que ce n'est pas** : ni un FEC (le fichier des écritures comptables de l'entreprise est produit par le logiciel du comptable, à partir de toutes ses écritures), ni l'export des achats et de la commission Break Eat (module Factures, plus tard).
+
+**Vérifié** : 9 tests du calcul (pièce équilibrée, manquant et excédent, montants négatifs, ordre, CSV, libellés protégés, récapitulatif, plan complété) ; 6 tests contre la base (match mars 2025 : 2 bières en espèces, une eau par carte, tiroir court de 2,00 € → 8 lignes, 18,00 € de chaque côté ; provisoire puis définitif après clôture du mois ; mois vide refusé ; plan invalide refusé, plan du lieu utilisé puis remis aux valeurs proposées ; journal technique). Suites complètes : 94 tests du moteur, 150 du serveur. Écran vérifié dans le navigateur (en formation : match d'entraînement clos, aperçu, contrôle débit = crédit, fichier « provisoire-FACTICE »).

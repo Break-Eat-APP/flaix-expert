@@ -143,7 +143,8 @@ export async function routesExportComptable(app: FastifyInstance, { base }: { ba
     const auth = await exigerDirecteur(req, base);
     const { mois, fichier } = corps(z.object({ mois: Mois, fichier: z.enum(["ecritures", "recapitulatif"]) }), req);
     const { contenu, nom } = await base.transaction(contexte(auth), async (c) => {
-      const zs = await lireZ(c, auth.lieuId, mois);
+      // Mode formation (§15.109) : la mention FACTICE figure dans le fichier lui-même, pas seulement dans son nom.
+      const zs = (await lireZ(c, auth.lieuId, mois)).map((z) => (auth.formation ? { ...z, libelle: `FACTICE — ${z.libelle}` } : z));
       if (zs.length === 0) throw new ErreurMetier(409, `Aucun match clos en ${libelleMois(mois)} : rien à exporter.`);
       const { plan } = await lirePlan(c, auth.lieuId);
       const journal = journalDuMois(zs, plan);

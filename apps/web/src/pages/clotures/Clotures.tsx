@@ -17,9 +17,10 @@ import {
 } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Periodes } from "./Periodes.tsx";
+import { ExportComptable } from "./ExportComptable.tsx";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 
-type Onglet = "match" | "periode" | "archives";
+type Onglet = "match" | "periode" | "export" | "archives";
 
 /**
  * Clôtures (organisation en 6 entrées, dossier §15.96). L'onglet « Clôture du match » est
@@ -53,6 +54,7 @@ export function Clotures() {
       <div className="onglets">
         {bouton("match", "Clôture du match")}
         {bouton("periode", "Mois & année")}
+        {bouton("export", "Export comptable")}
         {bouton("archives", "Archives & contrôle", true)}
       </div>
 
@@ -104,6 +106,8 @@ export function Clotures() {
         </>
       ) : onglet === "periode" ? (
         <Periodes />
+      ) : onglet === "export" ? (
+        <ExportComptable />
       ) : (
         <Carte>
           <EtatVide titre="Pas encore construit">Archives annuelles et accès d'un vérificateur de l'administration : ils seront préparés ici.</EtatVide>
@@ -121,6 +125,7 @@ export function Clotures() {
           <li><strong>Carte</strong> : une caisse « carte uniquement » n'a pas de tiroir. Son total carte s'affiche pour la comparaison avec le ticket de fin de journée du TPE.</li>
           <li><strong>Clore le match est définitif</strong> : il faut toutes les caisses clôturées et chaque tiroir compté. Le serveur le vérifie lui-même. Chaque étape est inscrite au journal technique. La clôture du match produit son <strong>Z</strong> (clôture journalière) : tickets, espèces, carte, TVA par taux, total de chaque caisse, grand total et total perpétuel, scellés.</li>
           <li><strong>Mois & année</strong> : un mois se clôture une fois terminé (heure de Paris, selon la date des matchs), tous ses matchs clos, et après le mois précédent qui a des matchs. Grand total du mois = somme des Z de ses matchs ; total perpétuel = celui de la clôture précédente + grand total, jamais remis à zéro. Un mois clôturé ne reçoit plus de match. L'exercice (12 mois, premier mois réglé dans Paramètres → Le lieu) se clôture une fois terminé et tous ses mois clôturés. Chaque clôture est scellée et chaînée à la précédente ; « Vérifier l'intégrité » relit toute la chaîne.</li>
+          <li><strong>Export comptable</strong> : pour chaque mois, deux fichiers bâtis sur les Z scellés (jamais sur des chiffres provisoires). <strong>Écritures comptables</strong> : une pièce par match (Z), équilibrée — espèces et cartes au débit, ventes hors taxe et TVA collectée par taux au crédit, écart de caisse (tiroirs et coffre) en charge s'il manque de l'argent, en produit s'il y en a trop. <strong>Récapitulatif</strong> : une ligne par match (tickets, CA, HT et TVA par taux, espèces, carte, écarts, empreinte du Z). Fichiers CSV (point-virgule, virgule décimale) lisibles dans Excel et importables dans les logiciels comptables. Tant que le mois n'est pas clôturé, l'export est « provisoire ». Les numéros de comptes sont une proposition : l'expert-comptable du lieu les valide ou donne les siens. Chaque téléchargement est inscrit au journal technique.</li>
         </ul>
       </Regles>
     </>
