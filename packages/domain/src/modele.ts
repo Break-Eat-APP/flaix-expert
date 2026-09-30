@@ -393,6 +393,8 @@ export interface StatsMatch {
   margeBrute: Centimes | null;
   produitsSansCout: string[];
   caHtSansCout: Centimes;
+  /** Personnel du match lu dans le planning (§15.104) ; reel null si un taux manque. */
+  personnel: { reel: Centimes | null; affectations: number; tauxManquants: number };
 }
 
 export interface AlerteResultat {
@@ -420,4 +422,70 @@ export interface Resultats {
   precedent: StatsMatch | null;
   alertes: AlerteResultat[];
   prochains: { id: string; libelle: string; debut: string }[];
+}
+
+// ---------------------------------------------------------------------------
+// Équipe : fiches, planning, masse salariale (dossier §15.104, module 14)
+// ---------------------------------------------------------------------------
+
+export interface Employe {
+  id: string;
+  nom: string;
+  statut: "salarie" | "interimaire";
+  agence: string | null;
+  role: import("./planning.ts").RoleEquipe;
+  /** Coût horaire chargé (salarié) ou taux facturé par l'agence (intérimaire), en centimes ; null = taux manquant. */
+  tauxHoraire: Centimes | null;
+  actif: boolean;
+  /** Accès caisse (compte caissière du §15.100), s'il a été donné. */
+  acces: { caissiereId: string; actif: boolean; bloqueeJusqua: string | null; derniereConnexion: string | null } | null;
+}
+
+export interface EmployeCree {
+  employe: Employe;
+  /** Code de caisse, remis une seule fois si l'accès caisse a été donné. */
+  code: string | null;
+}
+
+export interface Affectation {
+  id: string;
+  employeId: string;
+  employeNom: string;
+  statut: "salarie" | "interimaire";
+  agence: string | null;
+  standId: string | null;
+  standNom: string | null;
+  caisseId: string | null;
+  caisseNumero: number | null;
+  role: import("./planning.ts").RoleEquipe;
+  debutPrevu: string;
+  finPrevu: string;
+  debutReel: string;
+  finReel: string;
+  /** Heures réelles corrigées : par qui, quand. */
+  correction: { par: string; le: string } | null;
+  tauxHoraire: Centimes | null;
+  minutesPrevues: number;
+  minutesReelles: number;
+  coutPrevu: Centimes | null;
+  coutReel: Centimes | null;
+}
+
+export interface PlanningMatch {
+  evenement: Evenement;
+  affectations: Affectation[];
+  /** Somme des coûts réels ; null si un taux manque. */
+  masseReelle: Centimes | null;
+  massePrevue: Centimes | null;
+  salaries: Centimes;
+  interimaires: Centimes;
+  tauxManquants: number;
+}
+
+export interface MasseSalariale {
+  parMatch: { evenement: Evenement; affectations: number; salaries: Centimes; interimaires: Centimes; total: Centimes; tauxManquants: number }[];
+  parRole: { role: string; total: Centimes }[];
+  total: Centimes;
+  salaries: Centimes;
+  interimaires: Centimes;
 }

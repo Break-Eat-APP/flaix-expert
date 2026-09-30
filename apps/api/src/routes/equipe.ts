@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
-import type { AppareilCaisse, Caissiere, CodeCaissiere } from "@flaix/domain";
+import { ROLES_EQUIPE, type AppareilCaisse, type Caissiere, type CodeCaissiere, type Employe, type EmployeCree } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { NOM_COOKIE_APPAREIL } from "../auth/contexte.ts";
@@ -8,7 +8,7 @@ import { genererCodeCaissiere, lireAppareil, nouveauJetonAppareil, poserCookieAp
 import { hacherMotDePasse } from "../auth/secrets.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
-import { ParamId, contexte, corps, differences, texte } from "./outils.ts";
+import { ParamId, contexte, corps, differences, texte, texteFacultatif } from "./outils.ts";
 
 /*
  * Équipe → Fiches et Tablettes (dossier §15.100) : les caissières (nom + code personnel) et les
@@ -18,6 +18,97 @@ import { ParamId, contexte, corps, differences, texte } from "./outils.ts";
  */
 
 const NouvelleCaissiere = z.object({ nom: texte(60, "Le nom") });
+
+// Fiches employés (§15.104, module 14). Taux horaire en centimes : coût chargé ou taux de l'agence.
+const Statut = z.enum(["salarie", "interimaire"]);
+const RoleEquipe = z.enum(ROLES_EQUIPE);
+const TauxHoraire = z.number().int().min(0, "Taux horaire invalide.").max(100_000, "Taux horaire trop élevé.").nullable();
+const NouvelEmploye = z.object({
+  nom: texte(60, "Le nom"),
+  statut: Statut.default("salarie"),
+  agence: texteFacultatif(80),
+  role: RoleEquipe.default("Caissier"),
+  tauxHoraire: TauxHoraire.default(null),
+  accesCaisse: z.boolean().default(false),
+});
+const ModifEmploye = z.object({
+  nom: texte(60, "Le nom").optional(),
+  statut: Statut.optional(),
+  agence: texteFacultatif(80).optional(),
+  role: RoleEquipe.optional(),
+  tauxHoraire: TauxHoraire.optional(),
+  actif: z.boolean().optional(),
+});
+
+interface LigneEmploye {
+  id: string;
+  nom: string;
+  statut: "salarie" | "interimaire";
+  agence: string | null;
+  role: Employe["role"];
+  taux_horaire_centimes: number | null;
+  actif: boolean;
+  utilisateur_id: string | null;
+  acces_actif: boolean | null;
+  code_bloque_jusqua: Date | null;
+  derniere: Date | null;
+}
+
+async function lireEmployes(c: Client, lieuId: string): Promise<Employe[]> {
+  const { rows } = await c.query<LigneEmploye>(
+    `SELECT e.id, e.nom, e.statut, e.agence, e.role, e.taux_horaire_centimes, e.actif, e.utilisateur_id,
+            (m.actif AND u.actif) AS acces_actif, m.code_bloque_jusqua,
+            (SELECT max(s.cree_le) FROM session s WHERE s.utilisateur_id = e.utilisateur_id AND s.lieu_id = e.lieu_id) AS derniere
+       FROM employe e
+       LEFT JOIN membre m ON m.lieu_id = e.lieu_id AND m.utilisateur_id = e.utilisateur_id
+       LEFT JOIN utilisateur u ON u.id = e.utilisateur_id
+      WHERE e.lieu_id = $1
+      ORDER BY e.actif DESC, lower(e.nom)`,
+    [lieuId],
+  );
+  const maintenant = Date.now();
+  return rows.map((r) => ({
+    id: r.id,
+    nom: r.nom,
+    statut: r.statut,
+    agence: r.agence,
+    role: r.role,
+    tauxHoraire: r.taux_horaire_centimes,
+    actif: r.actif,
+    acces: r.utilisateur_id
+      ? {
+          caissiereId: r.utilisateur_id,
+          actif: !!r.acces_actif,
+          bloqueeJusqua: r.code_bloque_jusqua && r.code_bloque_jusqua.getTime() > maintenant ? r.code_bloque_jusqua.toISOString() : null,
+          derniereConnexion: r.derniere ? r.derniere.toISOString() : null,
+        }
+      : null,
+  }));
+}
+
+async function lireEmploye(c: Client, lieuId: string, id: string): Promise<Employe> {
+  const e = (await lireEmployes(c, lieuId)).find((x) => x.id === id);
+  if (!e) throw introuvable("Fiche employé");
+  return e;
+}
+
+/** Donne (ou redonne) l'accès caisse d'un employé : compte caissière relié, nouveau code remis une fois. */
+async function donnerAcces(c: Client, lieuId: string, e: Employe, empreinte: string): Promise<void> {
+  if (!e.acces) {
+    const { rows } = await c.query<{ id: string }>("SELECT creer_caissiere($1, $2) AS id", [e.nom, empreinte]);
+    await c.query("UPDATE employe SET utilisateur_id = $3 WHERE lieu_id = $1 AND id = $2", [lieuId, e.id, rows[0]!.id]);
+  } else {
+    await c.query("SELECT modifier_caissiere($1, $2, true)", [e.acces.caissiereId, e.nom]);
+    await c.query("SELECT changer_code_caissiere($1, $2)", [e.acces.caissiereId, empreinte]);
+  }
+}
+
+/** Coupe l'accès caisse : le compte reste (ses tickets le référencent), ses connexions sont fermées. */
+async function couperAcces(c: Client, lieuId: string, e: Employe): Promise<void> {
+  if (!e.acces) return;
+  await c.query("SELECT modifier_caissiere($1, $2, false)", [e.acces.caissiereId, e.nom]);
+  await c.query("UPDATE session SET revoquee_le = now() WHERE utilisateur_id = $1 AND lieu_id = $2 AND revoquee_le IS NULL", [e.acces.caissiereId, lieuId]);
+}
 const ModificationCaissiere = z.object({ nom: texte(60, "Le nom").optional(), actif: z.boolean().optional() });
 
 async function lireCaissieres(c: Client, lieuId: string): Promise<Caissiere[]> {
@@ -114,6 +205,7 @@ export async function routesEquipe(app: FastifyInstance, { base }: { base: Base 
     const resultat = await base.transaction(contexte(auth), async (c) => {
       const { rows } = await c.query<{ id: string }>("SELECT creer_caissiere($1, $2) AS id", [nom, empreinte]);
       const id = rows[0]!.id;
+      await c.query("INSERT INTO employe (lieu_id, nom, role, utilisateur_id) VALUES ($1, $2, 'Caissier', $3)", [auth.lieuId, nom, id]);
       await inscrireJet(c, { lieuId: auth.lieuId, type: "caissiere_creee", utilisateurId: auth.utilisateurId, details: { caissiere: id, nom } });
       return { caissiere: await lireCaissiere(c, auth.lieuId, id), code };
     });
@@ -130,6 +222,8 @@ export async function routesEquipe(app: FastifyInstance, { base }: { base: Base 
       const diff = differences({ nom: avant.nom, actif: avant.actif }, demande);
       if (Object.keys(diff).length === 0) return lireCaissieres(c, auth.lieuId);
       await c.query("SELECT modifier_caissiere($1, $2, $3)", [id, demande.nom ?? avant.nom, demande.actif ?? avant.actif]);
+      // La fiche employé reliée suit le nom (une seule identité par personne).
+      if (demande.nom) await c.query("UPDATE employe SET nom = $3 WHERE lieu_id = $1 AND utilisateur_id = $2", [auth.lieuId, id, demande.nom]);
       // Fiche désactivée : ses connexions ouvertes sont fermées tout de suite.
       if (demande.actif === false) {
         await c.query("UPDATE session SET revoquee_le = now() WHERE utilisateur_id = $1 AND lieu_id = $2 AND revoquee_le IS NULL", [id, auth.lieuId]);
@@ -149,6 +243,92 @@ export async function routesEquipe(app: FastifyInstance, { base }: { base: Base 
       await c.query("SELECT changer_code_caissiere($1, $2)", [id, empreinte]);
       await inscrireJet(c, { lieuId: auth.lieuId, type: "code_caissiere_renouvele", utilisateurId: auth.utilisateurId, details: { caissiere: id, nom: fiche.nom } });
       return { caissiere: await lireCaissiere(c, auth.lieuId, id), code };
+    });
+  });
+
+  // ---------- Fiches employés (§15.104) ----------
+  app.get("/api/equipe/employes", async (req): Promise<Employe[]> => {
+    const auth = await exigerDirecteur(req, base);
+    return base.transaction(contexte(auth), (c) => lireEmployes(c, auth.lieuId));
+  });
+
+  app.post("/api/equipe/employes", async (req, rep): Promise<EmployeCree> => {
+    const auth = await exigerDirecteur(req, base);
+    const d = corps(NouvelEmploye, req);
+    const agence = d.statut === "interimaire" ? d.agence : null;
+    const code = d.accesCaisse ? genererCodeCaissiere() : null;
+    const empreinte = code ? await hacherMotDePasse(code) : null;
+    const resultat = await base.transaction(contexte(auth), async (c) => {
+      const { rows } = await c.query<{ id: string }>(
+        "INSERT INTO employe (lieu_id, nom, statut, agence, role, taux_horaire_centimes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+        [auth.lieuId, d.nom, d.statut, agence, d.role, d.tauxHoraire],
+      );
+      const id = rows[0]!.id;
+      if (empreinte) await donnerAcces(c, auth.lieuId, await lireEmploye(c, auth.lieuId, id), empreinte);
+      await inscrireJet(c, {
+        lieuId: auth.lieuId,
+        type: "employe_cree",
+        utilisateurId: auth.utilisateurId,
+        details: { employe: id, nom: d.nom, statut: d.statut, agence, role: d.role, tauxHoraire: d.tauxHoraire, accesCaisse: d.accesCaisse },
+      });
+      return { employe: await lireEmploye(c, auth.lieuId, id), code };
+    });
+    rep.code(201);
+    return resultat;
+  });
+
+  app.patch("/api/equipe/employes/:id", async (req): Promise<Employe[]> => {
+    const auth = await exigerDirecteur(req, base);
+    const { id } = ParamId.parse(req.params);
+    const d = corps(ModifEmploye, req);
+    return base.transaction(contexte(auth), async (c) => {
+      const avant = await lireEmploye(c, auth.lieuId, id);
+      const statut = d.statut ?? avant.statut;
+      const apres = {
+        nom: d.nom ?? avant.nom,
+        statut,
+        agence: statut === "interimaire" ? (d.agence !== undefined ? d.agence : avant.agence) : null,
+        role: d.role ?? avant.role,
+        tauxHoraire: d.tauxHoraire !== undefined ? d.tauxHoraire : avant.tauxHoraire,
+        actif: d.actif ?? avant.actif,
+      };
+      const diff = differences({ nom: avant.nom, statut: avant.statut, agence: avant.agence, role: avant.role, tauxHoraire: avant.tauxHoraire, actif: avant.actif }, apres);
+      if (Object.keys(diff).length === 0) return lireEmployes(c, auth.lieuId);
+      await c.query(
+        "UPDATE employe SET nom = $3, statut = $4, agence = $5, role = $6, taux_horaire_centimes = $7, actif = $8 WHERE lieu_id = $1 AND id = $2",
+        [auth.lieuId, id, apres.nom, apres.statut, apres.agence, apres.role, apres.tauxHoraire, apres.actif],
+      );
+      // Le compte caissière relié suit le nom ; une fiche désactivée perd son accès caisse.
+      if (avant.acces && apres.nom !== avant.nom) await c.query("SELECT modifier_caissiere($1, $2, $3)", [avant.acces.caissiereId, apres.nom, avant.acces.actif && apres.actif]);
+      if (avant.acces?.actif && !apres.actif) await couperAcces(c, auth.lieuId, { ...avant, nom: apres.nom });
+      await inscrireJet(c, { lieuId: auth.lieuId, type: "employe_modifie", utilisateurId: auth.utilisateurId, details: { employe: id, nom: avant.nom, changements: diff } });
+      return lireEmployes(c, auth.lieuId);
+    });
+  });
+
+  app.post("/api/equipe/employes/:id/acces", async (req): Promise<EmployeCree> => {
+    const auth = await exigerDirecteur(req, base);
+    const { id } = ParamId.parse(req.params);
+    const code = genererCodeCaissiere();
+    const empreinte = await hacherMotDePasse(code);
+    return base.transaction(contexte(auth), async (c) => {
+      const e = await lireEmploye(c, auth.lieuId, id);
+      if (!e.actif) throw new ErreurMetier(409, "Cette fiche est inactive : réactive-la avant de donner un accès caisse.");
+      await donnerAcces(c, auth.lieuId, e, empreinte);
+      await inscrireJet(c, { lieuId: auth.lieuId, type: "acces_caisse_donne", utilisateurId: auth.utilisateurId, details: { employe: id, nom: e.nom } });
+      return { employe: await lireEmploye(c, auth.lieuId, id), code };
+    });
+  });
+
+  app.post("/api/equipe/employes/:id/acces/retrait", async (req): Promise<Employe[]> => {
+    const auth = await exigerDirecteur(req, base);
+    const { id } = ParamId.parse(req.params);
+    return base.transaction(contexte(auth), async (c) => {
+      const e = await lireEmploye(c, auth.lieuId, id);
+      if (!e.acces?.actif) return lireEmployes(c, auth.lieuId);
+      await couperAcces(c, auth.lieuId, e);
+      await inscrireJet(c, { lieuId: auth.lieuId, type: "acces_caisse_retire", utilisateurId: auth.utilisateurId, details: { employe: id, nom: e.nom } });
+      return lireEmployes(c, auth.lieuId);
     });
   });
 

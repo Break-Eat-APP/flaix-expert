@@ -381,11 +381,17 @@ function VueFinances({ s }: { s: StatsMatch }) {
   if (s.coutMatiere !== null && s.margeBrute !== null) {
     etapes.push({ l1: "Coût", l2: "matière", v: -s.coutMatiere, total: false, aide: "Quantités vendues × coût de la fiche produit" });
     etapes.push({ l1: "Marge", l2: "brute", v: s.margeBrute, total: true, aide: s.caHt > 0 ? `${((s.margeBrute / s.caHt) * 100).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} % du CA HT` : "" });
+    // Personnel lu dans le planning d'Équipe (§15.104) : seulement s'il est saisi et complet.
+    if (s.personnel.affectations > 0 && s.personnel.reel !== null) {
+      const apres = s.margeBrute - s.personnel.reel;
+      etapes.push({ l1: "Personnel", l2: "planning", v: -s.personnel.reel, total: false, aide: `${s.personnel.affectations} affectation${s.personnel.affectations > 1 ? "s" : ""}, heures réelles × taux` });
+      etapes.push({ l1: "Après", l2: "personnel", v: apres, total: true, aide: s.caHt > 0 ? `${((apres / s.caHt) * 100).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} % du CA HT` : "" });
+    }
   }
   return (
     <>
       <Carte
-        titre={s.margeBrute === null ? "De l'encaissé au chiffre d'affaires HT" : "De l'encaissé à la marge brute"}
+        titre={s.margeBrute === null ? "De l'encaissé au chiffre d'affaires HT" : s.personnel.affectations > 0 && s.personnel.reel !== null ? "De l'encaissé à la marge après personnel" : "De l'encaissé à la marge brute"}
         actions={
           <div className="leg-inline">
             <span>
@@ -408,8 +414,15 @@ function VueFinances({ s }: { s: StatsMatch }) {
             <Link to="/parametres/produits">Saisir les coûts</Link>
           </div>
         )}
+        {s.personnel.affectations > 0 && s.personnel.reel === null && (
+          <div className="message message-alerte">
+            <strong>Taux manquant</strong> sur {s.personnel.tauxManquants} affectation{s.personnel.tauxManquants > 1 ? "s" : ""} du planning : le personnel n'est pas déduit. <Link to="/equipe">Compléter les fiches</Link>
+          </div>
+        )}
         <p className="note">
-          Coût matière = coût saisi aujourd'hui sur chaque fiche produit. Personnel, commission, frais et autres dépenses ne sont pas encore saisis dans FlaiX : la marge nette de la soirée viendra avec eux.
+          Coût matière = coût saisi aujourd'hui sur chaque fiche produit.{" "}
+          {s.personnel.affectations === 0 ? "Aucun planning saisi pour ce match : le personnel n'est pas déduit (Équipe → Planning). " : "Personnel = heures réelles du planning × taux de chaque affectation. "}
+          Commission, frais et autres dépenses ne sont pas encore saisis dans FlaiX : ce n'est pas la marge nette de la soirée.
         </p>
       </Carte>
       <div className="deux egal">

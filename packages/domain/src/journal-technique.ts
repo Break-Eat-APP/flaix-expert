@@ -44,6 +44,13 @@ export const TYPES_JET = {
   z_caisse_clos: "Z de caisse clôturé (espèces comptées)",
   z_caisse_rectifie: "Rectification d'un Z de caisse",
   seuil_especes_modifie: "Tolérance d'écart d'espèces modifiée",
+  employe_cree: "Fiche employé créée",
+  employe_modifie: "Fiche employé modifiée",
+  acces_caisse_donne: "Accès caisse donné à un employé",
+  acces_caisse_retire: "Accès caisse retiré à un employé",
+  affectation_creee: "Affectation ajoutée au planning",
+  affectation_modifiee: "Affectation modifiée",
+  affectation_retiree: "Affectation retirée du planning",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

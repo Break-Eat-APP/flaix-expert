@@ -4,6 +4,7 @@ import { formaterMontant, rangHeure, type AlerteResultat, type Evenement, type M
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { listerEvenements } from "./evenements.ts";
+import { personnelDuMatch } from "./planning.ts";
 import { Uuid, contexte } from "./outils.ts";
 
 /*
@@ -114,6 +115,7 @@ export async function statsMatch(c: Client, lieuId: string, e: Evenement): Promi
     margeBrute: coutMatiere === null ? null : caHt - coutMatiere,
     produitsSansCout: sansCout.map((x) => x.nom),
     caHtSansCout: sansCout.reduce((s, x) => s + x.caHt, 0),
+    personnel: await personnelDuMatch(c, lieuId, e.id),
   };
 }
 
