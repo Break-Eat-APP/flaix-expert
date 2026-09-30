@@ -12,3 +12,4 @@ export * from "./resultats.ts";
 export * from "./planning.ts";
 export * from "./stock.ts";
 export * from "./cloture-periode.ts";
+export * from "./export-comptable.ts";

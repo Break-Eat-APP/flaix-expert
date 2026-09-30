@@ -46,6 +46,8 @@ export const TYPES_JET = {
   formation_recommencee: "Formation recommencée à zéro",
   tablette_formation_activee: "Tablette mise en mode formation",
   tablette_formation_desactivee: "Tablette sortie du mode formation",
+  export_comptable: "Export pour l'expert-comptable téléchargé",
+  plan_comptes_modifie: "Plan de comptes de l'export modifié",
   ticket_edite: "Ticket client édité (sur demande)",
   z_caisse_clos: "Z de caisse clôturé (espèces comptées)",
   z_caisse_rectifie: "Rectification d'un Z de caisse",
