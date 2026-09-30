@@ -6,6 +6,7 @@ import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { restesDuMatch } from "./stock.ts";
+import { exigerMoisOuvert, zDuMatch } from "./periodes.ts";
 import { ParamId, contexte, corps, differences, texte } from "./outils.ts";
 
 // Calendrier des matchs (dossier §15.94) : une seule liste pour tout le lieu.
@@ -71,6 +72,8 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
     const auth = await exigerDirecteur(req, base);
     const e = corps(NouvelEvenement, req);
     const liste = await base.transaction(contexte(auth), async (c) => {
+      // Un mois clôturé ne reçoit plus de match (§15.107).
+      await exigerMoisOuvert(c, auth.lieuId, new Date(e.debut).toISOString());
       const { rows } = await c.query<{ id: string }>(
         "INSERT INTO evenement (lieu_id, libelle, debut, spectateurs) VALUES ($1, $2, $3, $4) RETURNING id",
         [auth.lieuId, e.libelle, e.debut, e.spectateurs],
@@ -101,6 +104,7 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
         throw new ErreurMetier(409, "Le libellé et la date ne se modifient plus une fois le match ouvert. Seul le nombre de spectateurs peut être complété.");
       }
       const apres = { ...avant, ...Object.fromEntries(Object.entries(voulu).filter(([, v]) => v !== undefined)) };
+      if ("debut" in modifications) await exigerMoisOuvert(c, auth.lieuId, apres.debut as string);
       await c.query("UPDATE evenement SET libelle = $3, debut = $4, spectateurs = $5 WHERE lieu_id = $1 AND id = $2", [
         auth.lieuId,
         id,
@@ -124,6 +128,7 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
     return base.transaction(contexte(auth), async (c) => {
       const e = await lireEvenement(c, auth.lieuId, id);
       if (e.etat !== "a_venir") throw new ErreurMetier(409, "Ce match n'est pas « à venir ».");
+      await exigerMoisOuvert(c, auth.lieuId, e.debut.toISOString());
       const { rows } = await c.query<{ libelle: string }>("SELECT libelle FROM evenement WHERE lieu_id = $1 AND etat = 'ouvert'", [auth.lieuId]);
       if (rows[0]) throw new ErreurMetier(409, `Le match « ${rows[0].libelle} » est encore ouvert : clos-le d'abord.`);
       await c.query("UPDATE evenement SET etat = 'ouvert', ouvert_le = now() WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id]);
@@ -166,6 +171,8 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
         throw new ErreurMetier(409, `${restes.manquants} produit(s) de stock pas encore compté(s) : fais le comptage dans Stock → Comptage avant de clore le match.`);
       }
       await c.query("UPDATE evenement SET etat = 'clos', clos_le = now() WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id]);
+      // Z du match (clôture journalière) : totaux, TVA par taux, grand total et total perpétuel scellés (§15.107).
+      await zDuMatch(c, auth.lieuId, auth.utilisateurId, (await listerEvenements(c, auth.lieuId)).find((x) => x.id === id)!);
       await inscrireJet(c, { lieuId: auth.lieuId, type: "evenement_clos", utilisateurId: auth.utilisateurId, details: { evenementId: id, match: e.libelle } });
       return listerEvenements(c, auth.lieuId);
     });

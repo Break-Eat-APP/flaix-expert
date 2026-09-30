@@ -58,6 +58,10 @@ export const TYPES_JET = {
   remontee_coffre_annulee: "Remontée au coffre annulée",
   z_coffre_clos: "Z du coffre clôturé (coffre compté)",
   z_coffre_rectifie: "Rectification du Z du coffre",
+  z_match: "Z du match (clôture journalière)",
+  cloture_mois: "Clôture mensuelle",
+  cloture_exercice: "Clôture de l'exercice",
+  exercice_modifie: "Premier mois de l'exercice modifié",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

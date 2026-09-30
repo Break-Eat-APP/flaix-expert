@@ -607,3 +607,52 @@ export interface EtatReserve {
   inventaires: InventaireReserve[];
   mouvements: MouvementStock[];
 }
+
+// ---------------------------------------------------------------------------
+// Clôtures de période (dossier §15.107)
+// ---------------------------------------------------------------------------
+
+export interface ClotureVue {
+  id: string;
+  sequence: number;
+  niveau: import("./cloture-periode.ts").NiveauCloture;
+  libelle: string;
+  evenementId: string | null;
+  debut: string;
+  fin: string;
+  totalTtc: Centimes;
+  perpetuelAvant: Centimes;
+  perpetuelApres: Centimes;
+  tickets: number;
+  annulations: number;
+  especes: Centimes;
+  carte: Centimes;
+  ventilation: { tauxTva: TauxTvaPb; ht: Centimes; tva: Centimes; ttc: Centimes }[];
+  parCaisse: { caisseId: string; numero: number; total: Centimes; perpetuel: Centimes }[];
+  par: string;
+  le: string;
+  empreinte: string;
+}
+
+export interface PeriodeACloturer {
+  /** « 2026-09 » pour un mois, « 2026-01 » (premier mois) pour un exercice. */
+  cle: string;
+  libelle: string;
+  debut: string;
+  fin: string;
+  matchs: { id: string; libelle: string; debut: string; etat: EtatEvenement; totalTtc: Centimes }[];
+  totalTtc: Centimes;
+  etat: "clos" | "cloturable" | "bloque";
+  /** Pourquoi la période ne peut pas encore être clôturée. */
+  raison: string | null;
+  cloture: ClotureVue | null;
+}
+
+export interface EtatClotures {
+  moisDebutExercice: number;
+  exerciceModifiable: boolean;
+  perpetuel: Centimes;
+  mois: PeriodeACloturer[];
+  exercices: PeriodeACloturer[];
+  historique: ClotureVue[];
+}

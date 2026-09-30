@@ -19,6 +19,7 @@ import { routesClotures } from "./routes/clotures.ts";
 import { routesResultats } from "./routes/resultats.ts";
 import { routesPlanning } from "./routes/planning.ts";
 import { routesStock } from "./routes/stock.ts";
+import { routesPeriodes } from "./routes/periodes.ts";
 
 const METHODES_MODIFIANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -108,6 +109,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesResultats, { base });
   await app.register(routesPlanning, { base });
   await app.register(routesStock, { base });
+  await app.register(routesPeriodes, { base });
 
   return app;
 }
