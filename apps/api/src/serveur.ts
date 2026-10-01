@@ -25,6 +25,7 @@ import { routesExportComptable } from "./routes/export-comptable.ts";
 import { routesClickCollect } from "./routes/click-collect.ts";
 import { routesCoutsBuvette } from "./routes/couts-buvette.ts";
 import { routesFidelite } from "./routes/fidelite.ts";
+import { routesFactures } from "./routes/factures.ts";
 
 const METHODES_MODIFIANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 /** Routes de configuration, en lecture seule en mode formation. */
@@ -129,6 +130,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesClickCollect, { base });
   await app.register(routesCoutsBuvette, { base });
   await app.register(routesFidelite, { base });
+  await app.register(routesFactures, { base });
 
   return app;
 }
