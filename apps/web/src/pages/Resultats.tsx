@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Radio } from "lucide-react";
 import type { Evenement, Lieu, Produit, SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
 import { Carte, Chargement, EntetePage, MessageErreur } from "../composants/communs.tsx";
@@ -27,6 +27,7 @@ export function Resultats({ session }: { session: SessionInfo }) {
   const produitsActifs = produits.data!.filter((p) => p.actif);
   const produitsVendus = produitsActifs.filter((p) => p.standIds.length > 0);
   const nbMatchs = evenements.data!.length;
+  const enCours = evenements.data!.find((e) => e.etat === "ouvert") ?? null;
 
   const etapes = [
     {
@@ -78,6 +79,15 @@ export function Resultats({ session }: { session: SessionInfo }) {
             : `Bonjour ${session.utilisateur.nom}. Ton espace démarre vide : tu construis toi-même ta configuration, étape par étape.`
         }
       />
+      {enCours && (
+        <Link to="/direct" className="carte direct-accroche">
+          <Radio size={18} />
+          <span style={{ minWidth: 0 }}>
+            <strong>{enCours.libelle} : match en cours</strong>
+            <span className="discret"> — CA, caisses et ruptures en direct</span>
+          </span>
+        </Link>
+      )}
       {/* En formation, la configuration est celle du vrai lieu : pas de mise en route à faire ici. */}
       {!miseEnRouteTerminee && !session.formation && (
         <Carte titre={`Mise en route du lieu — ${faites} étape${faites > 1 ? "s" : ""} sur ${etapes.length}`}>

@@ -17,7 +17,8 @@ export function BandeauFormation({ quitter = false }: { quitter?: boolean }) {
   return (
     <div className="bandeau-formation" role="alert">
       <span>
-        <strong>MODE FORMATION — FACTICE</strong> · rien de ce qui est fait ici n'est réel : ventes, clôtures et stock ne comptent nulle part.
+        <strong>MODE FORMATION — FACTICE</strong>
+        <span className="bandeau-detail"> · rien de ce qui est fait ici n'est réel : ventes, clôtures et stock ne comptent nulle part.</span>
       </span>
       {quitter && (
         <button

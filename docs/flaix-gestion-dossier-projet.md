@@ -4299,3 +4299,21 @@ Suite des Clôtures demandée par Rémi (§15.99). Sources relues : module 2, on
 **Ce qui n'est pas fait, et pourquoi** : les **ventes** Click & Collect passent par l'application Break Eat ; FlaiX n'en reçoit rien pour l'instant (pas de raccordement entre les deux systèmes). Donc pas encore de CA comptoir / app par stand, ni de marge réalisée par canal, ni de stock dédié décompté. **Point déjà signalé, toujours ouvert** (§15.20) : termes réels du contrat Stripe et panier moyen mesuré — le logiciel prend ce que le directeur saisit ; la question « le lieu déduit-il la TVA sur la commission ? » reste pour l'expert-comptable.
 
 **Vérifié** : 8 tests du moteur (exemples du dossier), 7 tests contre la base (lieu neuf vide ; catalogue limité aux points de retrait ; réglages et prix journalisés avec avant/après ; valeurs invalides refusées ; recopie en formation et refus d'y modifier) ; suites complètes 102 (moteur) et 157 (serveur). Écran vérifié dans le navigateur : bière 7,00 € à 20 % → conseillé 8,25 € (+17,9 %) ; à 8,00 € « manque 0,20 € / vente », détail 5,63 € contre 5,83 € au comptoir ; simulateur hot-dog 6,50 € → 7,57 €.
+
+### 15.112 Vue téléphone du directeur : « En direct » (2026-10-01)
+
+**Demande** : 4ᵉ module de l'ordre fixé par Rémi (§15.109) ; contenu validé le 2026-09-29 (§15.95, ajout 1 : « vue soir de match sur téléphone pour le directeur : CA en direct, caisses ouvertes, ruptures ») et règle mobile du 2026-09-11 (§3 : consulter partout, gestes courts seulement — réassort en cours de match ; cartes empilées, jamais un tableau compressé).
+
+**Construit** (écran `/direct`, conçu d'abord pour le téléphone) :
+- CA TTC du match en direct (espèces / carte), tickets et panier moyen, caisses ouvertes sur le nombre de caisses actives ;
+- **ruptures et stock faible**, par stand : restant = départ + réassorts − vendu ; faible à 15 % du départ ou moins (même règle que le module Stock) ; ruptures d'abord ;
+- **réassort en deux gestes** depuis l'alerte (quantité, valider), inscrit comme dans Stock ;
+- caisses par stand : ouverte ou fermée, qui l'a ouverte, CA, dernier ticket « il y a X min » ;
+- **mise à jour automatique toutes les 20 secondes**, et bouton pour mettre à jour tout de suite.
+- **Aucun calcul nouveau** : l'écran assemble les chiffres déjà calculés par Caisses (`/api/caisses/tableau`) et Stock (`/api/stock`) — une seule source pour chaque chiffre.
+- **Menu inchangé** (6 entrées validées, §15.96) : l'écran s'ouvre depuis une carte « match en cours » en tête de Résultats, et depuis Caisses (« Vue téléphone »).
+- Sur téléphone, le bandeau « MODE FORMATION — FACTICE » se réduit à la mention et au bouton « Quitter » (la phrase d'explication reste sur grand écran).
+
+**Vérifié dans le navigateur, au format téléphone (375 px)**, en mode formation : match d'entraînement ouvert, 2 bières mises en place au Bar, vendues → « Rupture · reste 0 sur 2 · vendu 2 », CA 14,00 €, 1 caisse ouverte sur 2 ; réassort de 6 en deux gestes → plus aucune alerte.
+
+**Reste, déjà dans la liste** : l'alerte de rupture **poussée** sur le téléphone (notification), qui suppose l'envoi de notifications ; le rapport de soirée envoyé par e-mail.

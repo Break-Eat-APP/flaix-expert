@@ -126,7 +126,8 @@ function MatchDuJour({ evts }: { evts: Evenement[] }) {
     );
   }
   return (
-    <Carte titre="Match du jour" description="Ouvre le match avant d'ouvrir les caisses. Un seul match peut être ouvert à la fois, et l'ouverture est définitive.">
+    <Carte titre="Match du jour"
+        actions={ouvert ? <Link to="/direct" className="btn btn-fantome">Vue téléphone</Link> : undefined} description="Ouvre le match avant d'ouvrir les caisses. Un seul match peut être ouvert à la fois, et l'ouverture est définitive.">
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {aVenir.slice(0, 3).map((e) => (
           <div key={e.id} className="caisse">

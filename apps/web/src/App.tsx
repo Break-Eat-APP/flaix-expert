@@ -24,6 +24,7 @@ import { Equipe } from "./pages/equipe/Equipe.tsx";
 import { Stock } from "./pages/stock/Stock.tsx";
 import { Formation } from "./pages/parametres/Formation.tsx";
 import { ClickCollect } from "./pages/parametres/ClickCollect.tsx";
+import { EnDirect } from "./pages/direct/EnDirect.tsx";
 
 export function App() {
   const session = useSession();
@@ -51,6 +52,7 @@ export function App() {
         <Route element={<Coquille session={session.data} />}>
           {/* Organisation en 6 entrées (dossier §15.96) : Résultats, Caisses, Stock, Équipe, Clôtures, Paramètres. */}
           <Route index element={<Resultats session={session.data} />} />
+          <Route path="direct" element={<EnDirect />} />
           <Route path="caisses" element={<MesCaisses />} />
           <Route path="caisses/:caisseId" element={<EcranCaisse />} />
           <Route path="stock" element={<Stock />} />
