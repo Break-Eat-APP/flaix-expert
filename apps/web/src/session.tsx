@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { SessionInfo } from "@flaix/domain";
+import { OPTIONS_PAR_DEFAUT, type OptionsLieu, type SessionInfo } from "@flaix/domain";
 import { api, ErreurApi } from "./api.ts";
 
 /**
@@ -79,6 +79,12 @@ export function useBasculeFormation() {
       client.removeQueries({ predicate: (q) => q.queryKey[0] !== "session" });
     },
   });
+}
+
+/** Options du lieu activées par Break Eat (§15.118) ; toutes actives tant qu'elles ne sont pas lues. */
+export function useOptions(): OptionsLieu {
+  const q = useQuery({ queryKey: ["options"], queryFn: () => api.get<OptionsLieu>("/lieu/options"), staleTime: 60_000 });
+  return q.data ?? OPTIONS_PAR_DEFAUT;
 }
 
 export function useDeconnexion() {

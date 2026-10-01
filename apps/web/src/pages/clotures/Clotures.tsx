@@ -19,6 +19,7 @@ import { api, formaterDateHeure } from "../../api.ts";
 import { Periodes } from "./Periodes.tsx";
 import { ExportComptable } from "./ExportComptable.tsx";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
+import { useOptions } from "../../session.tsx";
 
 type Onglet = "match" | "periode" | "export" | "archives";
 
@@ -30,6 +31,7 @@ type Onglet = "match" | "periode" | "export" | "archives";
 export function Clotures() {
   const evenements = useQuery({ queryKey: ["evenements"], queryFn: () => api.get<Evenement[]>("/evenements"), refetchOnMount: "always" });
   const [onglet, setOnglet] = useState<Onglet>("match");
+  const options = useOptions();
   const [choisi, setChoisi] = useState<string | null>(null);
 
   if (evenements.isPending) return <Chargement />;
@@ -54,7 +56,7 @@ export function Clotures() {
       <div className="onglets">
         {bouton("match", "Clôture du match")}
         {bouton("periode", "Mois & année")}
-        {bouton("export", "Export comptable")}
+        {options.export_comptable && bouton("export", "Export comptable")}
         {bouton("archives", "Archives & contrôle", true)}
       </div>
 

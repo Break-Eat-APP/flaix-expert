@@ -2,9 +2,9 @@ import { useEffect, useState, type ComponentType } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChartLine, FileText, Heart, KeyRound, Lock, LogOut, Menu, Package, Receipt, SlidersHorizontal, Users, X } from "lucide-react";
-import type { SessionInfo, Stand } from "@flaix/domain";
+import type { OptionLieu, SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
-import { useDeconnexion } from "../session.tsx";
+import { useDeconnexion, useOptions } from "../session.tsx";
 import { BandeauFormation } from "./Formation.tsx";
 
 interface Entree {
@@ -13,6 +13,8 @@ interface Entree {
   icone: ComponentType<{ size?: number }>;
   /** Absent = entrée pas encore construite en production (affichée « à venir »). */
   route?: string;
+  /** Option du lieu dont dépend l'entrée (activée par Break Eat, §15.118). */
+  option?: OptionLieu;
 }
 
 // Organisation en 6 entrées validée par Rémi le 2026-09-29 (dossier §15.95), appliquée au §15.96.
@@ -20,17 +22,18 @@ interface Entree {
 const MENU: Entree[] = [
   { id: "resultats", libelle: "Résultats", icone: ChartLine, route: "/" },
   { id: "caisses", libelle: "Caisses", icone: Receipt, route: "/caisses" },
-  { id: "stock", libelle: "Stock", icone: Package, route: "/stock" },
+  { id: "stock", libelle: "Stock", icone: Package, route: "/stock", option: "stock" },
   { id: "equipe", libelle: "Équipe", icone: Users, route: "/equipe" },
   { id: "clotures", libelle: "Clôtures", icone: Lock, route: "/clotures" },
-  { id: "fidelite", libelle: "Fidélité", icone: Heart, route: "/fidelite" },
-  { id: "factures", libelle: "Factures", icone: FileText, route: "/factures" },
+  { id: "fidelite", libelle: "Fidélité", icone: Heart, route: "/fidelite", option: "fidelite" },
+  { id: "factures", libelle: "Factures", icone: FileText, route: "/factures", option: "factures" },
   { id: "parametres", libelle: "Paramètres", icone: SlidersHorizontal, route: "/parametres" },
 ];
 
 export function Coquille({ session }: { session: SessionInfo }) {
   const { pathname } = useLocation();
   const deconnecter = useDeconnexion();
+  const options = useOptions();
   const [mobileVisible, setMobileVisible] = useState(false);
   const stands = useQuery({ queryKey: ["stands"], queryFn: () => api.get<Stand[]>("/stands"), enabled: session.role === "directeur" });
 
@@ -76,7 +79,7 @@ export function Coquille({ session }: { session: SessionInfo }) {
         </NavLink>
 
         <nav className="nav" aria-label="Menu principal">
-          {MENU.map((entree) => {
+          {MENU.filter((e) => !e.option || options[e.option]).map((entree) => {
             const Icone = entree.icone;
             return entree.route ? (
               <NavLink key={entree.id} to={entree.route} end={entree.route === "/"} className={({ isActive }) => `nav-section${isActive ? " active" : ""}`}>

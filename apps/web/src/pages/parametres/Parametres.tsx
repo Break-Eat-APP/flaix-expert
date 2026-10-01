@@ -5,6 +5,7 @@ import { Building2, CalendarDays, GraduationCap, LayoutGrid, ShieldCheck, Shoppi
 import type { EtatFormation, Evenement, Lieu, Produit, Stand } from "@flaix/domain";
 import { api } from "../../api.ts";
 import { EntetePage } from "../../composants/communs.tsx";
+import { useOptions } from "../../session.tsx";
 
 interface Tuile {
   titre: string;
@@ -21,6 +22,7 @@ export function Parametres() {
   const stands = useQuery({ queryKey: ["stands"], queryFn: () => api.get<Stand[]>("/stands") });
   const produits = useQuery({ queryKey: ["produits"], queryFn: () => api.get<Produit[]>("/produits") });
   const evenements = useQuery({ queryKey: ["evenements"], queryFn: () => api.get<Evenement[]>("/evenements") });
+  const options = useOptions();
   const formation = useQuery({ queryKey: ["formation"], queryFn: () => api.get<EtatFormation>("/formation") });
 
   const l = lieu.data;
@@ -91,7 +93,9 @@ export function Parametres() {
     <>
       <EntetePage titre="Paramètres" description="Tous les réglages du lieu, au même endroit." />
       <div className="tuiles">
-        {tuiles.map((t) => {
+        {tuiles
+          .filter((t) => !(t.titre === "Click & Collect" && !options.click_collect) && !(t.titre === "Coûts par buvette" && !options.couts_buvette))
+          .map((t) => {
           const Icone = t.icone;
           const contenu = (
             <>

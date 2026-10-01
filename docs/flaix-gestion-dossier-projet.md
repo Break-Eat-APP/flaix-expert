@@ -4403,3 +4403,33 @@ Suite des Clôtures demandée par Rémi (§15.99). Sources relues : module 2, on
 **Réponse donnée sur « en URL et en application » et le hors connexion** : c'est le même logiciel, ouvert soit par l'adresse, soit installé comme application (icône sur l'écran d'accueil, plein écran) — application web installable ; une application de magasin (App Store / Play Store) est possible plus tard mais coûte (99 $/an chez Apple, validation à chaque mise à jour) sans rien apporter au hors connexion. **Le hors connexion est identique dans les deux cas** : sans réseau, une tablette ne connaît que ce qu'elle savait avant la coupure. Marche déjà : vendre, encaisser, sceller, rouvrir l'application ; gagner des points (calculés après coup). Ne peut pas être vérifié hors ligne : ce qui est partagé entre tablettes (solde de points, plafond d'un code promo, stock en direct). **Question posée à Rémi** : dépenser des points / code plafonné **seulement avec réseau** (option A, recommandée, aucun risque) ou **aussi hors ligne avec un plafond par ticket** (option B, double dépense possible pendant une coupure, signalée au retour).
 
 **Suite du 2026-10-01 — choix de Rémi : option A.** *« A points et codes plafonnés seulement avec réseau. »* Dépenser des points et utiliser un code promo **plafonné** demandent le réseau (« indisponible sans réseau » sinon) ; un code **sans plafond** (seulement des dates) marche hors ligne, la tablette gardant la liste des codes valides ; gagner des points marche toujours (calculés après coup sur les tickets). Rémi a aussi demandé ce qui se passe pour 10 caisses coupées 10 minutes puis 1 heure, client payé sur TPE externe — réponse donnée d'après le code (§15.97) : vente, numérotation et scellement continuent sur chaque tablette, ticket écrit sur la tablette avant d'être affiché encaissé, « Hors ligne · N en attente » ; au retour, renvoi automatique (toutes les 8 s et au retour du réseau), vérification par le serveur, heure de vente réelle conservée et heure de réception notée, jamais de double ; clôture de caisse et de match impossibles sans réseau (reportées, même au lendemain) ; vue En direct figée pendant la coupure ; risque réel : tablette perdue, cassée ou navigateur vidé avant le renvoi. Recommandation : Wi-Fi réservé aux caisses + routeur 4G/5G de secours.
+
+### 15.118 Options par lieu, activées depuis le back-office ; application installable (2026-10-01)
+
+**Demande de Rémi** (§15.117) : *« dans mon back office je décide de quel lieu a activer certaines options »*.
+
+**Construit** (migration `0020`) :
+- **Base, toujours incluse** : caisse (tablettes, caissières), clôtures, résultats, paramètres, mode formation, vue En direct.
+- **Options** (liste proposée, à ajuster par Rémi) : Stock ; Planning & masse salariale ; Fidélité ; Click & Collect ; Factures fournisseurs ; Export comptable ; Coûts par buvette.
+- **Sans réglage, une option est active** : rien n'a changé pour un lieu existant.
+- Rémi coche ou décoche chaque option de chaque lieu dans **`/editeur`** ; seule la fonction réservée aux comptes Break Eat peut écrire (vérifié jusque dans la base) ; **chaque changement est inscrit au journal technique du lieu** (« Break Eat — nom »), qui le voit. C'est la configuration du contrat, jamais une donnée d'encaissement (§15.13).
+- Une option désactivée : son entrée disparaît du menu (ou son onglet, sa tuile), et **ses adresses sont fermées par le serveur** (message « option non activée pour ce lieu : à demander à Break Eat »). Le lieu de formation suit les options de son vrai lieu.
+- Base de la future **facturation Break Eat** (12a) : l'abonnement se déduira des options actives — montants et document de facture à cadrer avec Rémi.
+
+**Application installable** (réponse « en URL et en mode application », §15.117) : fiche d'application (`manifest.webmanifest`), icônes (X blanc sur violet FlaiX, générées par `infra/outils/icones-application.cjs`), plein écran. Sur tablette ou téléphone : menu du navigateur → « Ajouter à l'écran d'accueil » (ou « Installer l'application »). Le fonctionnement hors connexion est le même qu'en URL (§15.97).
+
+**Vérifié** : 5 tests (toutes actives par défaut ; Stock désactivé → adresses fermées, base ouverte, journal du lieu, parc à jour ; lieu de formation aligné ; réactivation ; écriture refusée à un directeur et dans la base ; lieu inconnu). Navigateur : Factures décochée dans `/editeur` → entrée absente du menu du lieu et adresse refusée avec le message ; fiche d'application et icônes servies.
+
+### 15.119 Recettes (2026-10-01)
+
+**Spécification de Rémi** (§15.117) : ingrédients saisis à l'unité (kg, litre, pièce) avec leur prix ; dans la recette, on coche les ingrédients et leur poids ; *« 100 g de tomates = 0,25 € + salade 0,10 € = 2,00 € de coût de fabrication du burger »*.
+
+**Construit** (Paramètres → Produits & prix ; migration `0019`) :
+- **Ingrédients** (bouton « Ingrédients ») : nom, unité d'achat (kilo, litre, pièce — figée après création), **prix HT par unité**, actif ou non ; nombre de recettes qui l'utilisent. Changer un prix **recalcule le coût de toutes les recettes** qui l'utilisent ; le journal technique liste les produits recalculés (avant → après).
+- **Recette** dans la fiche d'un produit : ingrédients et quantités (en **grammes**, **centilitres** ou **pièces**, demi-pièce possible), coût de chaque ligne et **coût de fabrication en direct**. Coût de fabrication = Σ prix × quantité, calculé exact puis arrondi une fois au centime.
+- **Le coût de fabrication devient le coût matière du produit** : marges, résultats, coûts par buvette, export l'utilisent sans changement. Un produit avec recette : coût matière non modifiable à la main, et **pas de livraison** (ce sont ses ingrédients qui s'achètent). Retirer la recette : le coût reste le dernier calculé et redevient modifiable.
+- Recopie en mode formation, en lecture seule.
+
+**Pas construit (à décider par Rémi)** : le **stock au poids** — déduire les grammes de chaque ingrédient du stock à chaque burger vendu, livraisons et inventaire des ingrédients en kg. C'est la suite naturelle, mais elle change le module Stock.
+
+**Vérifié** : 6 tests du calcul (exemple de Rémi : tomates 0,25 + salade 0,10 + steak 1,20 + pain 0,45 = 2,00 € ; litres en cl ; demi-pièce ; arrondi unique) ; 7 tests contre la base (recette à 2,00 € devenue coût matière ; tomates à 3,00 €/kg → burger recalculé à 2,05 € et journalisé ; doublon refusé ; coût manuel et livraison refusés ; formation ; retrait de la recette). Navigateur : ingrédients saisis, recette du « Burger maison » (tomates 100 g, steak 120 g, pain 1) → 1,90 € en direct, enregistré comme coût matière.

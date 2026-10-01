@@ -1,6 +1,6 @@
 # Avancement — reprise après coupure
 
-Mis à jour le 2026-10-01 (6 étapes + coffre + clôtures de période + copie chiffrée des sauvegardes + mode formation + export comptable + Click & Collect + vue téléphone + coûts par buvette + fidélité gestion + factures fournisseurs + back-office). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.116.
+Mis à jour le 2026-10-01 (6 étapes + coffre + clôtures de période + copie chiffrée des sauvegardes + mode formation + export comptable + Click & Collect + vue téléphone + coûts par buvette + fidélité gestion + factures fournisseurs + back-office). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.119.
 
 ## Ordre de construction (dossier §15.99)
 
@@ -65,7 +65,9 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 | 8 | Facturation | **factures fournisseurs (12b) faites le 2026-10-01** (§15.115) ; 12a (Break Eat) avec le back-office |
 | 9 | Back-office éditeur | **niveau 1 (supervision) fait le 2026-10-01** (§15.116) ; niveau 2 (support sur autorisation) avec la Conformité |
 
-**À voir avec Rémi, ne pas construire seul** : Conformité (dossier bien structuré à préparer ; y joindre les points prévus à revoir ensemble), recettes / matières premières, IA ; serveur de production (Rémi s'en occupe).
+**Fait aussi le 2026-10-01** : options par lieu activées depuis le back-office et application installable (§15.118) ; recettes et coût de fabrication (§15.119). **Décidé** : fidélité à la caisse en option A (points et codes plafonnés avec réseau) — à construire. **À décider par Rémi** : stock au poids des ingrédients ; montants de l'abonnement Break Eat par option.
+
+**À voir avec Rémi, ne pas construire seul** : Conformité (dossier bien structuré à préparer ; y joindre les points prévus à revoir ensemble), IA ; serveur de production (Rémi s'en occupe).
 
 ## Ancienne proposition d'ordre (remplacée par le tableau ci-dessus)
 

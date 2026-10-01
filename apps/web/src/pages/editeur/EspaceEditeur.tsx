@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LogOut, ShieldCheck } from "lucide-react";
-import { alertesLieuParc, type ParcEditeur, type VerificationEditeur } from "@flaix/domain";
+import { OPTIONS_LIEU, alertesLieuParc, type OptionLieu, type ParcEditeur, type VerificationEditeur } from "@flaix/domain";
 import { api, ErreurApi, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EtatVide, MessageErreur } from "../../composants/communs.tsx";
 
@@ -75,6 +75,10 @@ function Parc({ nom }: { nom: string }) {
       setResultats((x) => ({ ...x, [lieuId]: r }));
       void client.invalidateQueries({ queryKey: ["editeur-parc"] });
     },
+  });
+  const option = useMutation({
+    mutationFn: (x: { lieuId: string; option: OptionLieu; active: boolean }) => api.put(`/editeur/lieux/${x.lieuId}/options`, { option: x.option, active: x.active }),
+    onSuccess: () => void client.invalidateQueries({ queryKey: ["editeur-parc"] }),
   });
   const deconnexion = useMutation({
     mutationFn: () => api.post("/editeur/deconnexion"),
@@ -151,6 +155,20 @@ function Parc({ nom }: { nom: string }) {
                           <span>exercice {l.exerciceRegle ? "réglé" : "non réglé"}</span>
                           <span>dernière activité : {l.derniereActivite ? formaterDateHeure(l.derniereActivite) : "—"}</span>
                         </div>
+                        <div className="editeur-options">
+                          <span className="discret" style={{ fontSize: 12.5 }}>Options :</span>
+                          {OPTIONS_LIEU.map((o) => (
+                            <label key={o.cle} className="case" title={o.aide}>
+                              <input
+                                type="checkbox"
+                                checked={l.options[o.cle]}
+                                disabled={option.isPending}
+                                onChange={(ev) => option.mutate({ lieuId: l.lieuId, option: o.cle, active: ev.target.checked })}
+                              />{" "}
+                              {o.libelle}
+                            </label>
+                          ))}
+                        </div>
                         <div className="editeur-ligne">
                           <span className="discret" style={{ fontSize: 12.5 }}>
                             {r
@@ -170,9 +188,9 @@ function Parc({ nom }: { nom: string }) {
                   })}
                 </div>
               )}
-              <MessageErreur erreur={verifier.error} />
+              <MessageErreur erreur={verifier.error ?? option.error} />
               <p className="aide" style={{ marginBottom: 0 }}>
-                Chaque vérification est inscrite au journal technique du lieu, qui la voit. L'accès aux données d'un lieu (support) n'existe que sur son autorisation :
+                Chaque vérification et chaque changement d'option sont inscrits au journal technique du lieu, qui les voit. Base toujours incluse : caisse, clôtures, résultats, paramètres, formation. L'accès aux données d'un lieu (support) n'existe que sur son autorisation :
                 pas encore en service.
               </p>
             </Carte>

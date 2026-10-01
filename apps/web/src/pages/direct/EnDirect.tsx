@@ -5,6 +5,7 @@ import { CircleAlert, PackagePlus, RefreshCw } from "lucide-react";
 import { formaterMontant, type Evenement, type LigneStock, type StatsCaisse, type StockMatch } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EtatVide, MessageErreur } from "../../composants/communs.tsx";
+import { useOptions } from "../../session.tsx";
 
 const RAFRAICHISSEMENT_MS = 20_000;
 const heure = new Intl.DateTimeFormat("fr-FR", { timeStyle: "medium", timeZone: "Europe/Paris" });
@@ -21,6 +22,7 @@ function ilYa(iso: string, maintenant: number): string {
  * calculs que Caisses et Stock (aucun chiffre recalculé ici) ; mis à jour toutes les 20 secondes.
  */
 export function EnDirect() {
+  const options = useOptions();
   const evenements = useQuery({ queryKey: ["evenements"], queryFn: () => api.get<Evenement[]>("/evenements"), refetchInterval: RAFRAICHISSEMENT_MS });
   const ouvert = evenements.data?.find((e) => e.etat === "ouvert") ?? null;
   const prochain =
@@ -34,7 +36,7 @@ export function EnDirect() {
   const stock = useQuery({
     queryKey: ["stock", ouvert?.id],
     queryFn: () => api.get<StockMatch | null>(`/stock?evenementId=${ouvert!.id}`),
-    enabled: !!ouvert,
+    enabled: !!ouvert && options.stock,
     refetchInterval: RAFRAICHISSEMENT_MS,
   });
 
@@ -117,6 +119,7 @@ export function EnDirect() {
         </div>
       </div>
 
+      {options.stock && (
       <Carte
         titre={alertes.length ? `Ruptures et stock faible (${alertes.length})` : "Stock"}
         description={alertes.length ? "Restant = départ + réassorts − vendu, par stand. Faible : 15 % du départ ou moins." : undefined}
@@ -137,6 +140,7 @@ export function EnDirect() {
           </div>
         )}
       </Carte>
+      )}
 
       <Carte titre="Caisses">
         {caisses.isPending ? (

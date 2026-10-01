@@ -6,6 +6,7 @@ import { ROLES_EQUIPE, formaterMontant, lireMontant, montantPourSaisie, type App
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 import { MasseSalarialeVue, PlanningVue } from "./Planning.tsx";
+import { useOptions } from "../../session.tsx";
 
 type Onglet = "fiches" | "planning" | "masse" | "tablettes";
 const heure = new Intl.DateTimeFormat("fr-FR", { timeStyle: "short", timeZone: "Europe/Paris" });
@@ -17,6 +18,7 @@ const libelleStatut = (e: Pick<Employe, "statut" | "agence">) => (e.statut === "
  */
 export function Equipe() {
   const [onglet, setOnglet] = useState<Onglet>("fiches");
+  const options = useOptions();
   const bouton = (id: Onglet, libelle: string) => (
     <button className={`onglet${onglet === id ? " actif" : ""}`} onClick={() => setOnglet(id)}>
       {libelle}
@@ -27,8 +29,8 @@ export function Equipe() {
       <EntetePage titre="Équipe" description="Qui travaille, où, et combien ça coûte." />
       <div className="onglets">
         {bouton("fiches", "Fiches")}
-        {bouton("planning", "Planning")}
-        {bouton("masse", "Masse salariale")}
+        {options.equipe && bouton("planning", "Planning")}
+        {options.equipe && bouton("masse", "Masse salariale")}
         {bouton("tablettes", "Tablettes")}
       </div>
       {onglet === "fiches" ? <Fiches /> : onglet === "planning" ? <PlanningVue /> : onglet === "masse" ? <MasseSalarialeVue /> : <Tablettes />}
