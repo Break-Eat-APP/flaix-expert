@@ -23,10 +23,11 @@ import { routesPeriodes } from "./routes/periodes.ts";
 import { routesFormation } from "./routes/formation.ts";
 import { routesExportComptable } from "./routes/export-comptable.ts";
 import { routesClickCollect } from "./routes/click-collect.ts";
+import { routesCoutsBuvette } from "./routes/couts-buvette.ts";
 
 const METHODES_MODIFIANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 /** Routes de configuration, en lecture seule en mode formation. */
-const CONFIGURATION = [/^\/api\/(stands|categories|produits|lieu|equipe|appareils|click-collect)(\/|$)/, /^\/api\/caisses\/:id(\/appareil)?$/];
+const CONFIGURATION = [/^\/api\/(stands|categories|produits|lieu|equipe|appareils|click-collect|couts-buvette)(\/|$)/, /^\/api\/caisses\/:id(\/appareil)?$/];
 
 export async function construireServeur(base: Base, options: { journaliser?: boolean } = {}): Promise<FastifyInstance> {
   // Derrière le relais https du serveur (Caddy), l'adresse du visiteur est celle transmise par le
@@ -125,6 +126,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesFormation, { base });
   await app.register(routesExportComptable, { base });
   await app.register(routesClickCollect, { base });
+  await app.register(routesCoutsBuvette, { base });
 
   return app;
 }

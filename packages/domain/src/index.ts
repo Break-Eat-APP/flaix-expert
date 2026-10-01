@@ -14,3 +14,4 @@ export * from "./stock.ts";
 export * from "./cloture-periode.ts";
 export * from "./export-comptable.ts";
 export * from "./click-collect.ts";
+export * from "./couts-buvette.ts";
