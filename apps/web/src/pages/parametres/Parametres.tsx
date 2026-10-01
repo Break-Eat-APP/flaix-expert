@@ -1,7 +1,7 @@
 import type { ComponentType } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, CalendarDays, GraduationCap, LayoutGrid, ShieldCheck, ShoppingBag, Tags, Target, UserCog } from "lucide-react";
+import { Building2, CalendarDays, GraduationCap, LayoutGrid, ShieldCheck, ShoppingBag, Tags, Target, UserCog, Wallet } from "lucide-react";
 import type { EtatFormation, Evenement, Lieu, Produit, Stand } from "@flaix/domain";
 import { api } from "../../api.ts";
 import { EntetePage } from "../../composants/communs.tsx";
@@ -82,7 +82,8 @@ export function Parametres() {
         : undefined,
     },
     { titre: "Click & Collect", texte: "Prix sur l'application, points de retrait", icone: ShoppingBag, route: "/parametres/click-collect", etat: "Prix app conseillés" },
-    { titre: "Objectifs & coûts", texte: "Cibles de marge, coûts par buvette", icone: Target },
+    { titre: "Coûts par buvette", texte: "Frais de chaque stand, coûts du mois par stand", icone: Wallet, route: "/parametres/couts" },
+    { titre: "Objectifs de marge", texte: "Cibles de marge par catégorie et par produit", icone: Target },
     { titre: "Accès", texte: "Comptes du directeur et des caissières", icone: UserCog },
   ];
 

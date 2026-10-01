@@ -25,6 +25,7 @@ import { Stock } from "./pages/stock/Stock.tsx";
 import { Formation } from "./pages/parametres/Formation.tsx";
 import { ClickCollect } from "./pages/parametres/ClickCollect.tsx";
 import { EnDirect } from "./pages/direct/EnDirect.tsx";
+import { CoutsBuvette } from "./pages/parametres/CoutsBuvette.tsx";
 
 export function App() {
   const session = useSession();
@@ -66,6 +67,7 @@ export function App() {
           <Route path="parametres/conformite" element={<JournalTechnique />} />
           <Route path="parametres/formation" element={<Formation />} />
           <Route path="parametres/click-collect" element={<ClickCollect />} />
+          <Route path="parametres/couts" element={<CoutsBuvette />} />
           <Route path="compte" element={<Compte />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

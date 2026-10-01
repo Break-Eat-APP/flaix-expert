@@ -40,7 +40,15 @@ async function couts(c: Client, lieuId: string, demande: string | undefined): Pr
   const { rows: stands } = await c.query<{ id: string; nom: string; actif: boolean }>("SELECT id, nom, actif FROM stand WHERE lieu_id = $1 ORDER BY actif DESC, lower(nom)", [lieuId]);
   const cle = demande ?? mois[0]?.cle ?? null;
   const moisDisponibles = mois.map((m) => ({ cle: m.cle, libelle: libelleMois(m.cle), matchs: m.matchs }));
-  if (!cle) return { moisDisponibles, cle: null, libelle: "", matchs: 0, stands: [], horsStand: { masseSalariale: 0, affectations: 0 }, frais };
+  if (!cle) {
+    // Aucun match joué : les stands sont listés quand même, pour la saisie des frais.
+    const vides = stands
+      .filter((st) => st.actif)
+      .map((st) =>
+        coutsDuStand({ standId: st.id, nom: st.nom, actif: true, caHt: 0, frais: fraisDuMois(frais, st.id, "9999-12"), coutMatiere: 0, produitsSansCout: [], masseSalariale: 0, affectationsSansTaux: 0 }),
+      );
+    return { moisDisponibles, cle: null, libelle: "", matchs: 0, stands: vides, horsStand: { masseSalariale: 0, affectations: 0 }, frais };
+  }
 
   const { rows: matchs } = await c.query<{ id: string }>(
     "SELECT id FROM evenement WHERE lieu_id = $1 AND etat IN ('ouvert', 'clos') AND to_char(debut AT TIME ZONE 'Europe/Paris', 'YYYY-MM') = $2",
