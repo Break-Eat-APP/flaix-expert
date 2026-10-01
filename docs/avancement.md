@@ -1,6 +1,6 @@
 # Avancement — reprise après coupure
 
-Mis à jour le 2026-10-01 (6 étapes + coffre + clôtures de période + copie chiffrée des sauvegardes + mode formation + export comptable + Click & Collect + vue téléphone + coûts par buvette). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.113.
+Mis à jour le 2026-10-01 (6 étapes + coffre + clôtures de période + copie chiffrée des sauvegardes + mode formation + export comptable + Click & Collect + vue téléphone + coûts par buvette + fidélité gestion). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.114.
 
 ## Ordre de construction (dossier §15.99)
 
@@ -60,8 +60,8 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 | 3 | Click & Collect | **fait le 2026-10-01** (§15.111) — ventes C&C : pas de raccordement à l'app Break Eat pour l'instant |
 | 4 | Vue téléphone du directeur | **fait le 2026-10-01** (§15.112) — écran « En direct » |
 | 5 | Coûts par buvette | **fait le 2026-10-01** (§15.113) — frais mensuels datés par stand |
-| 6 | Fidélité | **prochain** |
-| 7 | Wallet & campagnes | à faire |
+| 6 | Fidélité | **partie gestion faite le 2026-10-01** (§15.114) ; partie caisse (dépenser des points, code promo) à faire : choix « sans réseau » à valider |
+| 7 | Wallet & campagnes | **prochain** |
 | 8 | Facturation | à faire |
 | 9 | Back-office éditeur | à faire |
 

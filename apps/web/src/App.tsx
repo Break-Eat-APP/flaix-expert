@@ -26,6 +26,7 @@ import { Formation } from "./pages/parametres/Formation.tsx";
 import { ClickCollect } from "./pages/parametres/ClickCollect.tsx";
 import { EnDirect } from "./pages/direct/EnDirect.tsx";
 import { CoutsBuvette } from "./pages/parametres/CoutsBuvette.tsx";
+import { Fidelite } from "./pages/fidelite/Fidelite.tsx";
 
 export function App() {
   const session = useSession();
@@ -59,6 +60,7 @@ export function App() {
           <Route path="stock" element={<Stock />} />
           <Route path="equipe" element={<Equipe />} />
           <Route path="clotures" element={<Clotures />} />
+          <Route path="fidelite" element={<Fidelite />} />
           <Route path="parametres" element={<Parametres />} />
           <Route path="parametres/lieu" element={<Identite />} />
           <Route path="parametres/stands" element={<StandsCaisses />} />

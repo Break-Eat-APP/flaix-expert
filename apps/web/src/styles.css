@@ -166,7 +166,7 @@ a { color: var(--violet); }
 
 .champ { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .champ > span { font-size: 12px; font-weight: 600; color: var(--muted); }
-input[type="text"], input[type="email"], input[type="password"], input[type="search"], input[type="datetime-local"], select, textarea {
+input[type="text"], input[type="email"], input[type="password"], input[type="search"], input[type="datetime-local"], input[type="date"], select, textarea {
   font: inherit; font-size: 13px; font-weight: 600; color: var(--text);
   background: var(--field); border: 1px solid var(--field-border); border-radius: 8px; padding: 8px 10px; width: 100%; min-width: 0;
 }
