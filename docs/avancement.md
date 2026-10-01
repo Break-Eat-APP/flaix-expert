@@ -1,6 +1,6 @@
 # Avancement — reprise après coupure
 
-Mis à jour le 2026-10-01 (6 étapes + coffre + clôtures de période + copie chiffrée des sauvegardes + mode formation + export comptable + Click & Collect + vue téléphone + coûts par buvette + fidélité gestion + factures fournisseurs). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.115.
+Mis à jour le 2026-10-01 (6 étapes + coffre + clôtures de période + copie chiffrée des sauvegardes + mode formation + export comptable + Click & Collect + vue téléphone + coûts par buvette + fidélité gestion + factures fournisseurs + back-office). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.116.
 
 ## Ordre de construction (dossier §15.99)
 
@@ -63,7 +63,7 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 | 6 | Fidélité | **partie gestion faite le 2026-10-01** (§15.114) ; partie caisse (dépenser des points, code promo) à faire : choix « sans réseau » à valider |
 | 7 | Wallet & campagnes | **mis de côté** (§15.115) — carte reportée par Rémi ; campagnes : service d'e-mails et domaine à choisir |
 | 8 | Facturation | **factures fournisseurs (12b) faites le 2026-10-01** (§15.115) ; 12a (Break Eat) avec le back-office |
-| 9 | Back-office éditeur | **prochain** |
+| 9 | Back-office éditeur | **niveau 1 (supervision) fait le 2026-10-01** (§15.116) ; niveau 2 (support sur autorisation) avec la Conformité |
 
 **À voir avec Rémi, ne pas construire seul** : Conformité (dossier bien structuré à préparer ; y joindre les points prévus à revoir ensemble), recettes / matières premières, IA ; serveur de production (Rémi s'en occupe).
 
