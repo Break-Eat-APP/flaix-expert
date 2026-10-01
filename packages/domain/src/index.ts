@@ -18,3 +18,4 @@ export * from "./couts-buvette.ts";
 export * from "./fidelite.ts";
 export * from "./factures.ts";
 export * from "./editeur.ts";
+export * from "./recettes.ts";

@@ -6,6 +6,7 @@ import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { ParamId, Uuid, contexte, corps, differences, texte } from "./outils.ts";
+import { aUneRecette } from "./recettes.ts";
 
 const Montant = z.number().int("Montant en centimes attendu.").min(0, "Un montant ne peut pas être négatif.").max(1_000_000);
 const TauxTva = z.number().refine(estTauxTva, "Taux de TVA non reconnu.") as unknown as z.ZodType<TauxTvaPb>;
@@ -65,8 +66,10 @@ export async function listerProduits(c: Client, lieuId: string): Promise<Produit
     cout_matiere_centimes: number | null;
     actif: boolean;
     stand_ids: string[];
+    a_recette: boolean;
   }>(
     `SELECT p.id, p.nom, p.categorie_id, p.cout_matiere_centimes, p.actif,
+            EXISTS (SELECT 1 FROM recette_ligne r WHERE r.lieu_id = p.lieu_id AND r.produit_id = p.id) AS a_recette,
             coalesce(array_agg(ps.stand_id) FILTER (WHERE ps.stand_id IS NOT NULL), '{}') AS stand_ids
        FROM produit p
        LEFT JOIN produit_stand ps ON ps.lieu_id = p.lieu_id AND ps.produit_id = p.id
@@ -94,6 +97,7 @@ export async function listerProduits(c: Client, lieuId: string): Promise<Produit
     nom: p.nom,
     categorieId: p.categorie_id,
     coutMatiere: p.cout_matiere_centimes,
+    aRecette: p.a_recette,
     actif: p.actif,
     standIds: p.stand_ids,
     tarifEnVigueur: vigueur.get(p.id) ?? null,
@@ -258,6 +262,9 @@ export async function routesProduits(app: FastifyInstance, { base }: { base: Bas
       const p = await lireProduit(c, auth.lieuId, id);
       const avant = { nom: p.nom, categorieId: p.categorie_id, coutMatiere: p.cout_matiere_centimes, actif: p.actif };
       const modifications = differences(avant, demande);
+      if (modifications.coutMatiere && (await aUneRecette(c, auth.lieuId, id))) {
+        throw new ErreurMetier(409, "Ce produit a une recette : son coût matière se calcule à partir de ses ingrédients.");
+      }
       if (Object.keys(modifications).length > 0) {
         if (demande.categorieId !== undefined) await controlerCategorie(c, auth.lieuId, demande.categorieId);
         const apres = { ...avant, ...Object.fromEntries(Object.entries(demande).filter(([, v]) => v !== undefined)) };

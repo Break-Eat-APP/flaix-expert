@@ -89,6 +89,8 @@ export interface Produit {
   nom: string;
   categorieId: string | null;
   coutMatiere: Centimes | null;
+  /** Produit fabriqué : son coût matière est calculé par sa recette (§15.119). */
+  aRecette: boolean;
   actif: boolean;
   standIds: string[];
   /** Tarif en vigueur maintenant ; null seulement si le seul tarif saisi prend effet plus tard. */

@@ -21,6 +21,7 @@ import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { listerEvenements } from "./evenements.ts";
 import { Uuid, contexte, corps } from "./outils.ts";
+import { aUneRecette } from "./recettes.ts";
 
 /*
  * Stock suivi à l'unité (dossier §15.105, module 4) : réserve centrale, mise en place et
@@ -410,6 +411,9 @@ export async function routesStock(app: FastifyInstance, { base }: { base: Base }
       await verrouiller(c, `reserve:${d.produitId}`);
       const produit = (await reserveParProduit(c, auth.lieuId)).find((x) => x.produitId === d.produitId);
       if (!produit) throw introuvable("Produit");
+      if (await aUneRecette(c, auth.lieuId, d.produitId)) {
+        throw new ErreurMetier(409, "Ce produit est fabriqué (il a une recette) : son coût vient de ses ingrédients, il ne se livre pas.");
+      }
       // Le coût matière devient le coût moyen pondéré : source unique des valorisations et des marges.
       const nouveau = cump(produit.solde, produit.coutUnitaire, d.quantite, d.prixUnitaire);
       await c.query(
