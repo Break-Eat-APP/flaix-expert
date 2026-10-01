@@ -2,7 +2,7 @@ import { realpathSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import type { LieuParc, ParcEditeur, VerificationEditeur } from "@flaix/domain";
+import { OPTIONS_LIEU, OPTIONS_PAR_DEFAUT, type LieuParc, type OptionLieu, type ParcEditeur, type VerificationEditeur } from "@flaix/domain";
 import type { Base } from "../base.ts";
 import { config } from "../config.ts";
 import { ErreurMetier, nonAutorise } from "../erreurs.ts";
@@ -153,10 +153,30 @@ export async function routesEditeur(app: FastifyInstance, { base }: { base: Base
           moisACloturer: r.mois_a_cloturer,
           derniereActivite: r.derniere_activite?.toISOString() ?? null,
           derniereVerification: r.derniere_verification ? { le: r.derniere_verification.toISOString(), ok: r.verification_ok === true } : null,
+          options: { ...OPTIONS_PAR_DEFAUT },
         }),
       );
     });
+    const reglees = await base.transaction({ utilisateurId: e.utilisateurId }, async (c) => (await c.query<{ lieu_id: string; option: OptionLieu; active: boolean }>("SELECT * FROM options_du_parc()")).rows);
+    for (const o of reglees) {
+      const l = lieux.find((x) => x.lieuId === o.lieu_id);
+      if (l) l.options[o.option] = o.active;
+    }
     return { version: versionEnService(), environnement: config.environnement, lieux };
+  });
+
+  // Activer ou désactiver une option d'un lieu (§15.118) : configuration du contrat, inscrite au journal du lieu.
+  app.put("/api/editeur/lieux/:id/options", async (req) => {
+    const e = await exigerEditeur(base, req);
+    const { id } = ParamId.parse(req.params);
+    const { option, active } = corps(z.object({ option: z.enum(OPTIONS_LIEU.map((o) => o.cle) as [OptionLieu, ...OptionLieu[]]), active: z.boolean() }), req);
+    const connu = await base.transaction({ utilisateurId: e.utilisateurId }, async (c) => (await c.query("SELECT 1 FROM vue_parc() WHERE lieu_id = $1", [id])).rows.length > 0);
+    if (!connu) throw new ErreurMetier(404, "Lieu introuvable.");
+    await base.transaction({ lieuId: id, utilisateurId: e.utilisateurId }, async (c) => {
+      await c.query("SELECT definir_option_lieu($1, $2, $3)", [id, option, active]);
+      await inscrireJet(c, { lieuId: id, type: "option_modifiee", utilisateurId: e.utilisateurId, details: { option, active, par: `Break Eat — ${e.nom}` } });
+    });
+    return { ok: true };
   });
 
   app.post("/api/editeur/lieux/:id/verification", async (req): Promise<VerificationEditeur> => {

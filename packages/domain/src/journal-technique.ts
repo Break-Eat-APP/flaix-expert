@@ -67,6 +67,7 @@ export const TYPES_JET = {
   ingredient_cree: "Ingrédient créé",
   ingredient_modifie: "Ingrédient modifié (prix : coûts des recettes recalculés)",
   recette_modifiee: "Recette d'un produit modifiée",
+  option_modifiee: "Option du lieu activée ou désactivée par Break Eat",
   ticket_edite: "Ticket client édité (sur demande)",
   z_caisse_clos: "Z de caisse clôturé (espèces comptées)",
   z_caisse_rectifie: "Rectification d'un Z de caisse",

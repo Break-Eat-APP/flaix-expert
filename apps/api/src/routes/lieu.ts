@@ -1,8 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import type { Lieu } from "@flaix/domain";
+import type { Lieu, OptionsLieu } from "@flaix/domain";
+import { lireOptions } from "../options.ts";
 import type { Base, Client } from "../base.ts";
-import { exigerDirecteur } from "../auth/contexte.ts";
+import { exigerDirecteur, exigerSession } from "../auth/contexte.ts";
 import { introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { contexte, corps, differences, texte, texteFacultatif } from "./outils.ts";
@@ -79,6 +80,12 @@ export async function routesLieu(app: FastifyInstance, { base }: { base: Base })
       });
       return lireLieu(c, auth.lieuId);
     });
+  });
+
+  // Options activées par Break Eat (§15.118) : l'écran n'affiche que celles-là.
+  app.get("/api/lieu/options", async (req): Promise<OptionsLieu> => {
+    const auth = exigerSession(req);
+    return base.transaction(contexte(auth), (c) => lireOptions(c, auth.lieuId));
   });
 
   app.put("/api/lieu/reglages-caisse", async (req) => {

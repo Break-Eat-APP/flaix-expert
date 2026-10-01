@@ -23,6 +23,7 @@ export interface LieuParc {
   moisACloturer: number;
   derniereActivite: string | null;
   derniereVerification: { le: string; ok: boolean } | null;
+  options: OptionsLieu;
 }
 
 export interface ParcEditeur {
@@ -49,4 +50,36 @@ export function alertesLieuParc(l: LieuParc, maintenant: number): string[] {
   if (l.derniereVerification && !l.derniereVerification.ok) a.push("rupture d'intégrité à la dernière vérification");
   if (!l.exerciceRegle && l.matchsJoues > 0) a.push("exercice comptable non réglé");
   return a;
+}
+
+// ---------------------------------------------------------------------------
+// Options par lieu, activées par Break Eat (dossier §15.117, §15.118). La base (caisse, clôtures,
+// résultats, paramètres, formation) est toujours là ; une option absente des réglages est active.
+// ---------------------------------------------------------------------------
+
+export type OptionLieu = "stock" | "equipe" | "fidelite" | "click_collect" | "factures" | "export_comptable" | "couts_buvette";
+export type OptionsLieu = Record<OptionLieu, boolean>;
+
+export const OPTIONS_LIEU: { cle: OptionLieu; libelle: string; aide: string }[] = [
+  { cle: "stock", libelle: "Stock", aide: "Mise en place, comptages, réserve, livraisons, ruptures" },
+  { cle: "equipe", libelle: "Planning & masse salariale", aide: "Affectations par match, coût du personnel" },
+  { cle: "fidelite", libelle: "Fidélité", aide: "Abonnés, points, codes promo" },
+  { cle: "click_collect", libelle: "Click & Collect", aide: "Prix sur l'application Break Eat" },
+  { cle: "factures", libelle: "Factures fournisseurs", aide: "Saisie, rapprochement avec les livraisons" },
+  { cle: "export_comptable", libelle: "Export comptable", aide: "Fichiers pour l'expert-comptable" },
+  { cle: "couts_buvette", libelle: "Coûts par buvette", aide: "Frais et coûts par stand" },
+];
+
+export const OPTIONS_PAR_DEFAUT: OptionsLieu = { stock: true, equipe: true, fidelite: true, click_collect: true, factures: true, export_comptable: true, couts_buvette: true };
+
+/** Option dont dépend une adresse du serveur (null : la base, toujours ouverte). */
+export function optionDeLaRoute(url: string): OptionLieu | null {
+  if (/^\/api\/stock(\/|$)/.test(url)) return "stock";
+  if (/^\/api\/planning(\/|$)/.test(url)) return "equipe";
+  if (/^\/api\/fidelite(\/|$)/.test(url)) return "fidelite";
+  if (/^\/api\/click-collect(\/|$)/.test(url)) return "click_collect";
+  if (/^\/api\/factures(\/|$)/.test(url)) return "factures";
+  if (/^\/api\/export-comptable(\/|$)/.test(url)) return "export_comptable";
+  if (/^\/api\/couts-buvette(\/|$)/.test(url)) return "couts_buvette";
+  return null;
 }

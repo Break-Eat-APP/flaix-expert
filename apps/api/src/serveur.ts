@@ -28,6 +28,8 @@ import { routesFidelite } from "./routes/fidelite.ts";
 import { routesFactures } from "./routes/factures.ts";
 import { routesEditeur } from "./routes/editeur.ts";
 import { routesRecettes } from "./routes/recettes.ts";
+import { lireOptions, optionInactive } from "./options.ts";
+import { optionDeLaRoute } from "@flaix/domain";
 
 const METHODES_MODIFIANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 /** Routes de configuration, en lecture seule en mode formation. */
@@ -92,6 +94,13 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
     }
     // Mode formation (dossier §15.109) : la configuration est celle du vrai lieu, recopiée à chaque
     // entrée ; elle ne se modifie pas dans le lieu de formation.
+    // Options du lieu activées par Break Eat (§15.118) : une option désactivée ferme ses adresses.
+    const option = req.auth ? optionDeLaRoute(req.routeOptions.url ?? "") : null;
+    if (req.auth && option) {
+      const auth = req.auth;
+      const options = await base.transaction({ lieuId: auth.lieuId, utilisateurId: auth.utilisateurId }, (c) => lireOptions(c, auth.lieuId));
+      if (!options[option]) throw optionInactive(option);
+    }
     if (req.auth?.formation && METHODES_MODIFIANTES.has(req.method) && CONFIGURATION.some((r) => r.test(req.routeOptions.url ?? ""))) {
       throw new ErreurMetier(409, "Mode formation : la configuration est celle du vrai lieu et ne se modifie pas ici. Quitte la formation pour la changer.");
     }
