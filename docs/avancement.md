@@ -1,6 +1,6 @@
 # Avancement — reprise après coupure
 
-Mis à jour le 2026-09-30 (6 étapes + coffre + clôtures de période + copie chiffrée des sauvegardes + mode formation + export comptable). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.110.
+Mis à jour le 2026-10-01 (6 étapes + coffre + clôtures de période + copie chiffrée des sauvegardes + mode formation + export comptable + Click & Collect). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.111.
 
 ## Ordre de construction (dossier §15.99)
 
@@ -47,7 +47,6 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 
 | Travail | Remarque |
 |---|---|
-| 13 Click & Collect | règles de prix à revoir d'abord (§15.20) |
 | Vue téléphone du directeur, alerte de rupture en direct | — |
 | 8 Coûts par buvette | jamais prototypé ; laissé tel quel par Rémi |
 
@@ -59,8 +58,8 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 |---|---|---|
 | 1 | Mode formation « FACTICE » | **fait le 2026-09-30** (§15.109) |
 | 2 | Export pour l'expert-comptable | **fait le 2026-09-30** (§15.110) — format à confirmer par le comptable (G.20) |
-| 3 | Click & Collect | **prochain** (règles de prix §15.20 : poser les questions nécessaires, construire le reste) |
-| 4 | Vue téléphone du directeur | à faire |
+| 3 | Click & Collect | **fait le 2026-10-01** (§15.111) — ventes C&C : pas de raccordement à l'app Break Eat pour l'instant |
+| 4 | Vue téléphone du directeur | **prochain** |
 | 5 | Coûts par buvette | à faire |
 | 6 | Fidélité | à faire |
 | 7 | Wallet & campagnes | à faire |
