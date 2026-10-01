@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, Plus, Search, Tags } from "lucide-react";
+import { ChefHat, ChevronDown, ChevronRight, Plus, Search, Tags } from "lucide-react";
 import {
   TAUX_TVA,
   formaterMontant,
@@ -16,6 +16,7 @@ import {
 } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
+import { GestionIngredients, RecetteProduit } from "./Recettes.tsx";
 
 const COLONNES = "minmax(150px, 2fr) minmax(80px, 1fr) minmax(130px, 2fr) minmax(70px, 0.8fr) minmax(50px, 0.6fr) minmax(80px, 0.9fr) minmax(100px, 1.2fr) 24px";
 
@@ -41,6 +42,7 @@ export function Produits() {
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [creation, setCreation] = useState(false);
   const [gererCategories, setGererCategories] = useState(false);
+  const [gererIngredients, setGererIngredients] = useState(false);
 
   const majProduits = (liste: Produit[]) => client.setQueryData(["produits"], liste);
 
@@ -72,6 +74,9 @@ export function Produits() {
             <button className="btn btn-fantome" onClick={() => setGererCategories(!gererCategories)}>
               <Tags size={15} /> Catégories
             </button>
+            <button className="btn btn-fantome" onClick={() => setGererIngredients(!gererIngredients)}>
+              <ChefHat size={15} /> Ingrédients
+            </button>
             <button className="btn" onClick={() => setCreation(!creation)}>
               <Plus size={16} /> Ajouter un produit
             </button>
@@ -80,6 +85,7 @@ export function Produits() {
       />
 
       {gererCategories && <GestionCategories categories={categories.data!} />}
+      {gererIngredients && <GestionIngredients />}
       {creation && (
         <FormulaireCreation
           stands={listeStands}
@@ -163,6 +169,7 @@ export function Produits() {
                     <span className="chiffre">
                       <span className="cellule-libelle">Coût matière</span>
                       {p.coutMatiere !== null ? formaterMontant(p.coutMatiere) : <span className="discret">—</span>}
+                      {p.aRecette && <span className="puce" style={{ marginLeft: 4, fontSize: 10.5 }}>recette</span>}
                     </span>
                     <span>
                       <span className="cellule-libelle">Marge comptoir</span>
@@ -186,7 +193,8 @@ export function Produits() {
           <li><strong>Le taux de TVA est choisi par toi</strong>, produit par produit ; le logiciel ne présélectionne rien. En cas de doute (boissons consommées sur place : 5,5 % ou 10 % ?), demande à ton expert-comptable.</li>
           <li><strong>Marge comptoir</strong> = prix HT − coût matière HT, par vente. Prix HT = prix TTC ÷ (1 + taux de TVA). Taux de marge = marge ÷ prix HT. C'est une marge brute : ce qui reste avant salaires, loyer et charges — pas « ce que tu gagnes ».</li>
           <li>Exemple : 7,00 € TTC à 10 % de TVA = 6,36 € HT ; avec 1,90 € de coût matière, la marge est de 4,46 € par vente, soit 70,1 %.</li>
-          <li>Le coût matière est facultatif. Il sera ensuite recalculé automatiquement à partir des livraisons fournisseur (coût moyen pondéré) quand le module Stock sera en service.</li>
+          <li>Le coût matière est facultatif. Pour un produit acheté tel quel (canette, bière…), il est recalculé à chaque livraison du Stock (coût moyen pondéré).</li>
+          <li><strong>Recette</strong> (produit fabriqué) : tes ingrédients ont un prix HT au kilo, au litre ou à la pièce ; la recette en coche les quantités (en grammes, centilitres ou pièces). <strong>Coût de fabrication</strong> = Σ prix × quantité — ex. 100 g de tomates à 2,50 €/kg = 0,25 €. Il devient le coût matière du produit et se recalcule dès qu'un prix d'ingrédient change. Un produit avec recette ne se livre pas : ce sont ses ingrédients qui s'achètent.</li>
           <li>Un produit ne se supprime pas : il se désactive. Chaque création, modification et nouveau tarif est inscrit au journal technique avec son auteur et l'heure.</li>
         </ul>
       </Regles>
@@ -349,7 +357,7 @@ function DetailProduit({ produit, stands, categories, majProduits }: { produit: 
   });
 
   const coutCentimes = cout.trim() ? lireMontant(cout) : null;
-  const ficheModifiee = nom.trim() !== produit.nom || (categorieId || null) !== produit.categorieId || coutCentimes !== produit.coutMatiere;
+  const ficheModifiee = nom.trim() !== produit.nom || (categorieId || null) !== produit.categorieId || (!produit.aRecette && coutCentimes !== produit.coutMatiere);
   const standsModifies = [...standIds].sort().join() !== [...produit.standIds].sort().join();
   const prixCentimes = lireMontant(prix);
   const tarifValide = prixCentimes !== null && tva !== "" && (!programme || dateEffet !== "");
@@ -362,14 +370,22 @@ function DetailProduit({ produit, stands, categories, majProduits }: { produit: 
           <input type="text" value={nom} onChange={(e) => setNom(e.target.value)} maxLength={80} />
         </label>
         <SelectCategorie categories={categories} valeur={categorieId} onChange={setCategorieId} />
-        <ChampMontant libelle="Coût matière HT par portion" valeur={cout} onChange={setCout} aide="Facultatif." />
+        {produit.aRecette ? (
+          <div className="champ">
+            <span>Coût matière HT par portion</span>
+            <strong className="chiffre" style={{ padding: "8px 0" }}>{produit.coutMatiere !== null ? formaterMontant(produit.coutMatiere) : "—"}</strong>
+            <small className="discret">Calculé par la recette ci-dessous.</small>
+          </div>
+        ) : (
+          <ChampMontant libelle="Coût matière HT par portion" valeur={cout} onChange={setCout} aide="Facultatif — ou calculé par une recette." />
+        )}
       </div>
       <MessageErreur erreur={fiche.error} />
       <div className="ligne-actions">
         <button
           className="btn"
           disabled={!ficheModifiee || fiche.isPending || (cout.trim() !== "" && coutCentimes === null)}
-          onClick={() => fiche.mutate({ nom, categorieId: categorieId || null, coutMatiere: coutCentimes })}
+          onClick={() => fiche.mutate({ nom, categorieId: categorieId || null, ...(produit.aRecette ? {} : { coutMatiere: coutCentimes }) })}
         >
           Enregistrer la fiche
         </button>
@@ -383,6 +399,10 @@ function DetailProduit({ produit, stands, categories, majProduits }: { produit: 
           </button>
         )}
       </div>
+
+      <h3 style={{ marginTop: 22, marginBottom: 8 }}>Recette</h3>
+      <p className="discret" style={{ margin: "0 0 8px" }}>Pour un produit fabriqué (burger, hot-dog…) : coche ses ingrédients et leur quantité ; le coût de fabrication devient son coût matière.</p>
+      <RecetteProduit produit={produit} />
 
       <h3 style={{ marginTop: 22, marginBottom: 8 }}>Vendu dans</h3>
       <CasesStands stands={stands} coches={standIds} onChange={setStandIds} />
