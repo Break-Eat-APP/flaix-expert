@@ -1,7 +1,7 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, Heart, KeyRound, Lock, LogOut, Menu, Package, Receipt, SlidersHorizontal, Users, X } from "lucide-react";
+import { ChartLine, FileText, Heart, KeyRound, Lock, LogOut, Menu, Package, Receipt, SlidersHorizontal, Users, X } from "lucide-react";
 import type { SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
 import { useDeconnexion } from "../session.tsx";
@@ -24,6 +24,7 @@ const MENU: Entree[] = [
   { id: "equipe", libelle: "Équipe", icone: Users, route: "/equipe" },
   { id: "clotures", libelle: "Clôtures", icone: Lock, route: "/clotures" },
   { id: "fidelite", libelle: "Fidélité", icone: Heart, route: "/fidelite" },
+  { id: "factures", libelle: "Factures", icone: FileText, route: "/factures" },
   { id: "parametres", libelle: "Paramètres", icone: SlidersHorizontal, route: "/parametres" },
 ];
 
@@ -91,7 +92,7 @@ export function Coquille({ session }: { session: SessionInfo }) {
             );
           })}
           <div className="plus-tard">
-            <b>Plus tard</b>Facturation
+            <b>Plus tard</b>Campagnes · Wallet
           </div>
         </nav>
 

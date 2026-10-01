@@ -276,6 +276,12 @@ input[aria-invalid="true"] { border-color: var(--red); }
   font-size: 12px; font-weight: 700; text-align: center; padding: 6px 12px;
 }
 
+/* ---------- Factures fournisseurs (dossier §15.115) ---------- */
+.facture { border: 1px solid var(--border); border-radius: 12px; }
+.facture-entete { width: 100%; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; padding: 10px 14px; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.facture-entete > span:first-child { flex: 1; }
+.facture-detail { padding: 4px 14px 14px; border-top: 1px solid var(--border); }
+
 /* ---------- En direct : la soirée de match sur le téléphone du directeur (dossier §15.112) ---------- */
 .direct { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 .direct > .carte { margin: 0; }
