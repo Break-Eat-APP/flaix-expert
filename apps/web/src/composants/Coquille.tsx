@@ -6,6 +6,7 @@ import type { OptionLieu, SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
 import { useDeconnexion, useOptions } from "../session.tsx";
 import { BandeauFormation } from "./Formation.tsx";
+import { Logo } from "./Logo.tsx";
 
 interface Entree {
   id: string;
@@ -45,9 +46,7 @@ export function Coquille({ session }: { session: SessionInfo }) {
   return (
     <div className="coquille">
       <div className="barre-mobile">
-        <span className="marque-nom">
-          Flai<span>X</span> Expert
-        </span>
+        <Logo hauteur={30} />
         <button className="btn-fantome btn" onClick={() => setMobileVisible(true)} aria-label="Ouvrir le menu">
           <Menu size={18} />
         </button>
@@ -56,10 +55,7 @@ export function Coquille({ session }: { session: SessionInfo }) {
       <aside className={`laterale${mobileVisible ? " visible" : ""}`}>
         <div className="en-ligne" style={{ justifyContent: "space-between" }}>
           <div className="marque">
-            <div className="marque-logo">X</div>
-            <div className="marque-nom">
-              Flai<span>X</span> Expert
-            </div>
+            <Logo hauteur={50} />
           </div>
           {mobileVisible && (
             <button className="btn-lien" onClick={() => setMobileVisible(false)} aria-label="Fermer le menu">

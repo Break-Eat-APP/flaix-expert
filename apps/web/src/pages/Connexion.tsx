@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { SessionInfo } from "@flaix/domain";
 import { api } from "../api.ts";
 import { MessageErreur } from "../composants/communs.tsx";
+import { Logo } from "../composants/Logo.tsx";
 
 /** Connexion par e-mail (directeur). Sur une tablette enregistrée, un lien ramène à l'écran des caissières. */
 export function Connexion({ versCaissieres }: { versCaissieres?: () => void }) {
@@ -31,10 +32,7 @@ export function Connexion({ versCaissieres }: { versCaissieres?: () => void }) {
     <div className="page-connexion">
       <form className="carte boite-connexion" onSubmit={soumettre}>
         <div className="marque">
-          <div className="marque-logo">X</div>
-          <div className="marque-nom">
-            Flai<span>X</span> Expert
-          </div>
+          <Logo hauteur={64} />
         </div>
         <h2 style={{ marginBottom: 14 }}>Connexion</h2>
         <label className="champ">

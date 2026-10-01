@@ -5,6 +5,7 @@ import type { AccueilTablette, SessionInfo } from "@flaix/domain";
 import { api } from "../api.ts";
 import { MessageErreur } from "../composants/communs.tsx";
 import { BandeauFormation } from "../composants/Formation.tsx";
+import { Logo } from "../composants/Logo.tsx";
 
 /**
  * Accueil d'une tablette enregistrée comme caisse (dossier §15.100) : la caissière touche son nom,
@@ -46,10 +47,7 @@ export function ConnexionCaissiere({ accueil, versDirecteur }: { accueil: Accuei
       {accueil.formation && <BandeauFormation />}
       <div className="carte boite-caissiere">
         <div className="marque">
-          <div className="marque-logo">X</div>
-          <div className="marque-nom">
-            Flai<span>X</span> Expert
-          </div>
+          <Logo hauteur={64} />
         </div>
         <p className="tablette-caisse">
           {accueil.lieuNom} · <strong>Caisse {k.numero}{k.nom ? ` — ${k.nom}` : ""}</strong> · {k.standNom}

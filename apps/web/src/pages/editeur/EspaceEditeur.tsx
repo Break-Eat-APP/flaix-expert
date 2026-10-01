@@ -4,6 +4,7 @@ import { LogOut, ShieldCheck } from "lucide-react";
 import { OPTIONS_LIEU, alertesLieuParc, type OptionLieu, type ParcEditeur, type VerificationEditeur } from "@flaix/domain";
 import { api, ErreurApi, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EtatVide, MessageErreur } from "../../composants/communs.tsx";
+import { Logo } from "../../composants/Logo.tsx";
 
 const ENVIRONNEMENTS = { developpement: "développement local", test: "serveur de test", production: "production" } as const;
 
@@ -39,10 +40,7 @@ function ConnexionEditeur() {
     <div className="page-connexion">
       <form className="carte boite-connexion" onSubmit={soumettre}>
         <div className="marque">
-          <div className="marque-logo">X</div>
-          <div className="marque-nom">
-            Flai<span>X</span> Expert
-          </div>
+          <Logo hauteur={64} />
         </div>
         <h2 style={{ marginBottom: 4 }}>Back-office Break Eat</h2>
         <p className="aide" style={{ marginTop: 0, marginBottom: 14 }}>
@@ -92,10 +90,13 @@ function Parc({ nom }: { nom: string }) {
   return (
     <div className="editeur">
       <header className="editeur-entete">
-        <div>
-          <strong>FlaiX Expert — back-office Break Eat</strong>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <Logo hauteur={36} />
+          <div>
+          <strong>Back-office Break Eat</strong>
           <div className="discret" style={{ fontSize: 12.5 }}>
             {nom} · supervision technique : ni montant, ni ticket, ni nom de salarié
+          </div>
           </div>
         </div>
         <button className="btn btn-fantome" onClick={() => deconnexion.mutate()}>

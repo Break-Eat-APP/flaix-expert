@@ -5,6 +5,7 @@ import type { SessionInfo } from "@flaix/domain";
 import { useDeconnexion } from "../../session.tsx";
 import { EcranCaisse } from "./EcranCaisse.tsx";
 import { BandeauFormation } from "../../composants/Formation.tsx";
+import { Logo } from "../../composants/Logo.tsx";
 
 /**
  * Poste d'une caissière (dossier §15.100) : l'écran de vente de la caisse de cette tablette,
@@ -19,9 +20,7 @@ export function PosteCaissiere({ session }: { session: SessionInfo }) {
   return (
     <BrowserRouter>
       <div className="poste-entete">
-        <span className="marque-nom">
-          Flai<span>X</span> Expert
-        </span>
+        <Logo hauteur={30} />
         <span className="discret" style={{ fontSize: 13 }}>{session.lieu.nom}</span>
         <div className="qui">
           <span>
