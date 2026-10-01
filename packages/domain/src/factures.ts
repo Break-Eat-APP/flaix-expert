@@ -7,7 +7,7 @@
  *
  *   écart de quantité     = quantité facturée − quantité livrée
  *   impact de l'écart prix = (prix facturé − prix de la livraison) × quantité livrée     (en euros, pas l'écart brut)
- *   seuil                 = max(0,50 €, 1 % du montant livré)    ← recommandation du dossier, à confirmer
+ *   seuil                 = max(0,50 €, 1 % du montant livré)    ← validée par Rémi le 2026-10-01 (§15.117)
  *   ligne rapprochée      = |impact prix| ≤ seuil ET écart de quantité = 0
  */
 import type { Centimes } from "./argent.ts";

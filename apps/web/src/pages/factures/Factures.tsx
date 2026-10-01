@@ -119,7 +119,7 @@ export function Factures() {
           </li>
           <li>
             <strong>Écart</strong> : écart de quantité = facturé − livré ; écart de prix = (prix facturé − prix de la livraison) × quantité livrée, en euros. Tolérance :
-            0,50 € ou 1 % du montant livré, le plus grand des deux (recommandation à confirmer). Un écart est signalé, <strong>jamais corrigé</strong> : la facture peut
+            0,50 € ou 1 % du montant livré, le plus grand des deux (validée le 1er octobre 2026). Un écart est signalé, <strong>jamais corrigé</strong> : la facture peut
             avoir raison contre une livraison mal saisie, ou l'inverse.
           </li>
           <li>
