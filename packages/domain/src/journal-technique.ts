@@ -63,6 +63,7 @@ export const TYPES_JET = {
   facture_piece_jointe: "Pièce jointe d'une facture déposée",
   facture_validee: "Facture fournisseur validée",
   facture_payee: "Facture fournisseur marquée payée",
+  verification_editeur: "Vérification d'intégrité par Break Eat (éditeur)",
   ticket_edite: "Ticket client édité (sur demande)",
   z_caisse_clos: "Z de caisse clôturé (espèces comptées)",
   z_caisse_rectifie: "Rectification d'un Z de caisse",

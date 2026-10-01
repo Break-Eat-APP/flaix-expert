@@ -4,6 +4,7 @@
  *
  *   pnpm cli creer-lieu --nom "Nom du lieu" --email directeur@exemple.fr --directeur "Prénom Nom"
  *   pnpm cli nouveau-mot-de-passe --email directeur@exemple.fr
+ *   pnpm cli creer-editeur --email prenom@breakeat.fr --nom "Prénom Nom"   (compte du back-office éditeur, §15.116)
  *
  * Un lieu est créé VIDE : aucun stand, aucune caisse, aucun produit. Le directeur construit
  * tout lui-même depuis l'application (exigence du brief de production §1).
@@ -89,8 +90,29 @@ try {
       }
     });
     console.log(`\nNouveau mot de passe provisoire pour ${email} (affiché une seule fois) :\n\n    ${motDePasse}\n`);
+  } else if (commande === "creer-editeur") {
+    // Compte Break Eat du back-office : membre d'aucun lieu, il ne voit que la supervision technique (§15.13).
+    const email = exiger(values.email, "email").toLowerCase();
+    const nom = exiger(values.nom, "nom");
+    const motDePasse = genererMotDePasseProvisoire();
+    await base.transaction({}, async (c) => {
+      const { rows: existant } = await c.query<{ id: string }>("SELECT id FROM utilisateur WHERE lower(email) = $1", [email]);
+      if (existant[0]) {
+        const { rows: membres } = await c.query("SELECT 1 FROM membre WHERE utilisateur_id = $1", [existant[0].id]);
+        if (membres[0]) throw new Error("Ce compte est celui d'un lieu : un compte éditeur doit être distinct.");
+        throw new Error("Ce compte existe déjà.");
+      }
+      const { rows } = await c.query<{ id: string }>("INSERT INTO utilisateur (email, nom, mot_de_passe_hash) VALUES ($1, $2, $3) RETURNING id", [
+        email,
+        nom,
+        await hacherMotDePasse(motDePasse),
+      ]);
+      await c.query("INSERT INTO compte_editeur (utilisateur_id) VALUES ($1)", [rows[0]!.id]);
+    });
+    console.log(`\nCompte éditeur créé : ${nom} <${email}>`);
+    console.log(`Mot de passe provisoire (affiché une seule fois, à changer dès la première connexion sur /editeur) :\n\n    ${motDePasse}\n`);
   } else {
-    console.log('Commandes : creer-lieu --nom "…" --email … --directeur "…" | nouveau-mot-de-passe --email …');
+    console.log('Commandes : creer-lieu --nom "…" --email … --directeur "…" | nouveau-mot-de-passe --email … | creer-editeur --email … --nom "…"');
     process.exitCode = 1;
   }
 } catch (erreur) {

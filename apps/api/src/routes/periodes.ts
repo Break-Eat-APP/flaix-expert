@@ -309,6 +309,37 @@ async function etatClotures(c: Client, lieuId: string): Promise<EtatClotures> {
   };
 }
 
+/** Relecture de la chaîne des clôtures (Z de match, mois, exercices) : continuité, maillons, contenu. */
+export async function verifierClotures(c: Client, lieuId: string): Promise<{ ok: boolean; maillons: number; rupture: { sequence: number; raison: string } | null }> {
+  const lignes = await lireClotures(c, lieuId);
+  const { rows: lieu } = await c.query<{ id: string }>("SELECT id FROM lieu WHERE id = $1", [lieuId]);
+  let precedente = EMPREINTE_INITIALE;
+  let rupture: { sequence: number; raison: string } | null = null;
+  for (const [i, l] of lignes.entries()) {
+    if (l.sequence !== i + 1) rupture ??= { sequence: l.sequence, raison: "numérotation discontinue" };
+    if (l.empreinte_precedente !== precedente) rupture ??= { sequence: l.sequence, raison: "maillon précédent modifié ou retiré" };
+    const recalculee = empreinteCloture(
+      {
+        sequence: l.sequence,
+        niveau: l.niveau,
+        lieuId: lieu[0]!.id,
+        evenementId: l.evenement_id,
+        debut: l.debut,
+        fin: l.fin,
+        totalTtc: l.total_ttc_centimes,
+        perpetuelAvant: l.perpetuel_avant_centimes,
+        perpetuelApres: l.perpetuel_apres_centimes,
+        details: l.details as unknown as Record<string, unknown>,
+        horodatage: l.horodatage,
+      },
+      l.empreinte_precedente,
+    );
+    if (recalculee !== l.empreinte) rupture ??= { sequence: l.sequence, raison: "contenu modifié" };
+    precedente = l.empreinte;
+  }
+  return { ok: rupture === null, maillons: lignes.length, rupture };
+}
+
 export async function routesPeriodes(app: FastifyInstance, { base }: { base: Base }) {
   app.get("/api/clotures/periodes", async (req): Promise<EtatClotures> => {
     const auth = await exigerDirecteur(req, base);
@@ -356,33 +387,7 @@ export async function routesPeriodes(app: FastifyInstance, { base }: { base: Bas
   app.post("/api/clotures/verification", async (req) => {
     const auth = await exigerDirecteur(req, base);
     return base.transaction(contexte(auth), async (c) => {
-      const lignes = await lireClotures(c, auth.lieuId);
-      const { rows: lieu } = await c.query<{ id: string }>("SELECT id FROM lieu WHERE id = $1", [auth.lieuId]);
-      let precedente = EMPREINTE_INITIALE;
-      let rupture: { sequence: number; raison: string } | null = null;
-      for (const [i, l] of lignes.entries()) {
-        if (l.sequence !== i + 1) rupture ??= { sequence: l.sequence, raison: "numérotation discontinue" };
-        if (l.empreinte_precedente !== precedente) rupture ??= { sequence: l.sequence, raison: "maillon précédent modifié ou retiré" };
-        const recalculee = empreinteCloture(
-          {
-            sequence: l.sequence,
-            niveau: l.niveau,
-            lieuId: lieu[0]!.id,
-            evenementId: l.evenement_id,
-            debut: l.debut,
-            fin: l.fin,
-            totalTtc: l.total_ttc_centimes,
-            perpetuelAvant: l.perpetuel_avant_centimes,
-            perpetuelApres: l.perpetuel_apres_centimes,
-            details: l.details as unknown as Record<string, unknown>,
-            horodatage: l.horodatage,
-          },
-          l.empreinte_precedente,
-        );
-        if (recalculee !== l.empreinte) rupture ??= { sequence: l.sequence, raison: "contenu modifié" };
-        precedente = l.empreinte;
-      }
-      const resultat = { ok: rupture === null, maillons: lignes.length, rupture };
+      const resultat = await verifierClotures(c, auth.lieuId);
       await inscrireJet(c, { lieuId: auth.lieuId, type: "verification_integrite", utilisateurId: auth.utilisateurId, details: { journal: "clotures", ...resultat } });
       return resultat;
     });
