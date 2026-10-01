@@ -81,7 +81,7 @@ export function Parametres() {
           : `${formation.data.lieuFormation ? "Lieu d'entraînement prêt" : "Jamais utilisé"} · ${pluriel(formation.data.tablettesEnFormation, "tablette")} en formation`
         : undefined,
     },
-    { titre: "Click & Collect", texte: "Prix sur l'application, points de retrait", icone: ShoppingBag },
+    { titre: "Click & Collect", texte: "Prix sur l'application, points de retrait", icone: ShoppingBag, route: "/parametres/click-collect", etat: "Prix app conseillés" },
     { titre: "Objectifs & coûts", texte: "Cibles de marge, coûts par buvette", icone: Target },
     { titre: "Accès", texte: "Comptes du directeur et des caissières", icone: UserCog },
   ];

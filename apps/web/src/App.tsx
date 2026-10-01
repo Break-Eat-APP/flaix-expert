@@ -23,6 +23,7 @@ import { Clotures } from "./pages/clotures/Clotures.tsx";
 import { Equipe } from "./pages/equipe/Equipe.tsx";
 import { Stock } from "./pages/stock/Stock.tsx";
 import { Formation } from "./pages/parametres/Formation.tsx";
+import { ClickCollect } from "./pages/parametres/ClickCollect.tsx";
 
 export function App() {
   const session = useSession();
@@ -62,6 +63,7 @@ export function App() {
           <Route path="parametres/saison" element={<Saison />} />
           <Route path="parametres/conformite" element={<JournalTechnique />} />
           <Route path="parametres/formation" element={<Formation />} />
+          <Route path="parametres/click-collect" element={<ClickCollect />} />
           <Route path="compte" element={<Compte />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
