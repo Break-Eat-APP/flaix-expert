@@ -48,6 +48,8 @@ export const TYPES_JET = {
   tablette_formation_desactivee: "Tablette sortie du mode formation",
   export_comptable: "Export pour l'expert-comptable téléchargé",
   plan_comptes_modifie: "Plan de comptes de l'export modifié",
+  click_collect_reglages_modifies: "Réglages Click & Collect modifiés",
+  prix_app_modifie: "Prix ou stock Click & Collect d'un produit modifié",
   ticket_edite: "Ticket client édité (sur demande)",
   z_caisse_clos: "Z de caisse clôturé (espèces comptées)",
   z_caisse_rectifie: "Rectification d'un Z de caisse",
