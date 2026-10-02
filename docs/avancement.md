@@ -89,3 +89,13 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 - Recharger la page sans réseau sur le vrai serveur (service worker) : à essayer.
 - Sous-domaine : **fait le 2026-10-02** — https://flaixexpert.flaixlabs.com (back-office : /editeur) ; l'ancienne adresse sslip.io renvoie vers elle.
 - Conservation des tickets sans limite : décidée (§15.106) ; question RGPD posée (G.19).
+
+## Passage en production — ce qui se passera (réponse à Rémi du 2026-10-02)
+
+**Préalables (Rémi)** : réponse écrite de l'expert-comptable (questions A à G) ; entité juridique éditrice de FlaiX Expert (nom sur l'attestation, propriétaire du code, dépôt GitHub aujourd'hui chez Break-Eat-APP) ; stockage OVH réglé et essai de restauration réussi ; choix du serveur de production (recommandé : un second VPS, le serveur actuel restant celui de test) ; conditions d'abonnement et contrat de sous-traitance RGPD avec chaque lieu.
+
+**À construire avant (moi)** : script de reprise de la configuration (identité, stands, caisses, produits et prix datés, recettes, équipe, codes caissières, options — jamais un ticket, un match, une clôture ni le journal d'essai), essayé sur une copie ; minimum de conformité vu ensemble (attestation téléchargeable dans l'application, registre des versions).
+
+**Le jour J** : étiquette de version dans Git (L96 J) ; base neuve, bandeau « test » retiré ; configuration recopiée ; directeurs gardent leur mot de passe, tablettes réenregistrées ; sauvegarde + copie OVH + essai de restauration sur la production. Ensuite : tout ce qui est saisi est définitif (rectifications, jamais d'effacement) ; entraînement en mode formation ; mises à jour hors match, essayées d'abord sur le serveur de test ; une version majeure demande une nouvelle attestation.
+
+**Sur place avant le premier vrai match** : soirée à blanc en mode formation avec les vraies tablettes, le vrai réseau et le TPE, coupure volontaire du Wi-Fi pour voir le hors-ligne ; caissières formées.
