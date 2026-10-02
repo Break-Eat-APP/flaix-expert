@@ -9,7 +9,7 @@ import { Logo } from "../../composants/Logo.tsx";
 const ENVIRONNEMENTS = { developpement: "développement local", test: "serveur de test", production: "production" } as const;
 
 /**
- * Back-office éditeur, niveau 1 (module 17 ; dossier §15.13, §15.116) : l'espace des comptes Break Eat,
+ * Back-office éditeur, niveau 1 (module 17 ; dossier §15.13, §15.116) : l'espace des comptes FlaiX Expert,
  * séparé de l'application des lieux (autre cookie, autres comptes). Supervision technique seulement :
  * ni montant, ni ticket, ni nom de salarié.
  */
@@ -42,7 +42,7 @@ function ConnexionEditeur() {
         <div className="marque">
           <Logo hauteur={64} />
         </div>
-        <h2 style={{ marginBottom: 4 }}>Back-office Break Eat</h2>
+        <h2 style={{ marginBottom: 4 }}>Back-office FlaiX Expert</h2>
         <p className="aide" style={{ marginTop: 0, marginBottom: 14 }}>
           Réservé aux comptes éditeur. Les directeurs et les caissières se connectent depuis l'accueil.
         </p>
@@ -93,7 +93,7 @@ function Parc({ nom }: { nom: string }) {
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <Logo hauteur={36} />
           <div>
-          <strong>Back-office Break Eat</strong>
+          <strong>Back-office FlaiX Expert</strong>
           <div className="discret" style={{ fontSize: 12.5 }}>
             {nom} · supervision technique : ni montant, ni ticket, ni nom de salarié
           </div>
@@ -178,7 +178,7 @@ function Parc({ nom }: { nom: string }) {
                                 : `Rupture : ${[!r.caisses.ok && `caisses ${r.caisses.ruptures.join(", ")}`, !r.journalTechnique.ok && "journal technique", !r.clotures.ok && "clôtures"].filter(Boolean).join(", ")}.`
                               : l.derniereVerification
                                 ? `Dernière vérification le ${formaterDateHeure(l.derniereVerification.le)} : ${l.derniereVerification.ok ? "intacte" : "RUPTURE"}.`
-                                : "Jamais vérifié par Break Eat."}
+                                : "Jamais vérifié par FlaiX Expert."}
                           </span>
                           <button className="btn btn-fantome" disabled={verifier.isPending} onClick={() => verifier.mutate(l.lieuId)}>
                             <ShieldCheck size={15} /> Vérifier l'intégrité

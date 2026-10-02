@@ -108,7 +108,7 @@ export function JournalTechnique() {
                 <span className="chiffre">{e.numero}</span>
                 <span className="chiffre">{formaterDateHeure(e.horodatage)}</span>
                 <strong>{e.libelle}</strong>
-                <span>{e.auteur ?? <span className="discret">Break Eat (éditeur)</span>}</span>
+                <span>{e.auteur ?? <span className="discret">FlaiX Expert (éditeur)</span>}</span>
                 <span style={{ fontSize: 12.5 }}>{resume(e)}</span>
                 <span className="empreinte" title={e.empreinte}>
                   {e.empreinte.slice(0, 10)}…

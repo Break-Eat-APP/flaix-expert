@@ -53,7 +53,7 @@ export function alertesLieuParc(l: LieuParc, maintenant: number): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// Options par lieu, activées par Break Eat (dossier §15.117, §15.118). La base (caisse, clôtures,
+// Options par lieu, activées par FlaiX Expert (dossier §15.117, §15.118). La base (caisse, clôtures,
 // résultats, paramètres, formation) est toujours là ; une option absente des réglages est active.
 // ---------------------------------------------------------------------------
 

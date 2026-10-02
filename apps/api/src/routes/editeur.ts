@@ -15,7 +15,7 @@ import { ParamId, corps } from "./outils.ts";
 /**
  * Back-office éditeur, niveau 1 : supervision technique (module 17 ; dossier §15.13, §15.116).
  *
- * Comptes Break Eat distincts des comptes des lieux, cookie distinct. Une session éditeur n'a pas de
+ * Comptes FlaiX Expert distincts des comptes des lieux, cookie distinct. Une session éditeur n'a pas de
  * lieu : la base ne lui montre aucune donnée d'un lieu ; la vue du parc ne contient ni montant, ni
  * ticket, ni nom de salarié. Seule action sur un lieu : vérifier l'intégrité de ses chaînes — le
  * serveur relit, ne renvoie que des états, et l'inscrit au journal technique du lieu (visible par lui).
@@ -174,7 +174,7 @@ export async function routesEditeur(app: FastifyInstance, { base }: { base: Base
     if (!connu) throw new ErreurMetier(404, "Lieu introuvable.");
     await base.transaction({ lieuId: id, utilisateurId: e.utilisateurId }, async (c) => {
       await c.query("SELECT definir_option_lieu($1, $2, $3)", [id, option, active]);
-      await inscrireJet(c, { lieuId: id, type: "option_modifiee", utilisateurId: e.utilisateurId, details: { option, active, par: `Break Eat — ${e.nom}` } });
+      await inscrireJet(c, { lieuId: id, type: "option_modifiee", utilisateurId: e.utilisateurId, details: { option, active, par: `FlaiX Expert — ${e.nom}` } });
     });
     return { ok: true };
   });
@@ -196,7 +196,7 @@ export async function routesEditeur(app: FastifyInstance, { base }: { base: Base
         clotures: { ok: clotures.ok, maillons: clotures.maillons },
       };
       // Inscrit au journal du lieu, qui voit qui a vérifié quoi et quand.
-      await inscrireJet(c, { lieuId: id, type: "verification_editeur", utilisateurId: e.utilisateurId, details: { ...resultat, par: `Break Eat — ${e.nom}` } });
+      await inscrireJet(c, { lieuId: id, type: "verification_editeur", utilisateurId: e.utilisateurId, details: { ...resultat, par: `FlaiX Expert — ${e.nom}` } });
       return resultat;
     });
   });

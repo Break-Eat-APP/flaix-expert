@@ -14,7 +14,7 @@ interface Entree {
   icone: ComponentType<{ size?: number }>;
   /** Absent = entrée pas encore construite en production (affichée « à venir »). */
   route?: string;
-  /** Option du lieu dont dépend l'entrée (activée par Break Eat, §15.118). */
+  /** Option du lieu dont dépend l'entrée (activée par FlaiX Expert, §15.118). */
   option?: OptionLieu;
 }
 

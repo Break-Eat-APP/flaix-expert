@@ -30,7 +30,7 @@ import { Fidelite } from "./pages/fidelite/Fidelite.tsx";
 import { Factures } from "./pages/factures/Factures.tsx";
 import { EspaceEditeur } from "./pages/editeur/EspaceEditeur.tsx";
 
-/** Le back-office Break Eat (/editeur) est un espace à part : autres comptes, autre cookie (dossier §15.116). */
+/** Le back-office FlaiX Expert (/editeur) est un espace à part : autres comptes, autre cookie (dossier §15.116). */
 export function App() {
   return window.location.pathname.startsWith("/editeur") ? <EspaceEditeur /> : <AppLieu />;
 }

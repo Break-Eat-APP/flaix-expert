@@ -94,7 +94,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
     }
     // Mode formation (dossier §15.109) : la configuration est celle du vrai lieu, recopiée à chaque
     // entrée ; elle ne se modifie pas dans le lieu de formation.
-    // Options du lieu activées par Break Eat (§15.118) : une option désactivée ferme ses adresses.
+    // Options du lieu activées par FlaiX Expert (§15.118) : une option désactivée ferme ses adresses.
     const option = req.auth ? optionDeLaRoute(req.routeOptions.url ?? "") : null;
     if (req.auth && option) {
       const auth = req.auth;

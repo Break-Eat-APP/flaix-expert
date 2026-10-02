@@ -37,7 +37,7 @@ Si tu n'as pas pu coller la clé à l'étape 1 : dans l'espace client OVHcloud, 
 
 La connexion au logiciel exige une adresse sécurisée (https) sur un serveur : c'est voulu, pour protéger les mots de passe. Deux possibilités :
 
-- **Tu as un nom de domaine** (par exemple celui de Break Eat) : on crée un sous-domaine, par exemple `test-flaix.<ton-domaine>`, qui pointe vers l'adresse IP du serveur. Je te dirai exactement quoi saisir chez ton registraire (là où le domaine est acheté).
+- **Tu as un nom de domaine** (par exemple flaixlabs.com) : on crée un sous-domaine, par exemple `test-flaix.<ton-domaine>`, qui pointe vers l'adresse IP du serveur. Je te dirai exactement quoi saisir chez ton registraire (là où le domaine est acheté).
 - **Tu n'en as pas, ou tu préfères attendre** : j'utilise une adresse provisoire gratuite construite à partir de l'adresse IP (service public sslip.io), avec un certificat https gratuit (Let's Encrypt). Parfait pour un test, moins joli à montrer.
 
 ## Étape 4 — Ce que je fais ensuite, depuis ton ordinateur
@@ -51,14 +51,14 @@ La connexion au logiciel exige une adresse sécurisée (https) sur un serveur : 
 
 ## Ce qui a été fait le 2026-09-29 (serveur en service)
 
-- **Serveur** : `vps-1fbd80b9.vps.ovh.net`, adresse IPv4 146.59.154.196. **Adresse du site : https://flaixexpert.flaixlabs.com** depuis le 2026-10-02 (sous-domaine enregistré par Rémi, entrée DNS de type A vers 146.59.154.196 ; certificat https Let's Encrypt obtenu et renouvelé automatiquement). **Back-office Break Eat : https://flaixexpert.flaixlabs.com/editeur**. L'ancienne adresse provisoire (https://146-59-154-196.sslip.io) renvoie automatiquement vers la nouvelle.
+- **Serveur** : `vps-1fbd80b9.vps.ovh.net`, adresse IPv4 146.59.154.196. **Adresse du site : https://flaixexpert.flaixlabs.com** depuis le 2026-10-02 (sous-domaine enregistré par Rémi, entrée DNS de type A vers 146.59.154.196 ; certificat https Let's Encrypt obtenu et renouvelé automatiquement). **Back-office FlaiX Expert : https://flaixexpert.flaixlabs.com/editeur**. L'ancienne adresse provisoire (https://146-59-154-196.sslip.io) renvoie automatiquement vers la nouvelle.
 - **Système** : OVH avait installé Debian 11, **sans correctifs de sécurité depuis le 31/08/2026** (wiki Debian LTS). Monté en Debian 12 puis **Debian 13** (suivi jusqu'en 2030). Script : `infra/vps/montee-debian.sh`.
 - **Sécurité** (`infra/vps/securiser.sh`) : mises à jour de sécurité automatiques ; pare-feu (entrées autorisées : 22, 80, 443 seulement) ; connexion SSH par clé uniquement, pas de root, mot de passe refusé à distance. Le mot de passe du compte `debian`, changé par Rémi, reste son accès de secours par la console OVH.
 - **Logiciels** (`infra/vps/installer-socle.sh`) : PostgreSQL 17, Caddy (https), Node.js 24 depuis nodejs.org (empreinte vérifiée).
 - **Application** (`infra/vps/deployer.sh`) : chaque version dans `/srv/flaix/versions/…`, `/srv/flaix/app` pointe sur la version en service (retour arrière possible). Service `flaix-api` sous un compte système sans shell. Mode serveur, environnement **test** (bandeau permanent).
 - **Base de données** : deux rôles (`flaix_owner` pour les migrations, `flaix_app` pour le serveur), mots de passe tirés au hasard sur le serveur, jamais affichés : `/etc/flaix/admin.env` (root seul), `/etc/flaix/flaix.env` (le serveur, qui ne connaît que `flaix_app`).
 - **Sauvegarde** : copie complète de la base chaque nuit à 4 h 15 dans `/var/backups/flaix`, 14 jours gardés ; **celle du 1er de chaque mois est gardée sans limite** (décision du 2026-09-30 : tickets conservés sans limite de durée, dossier §15.106). **Copie chiffrée chez OVH** : prête depuis le 2026-09-30, elle démarre dès que tu l'as réglée (section suivante).
-- **Administration** : `sudo flaix-admin creer-lieu`, `sudo flaix-admin nouveau-mot-de-passe`, `sudo flaix-admin creer-editeur` (compte Break Eat du back-office, adresse `/editeur`), `sudo flaix-admin sauvegarde-externe` et `sudo flaix-admin essai-restauration` (`infra/vps/flaix-admin.sh`) posent leurs questions à l'écran ; le mot de passe provisoire ne s'affiche que dans la fenêtre de celui qui lance la commande.
+- **Administration** : `sudo flaix-admin creer-lieu`, `sudo flaix-admin nouveau-mot-de-passe`, `sudo flaix-admin creer-editeur` (compte FlaiX Expert du back-office, adresse `/editeur`), `sudo flaix-admin sauvegarde-externe` et `sudo flaix-admin essai-restauration` (`infra/vps/flaix-admin.sh`) posent leurs questions à l'écran ; le mot de passe provisoire ne s'affiche que dans la fenêtre de celui qui lance la commande.
 - **Mettre à jour l'application** : archive du dépôt (`git archive`), copie sur le serveur, `sudo deployer-flaix.sh archive.tar.gz` (applique les nouvelles migrations, redémarre le service).
 
 ## Copie des sauvegardes chez OVH (à faire par toi, environ 15 minutes)

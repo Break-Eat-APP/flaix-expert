@@ -81,7 +81,7 @@ export function useBasculeFormation() {
   });
 }
 
-/** Options du lieu activées par Break Eat (§15.118) ; toutes actives tant qu'elles ne sont pas lues. */
+/** Options du lieu activées par FlaiX Expert (§15.118) ; toutes actives tant qu'elles ne sont pas lues. */
 export function useOptions(): OptionsLieu {
   const q = useQuery({ queryKey: ["options"], queryFn: () => api.get<OptionsLieu>("/lieu/options"), staleTime: 60_000 });
   return q.data ?? OPTIONS_PAR_DEFAUT;

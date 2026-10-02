@@ -1,10 +1,10 @@
 /**
- * Outil d'administration Break Eat (éditeur), en attendant le back-office éditeur (§15.13).
+ * Outil d'administration FlaiX Expert (éditeur), en attendant le back-office éditeur (§15.13).
  * Il se connecte avec le rôle propriétaire : il ne doit jamais être exposé sur Internet.
  *
  *   pnpm cli creer-lieu --nom "Nom du lieu" --email directeur@exemple.fr --directeur "Prénom Nom"
  *   pnpm cli nouveau-mot-de-passe --email directeur@exemple.fr
- *   pnpm cli creer-editeur --email prenom@breakeat.fr --nom "Prénom Nom"   (compte du back-office éditeur, §15.116)
+ *   pnpm cli creer-editeur --email prenom@flaixlabs.com --nom "Prénom Nom"   (compte du back-office éditeur, §15.116)
  *
  * Un lieu est créé VIDE : aucun stand, aucune caisse, aucun produit. Le directeur construit
  * tout lui-même depuis l'application (exigence du brief de production §1).
@@ -34,7 +34,7 @@ function exiger(valeur: string | undefined, option: string): string {
 }
 
 const base = ouvrirBase(config.databaseOwnerUrl, 1);
-const ORIGINE = "outil d'administration Break Eat";
+const ORIGINE = "outil d'administration FlaiX Expert";
 
 try {
   if (commande === "creer-lieu") {
@@ -91,7 +91,7 @@ try {
     });
     console.log(`\nNouveau mot de passe provisoire pour ${email} (affiché une seule fois) :\n\n    ${motDePasse}\n`);
   } else if (commande === "creer-editeur") {
-    // Compte Break Eat du back-office : membre d'aucun lieu, il ne voit que la supervision technique (§15.13).
+    // Compte FlaiX Expert du back-office : membre d'aucun lieu, il ne voit que la supervision technique (§15.13).
     const email = exiger(values.email, "email").toLowerCase();
     const nom = exiger(values.nom, "nom");
     const motDePasse = genererMotDePasseProvisoire();

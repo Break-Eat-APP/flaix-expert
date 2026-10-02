@@ -49,7 +49,7 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 |---|---|
 | Alerte de rupture poussée sur téléphone | suppose l'envoi de notifications |
 
-**Plus tard (décidé par Rémi)** : 19 Fidélité, 20 Wallet & campagnes, Facturation (facture Break Eat, rapprochement fournisseur), 17 Back-office éditeur, assistant IA, recettes et matières premières.
+**Plus tard (décidé par Rémi)** : 19 Fidélité, 20 Wallet & campagnes, Facturation (facture FlaiX Expert, rapprochement fournisseur), 17 Back-office éditeur, assistant IA, recettes et matières premières.
 
 ## Ordre fixé par Rémi le 2026-09-30 (dossier §15.109) — « développe, sans t'arrêter »
 
@@ -62,10 +62,10 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 | 5 | Coûts par buvette | **fait le 2026-10-01** (§15.113) — frais mensuels datés par stand |
 | 6 | Fidélité | **partie gestion faite le 2026-10-01** (§15.114) ; partie caisse (dépenser des points, code promo) à faire : choix « sans réseau » à valider |
 | 7 | Wallet & campagnes | **mis de côté** (§15.115) — carte reportée par Rémi ; campagnes : service d'e-mails et domaine à choisir |
-| 8 | Facturation | **factures fournisseurs (12b) faites le 2026-10-01** (§15.115) ; 12a (Break Eat) avec le back-office |
+| 8 | Facturation | **factures fournisseurs (12b) faites le 2026-10-01** (§15.115) ; 12a (facture FlaiX Expert au lieu) avec le back-office |
 | 9 | Back-office éditeur | **niveau 1 (supervision) fait le 2026-10-01** (§15.116) ; niveau 2 (support sur autorisation) avec la Conformité |
 
-**Fait aussi le 2026-10-01** : options par lieu activées depuis le back-office et application installable (§15.118) ; recettes et coût de fabrication (§15.119). **Décidé** : fidélité à la caisse en option A (points et codes plafonnés avec réseau) — à construire. **À décider par Rémi** : stock au poids des ingrédients ; montants de l'abonnement Break Eat par option.
+**Fait aussi le 2026-10-01** : options par lieu activées depuis le back-office et application installable (§15.118) ; recettes et coût de fabrication (§15.119). **Décidé** : fidélité à la caisse en option A (points et codes plafonnés avec réseau) — à construire. **À décider par Rémi** : stock au poids des ingrédients ; montants de l'abonnement FlaiX Expert par option.
 
 **À voir avec Rémi, ne pas construire seul** : Conformité (dossier bien structuré à préparer ; y joindre les points prévus à revoir ensemble), IA ; serveur de production (Rémi s'en occupe).
 
@@ -73,7 +73,7 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 
 1. **Mode formation « FACTICE »** — pour que les essais ne se mélangent jamais aux vrais chiffres.
 2. **Conformité** : attestation, registre des versions, connexions par caisse, archive annuelle, accès vérificateur, export pour l'expert-comptable.
-3. **Passage en production** : vraie base neuve, seule la configuration du directeur recopiée, sous-domaine Break Eat. Préalables : réponse écrite de l'expert-comptable (NF525), décision d'hébergement (§15.108), copie OVH réglée et essai de restauration réussi.
+3. **Passage en production** : vraie base neuve, seule la configuration du directeur recopiée, adresse flaixexpert.flaixlabs.com (ou un sous-domaine de production). Préalables : réponse écrite de l'expert-comptable (NF525), décision d'hébergement (§15.108), copie OVH réglée et essai de restauration réussi.
 4. **Gestion financière complète + cibles de marge**.
 5. **Reporting de soirée** figé, imprimable, envoyé par e-mail (choisir un service d'envoi d'e-mails ; sert aussi à la notification des rectifications).
 6. **Centre d'alertes + Optimisation complète**.

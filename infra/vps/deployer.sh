@@ -4,7 +4,7 @@
 # Les secrets de la base sont créés ici, sur le serveur, et n'en sortent jamais.
 set -euo pipefail
 etape() { echo "=== $(date -Is) $*"; }
-# Adresse du site (sous-domaine Break Eat, 2026-10-02) ; l'ancienne adresse provisoire renvoie vers elle.
+# Adresse du site (sous-domaine FlaiX Expert, 2026-10-02) ; l'ancienne adresse provisoire renvoie vers elle.
 ADRESSE="flaixexpert.flaixlabs.com"
 ANCIENNE_ADRESSE="146-59-154-196.sslip.io"
 ARCHIVE="$1"

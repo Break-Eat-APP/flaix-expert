@@ -123,7 +123,7 @@ export function EcranCaisse({ caisseId: caisseImposee, poste = false }: { caisse
       </div>
       {etat && statut.etat === "refus" && (
         <div className="message message-erreur">
-          Envoi refusé par le serveur : {statut.message} Les {etat.attente.length} ticket(s) en attente restent sur cette tablette : ne vide pas le navigateur et préviens {poste ? "le directeur" : "Break Eat"}.{" "}
+          Envoi refusé par le serveur : {statut.message} Les {etat.attente.length} ticket(s) en attente restent sur cette tablette : ne vide pas le navigateur et préviens {poste ? "le directeur" : "FlaiX Expert"}.{" "}
           <button className="btn-lien" onClick={() => void envoyer(caisseId)}>
             Réessayer
           </button>

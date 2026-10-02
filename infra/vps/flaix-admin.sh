@@ -2,7 +2,7 @@
 # Outils d'administration de FlaiX Expert sur le serveur (exécutés en root).
 #   flaix-admin creer-lieu            crée un lieu vide et son directeur (questions posées à l'écran)
 #   flaix-admin nouveau-mot-de-passe  donne un mot de passe provisoire à un compte
-#   flaix-admin creer-editeur         crée un compte Break Eat pour le back-office (supervision, §15.116)
+#   flaix-admin creer-editeur         crée un compte FlaiX Expert pour le back-office (supervision, §15.116)
 #   flaix-admin sauvegarde-externe    règle la copie chiffrée des sauvegardes chez OVHcloud (dossier §15.108)
 #   flaix-admin essai-restauration    restaure la dernière copie OVH dans une base temporaire et la compare
 # Mots de passe, clés et codes s'affichent une seule fois, dans cette fenêtre seulement.
@@ -32,7 +32,7 @@ case "${1:-}" in
     ;;
 
   creer-editeur)
-    read -r -p "Adresse e-mail du compte Break Eat : " EMAIL
+    read -r -p "Adresse e-mail du compte FlaiX Expert : " EMAIL
     read -r -p "Prénom et nom : " NOM
     outil creer-editeur --email "$EMAIL" --nom "$NOM"
     ;;

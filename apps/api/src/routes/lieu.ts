@@ -82,7 +82,7 @@ export async function routesLieu(app: FastifyInstance, { base }: { base: Base })
     });
   });
 
-  // Options activées par Break Eat (§15.118) : l'écran n'affiche que celles-là.
+  // Options activées par FlaiX Expert (§15.118) : l'écran n'affiche que celles-là.
   app.get("/api/lieu/options", async (req): Promise<OptionsLieu> => {
     const auth = exigerSession(req);
     return base.transaction(contexte(auth), (c) => lireOptions(c, auth.lieuId));

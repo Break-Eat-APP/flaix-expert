@@ -149,7 +149,7 @@ export async function routesExportComptable(app: FastifyInstance, { base }: { ba
       const { plan } = await lirePlan(c, auth.lieuId);
       const journal = journalDuMois(zs, plan);
       if (journal.desequilibres.length) {
-        throw new ErreurMetier(409, `Écritures déséquilibrées (${journal.desequilibres.join(", ")}) : export bloqué, signale-le à Break Eat.`);
+        throw new ErreurMetier(409, `Écritures déséquilibrées (${journal.desequilibres.join(", ")}) : export bloqué, signale-le à FlaiX Expert.`);
       }
       const definitif = await moisClos(c, auth.lieuId, mois);
       await inscrireJet(c, {

@@ -132,7 +132,7 @@ export function ExportComptable() {
               </p>
             ) : (
               <div className="message message-erreur">
-                <TriangleAlert size={15} /> Écritures déséquilibrées ({a.journal.desequilibres.join(", ")}) : l'export est bloqué. Signale-le à Break Eat.
+                <TriangleAlert size={15} /> Écritures déséquilibrées ({a.journal.desequilibres.join(", ")}) : l'export est bloqué. Signale-le à FlaiX Expert.
               </div>
             )}
             <div className="actions" style={{ justifyContent: "flex-start", flexWrap: "wrap" }}>

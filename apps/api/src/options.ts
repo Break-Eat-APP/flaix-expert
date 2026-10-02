@@ -3,7 +3,7 @@ import type { Client } from "./base.ts";
 import { ErreurMetier } from "./erreurs.ts";
 
 /**
- * Options du lieu activées par Break Eat (dossier §15.118). Un lieu de formation suit son vrai lieu.
+ * Options du lieu activées par FlaiX Expert (dossier §15.118). Un lieu de formation suit son vrai lieu.
  * Une option sans réglage est active.
  */
 export async function lireOptions(c: Client, lieuId: string): Promise<OptionsLieu> {
@@ -16,5 +16,5 @@ export async function lireOptions(c: Client, lieuId: string): Promise<OptionsLie
 
 export function optionInactive(option: OptionLieu): ErreurMetier {
   const libelle = OPTIONS_LIEU.find((o) => o.cle === option)?.libelle ?? option;
-  return new ErreurMetier(403, `L'option « ${libelle} » n'est pas activée pour ce lieu : à demander à Break Eat.`);
+  return new ErreurMetier(403, `L'option « ${libelle} » n'est pas activée pour ce lieu : à demander à FlaiX Expert.`);
 }
