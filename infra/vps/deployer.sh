@@ -4,7 +4,9 @@
 # Les secrets de la base sont créés ici, sur le serveur, et n'en sortent jamais.
 set -euo pipefail
 etape() { echo "=== $(date -Is) $*"; }
-ADRESSE="146-59-154-196.sslip.io"
+# Adresse du site (sous-domaine Break Eat, 2026-10-02) ; l'ancienne adresse provisoire renvoie vers elle.
+ADRESSE="flaixexpert.flaixlabs.com"
+ANCIENNE_ADRESSE="146-59-154-196.sslip.io"
 ARCHIVE="$1"
 VERSION="/srv/flaix/versions/$(date +%Y%m%d-%H%M%S)"
 APP=/srv/flaix/app
@@ -97,6 +99,11 @@ systemctl daemon-reload
 systemctl enable flaix-api
 systemctl restart flaix-api
 
+etape "adresse du site : $ADRESSE"
+# Les fichiers de configuration sont écrits à la première installation : l'adresse autorisée y est mise à jour à chaque déploiement.
+sed -i "s|^ORIGINES_AUTORISEES=.*|ORIGINES_AUTORISEES=https://$ADRESSE|" /etc/flaix/admin.env /etc/flaix/flaix.env
+systemctl restart flaix-api
+
 etape "relais https (Caddy)"
 usermod -aG flaix caddy
 cat > /etc/caddy/Caddyfile <<CADDY
@@ -122,6 +129,11 @@ $ADRESSE {
 		try_files {path} /index.html
 		file_server
 	}
+}
+
+# Ancienne adresse provisoire : renvoi définitif vers l'adresse du site.
+$ANCIENNE_ADRESSE {
+	redir https://$ADRESSE{uri} permanent
 }
 CADDY
 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
