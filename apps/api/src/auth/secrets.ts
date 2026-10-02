@@ -1,10 +1,8 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomInt } from "node:crypto";
 import { hash, verify } from "@node-rs/argon2";
 
 /** Paramètres argon2id recommandés par l'OWASP (19 Mio de mémoire, 2 passes). */
 const ARGON2 = { memoryCost: 19_456, timeCost: 2, parallelism: 1 } as const;
-
-export const LONGUEUR_MIN_MOT_DE_PASSE = 12;
 
 export function hacherMotDePasse(motDePasse: string): Promise<string> {
   return hash(motDePasse, ARGON2);
@@ -26,9 +24,13 @@ export function empreinteLeurre(): Promise<string> {
   return empreinteFactice;
 }
 
-/** Mot de passe provisoire lisible, remis une seule fois par l'outil d'administration. */
+// Sans caractères qui se confondent (0/o, 1/l/i) : le mot de passe provisoire se dicte au téléphone.
+const ALPHABET_PROVISOIRE = "abcdefghjkmnpqrstuvwxyz23456789";
+
+/** Mot de passe provisoire lisible (« k7mq-4xtp-9rwe », environ 59 bits), remis une seule fois. */
 export function genererMotDePasseProvisoire(): string {
-  return randomBytes(15).toString("base64url");
+  const groupe = () => Array.from({ length: 4 }, () => ALPHABET_PROVISOIRE[randomInt(ALPHABET_PROVISOIRE.length)]).join("");
+  return [groupe(), groupe(), groupe()].join("-");
 }
 
 export function nouveauJetonSession(): { jeton: string; empreinte: string } {

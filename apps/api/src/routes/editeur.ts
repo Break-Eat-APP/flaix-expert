@@ -2,15 +2,26 @@ import { realpathSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { OPTIONS_LIEU, OPTIONS_PAR_DEFAUT, type LieuParc, type OptionLieu, type ParcEditeur, type VerificationEditeur } from "@flaix/domain";
-import type { Base } from "../base.ts";
+import {
+  OPTIONS_LIEU,
+  OPTIONS_PAR_DEFAUT,
+  type DirecteurParc,
+  type DirecteurRemis,
+  type LieuCree,
+  type LieuParc,
+  type OptionLieu,
+  type ParcEditeur,
+  type VerificationEditeur,
+} from "@flaix/domain";
+import { changerLieu, type Base, type Client } from "../base.ts";
 import { config } from "../config.ts";
 import { ErreurMetier, nonAutorise } from "../erreurs.ts";
 import { verifierCaisses } from "../journal-caisse.ts";
 import { inscrireJet, verifierJet } from "../journal-technique.ts";
-import { LONGUEUR_MIN_MOT_DE_PASSE, empreinteJeton, empreinteLeurre, hacherMotDePasse, nouveauJetonSession, verifierMotDePasse } from "../auth/secrets.ts";
+import { empreinteJeton, empreinteLeurre, genererMotDePasseProvisoire, hacherMotDePasse, nouveauJetonSession, verifierMotDePasse } from "../auth/secrets.ts";
+import { NouveauMotDePasse } from "../auth/routes.ts";
 import { verifierClotures } from "./periodes.ts";
-import { ParamId, corps } from "./outils.ts";
+import { ParamId, Uuid, corps, texte } from "./outils.ts";
 
 /**
  * Back-office éditeur, niveau 1 : supervision technique (module 17 ; dossier §15.13, §15.116).
@@ -50,6 +61,33 @@ async function exigerEditeur(base: Base, req: FastifyRequest): Promise<Editeur> 
   });
   if (!r) throw nonAutorise();
   return { utilisateurId: r.utilisateur_id, nom: r.nom, email: r.email, jetonEmpreinte: empreinte };
+}
+
+const NouveauDirecteur = z.object({
+  nom: texte(120, "Le nom du directeur"),
+  email: z.string().trim().toLowerCase().max(200).email("Adresse e-mail invalide."),
+});
+
+/** Les refus écrits par les fonctions du back-office (sans contrainte nommée) deviennent des messages lisibles. */
+function refusLisible(erreur: unknown): never {
+  const e = erreur as { code?: string; constraint?: string; message?: string };
+  if (e.code === "P0002") throw new ErreurMetier(404, "Lieu ou directeur introuvable.");
+  if (!e.constraint && (e.code === "23505" || e.code === "23514") && e.message) throw new ErreurMetier(e.code === "23505" ? 409 : 400, e.message);
+  throw erreur;
+}
+
+/**
+ * Ajoute un directeur au lieu (transaction déjà placée sur ce lieu) et l'inscrit à son journal.
+ * Le mot de passe provisoire n'est tiré que pour un nouveau compte ; il n'est jamais stocké en clair.
+ */
+async function ajouterDirecteur(c: Client, lieuId: string, d: z.infer<typeof NouveauDirecteur>, e: Editeur): Promise<DirecteurRemis> {
+  const motDePasse = genererMotDePasseProvisoire();
+  const { rows } = await c
+    .query<{ utilisateur_id: string; nouveau_compte: boolean }>("SELECT * FROM ajouter_directeur_editeur($1, $2, $3, $4)", [lieuId, d.email, d.nom, await hacherMotDePasse(motDePasse)])
+    .catch(refusLisible);
+  const nouveauCompte = rows[0]!.nouveau_compte;
+  await inscrireJet(c, { lieuId, type: "directeur_ajoute", utilisateurId: e.utilisateurId, details: { nom: d.nom, email: d.email, nouveauCompte, par: `FlaiX Expert — ${e.nom}` } });
+  return { email: d.email, motDePasseProvisoire: nouveauCompte ? motDePasse : null };
 }
 
 function poserCookie(rep: FastifyReply, jeton: string, expire: Date) {
@@ -101,7 +139,7 @@ export async function routesEditeur(app: FastifyInstance, { base }: { base: Base
     const { actuel, nouveau } = corps(
       z.object({
         actuel: z.string().min(1).max(200),
-        nouveau: z.string().min(LONGUEUR_MIN_MOT_DE_PASSE, `Le nouveau mot de passe doit contenir au moins ${LONGUEUR_MIN_MOT_DE_PASSE} caractères.`).max(200),
+        nouveau: NouveauMotDePasse,
       }),
       req,
     );
@@ -154,6 +192,7 @@ export async function routesEditeur(app: FastifyInstance, { base }: { base: Base
           derniereActivite: r.derniere_activite?.toISOString() ?? null,
           derniereVerification: r.derniere_verification ? { le: r.derniere_verification.toISOString(), ok: r.verification_ok === true } : null,
           options: { ...OPTIONS_PAR_DEFAUT },
+          directeurs: [],
         }),
       );
     });
@@ -162,7 +201,51 @@ export async function routesEditeur(app: FastifyInstance, { base }: { base: Base
       const l = lieux.find((x) => x.lieuId === o.lieu_id);
       if (l) l.options[o.option] = o.active;
     }
+    const directeurs = await base.transaction({ utilisateurId: e.utilisateurId }, async (c) =>
+      (await c.query<{ lieu_id: string; utilisateur_id: string; nom: string; email: string; actif: boolean }>("SELECT * FROM directeurs_du_parc()")).rows,
+    );
+    for (const d of directeurs) {
+      const directeur: DirecteurParc = { utilisateurId: d.utilisateur_id, nom: d.nom, email: d.email, actif: d.actif };
+      lieux.find((x) => x.lieuId === d.lieu_id)?.directeurs.push(directeur);
+    }
     return { version: versionEnService(), environnement: config.environnement, lieux };
+  });
+
+  // Créer un lieu, vide, avec son premier directeur (§15.122) : jusqu'ici réservé à l'outil du serveur.
+  app.post("/api/editeur/lieux", async (req): Promise<LieuCree> => {
+    const e = await exigerEditeur(base, req);
+    const { nom, directeur } = corps(z.object({ nom: texte(120, "Le nom du lieu"), directeur: NouveauDirecteur }), req);
+    return base.transaction({ utilisateurId: e.utilisateurId }, async (c) => {
+      const lieuId = (await c.query<{ id: string }>("SELECT creer_lieu_editeur($1) AS id", [nom])).rows[0]!.id;
+      await changerLieu(c, lieuId);
+      await inscrireJet(c, { lieuId, type: "lieu_cree", utilisateurId: e.utilisateurId, details: { nom, par: `FlaiX Expert — ${e.nom}` } });
+      return { lieuId, nom, directeur: await ajouterDirecteur(c, lieuId, directeur, e) };
+    });
+  });
+
+  // Ajouter un directeur à un lieu existant ; une adresse déjà connue est rattachée avec son mot de passe actuel.
+  app.post("/api/editeur/lieux/:id/directeurs", async (req): Promise<DirecteurRemis> => {
+    const e = await exigerEditeur(base, req);
+    const { id } = ParamId.parse(req.params);
+    const directeur = corps(NouveauDirecteur, req);
+    return base.transaction({ lieuId: id, utilisateurId: e.utilisateurId }, (c) => ajouterDirecteur(c, id, directeur, e));
+  });
+
+  // Nouveau mot de passe provisoire d'un directeur : ses sessions sont fermées, chaque lieu dont il est membre le voit au journal.
+  app.post("/api/editeur/lieux/:id/directeurs/:utilisateurId/mot-de-passe", async (req): Promise<DirecteurRemis> => {
+    const e = await exigerEditeur(base, req);
+    const { id, utilisateurId } = z.object({ id: Uuid, utilisateurId: Uuid }).parse(req.params);
+    const motDePasse = genererMotDePasseProvisoire();
+    const hash = await hacherMotDePasse(motDePasse);
+    return base.transaction({ lieuId: id, utilisateurId: e.utilisateurId }, async (c) => {
+      const lieux = (await c.query<{ lieu: string }>("SELECT nouveau_mot_de_passe_directeur($1, $2, $3) AS lieu", [id, utilisateurId, hash]).catch(refusLisible)).rows.map((r) => r.lieu);
+      const email = (await c.query<{ email: string }>("SELECT email FROM directeurs_du_parc() WHERE utilisateur_id = $1 LIMIT 1", [utilisateurId])).rows[0]!.email;
+      for (const lieuId of lieux) {
+        await changerLieu(c, lieuId);
+        await inscrireJet(c, { lieuId, type: "mot_de_passe_provisoire", utilisateurId: e.utilisateurId, details: { email, par: `FlaiX Expert — ${e.nom}` } });
+      }
+      return { email, motDePasseProvisoire: motDePasse };
+    });
   });
 
   // Activer ou désactiver une option d'un lieu (§15.118) : configuration du contrat, inscrite au journal du lieu.

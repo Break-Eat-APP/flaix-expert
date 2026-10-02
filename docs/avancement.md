@@ -67,6 +67,8 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 
 **Fait aussi le 2026-10-01** : options par lieu activées depuis le back-office et application installable (§15.118) ; recettes et coût de fabrication (§15.119). **Décidé** : fidélité à la caisse en option A (points et codes plafonnés avec réseau) — à construire. **À décider par Rémi** : stock au poids des ingrédients ; montants de l'abonnement FlaiX Expert par option.
 
+**Fait le 2026-10-02** (§15.121, §15.122) : l'éditeur s'appelle FlaiX Expert partout (le Click & Collect garde « application Break Eat » et « commission Break Eat » : Rémi y reviendra) ; back-office : créer un lieu avec son directeur, ajouter un directeur, nouveau mot de passe provisoire ; mots de passe de 6 caractères au moins (les plus utilisés refusés) avec un œil pour les afficher.
+
 **À voir avec Rémi, ne pas construire seul** : Conformité (dossier bien structuré à préparer ; y joindre les points prévus à revoir ensemble), IA ; serveur de production (Rémi s'en occupe).
 
 ## Ancienne proposition d'ordre (remplacée par le tableau ci-dessus)

@@ -19,3 +19,4 @@ export * from "./fidelite.ts";
 export * from "./factures.ts";
 export * from "./editeur.ts";
 export * from "./recettes.ts";
+export * from "./mot-de-passe.ts";

@@ -1,10 +1,21 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { LogOut, ShieldCheck } from "lucide-react";
-import { OPTIONS_LIEU, alertesLieuParc, type OptionLieu, type ParcEditeur, type VerificationEditeur } from "@flaix/domain";
+import { KeyRound, LogOut, Plus, ShieldCheck } from "lucide-react";
+import {
+  LONGUEUR_MIN_MOT_DE_PASSE,
+  OPTIONS_LIEU,
+  alertesLieuParc,
+  type DirecteurRemis,
+  type LieuCree,
+  type LieuParc,
+  type OptionLieu,
+  type ParcEditeur,
+  type VerificationEditeur,
+} from "@flaix/domain";
 import { api, ErreurApi, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EtatVide, MessageErreur } from "../../composants/communs.tsx";
 import { Logo } from "../../composants/Logo.tsx";
+import { ChampMotDePasse, MotDePasseRemis } from "../../composants/MotDePasse.tsx";
 
 const ENVIRONNEMENTS = { developpement: "développement local", test: "serveur de test", production: "production" } as const;
 
@@ -52,7 +63,7 @@ function ConnexionEditeur() {
         </label>
         <label className="champ" style={{ marginTop: 12 }}>
           <span>Mot de passe</span>
-          <input type="password" autoComplete="current-password" required value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} />
+          <ChampMotDePasse autoComplete="current-password" value={motDePasse} onChange={setMotDePasse} />
         </label>
         <MessageErreur erreur={connexion.error} />
         <button className="btn btn-bloc" style={{ marginTop: 16 }} disabled={connexion.isPending}>
@@ -125,6 +136,7 @@ function Parc({ nom }: { nom: string }) {
                 <div className="kpi-valeur">{parc.data!.lieux.filter((l) => alertesLieuParc(l, maintenant).length > 0).length}</div>
               </div>
             </div>
+            <NouveauLieu />
             <Carte titre="Parc" description="Un lieu en retard de clôture ou avec une rupture d'intégrité risque l'amende : le prévenir est un service.">
               {parc.data!.lieux.length === 0 ? (
                 <EtatVide titre="Aucun lieu" />
@@ -156,6 +168,7 @@ function Parc({ nom }: { nom: string }) {
                           <span>exercice {l.exerciceRegle ? "réglé" : "non réglé"}</span>
                           <span>dernière activité : {l.derniereActivite ? formaterDateHeure(l.derniereActivite) : "—"}</span>
                         </div>
+                        <DirecteursDuLieu lieu={l} />
                         <div className="editeur-options">
                           <span className="discret" style={{ fontSize: 12.5 }}>Options :</span>
                           {OPTIONS_LIEU.map((o) => (
@@ -203,6 +216,190 @@ function Parc({ nom }: { nom: string }) {
   );
 }
 
+/** Créer un lieu, vide, avec son premier directeur (§15.122). */
+function NouveauLieu() {
+  const client = useQueryClient();
+  const [ouvert, setOuvert] = useState(false);
+  const [nom, setNom] = useState("");
+  const [directeur, setDirecteur] = useState("");
+  const [email, setEmail] = useState("");
+  const creer = useMutation({
+    mutationFn: () => api.post<LieuCree>("/editeur/lieux", { nom, directeur: { nom: directeur, email } }),
+    onSuccess: () => {
+      setNom("");
+      setDirecteur("");
+      setEmail("");
+      setOuvert(false);
+      void client.invalidateQueries({ queryKey: ["editeur-parc"] });
+    },
+  });
+  const cree = creer.data;
+  return (
+    <Carte
+      titre="Nouveau lieu"
+      description="Le lieu est créé vide : son directeur construit lui-même stands, caisses et produits. Toutes les options sont actives ; tu les règles ensuite dans le parc."
+      actions={
+        !ouvert && (
+          <button
+            className="btn"
+            onClick={() => {
+              setOuvert(true);
+              creer.reset();
+            }}
+          >
+            <Plus size={15} /> Ajouter un lieu
+          </button>
+        )
+      }
+    >
+      {ouvert && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            creer.mutate();
+          }}
+        >
+          <div className="grille-champs">
+            <label className="champ">
+              <span>Nom du lieu</span>
+              <input type="text" required maxLength={120} value={nom} onChange={(e) => setNom(e.target.value)} placeholder="ex. Patinoire du Nord" />
+            </label>
+            <label className="champ">
+              <span>Directeur : prénom et nom</span>
+              <input type="text" required maxLength={120} value={directeur} onChange={(e) => setDirecteur(e.target.value)} />
+            </label>
+            <label className="champ">
+              <span>Directeur : adresse e-mail</span>
+              <input type="email" required maxLength={200} value={email} onChange={(e) => setEmail(e.target.value)} />
+            </label>
+          </div>
+          <MessageErreur erreur={creer.error} />
+          <div className="ligne-actions">
+            <button className="btn" type="submit" disabled={creer.isPending}>
+              {creer.isPending ? "Création…" : "Créer le lieu"}
+            </button>
+            <button className="btn btn-fantome" type="button" onClick={() => setOuvert(false)}>
+              Annuler
+            </button>
+          </div>
+        </form>
+      )}
+      {cree && (
+        <>
+          <div className="message message-ok">Lieu « {cree.nom} » créé.</div>
+          {cree.directeur.motDePasseProvisoire ? (
+            <MotDePasseRemis email={cree.directeur.email} motDePasse={cree.directeur.motDePasseProvisoire} />
+          ) : (
+            <p className="aide">{cree.directeur.email} avait déjà un compte : il accède au nouveau lieu avec son mot de passe actuel.</p>
+          )}
+        </>
+      )}
+    </Carte>
+  );
+}
+
+/** Directeurs d'un lieu : en ajouter un, ou lui donner un nouveau mot de passe provisoire. */
+function DirecteursDuLieu({ lieu }: { lieu: LieuParc }) {
+  const client = useQueryClient();
+  const [ajout, setAjout] = useState(false);
+  const [nom, setNom] = useState("");
+  const [email, setEmail] = useState("");
+  const [aConfirmer, setAConfirmer] = useState<string | null>(null);
+  const [remis, setRemis] = useState<DirecteurRemis | null>(null);
+  const ajouter = useMutation({
+    mutationFn: () => api.post<DirecteurRemis>(`/editeur/lieux/${lieu.lieuId}/directeurs`, { nom, email }),
+    onSuccess: (r) => {
+      setRemis(r);
+      setAjout(false);
+      setNom("");
+      setEmail("");
+      void client.invalidateQueries({ queryKey: ["editeur-parc"] });
+    },
+  });
+  const renouveler = useMutation({
+    mutationFn: (utilisateurId: string) => api.post<DirecteurRemis>(`/editeur/lieux/${lieu.lieuId}/directeurs/${utilisateurId}/mot-de-passe`),
+    onSuccess: (r) => {
+      setRemis(r);
+      setAConfirmer(null);
+    },
+  });
+  return (
+    <div className="editeur-directeurs">
+      <span className="discret" style={{ fontSize: 12.5 }}>
+        Directeur{lieu.directeurs.length > 1 ? "s" : ""} :
+      </span>
+      {lieu.directeurs.length === 0 && <span className="puce puce-ambre">aucun</span>}
+      {lieu.directeurs.map((d) => (
+        <span key={d.utilisateurId} className="editeur-directeur">
+          <strong>{d.nom}</strong> <span className="discret">{d.email}</span>
+          {!d.actif && <span className="puce puce-ambre">désactivé</span>}
+          {aConfirmer === d.utilisateurId ? (
+            <>
+              <span className="discret">Ses sessions seront fermées.</span>
+              <button className="btn-lien" disabled={renouveler.isPending} onClick={() => renouveler.mutate(d.utilisateurId)}>
+                Confirmer
+              </button>
+              <button className="btn-lien" onClick={() => setAConfirmer(null)}>
+                Annuler
+              </button>
+            </>
+          ) : (
+            <button
+              className="btn-lien"
+              title="Mot de passe oublié ou jamais reçu"
+              onClick={() => {
+                setAConfirmer(d.utilisateurId);
+                setRemis(null);
+              }}
+            >
+              <KeyRound size={13} /> Nouveau mot de passe
+            </button>
+          )}
+        </span>
+      ))}
+      {!ajout && (
+        <button
+          className="btn-lien"
+          onClick={() => {
+            setAjout(true);
+            setRemis(null);
+            ajouter.reset();
+          }}
+        >
+          <Plus size={13} /> Ajouter un directeur
+        </button>
+      )}
+      {ajout && (
+        <form
+          className="editeur-ajout"
+          onSubmit={(e) => {
+            e.preventDefault();
+            ajouter.mutate();
+          }}
+        >
+          <input type="text" required maxLength={120} placeholder="Prénom et nom" aria-label="Prénom et nom du directeur" value={nom} onChange={(e) => setNom(e.target.value)} />
+          <input type="email" required maxLength={200} placeholder="Adresse e-mail" aria-label="Adresse e-mail du directeur" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <button className="btn" type="submit" disabled={ajouter.isPending}>
+            Ajouter
+          </button>
+          <button className="btn btn-fantome" type="button" onClick={() => setAjout(false)}>
+            Annuler
+          </button>
+        </form>
+      )}
+      <MessageErreur erreur={ajouter.error ?? renouveler.error} />
+      {remis &&
+        (remis.motDePasseProvisoire ? (
+          <MotDePasseRemis email={remis.email} motDePasse={remis.motDePasseProvisoire} />
+        ) : (
+          <p className="aide" style={{ margin: 0, width: "100%" }}>
+            {remis.email} avait déjà un compte : il accède à ce lieu avec son mot de passe actuel.
+          </p>
+        ))}
+    </div>
+  );
+}
+
 function MotDePasse() {
   const [actuel, setActuel] = useState("");
   const [nouveau, setNouveau] = useState("");
@@ -224,11 +421,11 @@ function MotDePasse() {
       >
         <label className="champ">
           <span>Mot de passe actuel</span>
-          <input type="password" autoComplete="current-password" value={actuel} onChange={(e) => setActuel(e.target.value)} required />
+          <ChampMotDePasse autoComplete="current-password" value={actuel} onChange={setActuel} />
         </label>
         <label className="champ">
-          <span>Nouveau (12 caractères au moins)</span>
-          <input type="password" autoComplete="new-password" value={nouveau} onChange={(e) => setNouveau(e.target.value)} required minLength={12} />
+          <span>Nouveau ({LONGUEUR_MIN_MOT_DE_PASSE} caractères au moins)</span>
+          <ChampMotDePasse autoComplete="new-password" value={nouveau} onChange={setNouveau} minLength={LONGUEUR_MIN_MOT_DE_PASSE} />
         </label>
         <div style={{ alignSelf: "end" }}>
           <button className="btn" type="submit" disabled={changer.isPending}>

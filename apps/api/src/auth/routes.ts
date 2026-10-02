@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { FastifyReply } from "fastify";
-import type { AccueilTablette, Role, SessionInfo } from "@flaix/domain";
+import { refusMotDePasse, type AccueilTablette, type Role, type SessionInfo } from "@flaix/domain";
 import { changerLieu, type Base } from "../base.ts";
 import { config } from "../config.ts";
 import { ErreurMetier } from "../erreurs.ts";
@@ -9,7 +9,6 @@ import { inscrireJet } from "../journal-technique.ts";
 import { NOM_COOKIE, exigerSession, type Authentification } from "./contexte.ts";
 import { BLOCAGE_CODE_MINUTES, ESSAIS_CODE_MAX, lireAppareil } from "./appareil.ts";
 import {
-  LONGUEUR_MIN_MOT_DE_PASSE,
   empreinteLeurre,
   hacherMotDePasse,
   nouveauJetonSession,
@@ -21,12 +20,15 @@ const Connexion = z.object({
   motDePasse: z.string().min(1).max(200),
 });
 
+/** Nouveau mot de passe : 6 caractères au moins, pas un des plus utilisés (§15.122). */
+export const NouveauMotDePasse = z.string().superRefine((v, ctx) => {
+  const refus = refusMotDePasse(v);
+  if (refus) ctx.addIssue({ code: "custom", message: refus });
+});
+
 const ChangementMotDePasse = z.object({
   actuel: z.string().min(1).max(200),
-  nouveau: z
-    .string()
-    .min(LONGUEUR_MIN_MOT_DE_PASSE, `Le nouveau mot de passe doit contenir au moins ${LONGUEUR_MIN_MOT_DE_PASSE} caractères.`)
-    .max(200),
+  nouveau: NouveauMotDePasse,
 });
 
 const ConnexionCode = z.object({

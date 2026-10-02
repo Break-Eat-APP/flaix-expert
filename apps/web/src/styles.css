@@ -172,6 +172,13 @@ input[type="text"], input[type="email"], input[type="password"], input[type="sea
 }
 input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--violet); outline-offset: 1px; }
 input[aria-invalid="true"] { border-color: var(--red); }
+.mdp { position: relative; display: flex; min-width: 0; }
+.mdp input { padding-right: 38px; }
+.mdp-oeil { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); display: inline-flex; padding: 6px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
+.mdp-oeil:hover { color: var(--text); }
+.mdp-remis { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: var(--violet-soft); font-size: 13px; }
+.mdp-remis-ligne { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mdp-remis-valeur { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 18px; font-weight: 700; letter-spacing: 0.04em; color: var(--text); user-select: all; }
 .grille-champs { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
 .ligne-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
 .case { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
@@ -283,6 +290,12 @@ input[aria-invalid="true"] { border-color: var(--red); }
 .editeur-lieu { border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
 .editeur-ligne { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .editeur-faits { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; }
+.editeur-directeurs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 13px; }
+.editeur-directeurs .mdp-remis, .editeur-directeurs .message { width: 100%; }
+.editeur-directeur { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; overflow-wrap: anywhere; }
+.editeur-directeurs .btn-lien { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; }
+.editeur-ajout { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+.editeur-ajout input { flex: 1 1 200px; width: auto; }
 .editeur-options { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 12.5px; }
 
 /* ---------- Factures fournisseurs (dossier §15.115) ---------- */

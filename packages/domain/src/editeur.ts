@@ -1,7 +1,15 @@
 /**
  * Back-office éditeur, niveau 1 (module 17 ; dossier §15.13, §15.116) : supervision technique du parc.
- * Aucun montant, aucun ticket, aucun nom de salarié : des dates, des compteurs et des états.
+ * Aucun montant, aucun ticket, aucun nom de salarié : des dates, des compteurs et des états. Seule exception :
+ * les directeurs (nom, e-mail), contact du client que FlaiX Expert crée lui-même (§15.122).
  */
+export interface DirecteurParc {
+  utilisateurId: string;
+  nom: string;
+  email: string;
+  actif: boolean;
+}
+
 export interface LieuParc {
   lieuId: string;
   nom: string;
@@ -24,12 +32,26 @@ export interface LieuParc {
   derniereActivite: string | null;
   derniereVerification: { le: string; ok: boolean } | null;
   options: OptionsLieu;
+  directeurs: DirecteurParc[];
 }
 
 export interface ParcEditeur {
   version: string;
   environnement: "developpement" | "test" | "production";
   lieux: LieuParc[];
+}
+
+/** Compte directeur créé ou rattaché depuis le back-office : le mot de passe provisoire n'est donné qu'une fois. */
+export interface DirecteurRemis {
+  email: string;
+  /** null : le compte existait déjà, il garde son mot de passe. */
+  motDePasseProvisoire: string | null;
+}
+
+export interface LieuCree {
+  lieuId: string;
+  nom: string;
+  directeur: DirecteurRemis;
 }
 
 export interface VerificationEditeur {

@@ -4,6 +4,7 @@ import type { SessionInfo } from "@flaix/domain";
 import { api } from "../api.ts";
 import { MessageErreur } from "../composants/communs.tsx";
 import { Logo } from "../composants/Logo.tsx";
+import { ChampMotDePasse } from "../composants/MotDePasse.tsx";
 
 /** Connexion par e-mail (directeur). Sur une tablette enregistrée, un lien ramène à l'écran des caissières. */
 export function Connexion({ versCaissieres }: { versCaissieres?: () => void }) {
@@ -41,7 +42,7 @@ export function Connexion({ versCaissieres }: { versCaissieres?: () => void }) {
         </label>
         <label className="champ" style={{ marginTop: 12 }}>
           <span>Mot de passe</span>
-          <input type="password" autoComplete="current-password" required value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} />
+          <ChampMotDePasse autoComplete="current-password" value={motDePasse} onChange={setMotDePasse} />
         </label>
         <MessageErreur erreur={erreur} />
         <button className="btn btn-bloc" style={{ marginTop: 16 }} disabled={envoi}>

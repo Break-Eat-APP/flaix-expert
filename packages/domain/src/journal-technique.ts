@@ -68,6 +68,8 @@ export const TYPES_JET = {
   ingredient_modifie: "Ingrédient modifié (prix : coûts des recettes recalculés)",
   recette_modifiee: "Recette d'un produit modifiée",
   option_modifiee: "Option du lieu activée ou désactivée par FlaiX Expert",
+  directeur_ajoute: "Compte directeur ajouté par FlaiX Expert",
+  mot_de_passe_provisoire: "Nouveau mot de passe provisoire d'un directeur (FlaiX Expert)",
   ticket_edite: "Ticket client édité (sur demande)",
   z_caisse_clos: "Z de caisse clôturé (espèces comptées)",
   z_caisse_rectifie: "Rectification d'un Z de caisse",
