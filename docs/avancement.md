@@ -85,5 +85,5 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 - **Copie des sauvegardes chez OVH** : scripts en service et essayés sur le serveur le 2026-09-30 (faux stockage, clé jetable : chiffrement, envoi, mauvaise clé refusée, restauration complète). **Attend Rémi** : créer le stockage OVH puis lancer `sudo flaix-admin sauvegarde-externe` (guide serveur, « Copie des sauvegardes chez OVH »), puis `sudo flaix-admin essai-restauration`.
 - Premier mois de l'exercice : à régler par le directeur de chaque lieu (Paramètres → Le lieu), avec son expert-comptable.
 - Recharger la page sans réseau sur le vrai serveur (service worker) : à essayer.
-- Sous-domaine Break Eat à la place de sslip.io (Rémi).
+- Sous-domaine : **fait le 2026-10-02** — https://flaixexpert.flaixlabs.com (back-office : /editeur) ; l'ancienne adresse sslip.io renvoie vers elle.
 - Conservation des tickets sans limite : décidée (§15.106) ; question RGPD posée (G.19).

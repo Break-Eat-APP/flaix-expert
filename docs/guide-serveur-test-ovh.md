@@ -51,7 +51,7 @@ La connexion au logiciel exige une adresse sécurisée (https) sur un serveur : 
 
 ## Ce qui a été fait le 2026-09-29 (serveur en service)
 
-- **Serveur** : `vps-1fbd80b9.vps.ovh.net`, adresse IPv4 146.59.154.196. **Adresse du site : https://146-59-154-196.sslip.io** (adresse provisoire gratuite construite sur l'IP, certificat https Let's Encrypt renouvelé automatiquement ; à remplacer par un sous-domaine de Break Eat quand il y en aura un).
+- **Serveur** : `vps-1fbd80b9.vps.ovh.net`, adresse IPv4 146.59.154.196. **Adresse du site : https://flaixexpert.flaixlabs.com** depuis le 2026-10-02 (sous-domaine enregistré par Rémi, entrée DNS de type A vers 146.59.154.196 ; certificat https Let's Encrypt obtenu et renouvelé automatiquement). **Back-office Break Eat : https://flaixexpert.flaixlabs.com/editeur**. L'ancienne adresse provisoire (https://146-59-154-196.sslip.io) renvoie automatiquement vers la nouvelle.
 - **Système** : OVH avait installé Debian 11, **sans correctifs de sécurité depuis le 31/08/2026** (wiki Debian LTS). Monté en Debian 12 puis **Debian 13** (suivi jusqu'en 2030). Script : `infra/vps/montee-debian.sh`.
 - **Sécurité** (`infra/vps/securiser.sh`) : mises à jour de sécurité automatiques ; pare-feu (entrées autorisées : 22, 80, 443 seulement) ; connexion SSH par clé uniquement, pas de root, mot de passe refusé à distance. Le mot de passe du compte `debian`, changé par Rémi, reste son accès de secours par la console OVH.
 - **Logiciels** (`infra/vps/installer-socle.sh`) : PostgreSQL 17, Caddy (https), Node.js 24 depuis nodejs.org (empreinte vérifiée).
