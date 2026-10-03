@@ -11,9 +11,10 @@ const path = require("path");
 
 const racine = path.join(__dirname, "..", "..");
 const source = fs.readFileSync(path.join(racine, "docs", "marque", "logo-expert-officiel.svg"), "utf8");
-const CADRAGE = process.env.CADRAGE ?? "512 640 412 240";
+// Version 2 du logo (2026-10-03) : le X en quatre traits ; cadrage mesuré sur le PNG officiel (dessin de 549 à 868 × 689 à 834, marge de 6).
+const CADRAGE = process.env.CADRAGE ?? "543 683 331 157";
 
-const fond = /<g clip-path="url\(#58ea1121c9\)"><path fill="#ffffff"[^>]*\/><\/g>/;
+const fond = /<g clip-path="url\(#[0-9a-f]+\)"><path fill="#ffffff"[^>]*\/><\/g>/;
 if (!fond.test(source)) throw new Error("Fond blanc introuvable : le fichier source a changé.");
 const base = source
   .replace(fond, "")
