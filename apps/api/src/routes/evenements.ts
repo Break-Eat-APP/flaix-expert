@@ -6,6 +6,7 @@ import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { restesDuMatch } from "./stock.ts";
+import { figerConsommationIngredients } from "./stock-ingredients.ts";
 import { exigerMoisOuvert, zDuMatch } from "./periodes.ts";
 import { ParamId, contexte, corps, differences, texte } from "./outils.ts";
 
@@ -168,8 +169,10 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
       // Match avec une mise en place ou un réassort : chaque produit concerné doit être compté (§15.105).
       const restes = await restesDuMatch(c, auth.lieuId, (await listerEvenements(c, auth.lieuId)).find((x) => x.id === id)!);
       if (restes.requis && restes.manquants > 0) {
-        throw new ErreurMetier(409, `${restes.manquants} produit(s) de stock pas encore compté(s) : fais le comptage dans Stock → Comptage avant de clore le match.`);
+        throw new ErreurMetier(409, `${restes.manquants} produit(s) ou ingrédient(s) de stock pas encore compté(s) : fais le comptage dans Stock (Comptage, Ingrédients) avant de clore le match.`);
       }
+      // Consommation des ingrédients figée avec les recettes du moment (§15.124).
+      await figerConsommationIngredients(c, auth.lieuId, id);
       await c.query("UPDATE evenement SET etat = 'clos', clos_le = now() WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id]);
       // Z du match (clôture journalière) : totaux, TVA par taux, grand total et total perpétuel scellés (§15.107).
       await zDuMatch(c, auth.lieuId, auth.utilisateurId, (await listerEvenements(c, auth.lieuId)).find((x) => x.id === id)!);

@@ -5,8 +5,9 @@ import { Minus, PackagePlus, Plus, Sparkles } from "lucide-react";
 import { formaterMontant, lireMontant, type EtatReserve, type Evenement, type LigneStock, type StockMatch } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
+import { StockIngredients } from "./StockIngredients.tsx";
 
-type Onglet = "mep" | "match" | "comptage" | "reserve";
+type Onglet = "mep" | "match" | "comptage" | "reserve" | "ingredients";
 const ETAT = { a_venir: "à venir", ouvert: "en cours", clos: "clos" } as const;
 const dateCourte = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Paris" });
 const heure = new Intl.DateTimeFormat("fr-FR", { timeStyle: "short", timeZone: "Europe/Paris" });
@@ -31,7 +32,7 @@ export function Stock() {
     queryKey: ["stock", evenementId],
     queryFn: () => api.get<StockMatch | null>(`/stock${evenementId ? `?evenementId=${evenementId}` : ""}`),
     placeholderData: (avant) => avant,
-    enabled: onglet !== "reserve",
+    enabled: onglet !== "reserve" && onglet !== "ingredients",
   });
   const bouton = (id: Onglet, libelle: string) => (
     <button className={`onglet${onglet === id ? " actif" : ""}`} onClick={() => setOnglet(id)}>
@@ -47,9 +48,12 @@ export function Stock() {
         {bouton("match", "Pendant le match")}
         {bouton("comptage", "Comptage")}
         {bouton("reserve", "Réserve & livraisons")}
+        {bouton("ingredients", "Ingrédients")}
       </div>
       {onglet === "reserve" ? (
         <Reserve />
+      ) : onglet === "ingredients" ? (
+        evenements.isPending ? <Chargement /> : evenements.error ? <MessageErreur erreur={evenements.error} /> : <StockIngredients evenements={evenements.data!} evenementId={evenementId} choisir={setEvenementId} />
       ) : stock.isPending || evenements.isPending ? (
         <Chargement />
       ) : stock.error || evenements.error ? (
@@ -61,7 +65,7 @@ export function Stock() {
           </EtatVide>
         </Carte>
       ) : (
-        <VueMatch onglet={onglet} s={stock.data} evenements={evenements.data!} choisir={setEvenementId} standId={standId} choisirStand={setStandId} cle={evenementId} />
+        <VueMatch onglet={onglet as Exclude<Onglet, "reserve" | "ingredients">} s={stock.data} evenements={evenements.data!} choisir={setEvenementId} standId={standId} choisirStand={setStandId} cle={evenementId} />
       )}
       <Regles>
         <ul>
@@ -71,7 +75,7 @@ export function Stock() {
           <li><strong>Pendant le match</strong> : <strong>réassort</strong> à quantité libre (« − » = retour en réserve d'un réassort saisi par erreur). <strong>Restant</strong> = reste précédent + mise en place + réassort − vendu (ventes lues en direct dans les caisses). Alerte « faible » à 15 % du départ, « rupture » à zéro.</li>
           <li><strong>Comptage</strong> : ce qu'on trouve au stand en fin de match. <strong>Écart</strong> = compté − restant attendu, valorisé au coût matière (jamais au prix de vente) : négatif = manquant (casse, coulage, vente non enregistrée), positif = surplus (souvent une erreur de comptage). Motif obligatoire au-delà de 3 % du départ. Le comptage se corrige jusqu'à la clôture du match, puis il est figé ; une correction est inscrite au journal technique.</li>
           <li><strong>Clôture du match</strong> : un match qui a une mise en place ou un réassort ne se clôt qu'une fois chaque produit concerné compté (Clôtures → étape Restes).</li>
-          <li><strong>Pas encore suivis</strong> : les matières premières au poids ou au volume (frites, lait…) et les recettes ; ces produits se suivent à l'unité en attendant.</li>
+          <li><strong>Ingrédients</strong> (onglet du même nom) : un ingrédient coché « suivre » dans Produits & prix se suit comme un produit, en kg, litres ou pièces. Le <strong>consommé</strong> vient des recettes des produits vendus (une pinte de 50 cl déduit 0,5 L du fût), figé à la clôture du match. Un ingrédient non coché sert seulement au coût des recettes.</li>
         </ul>
       </Regles>
     </>
@@ -87,7 +91,7 @@ function VueMatch({
   choisirStand,
   cle,
 }: {
-  onglet: Exclude<Onglet, "reserve">;
+  onglet: Exclude<Onglet, "reserve" | "ingredients">;
   s: StockMatch;
   evenements: Evenement[];
   choisir: (id: string) => void;

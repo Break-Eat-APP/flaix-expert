@@ -4470,3 +4470,20 @@ Réponses de Rémi (« ok » point par point, et « oui » pour la bière pressi
 6. **Stock des ingrédients au choix, ingrédient par ingrédient** (case « suivre le stock ») ; premier cas : la **bière pression** (fût en litres, la pinte déduit sa recette).
 
 Restent à fixer par Rémi : les montants de la grille (ma proposition du 2026-10-03 sert d'exemple, rien n'est prérempli), le tarif d'un mois sans match, ses vrais frais de paiement et panier moyen, et si son « +16 % » contient une marge voulue.
+
+### 15.125 Stock des ingrédients au choix — construit (2026-10-03)
+
+Décision de Rémi (§15.124, point 6), premier cas : la bière pression. Migration `0023`.
+- **Case « suivre » sur chaque ingrédient** (Paramètres → Produits & prix → Ingrédients), journalisée. Un ingrédient non coché sert seulement au coût des recettes.
+- **Même cycle que les produits** (Stock → onglet **Ingrédients**), en kg, litres ou pièces (stockés en millièmes) : réserve (inventaire, livraisons), mise en place par stand avant l'ouverture, réassort pendant le match (« − » pour un retour), comptage de fin de match avec motif au-delà de 3 % du départ, inventaire de la réserve.
+- **Consommé = Σ produits vendus × recette** (une pinte de 50 cl déduit 0,5 L du fût), lu en direct pendant le match, **figé à la clôture du match** (table `ingredient_consommation`) : une recette changée ensuite ne réécrit pas le passé.
+- **Livraison au prix total HT** (« fût de 30 L à 90 € ») : le prix de l'ingrédient devient le coût moyen pondéré, et le coût des recettes qui l'utilisent est recalculé (journal : `ingredient_livre`).
+- **Clôture du match** : un ingrédient mis en place ou réassorti doit être compté, comme un produit.
+- Tout est en écriture seule (refus de la base testés) ; le lieu de formation recopie la case « suivre ».
+
+### 15.126 Ordre, éditeur, évolution des paiements (Rémi, 2026-10-03)
+
+- **Ordre** : après le stock des ingrédients, la **conformité** passe avant la facturation et l'import des ventes C&C (elle bloque la production, pas eux). Rémi : « oui ça me va ».
+- **Éditeur et hébergeur** : *« la société qui héberge Flaix et FlaiX Expert, c'est Break Eat App »*. Les écrans disent **FlaiX Expert** (le produit) ; l'attestation d'éditeur, les factures aux lieux et les mentions légales sont au nom de **Break Eat App** (point 11 de `decisions-architecture-production.md` : forme sociale et SIREN à confirmer sur l'extrait Kbis).
+- **Dossier de conformité** : Rémi a rédigé un plan en 20 parties (OneDrive, « FLAIX EXPERT — DOSSIER DE CONFORMITÉ DU SYSTÈME DE CAISSE »). Il valide sa réécriture pour la caisse FlaiX Expert (parties 03, 04, 11, 14, 18) et l'ajout des points propres à notre caisse (vente sans réseau, mode formation, clôtures et totaux, ticket et duplicata, contrôle inopiné, conservation du code de chaque version, version majeure / mineure, annulation, offerts et rectification au lieu du « remboursement partiel »).
+- **Évolution annoncée** : *« il se peut que le logiciel évolue pour faire des tickets et ne pas encaisser directement sur nos TPE à nous ; demain je développe peut-être nos propres TPE Android qui encaisseront toujours avec un PSP style Stripe »*. Le dossier de conformité la prévoit : paiement intégré, référence de transaction du prestataire, remboursements par le prestataire → **version majeure, nouvelle attestation**, et réexamen des questions A (champ du logiciel de caisse) par l'expert-comptable.

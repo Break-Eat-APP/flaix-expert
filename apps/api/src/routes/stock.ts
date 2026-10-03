@@ -22,6 +22,7 @@ import { inscrireJet } from "../journal-technique.ts";
 import { listerEvenements } from "./evenements.ts";
 import { Uuid, contexte, corps } from "./outils.ts";
 import { aUneRecette } from "./recettes.ts";
+import { stockIngredientsDuMatch } from "./stock-ingredients.ts";
 
 /*
  * Stock suivi à l'unité (dossier §15.105, module 4) : réserve centrale, mise en place et
@@ -203,9 +204,11 @@ export async function stockDuMatch(c: Client, lieuId: string, e: Evenement): Pro
   return { evenement: e, stands: resultat, reserve, restes: { requis, manquants } };
 }
 
-/** Pour Clôtures : l'étape « Restes » d'un match (§15.105 point 6). */
+/** Pour Clôtures : l'étape « Restes » d'un match (§15.105 point 6), produits et ingrédients suivis (§15.124). */
 export async function restesDuMatch(c: Client, lieuId: string, e: Evenement) {
-  return (await stockDuMatch(c, lieuId, e)).restes;
+  const produits = (await stockDuMatch(c, lieuId, e)).restes;
+  const ingredients = (await stockIngredientsDuMatch(c, lieuId, e)).restes;
+  return { requis: produits.requis || ingredients.requis, manquants: produits.manquants + ingredients.manquants };
 }
 
 async function evenementPour(c: Client, lieuId: string, id: string): Promise<Evenement> {

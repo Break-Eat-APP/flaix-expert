@@ -42,7 +42,7 @@ export function GestionIngredients() {
     },
   });
   const modifier = useMutation({
-    mutationFn: ({ id, ...corps }: { id: string; prix?: number; actif?: boolean }) => api.patch<Ingredient[]>(`/ingredients/${id}`, corps),
+    mutationFn: ({ id, ...corps }: { id: string; prix?: number; actif?: boolean; suiviStock?: boolean }) => api.patch<Ingredient[]>(`/ingredients/${id}`, corps),
     onSuccess: (l) => {
       maj(l);
       setEdition(null);
@@ -53,7 +53,7 @@ export function GestionIngredients() {
   return (
     <Carte
       titre="Ingrédients"
-      description="Ce qui entre dans tes recettes, avec son prix d'achat HT au kilo, au litre ou à la pièce. Changer un prix recalcule le coût de toutes les recettes qui l'utilisent."
+      description="Ce qui entre dans tes recettes, avec son prix d'achat HT au kilo, au litre ou à la pièce. Changer un prix recalcule le coût de toutes les recettes qui l'utilisent. « Stock » : l'ingrédient se suit en réserve et aux stands (livraisons, mise en place, comptage), la recette de chaque produit vendu le déduit — par exemple un fût de bière."
     >
       <form
         className="en-ligne"
@@ -96,6 +96,7 @@ export function GestionIngredients() {
                 <th>Ingrédient</th>
                 <th className="d">Prix HT</th>
                 <th className="d">Recettes</th>
+                <th>Stock</th>
                 <th />
               </tr>
             </thead>
@@ -127,6 +128,11 @@ export function GestionIngredients() {
                     )}
                   </td>
                   <td className="d chiffre">{i.recettes}</td>
+                  <td>
+                    <label className="case" title="Suivre cet ingrédient en stock (Stock → Ingrédients)">
+                      <input type="checkbox" checked={i.suiviStock} disabled={modifier.isPending} onChange={(e) => modifier.mutate({ id: i.id, suiviStock: e.target.checked })} /> suivre
+                    </label>
+                  </td>
                   <td>
                     <div className="en-ligne" style={{ justifyContent: "flex-end", gap: 8 }}>
                       {edition?.id !== i.id && (

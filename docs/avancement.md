@@ -69,6 +69,8 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 
 **Fait le 2026-10-02** (§15.121, §15.122) : l'éditeur s'appelle FlaiX Expert partout (le Click & Collect est devenu neutre le 2026-10-03 : « application de commande », « commission de la plateforme », « frais de paiement ») ; back-office : créer un lieu avec son directeur, ajouter un directeur, nouveau mot de passe provisoire ; mots de passe de 6 caractères au moins (les plus utilisés refusés) avec un œil pour les afficher.
 
+**Fait le 2026-10-03** (§15.123 à §15.126) : Click & Collect neutre ; export comptable dans la base ; commission C&C sur le prix buvette ou sur le prix app ; **stock des ingrédients au choix** (bière pression au litre). **Ordre décidé** : conformité (dossier en 20 parties pour FlaiX Expert, éditeur Break Eat App) → facturation dans le back-office → import des ventes d'une application de commande.
+
 **À voir avec Rémi, ne pas construire seul** : Conformité (dossier bien structuré à préparer ; y joindre les points prévus à revoir ensemble), IA ; serveur de production (Rémi s'en occupe).
 
 ## Ancienne proposition d'ordre (remplacée par le tableau ci-dessus)

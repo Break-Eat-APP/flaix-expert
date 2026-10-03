@@ -45,6 +45,8 @@ export interface Ingredient {
   /** Prix HT par unité d'achat (par kg, par litre, par pièce). */
   prix: Centimes;
   actif: boolean;
+  /** Suivi en stock (livraisons, mise en place, comptage), au choix du directeur (§15.124). */
+  suiviStock: boolean;
   /** Nombre de recettes qui l'utilisent. */
   recettes: number;
 }

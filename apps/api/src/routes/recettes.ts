@@ -18,7 +18,7 @@ const NouvelIngredient = z.object({
   unite: z.enum(["kg", "l", "piece"]),
   prix: Prix,
 });
-const ModifIngredient = z.object({ nom: z.string().trim().min(1).max(80).optional(), prix: Prix.optional(), actif: z.boolean().optional() });
+const ModifIngredient = z.object({ nom: z.string().trim().min(1).max(80).optional(), prix: Prix.optional(), actif: z.boolean().optional(), suiviStock: z.boolean().optional() });
 const SaisieRecette = z.object({
   lignes: z
     .array(z.object({ ingredientId: z.string().uuid(), quantiteMilli: z.number().int().min(1, "Quantité nulle.").max(100_000_000) }))
@@ -27,13 +27,13 @@ const SaisieRecette = z.object({
 });
 
 async function lireIngredients(c: Client, lieuId: string): Promise<Ingredient[]> {
-  const { rows } = await c.query<{ id: string; nom: string; unite: UniteIngredient; prix_centimes: number; actif: boolean; recettes: number }>(
-    `SELECT i.id, i.nom, i.unite, i.prix_centimes, i.actif,
+  const { rows } = await c.query<{ id: string; nom: string; unite: UniteIngredient; prix_centimes: number; actif: boolean; suivi_stock: boolean; recettes: number }>(
+    `SELECT i.id, i.nom, i.unite, i.prix_centimes, i.actif, i.suivi_stock,
             (SELECT count(*)::int FROM recette_ligne r WHERE r.lieu_id = i.lieu_id AND r.ingredient_id = i.id) AS recettes
        FROM ingredient i WHERE i.lieu_id = $1 ORDER BY i.actif DESC, lower(i.nom)`,
     [lieuId],
   );
-  return rows.map((r) => ({ id: r.id, nom: r.nom, unite: r.unite, prix: r.prix_centimes, actif: r.actif, recettes: r.recettes }));
+  return rows.map((r) => ({ id: r.id, nom: r.nom, unite: r.unite, prix: r.prix_centimes, actif: r.actif, suiviStock: r.suivi_stock, recettes: r.recettes }));
 }
 
 async function lireRecette(c: Client, lieuId: string, produitId: string): Promise<Recette> {
@@ -105,7 +105,7 @@ export async function routesRecettes(app: FastifyInstance, { base }: { base: Bas
     const { id } = ParamId.parse(req.params);
     const m = corps(ModifIngredient, req);
     return base.transaction(contexte(auth), async (c) => {
-      const { rows } = await c.query<{ nom: string; prix_centimes: number; actif: boolean }>("SELECT nom, prix_centimes, actif FROM ingredient WHERE lieu_id = $1 AND id = $2 FOR UPDATE", [
+      const { rows } = await c.query<{ nom: string; prix_centimes: number; actif: boolean; suivi_stock: boolean }>("SELECT nom, prix_centimes, actif, suivi_stock FROM ingredient WHERE lieu_id = $1 AND id = $2 FOR UPDATE", [
         auth.lieuId,
         id,
       ]);
@@ -115,14 +115,14 @@ export async function routesRecettes(app: FastifyInstance, { base }: { base: Bas
         const { rows: existe } = await c.query("SELECT 1 FROM ingredient WHERE lieu_id = $1 AND id <> $2 AND lower(btrim(nom)) = lower($3)", [auth.lieuId, id, m.nom]);
         if (existe[0]) throw new ErreurMetier(409, `L'ingrédient « ${m.nom} » existe déjà.`);
       }
-      const apres = { nom: m.nom ?? avant.nom, prix: m.prix ?? avant.prix_centimes, actif: m.actif ?? avant.actif };
-      await c.query("UPDATE ingredient SET nom = $3, prix_centimes = $4, actif = $5 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id, apres.nom, apres.prix, apres.actif]);
+      const apres = { nom: m.nom ?? avant.nom, prix: m.prix ?? avant.prix_centimes, actif: m.actif ?? avant.actif, suiviStock: m.suiviStock ?? avant.suivi_stock };
+      await c.query("UPDATE ingredient SET nom = $3, prix_centimes = $4, actif = $5, suivi_stock = $6 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id, apres.nom, apres.prix, apres.actif, apres.suiviStock]);
       const recalcules = apres.prix !== avant.prix_centimes ? await recalculerCoutsRecettes(c, auth.lieuId, id) : [];
       await inscrireJet(c, {
         lieuId: auth.lieuId,
         type: "ingredient_modifie",
         utilisateurId: auth.utilisateurId,
-        details: { ingredient: avant.nom, avant: { nom: avant.nom, prix: avant.prix_centimes, actif: avant.actif }, apres, produits_recalcules: recalcules },
+        details: { ingredient: avant.nom, avant: { nom: avant.nom, prix: avant.prix_centimes, actif: avant.actif, suiviStock: avant.suivi_stock }, apres, produits_recalcules: recalcules },
       });
       return lireIngredients(c, auth.lieuId);
     });
