@@ -71,6 +71,8 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 
 **Fait le 2026-10-03** (§15.123 à §15.126) : Click & Collect neutre ; export comptable dans la base ; commission C&C sur le prix buvette ou sur le prix app ; **stock des ingrédients au choix** (bière pression au litre). **Ordre décidé** : conformité (dossier en 20 parties pour FlaiX Expert, éditeur Break Eat App) → facturation dans le back-office → import des ventes d'une application de commande.
 
+**Conformité — démarré le 2026-10-03** : `docs/conformite/dossier-conformite-flaix-expert.md` (v0.1, plan de Rémi en 20 parties réécrit pour FlaiX Expert + parties 21 à 28). À construire ensuite, dans l'ordre : numéro de version et registre des versions (12), attestation téléchargeable (01, 20), archive annuelle (09), compte vérificateur (07, 25), étiquette Git par version (26).
+
 **À voir avec Rémi, ne pas construire seul** : Conformité (dossier bien structuré à préparer ; y joindre les points prévus à revoir ensemble), IA ; serveur de production (Rémi s'en occupe).
 
 ## Ancienne proposition d'ordre (remplacée par le tableau ci-dessus)
