@@ -47,7 +47,7 @@ export function ClickCollect() {
 
   return (
     <>
-      <EntetePage fil="Paramètres" filLien="/parametres" titre="Click & Collect" description="Le prix de chaque produit sur l'application Break Eat, et ce qu'il laisse au lieu." />
+      <EntetePage fil="Paramètres" filLien="/parametres" titre="Click & Collect" description="Le prix de chaque produit sur l'application de commande (plateforme Click & Collect ou application du lieu), et ce qu'il laisse au lieu." />
       <div className="onglets">
         {bouton("catalogue", "Catalogue C&C")}
         {bouton("reglages", "Réglages du lieu")}
@@ -59,19 +59,19 @@ export function ClickCollect() {
         <ul>
           <li>
             <strong>Objectif</strong> : une vente sur l'application laisse au lieu <strong>exactement la même marge hors taxes</strong> qu'au comptoir, une fois payées la
-            commission Break Eat et les frais de paiement Stripe.
+            commission de la plateforme et les frais de paiement.
           </li>
           <li>
-            <strong>Prix app conseillé</strong> = prix buvette × (u + commission × k) ÷ (u − Stripe), avec u = 1 ÷ (1 + TVA du produit). Arrondi au centime supérieur : il
+            <strong>Prix app conseillé</strong> = prix buvette × (u + commission × k) ÷ (u − frais de paiement), avec u = 1 ÷ (1 + TVA du produit). Arrondi au centime supérieur : il
             couvre toujours. La majoration dépend du taux de TVA du produit — il n'existe pas de pourcentage unique pour toute la carte.
           </li>
           <li>
-            <strong>Commission</strong> : taux unique du lieu, calculé sur le <strong>prix buvette</strong>. <strong>k</strong> = 1,2 si la TVA (20 %) facturée sur la
+            <strong>Commission</strong> de la plateforme de commande : taux unique du lieu, calculé sur le <strong>prix buvette</strong> (0 si c'est l'application du lieu lui-même). <strong>k</strong> = 1,2 si la TVA (20 %) facturée sur la
             commission est répercutée au client (réglage prudent : il protège le lieu qui ne récupère pas cette TVA), 1,0 sinon (un lieu qui la récupère peut afficher un
             prix app plus bas). À confirmer avec l'expert-comptable du lieu.
           </li>
           <li>
-            <strong>Stripe</strong> : pourcentage + frais fixe par paiement, supportés par le lieu. Le taux effectif se calcule sur le <strong>panier moyen</strong> de
+            <strong>Frais de paiement</strong> (Stripe ou autre prestataire) : pourcentage + frais fixe par paiement, supportés par le lieu. Le taux effectif se calcule sur le <strong>panier moyen</strong> de
             l'application : le frais fixe pèse plus lourd sur un petit panier.
           </li>
           <li>
@@ -81,7 +81,7 @@ export function ClickCollect() {
           <li>
             <strong>Catalogue C&C</strong> : les produits vendus dans un stand marqué « point de retrait Click & Collect » (Paramètres → Stands & caisses). Le prix buvette
             se règle dans Produits & prix ; ici, seulement le prix app et le mode de stock. Chaque changement est inscrit au journal technique. Les commandes passent par
-            l'application Break Eat, pas par les caisses.
+            l'application de commande, pas par les caisses.
           </li>
         </ul>
       </Regles>
@@ -110,7 +110,7 @@ function Catalogue({ e, versReglages }: { e: EtatClickCollect; versReglages: () 
     <>
       {!r && (
         <div className="message message-alerte">
-          Règle d'abord la commission et le contrat Stripe du lieu pour obtenir les prix conseillés.{" "}
+          Règle d'abord la commission et les frais de paiement du lieu pour obtenir les prix conseillés.{" "}
           <button className="btn-lien" onClick={versReglages}>
             Réglages du lieu
           </button>
@@ -262,8 +262,8 @@ function Cascade({ prixApp, prixBuvette, tauxTva, r }: { prixApp: number; prixBu
     <div style={{ maxWidth: 460, padding: "4px 0" }}>
       {ligne("Le supporter paie", c.paye, true)}
       {ligne(`− TVA du produit (${libelleTauxTva(tauxTva)})`, c.tvaProduit)}
-      {ligne(`− Frais Stripe (${pct(Math.round(tauxStripeEffectif(r) * 10_000))} effectif)`, c.stripe)}
-      {ligne(`− Commission Break Eat HT (${pct(r.commissionPb)} du prix buvette)`, c.commissionHt)}
+      {ligne(`− Frais de paiement (${pct(Math.round(tauxStripeEffectif(r) * 10_000))} effectif)`, c.stripe)}
+      {ligne(`− Commission de la plateforme HT (${pct(r.commissionPb)} du prix buvette)`, c.commissionHt)}
       {r.tvaCommissionRepercutee && ligne("− TVA sur la commission (répercutée)", c.tvaCommission)}
       {ligne("= Reste au lieu, hors taxes", c.reste, true)}
       {ligne("Au comptoir, il reste hors taxes", prixBuvette / (1 + tauxTva / 10_000))}
@@ -314,10 +314,10 @@ function ReglagesLieu({ e }: { e: EtatClickCollect }) {
     <Carte titre="Réglages du lieu" description="Ils valent pour tous les produits du lieu. Rien n'est supposé : chaque valeur vient du contrat du lieu.">
       <form onSubmit={envoyer}>
         <div className="grille-champs">
-          {champ("commission", "Commission Break Eat (%)", "Taux du contrat, sur le prix buvette.", "ex. 10")}
-          {champ("stripeTaux", "Stripe : pourcentage (%)", "Pourcentage du contrat Stripe.", "ex. 1,5")}
-          {champ("stripeFixe", "Stripe : frais fixe par paiement (€)", "0 si le contrat n'en a pas.", "ex. 0,25")}
-          {champ("panier", "Panier moyen sur l'application (€)", "Sert au taux Stripe effectif.", "ex. 27,00")}
+          {champ("commission", "Commission de la plateforme (%)", "Taux du contrat, sur le prix buvette ; 0 pour l'application du lieu.", "ex. 10")}
+          {champ("stripeTaux", "Frais de paiement : pourcentage (%)", "Pourcentage du prestataire de paiement (Stripe ou autre).", "ex. 1,5")}
+          {champ("stripeFixe", "Frais de paiement : fixe par paiement (€)", "0 si le contrat n'en a pas.", "ex. 0,25")}
+          {champ("panier", "Panier moyen sur l'application (€)", "Sert au taux effectif des frais de paiement.", "ex. 27,00")}
         </div>
         <fieldset style={{ border: 0, padding: 0, margin: "14px 0 0" }}>
           <legend className="discret" style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
@@ -338,7 +338,7 @@ function ReglagesLieu({ e }: { e: EtatClickCollect }) {
         </fieldset>
         {saisi && (
           <p className="discret" style={{ margin: "12px 0 0" }}>
-            Taux Stripe effectif à ce panier : <strong>{pct(Math.round(tauxStripeEffectif(saisi) * 10_000))}</strong>
+            Frais de paiement effectifs à ce panier : <strong>{pct(Math.round(tauxStripeEffectif(saisi) * 10_000))}</strong>
             {saisi.stripeFixe > 0 && " — plus le panier baisse, plus le frais fixe pèse."}
           </p>
         )}
@@ -399,7 +399,7 @@ function Simulateur({ reglages }: { reglages: ReglagesClickCollect | null }) {
           </select>
         </label>
         {champ("commission", "Commission (%)", "ex. 10")}
-        {champ("stripe", "Stripe effectif (%)", "ex. 2,5")}
+        {champ("stripe", "Frais de paiement effectifs (%)", "ex. 2,5")}
         <label className="champ">
           <span>TVA sur la commission</span>
           <select value={s.repercutee ? "oui" : "non"} onChange={(ev) => setS({ ...s, repercutee: ev.target.value === "oui" })}>
@@ -425,7 +425,7 @@ function Simulateur({ reglages }: { reglages: ReglagesClickCollect | null }) {
         </div>
       ) : (
         <p className="discret" style={{ marginBottom: 0 }}>
-          Saisis un prix buvette, la commission et le taux Stripe.
+          Saisis un prix buvette, la commission et les frais de paiement.
         </p>
       )}
     </Carte>

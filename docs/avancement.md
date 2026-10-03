@@ -39,7 +39,7 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 | 5 Marges & ratios | Résultats → marge produit par produit (coût matière CUMP du Stock) | cibles de marge par catégorie et par produit (§15.78) |
 | 6 Optimisation | Résultats → « Pistes pour le prochain match » | croisement volume × marge complet, écarts entre stands, coût des ruptures, actions classées par impact |
 | 9 Reporting de soirée | les chiffres sont dans Résultats | rapport figé du match, imprimable, envoyé par e-mail à la clôture |
-| 11 Gestion financière | Résultats → TVA collectée, moyens de paiement, personnel | dépenses catégorisées, commission Break Eat, cascade marge brute → nette, cible de marge nette de la soirée (écran « Configuration cible & marge ») |
+| 11 Gestion financière | Résultats → TVA collectée, moyens de paiement, personnel | dépenses catégorisées, commission Click & Collect, cascade marge brute → nette, cible de marge nette de la soirée (écran « Configuration cible & marge ») |
 | 16 Conformité / Profil & documentation | journal technique, vérification des chaînes, clôtures scellées | attestation, registre des versions, connexions par caisse, archive annuelle en format ouvert, accès vérificateur |
 | 18 Centre d'alertes | Résultats → « À surveiller » | le centre et ses 6 alertes (dépend des cibles de marge et des prix fournisseurs) |
 
@@ -57,7 +57,7 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 |---|---|---|
 | 1 | Mode formation « FACTICE » | **fait le 2026-09-30** (§15.109) |
 | 2 | Export pour l'expert-comptable | **fait le 2026-09-30** (§15.110) — format à confirmer par le comptable (G.20) |
-| 3 | Click & Collect | **fait le 2026-10-01** (§15.111) — ventes C&C : pas de raccordement à l'app Break Eat pour l'instant |
+| 3 | Click & Collect | **fait le 2026-10-01** (§15.111) — ventes C&C : pas de raccordement à une application de commande pour l'instant |
 | 4 | Vue téléphone du directeur | **fait le 2026-10-01** (§15.112) — écran « En direct » |
 | 5 | Coûts par buvette | **fait le 2026-10-01** (§15.113) — frais mensuels datés par stand |
 | 6 | Fidélité | **partie gestion faite le 2026-10-01** (§15.114) ; partie caisse (dépenser des points, code promo) à faire : choix « sans réseau » à valider |
@@ -67,7 +67,7 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 
 **Fait aussi le 2026-10-01** : options par lieu activées depuis le back-office et application installable (§15.118) ; recettes et coût de fabrication (§15.119). **Décidé** : fidélité à la caisse en option A (points et codes plafonnés avec réseau) — à construire. **À décider par Rémi** : stock au poids des ingrédients ; montants de l'abonnement FlaiX Expert par option.
 
-**Fait le 2026-10-02** (§15.121, §15.122) : l'éditeur s'appelle FlaiX Expert partout (le Click & Collect garde « application Break Eat » et « commission Break Eat » : Rémi y reviendra) ; back-office : créer un lieu avec son directeur, ajouter un directeur, nouveau mot de passe provisoire ; mots de passe de 6 caractères au moins (les plus utilisés refusés) avec un œil pour les afficher.
+**Fait le 2026-10-02** (§15.121, §15.122) : l'éditeur s'appelle FlaiX Expert partout (le Click & Collect est devenu neutre le 2026-10-03 : « application de commande », « commission de la plateforme », « frais de paiement ») ; back-office : créer un lieu avec son directeur, ajouter un directeur, nouveau mot de passe provisoire ; mots de passe de 6 caractères au moins (les plus utilisés refusés) avec un œil pour les afficher.
 
 **À voir avec Rémi, ne pas construire seul** : Conformité (dossier bien structuré à préparer ; y joindre les points prévus à revoir ensemble), IA ; serveur de production (Rémi s'en occupe).
 

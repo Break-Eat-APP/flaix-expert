@@ -10,7 +10,7 @@ import { ParamId, contexte, corps, differences } from "./outils.ts";
 /**
  * Click & Collect (module 13 validé ; dossier §3, §15.20, §15.28, §15.76, §15.111) : réglages du lieu
  * pour le moteur de prix, et configuration par produit (prix app appliqué, mode de stock C&C).
- * Les commandes elles-mêmes passent par l'application Break Eat, pas par les caisses FlaiX.
+ * Les commandes elles-mêmes passent par l'application de commande (plateforme ou application du lieu), pas par les caisses FlaiX.
  */
 const Reglages = z.object({
   commissionPb: z.number().int().min(0).max(5000, "Commission de 50 % au plus."),

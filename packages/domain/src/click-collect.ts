@@ -2,7 +2,7 @@
  * Moteur de prix Click & Collect (dossier §3, §15.20 ter et quater, §15.28, §15.76 ; module 13 validé).
  *
  * Objectif : une vente sur l'application laisse au lieu EXACTEMENT la marge hors taxes d'une vente au
- * comptoir, une fois payées la commission Break Eat (assise sur le prix buvette) et les frais Stripe
+ * comptoir, une fois payées la commission de la plateforme de commande (assise sur le prix buvette) et les frais de paiement
  * (supportés par le lieu, prélevés sur le prix app).
  *
  *   u              = 1 / (1 + TVA du produit)
@@ -22,7 +22,7 @@ import type { Centimes } from "./argent.ts";
 export const TVA_COMMISSION = 0.2;
 
 export interface ReglagesClickCollect {
-  /** Commission Break Eat, en points de base du prix buvette (1000 = 10 %), unique pour le lieu. */
+  /** Commission de la plateforme de commande (0 pour l'application du lieu), en points de base du prix buvette (1000 = 10 %), unique pour le lieu. */
   commissionPb: number;
   /** La TVA facturée sur la commission est-elle répercutée dans le prix app ? */
   tvaCommissionRepercutee: boolean;

@@ -86,7 +86,7 @@ export const OPTIONS_LIEU: { cle: OptionLieu; libelle: string; aide: string }[] 
   { cle: "stock", libelle: "Stock", aide: "Mise en place, comptages, réserve, livraisons, ruptures" },
   { cle: "equipe", libelle: "Planning & masse salariale", aide: "Affectations par match, coût du personnel" },
   { cle: "fidelite", libelle: "Fidélité", aide: "Abonnés, points, codes promo" },
-  { cle: "click_collect", libelle: "Click & Collect", aide: "Prix sur l'application Break Eat" },
+  { cle: "click_collect", libelle: "Click & Collect", aide: "Prix sur l'application de commande" },
   { cle: "factures", libelle: "Factures fournisseurs", aide: "Saisie, rapprochement avec les livraisons" },
   { cle: "export_comptable", libelle: "Export comptable", aide: "Fichiers pour l'expert-comptable" },
   { cle: "couts_buvette", libelle: "Coûts par buvette", aide: "Frais et coûts par stand" },

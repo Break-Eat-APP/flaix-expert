@@ -6,7 +6,7 @@
  *   coût matière       = Σ quantités vendues × coût matière du produit (lu comme dans Résultats)
  *   masse salariale    = Σ coûts réels des affectations du stand (lu comme dans Équipe)
  *   total              = frais + coût matière + masse salariale
- *   reste              = CA HT − total   (avant commission Break Eat et charges du lieu non saisies ici)
+ *   reste              = CA HT − total   (avant commission Click & Collect et charges du lieu non saisies ici)
  */
 import type { Centimes } from "./argent.ts";
 
