@@ -4457,3 +4457,16 @@ Demandes de Rémi : *« la possibilité de voir le mot de passe pour chaque iden
 ### 15.123 Click & Collect neutre : n'importe quelle application de commande (2026-10-03)
 
 Rémi : *« garde Click & Collect, imagine demain c'est un autre Click & Collect ou leur propre app »*. Les écrans ne nomment plus aucune plateforme : « application de commande », « commission de la plateforme » (0 pour l'application du lieu lui-même), « frais de paiement » (Stripe ou autre prestataire). Le moteur de prix est inchangé (§15.20 ter). Reste ouvert, proposé à Rémi : une plateforme qui calcule sa commission sur le **prix app** et non sur le prix buvette (réglage d'assiette à ajouter s'il le valide) ; le raccordement des ventes d'une application au logiciel (import, puis branchement).
+
+### 15.124 Décisions de Rémi du 2026-10-03 : C&C, abonnement, stock des ingrédients
+
+Réponses de Rémi (« ok » point par point, et « oui » pour la bière pression) :
+
+1. **Commission calculée sur le prix app** : réglage à ajouter (assiette « prix buvette » ou « prix payé sur l'application »), pour une plateforme qui ne calcule pas comme Break Eat.
+2. **Ventes d'une application de commande** : d'abord un import du fichier de ventes de n'importe quelle application, ensuite un branchement direct, plateforme par plateforme.
+3. **Export comptable inclus dans la base** : ce n'est plus une option.
+4. **Abonnement** : prélèvement SEPA recommandé ; la commission Click & Collect n'apparaît pas sur la facture FlaiX Expert (elle appartient à la plateforme).
+5. **Facturation dans le back-office** : grille de prix ; pour chaque lieu, date de début, formule et remise ; historique des dates d'activation des options ; option activée en cours de mois = mois entier, option arrêtée = due jusqu'à la fin du mois ; chaque mois, un relevé par lieu, vérifié par Rémi avant que la facture parte (émise par son outil de facturation, §15.123 et réponse du 2026-10-03).
+6. **Stock des ingrédients au choix, ingrédient par ingrédient** (case « suivre le stock ») ; premier cas : la **bière pression** (fût en litres, la pinte déduit sa recette).
+
+Restent à fixer par Rémi : les montants de la grille (ma proposition du 2026-10-03 sert d'exemple, rien n'est prérempli), le tarif d'un mois sans match, ses vrais frais de paiement et panier moyen, et si son « +16 % » contient une marge voulue.

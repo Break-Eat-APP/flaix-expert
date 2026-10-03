@@ -4,6 +4,7 @@ import { cascadeEncaissement, prixAppConseille, prixAppExact, resteApp, resteCom
 /** Exemple vérifié du dossier (§15.20 ter, §15.28) : commission 10 %, TVA répercutée, Stripe 2,5 % sans frais fixe. */
 const r = (x: Partial<ReglagesClickCollect> = {}): ReglagesClickCollect => ({
   commissionPb: 1000,
+  commissionSurPrixApp: false,
   tvaCommissionRepercutee: true,
   stripeTauxPb: 250,
   stripeFixe: 0,
@@ -32,6 +33,15 @@ describe("prix app conseillé", () => {
 
   it("TVA sur commission non répercutée : 7,42 € au lieu de 7,57 €", () => {
     expect(prixAppConseille(650, 1000, r({ tvaCommissionRepercutee: false }))).toBe(742);
+  });
+
+  it("commission sur le prix app : hot-dog 6,50 € → 7,7335 € (+18,98 %), marge HT du comptoir préservée", () => {
+    const x = r({ commissionSurPrixApp: true });
+    const a = prixAppExact(650, 1000, x)!;
+    expect(a).toBeCloseTo(773.35, 1);
+    expect(resteApp(a, 650, 1000, x)).toBeCloseTo(resteComptoir(650, 1000), 6);
+    expect(cascadeEncaissement(774, 650, 1000, x).commissionHt).toBeCloseTo(77.4, 6);
+    expect(prixAppExact(650, 1000, r({ commissionSurPrixApp: true, commissionPb: 5000, stripeTauxPb: 3500 }))).toBeNull();
   });
 
   it("frais impossibles à couvrir (Stripe ≥ prix HT) : pas de prix", () => {

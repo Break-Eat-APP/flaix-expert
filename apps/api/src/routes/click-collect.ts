@@ -14,6 +14,7 @@ import { ParamId, contexte, corps, differences } from "./outils.ts";
  */
 const Reglages = z.object({
   commissionPb: z.number().int().min(0).max(5000, "Commission de 50 % au plus."),
+  commissionSurPrixApp: z.boolean(),
   tvaCommissionRepercutee: z.boolean(),
   stripeTauxPb: z.number().int().min(0).max(1000, "Taux Stripe de 10 % au plus."),
   stripeFixe: z.number().int().min(0).max(500, "Frais fixe de 5,00 € au plus."),
@@ -27,6 +28,7 @@ const ProduitCC = z.object({
 interface LigneLieu {
   cc_commission_pb: number | null;
   cc_tva_commission_repercutee: boolean;
+  cc_commission_sur_prix_app: boolean;
   cc_stripe_taux_pb: number | null;
   cc_stripe_fixe_centimes: number | null;
   cc_panier_moyen_centimes: number | null;
@@ -34,13 +36,14 @@ interface LigneLieu {
 
 async function lireReglages(c: Client, lieuId: string): Promise<ReglagesClickCollect | null> {
   const { rows } = await c.query<LigneLieu>(
-    "SELECT cc_commission_pb, cc_tva_commission_repercutee, cc_stripe_taux_pb, cc_stripe_fixe_centimes, cc_panier_moyen_centimes FROM lieu WHERE id = $1",
+    "SELECT cc_commission_pb, cc_commission_sur_prix_app, cc_tva_commission_repercutee, cc_stripe_taux_pb, cc_stripe_fixe_centimes, cc_panier_moyen_centimes FROM lieu WHERE id = $1",
     [lieuId],
   );
   const l = rows[0]!;
   if (l.cc_commission_pb === null || l.cc_stripe_taux_pb === null || l.cc_panier_moyen_centimes === null) return null;
   return {
     commissionPb: l.cc_commission_pb,
+    commissionSurPrixApp: l.cc_commission_sur_prix_app,
     tvaCommissionRepercutee: l.cc_tva_commission_repercutee,
     stripeTauxPb: l.cc_stripe_taux_pb,
     stripeFixe: l.cc_stripe_fixe_centimes ?? 0,
@@ -105,11 +108,12 @@ export async function routesClickCollect(app: FastifyInstance, { base }: { base:
     const auth = await exigerDirecteur(req, base);
     const r = corps(Reglages, req);
     return base.transaction(contexte(auth), async (c) => {
-      const avant = (await lireReglages(c, auth.lieuId)) ?? { commissionPb: null, tvaCommissionRepercutee: true, stripeTauxPb: null, stripeFixe: null, panierMoyen: null };
+      const avant = (await lireReglages(c, auth.lieuId)) ?? { commissionPb: null, commissionSurPrixApp: false, tvaCommissionRepercutee: true, stripeTauxPb: null, stripeFixe: null, panierMoyen: null };
       await c.query(
-        `UPDATE lieu SET cc_commission_pb = $2, cc_tva_commission_repercutee = $3, cc_stripe_taux_pb = $4, cc_stripe_fixe_centimes = $5, cc_panier_moyen_centimes = $6
+        `UPDATE lieu SET cc_commission_pb = $2, cc_tva_commission_repercutee = $3, cc_stripe_taux_pb = $4, cc_stripe_fixe_centimes = $5, cc_panier_moyen_centimes = $6,
+               cc_commission_sur_prix_app = $7
           WHERE id = $1`,
-        [auth.lieuId, r.commissionPb, r.tvaCommissionRepercutee, r.stripeTauxPb, r.stripeFixe, r.panierMoyen],
+        [auth.lieuId, r.commissionPb, r.tvaCommissionRepercutee, r.stripeTauxPb, r.stripeFixe, r.panierMoyen, r.commissionSurPrixApp],
       );
       const diff = differences(avant as Record<string, unknown>, r);
       if (Object.keys(diff).length) await inscrireJet(c, { lieuId: auth.lieuId, type: "click_collect_reglages_modifies", utilisateurId: auth.utilisateurId, details: diff });

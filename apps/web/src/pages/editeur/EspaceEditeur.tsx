@@ -204,7 +204,7 @@ function Parc({ nom }: { nom: string }) {
               )}
               <MessageErreur erreur={verifier.error ?? option.error} />
               <p className="aide" style={{ marginBottom: 0 }}>
-                Chaque vérification et chaque changement d'option sont inscrits au journal technique du lieu, qui les voit. Base toujours incluse : caisse, clôtures, résultats, paramètres, formation. L'accès aux données d'un lieu (support) n'existe que sur son autorisation :
+                Chaque vérification et chaque changement d'option sont inscrits au journal technique du lieu, qui les voit. Base toujours incluse : caisse, clôtures, résultats, export comptable, paramètres, formation. L'accès aux données d'un lieu (support) n'existe que sur son autorisation :
                 pas encore en service.
               </p>
             </Carte>

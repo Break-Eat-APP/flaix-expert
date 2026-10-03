@@ -66,7 +66,7 @@ export function ClickCollect() {
             couvre toujours. La majoration dépend du taux de TVA du produit — il n'existe pas de pourcentage unique pour toute la carte.
           </li>
           <li>
-            <strong>Commission</strong> de la plateforme de commande : taux unique du lieu, calculé sur le <strong>prix buvette</strong> (0 si c'est l'application du lieu lui-même). <strong>k</strong> = 1,2 si la TVA (20 %) facturée sur la
+            <strong>Commission</strong> de la plateforme de commande : taux unique du lieu, calculé sur le <strong>prix buvette</strong> ou sur le <strong>prix payé dans l'application</strong> selon le contrat (0 si c'est l'application du lieu lui-même). Sur le prix app : prix app = prix buvette × u ÷ (u − commission × k − frais de paiement). <strong>k</strong> = 1,2 si la TVA (20 %) facturée sur la
             commission est répercutée au client (réglage prudent : il protège le lieu qui ne récupère pas cette TVA), 1,0 sinon (un lieu qui la récupère peut afficher un
             prix app plus bas). À confirmer avec l'expert-comptable du lieu.
           </li>
@@ -263,7 +263,7 @@ function Cascade({ prixApp, prixBuvette, tauxTva, r }: { prixApp: number; prixBu
       {ligne("Le supporter paie", c.paye, true)}
       {ligne(`− TVA du produit (${libelleTauxTva(tauxTva)})`, c.tvaProduit)}
       {ligne(`− Frais de paiement (${pct(Math.round(tauxStripeEffectif(r) * 10_000))} effectif)`, c.stripe)}
-      {ligne(`− Commission de la plateforme HT (${pct(r.commissionPb)} du prix buvette)`, c.commissionHt)}
+      {ligne(`− Commission de la plateforme HT (${pct(r.commissionPb)} du prix ${r.commissionSurPrixApp ? "app" : "buvette"})`, c.commissionHt)}
       {r.tvaCommissionRepercutee && ligne("− TVA sur la commission (répercutée)", c.tvaCommission)}
       {ligne("= Reste au lieu, hors taxes", c.reste, true)}
       {ligne("Au comptoir, il reste hors taxes", prixBuvette / (1 + tauxTva / 10_000))}
@@ -276,6 +276,7 @@ function ReglagesLieu({ e }: { e: EtatClickCollect }) {
   const r = e.reglages;
   const initial = () => ({
     commission: r ? montantPourSaisie(r.commissionPb) : "",
+    surApp: r ? r.commissionSurPrixApp : false,
     repercutee: r ? r.tvaCommissionRepercutee : true,
     stripeTaux: r ? montantPourSaisie(r.stripeTauxPb) : "",
     stripeFixe: r ? montantPourSaisie(r.stripeFixe) : "",
@@ -295,7 +296,7 @@ function ReglagesLieu({ e }: { e: EtatClickCollect }) {
   };
   const complet = lu.commissionPb !== null && lu.stripeTauxPb !== null && lu.stripeFixe !== null && lu.panierMoyen !== null && lu.panierMoyen > 0;
   const saisi: ReglagesClickCollect | null = complet
-    ? { commissionPb: lu.commissionPb!, tvaCommissionRepercutee: s.repercutee, stripeTauxPb: lu.stripeTauxPb!, stripeFixe: lu.stripeFixe!, panierMoyen: lu.panierMoyen! }
+    ? { commissionPb: lu.commissionPb!, commissionSurPrixApp: s.surApp, tvaCommissionRepercutee: s.repercutee, stripeTauxPb: lu.stripeTauxPb!, stripeFixe: lu.stripeFixe!, panierMoyen: lu.panierMoyen! }
     : null;
   const envoyer = (ev: FormEvent) => {
     ev.preventDefault();
@@ -314,11 +315,28 @@ function ReglagesLieu({ e }: { e: EtatClickCollect }) {
     <Carte titre="Réglages du lieu" description="Ils valent pour tous les produits du lieu. Rien n'est supposé : chaque valeur vient du contrat du lieu.">
       <form onSubmit={envoyer}>
         <div className="grille-champs">
-          {champ("commission", "Commission de la plateforme (%)", "Taux du contrat, sur le prix buvette ; 0 pour l'application du lieu.", "ex. 10")}
+          {champ("commission", "Commission de la plateforme (%)", "Taux du contrat ; 0 pour l'application du lieu.", "ex. 10")}
           {champ("stripeTaux", "Frais de paiement : pourcentage (%)", "Pourcentage du prestataire de paiement (Stripe ou autre).", "ex. 1,5")}
           {champ("stripeFixe", "Frais de paiement : fixe par paiement (€)", "0 si le contrat n'en a pas.", "ex. 0,25")}
           {champ("panier", "Panier moyen sur l'application (€)", "Sert au taux effectif des frais de paiement.", "ex. 27,00")}
         </div>
+        <fieldset style={{ border: 0, padding: 0, margin: "14px 0 0" }}>
+          <legend className="discret" style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
+            La plateforme calcule sa commission sur
+          </legend>
+          <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 6 }}>
+            <input type="radio" checked={!s.surApp} onChange={() => setS({ ...s, surApp: false })} />
+            <span>
+              <strong>Le prix buvette</strong> — la commission ne dépend pas du prix affiché dans l'application.
+            </span>
+          </label>
+          <label style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <input type="radio" checked={s.surApp} onChange={() => setS({ ...s, surApp: true })} />
+            <span>
+              <strong>Le prix payé dans l'application</strong> — la commission grossit avec le prix app : la hausse conseillée est plus forte.
+            </span>
+          </label>
+        </fieldset>
         <fieldset style={{ border: 0, padding: 0, margin: "14px 0 0" }}>
           <legend className="discret" style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
             TVA (20 %) facturée sur la commission
@@ -365,6 +383,7 @@ function Simulateur({ reglages }: { reglages: ReglagesClickCollect | null }) {
     prix: "",
     tva: 1000,
     commission: reglages ? montantPourSaisie(reglages.commissionPb) : "",
+    surApp: reglages ? reglages.commissionSurPrixApp : false,
     repercutee: reglages ? reglages.tvaCommissionRepercutee : true,
     stripe: reglages ? montantPourSaisie(Math.round(tauxStripeEffectif(reglages) * 10_000)) : "",
     applique: "",
@@ -373,7 +392,7 @@ function Simulateur({ reglages }: { reglages: ReglagesClickCollect | null }) {
   const commission = lirePct(s.commission);
   const stripe = lirePct(s.stripe);
   const r: ReglagesClickCollect | null =
-    commission !== null && stripe !== null ? { commissionPb: commission, tvaCommissionRepercutee: s.repercutee, stripeTauxPb: stripe, stripeFixe: 0, panierMoyen: 10_000 } : null;
+    commission !== null && stripe !== null ? { commissionPb: commission, commissionSurPrixApp: s.surApp, tvaCommissionRepercutee: s.repercutee, stripeTauxPb: stripe, stripeFixe: 0, panierMoyen: 10_000 } : null;
   const conseille = r && prix ? prixAppConseille(prix, s.tva, r) : null;
   const applique = s.applique.trim() === "" ? conseille : lireMontant(s.applique);
   const v = r && prix && applique ? verdictPrixApp(applique, prix, s.tva, r) : null;
@@ -399,6 +418,13 @@ function Simulateur({ reglages }: { reglages: ReglagesClickCollect | null }) {
           </select>
         </label>
         {champ("commission", "Commission (%)", "ex. 10")}
+        <label className="champ">
+          <span>Commission calculée sur</span>
+          <select value={s.surApp ? "app" : "buvette"} onChange={(ev) => setS({ ...s, surApp: ev.target.value === "app" })}>
+            <option value="buvette">Le prix buvette</option>
+            <option value="app">Le prix payé dans l'application</option>
+          </select>
+        </label>
         {champ("stripe", "Frais de paiement effectifs (%)", "ex. 2,5")}
         <label className="champ">
           <span>TVA sur la commission</span>

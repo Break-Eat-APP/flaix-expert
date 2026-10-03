@@ -22,7 +22,7 @@ async function appel<T = unknown>(method: "GET" | "POST" | "PUT", url: string, p
 }
 const etat = async () => (await appel<EtatClickCollect>("GET", "/api/click-collect")).corps;
 const jet = async () => (await appel<EntreeJournalTechnique[]>("GET", "/api/journal-technique?limite=50")).corps;
-const REGLAGES = { commissionPb: 1000, tvaCommissionRepercutee: true, stripeTauxPb: 150, stripeFixe: 25, panierMoyen: 2700 };
+const REGLAGES = { commissionPb: 1000, commissionSurPrixApp: false, tvaCommissionRepercutee: true, stripeTauxPb: 150, stripeFixe: 25, panierMoyen: 2700 };
 
 beforeAll(async () => {
   ({ proprietaire, app } = basesDeTest());
@@ -66,6 +66,14 @@ describe("réglages du lieu", () => {
     expect(r.corps.reglages).toEqual(REGLAGES);
     const e = (await jet()).find((x) => x.type === "click_collect_reglages_modifies")!;
     expect(e.details).toMatchObject({ commissionPb: { avant: null, apres: 1000 }, stripeFixe: { avant: null, apres: 25 } });
+  });
+
+  it("commission calculée sur le prix app (§15.124) : réglage enregistré et journalisé", async () => {
+    const r = await appel<EtatClickCollect>("PUT", "/api/click-collect/reglages", { ...REGLAGES, commissionSurPrixApp: true });
+    expect(r.corps.reglages?.commissionSurPrixApp).toBe(true);
+    const e = (await jet()).find((x) => x.type === "click_collect_reglages_modifies")!;
+    expect(e.details).toMatchObject({ commissionSurPrixApp: { avant: false, apres: true } });
+    expect((await appel<EtatClickCollect>("PUT", "/api/click-collect/reglages", REGLAGES)).corps.reglages).toEqual(REGLAGES);
   });
 });
 

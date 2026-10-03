@@ -6,9 +6,10 @@
  * (supportés par le lieu, prélevés sur le prix app).
  *
  *   u              = 1 / (1 + TVA du produit)
- *   prix app       = prix buvette × (u + commission × k) ÷ (u − Stripe)
+ *   prix app       = prix buvette × (u + commission × k) ÷ (u − Stripe)       commission sur le prix buvette
+ *                  = prix buvette × u ÷ (u − commission × k − Stripe)          commission sur le prix app (§15.124)
  *   reste comptoir = prix buvette × u
- *   reste app (A)  = A × u − prix buvette × commission × k − A × Stripe
+ *   reste app (A)  = A × u − assiette × commission × k − A × Stripe          assiette = prix buvette ou A
  *
  * k = 1,2 si la TVA (20 %) facturée sur la commission est répercutée au client (réglage prudent par
  * défaut : il protège le lieu qui ne la récupère pas), 1,0 sinon. La majoration dépend donc du taux de
@@ -24,6 +25,8 @@ export const TVA_COMMISSION = 0.2;
 export interface ReglagesClickCollect {
   /** Commission de la plateforme de commande (0 pour l'application du lieu), en points de base du prix buvette (1000 = 10 %), unique pour le lieu. */
   commissionPb: number;
+  /** La plateforme calcule-t-elle sa commission sur le prix payé dans l'application (sinon : sur le prix buvette) ? */
+  commissionSurPrixApp: boolean;
   /** La TVA facturée sur la commission est-elle répercutée dans le prix app ? */
   tvaCommissionRepercutee: boolean;
   /** Contrat Stripe : pourcentage (points de base) + frais fixe par paiement. */
@@ -52,9 +55,14 @@ const u = (tvaPb: number) => 1 / (1 + tvaPb / 10_000);
 /** Prix app exact (centimes, non arrondi) qui préserve la marge HT du comptoir ; null si impossible (frais ≥ prix HT). */
 export function prixAppExact(prixBuvette: Centimes, tvaPb: number, r: ReglagesClickCollect): number | null {
   const s = tauxStripeEffectif(r);
+  const commission = (r.commissionPb / 10_000) * coefficientCommission(r);
+  if (r.commissionSurPrixApp) {
+    const denominateur = u(tvaPb) - commission - s;
+    return denominateur <= 0 ? null : (prixBuvette * u(tvaPb)) / denominateur;
+  }
   const denominateur = u(tvaPb) - s;
   if (denominateur <= 0) return null;
-  return (prixBuvette * (u(tvaPb) + (r.commissionPb / 10_000) * coefficientCommission(r))) / denominateur;
+  return (prixBuvette * (u(tvaPb) + commission)) / denominateur;
 }
 
 /** Prix app conseillé, arrondi au centime SUPÉRIEUR : il couvre toujours. */
@@ -68,7 +76,8 @@ export const resteComptoir = (prixBuvette: Centimes, tvaPb: number) => prixBuvet
 
 /** Ce qui reste au lieu, hors taxes, d'une vente sur l'application au prix `prixApp`. */
 export function resteApp(prixApp: Centimes, prixBuvette: Centimes, tvaPb: number, r: ReglagesClickCollect): number {
-  return prixApp * u(tvaPb) - prixBuvette * (r.commissionPb / 10_000) * coefficientCommission(r) - prixApp * tauxStripeEffectif(r);
+  const assiette = r.commissionSurPrixApp ? prixApp : prixBuvette;
+  return prixApp * u(tvaPb) - assiette * (r.commissionPb / 10_000) * coefficientCommission(r) - prixApp * tauxStripeEffectif(r);
 }
 
 export interface VerdictPrixApp {
@@ -97,7 +106,7 @@ export interface CascadeEncaissement {
 
 /** Où part l'argent d'une vente sur l'application : la cascade affichée au directeur. */
 export function cascadeEncaissement(prixApp: Centimes, prixBuvette: Centimes, tvaPb: number, r: ReglagesClickCollect): CascadeEncaissement {
-  const commissionHt = prixBuvette * (r.commissionPb / 10_000);
+  const commissionHt = (r.commissionSurPrixApp ? prixApp : prixBuvette) * (r.commissionPb / 10_000);
   return {
     paye: prixApp,
     tvaProduit: prixApp - prixApp * u(tvaPb),

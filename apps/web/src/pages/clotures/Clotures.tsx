@@ -56,7 +56,7 @@ export function Clotures() {
       <div className="onglets">
         {bouton("match", "Clôture du match")}
         {bouton("periode", "Mois & année")}
-        {options.export_comptable && bouton("export", "Export comptable")}
+        {bouton("export", "Export comptable")}
         {bouton("archives", "Archives & contrôle", true)}
       </div>
 
