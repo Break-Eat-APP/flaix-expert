@@ -77,6 +77,7 @@ async function lireReglages(c: Client, lieuId: string): Promise<ReglagesFidelite
 /** Tickets « remise abonné » par n° normalisé : nombre, dépense et euros entiers des tickets non annulés. */
 const TICKETS_ABONNES = `
   SELECT upper(btrim(v.details->'ajustement'->>'reference')) AS numero, v.id, v.numero_justificatif, v.horodatage, v.total_ttc_centimes AS ttc,
+         coalesce((v.details->'fidelite'->'points'->>'points')::int, 0) AS depense,
          v.evenement_id, EXISTS (SELECT 1 FROM journal_caisse a WHERE a.lieu_id = v.lieu_id AND a.ref_evenement = v.id AND a.type = 'annulation') AS annule
     FROM journal_caisse v
    WHERE v.lieu_id = $1 AND v.type = 'vente' AND v.details->'ajustement'->>'motif' = 'abonne'
@@ -96,14 +97,16 @@ async function lireAbonnes(c: Client, lieuId: string, r: ReglagesFidelite | null
     euros: number;
     derniere: Date | null;
     mouvements: number;
+    depenses: number;
   }>(
     `WITH t AS (${TICKETS_ABONNES}),
           parNumero AS (
             SELECT numero, count(*) FILTER (WHERE NOT annule)::int AS tickets, coalesce(sum(ttc) FILTER (WHERE NOT annule), 0)::int AS depense,
-                   coalesce(sum(floor(ttc / 100.0)) FILTER (WHERE NOT annule AND ttc > 0), 0)::int AS euros, max(horodatage) FILTER (WHERE NOT annule) AS derniere
+                   coalesce(sum(floor(ttc / 100.0)) FILTER (WHERE NOT annule AND ttc > 0), 0)::int AS euros, max(horodatage) FILTER (WHERE NOT annule) AS derniere,
+                   coalesce(sum(depense) FILTER (WHERE NOT annule), 0)::int AS depenses
               FROM t GROUP BY numero)
      SELECT a.id, a.numero, a.nom, a.email, a.telephone, a.source, a.actif,
-            coalesce(p.tickets, 0) AS tickets, coalesce(p.depense, 0) AS depense, coalesce(p.euros, 0) AS euros, p.derniere,
+            coalesce(p.tickets, 0) AS tickets, coalesce(p.depense, 0) AS depense, coalesce(p.euros, 0) AS euros, p.derniere, coalesce(p.depenses, 0) AS depenses,
             coalesce((SELECT sum(m.points) FROM mouvement_points m WHERE m.lieu_id = a.lieu_id AND m.abonne_id = a.id), 0)::int AS mouvements
        FROM abonne_fidelite a LEFT JOIN parNumero p ON p.numero = a.numero
       WHERE a.lieu_id = $1 AND ($2::uuid IS NULL OR a.id = $2)
@@ -121,7 +124,8 @@ async function lireAbonnes(c: Client, lieuId: string, r: ReglagesFidelite | null
     tickets: a.tickets,
     depense: a.depense,
     derniereVisite: a.derniere ? a.derniere.toISOString() : null,
-    points: r ? a.euros * r.pointsParEuro + a.mouvements : null,
+    // Points dépensés à la caisse (§15.127) : lus dans les tickets non annulés, comme les points gagnés.
+    points: r ? a.euros * r.pointsParEuro + a.mouvements - a.depenses : null,
   }));
 }
 
@@ -148,8 +152,7 @@ async function etat(c: Client, lieuId: string): Promise<EtatFidelite> {
   }>(
     `SELECT k.id, k.code, k.type, k.valeur, to_char(k.debut, 'YYYY-MM-DD') AS debut, to_char(k.fin, 'YYYY-MM-DD') AS fin, k.usage_max, k.actif,
             (SELECT count(*) FROM journal_caisse v
-              WHERE v.lieu_id = k.lieu_id AND v.type = 'vente' AND v.details->'ajustement'->>'motif' = 'code_promo'
-                AND upper(btrim(v.details->'ajustement'->>'reference')) = k.code
+              WHERE v.lieu_id = k.lieu_id AND v.type = 'vente' AND v.details->'fidelite'->'codePromo'->>'code' = k.code
                 AND NOT EXISTS (SELECT 1 FROM journal_caisse a WHERE a.lieu_id = v.lieu_id AND a.ref_evenement = v.id))::int AS usages
        FROM code_promo k WHERE k.lieu_id = $1 ORDER BY k.actif DESC, k.fin DESC, k.code`,
     [lieuId],
@@ -238,9 +241,9 @@ export async function routesFidelite(app: FastifyInstance, { base }: { base: Bas
       const r = await lireReglages(c, auth.lieuId);
       const abonne = (await lireAbonnes(c, auth.lieuId, r, id))[0];
       if (!abonne) throw introuvable("Abonné");
-      const { rows: tickets } = await c.query<{ id: string; numero_justificatif: string; horodatage: Date; ttc: number; annule: boolean; match: string }>(
+      const { rows: tickets } = await c.query<{ id: string; numero_justificatif: string; horodatage: Date; ttc: number; annule: boolean; match: string; depense: number }>(
         `WITH t AS (${TICKETS_ABONNES})
-         SELECT t.id, t.numero_justificatif, t.horodatage, t.ttc, t.annule, e.libelle AS match
+         SELECT t.id, t.numero_justificatif, t.horodatage, t.ttc, t.annule, t.depense, e.libelle AS match
            FROM t JOIN evenement e ON e.lieu_id = $1 AND e.id = t.evenement_id
           WHERE t.numero = $2 ORDER BY t.horodatage DESC LIMIT 500`,
         [auth.lieuId, abonne.numero],
@@ -260,6 +263,7 @@ export async function routesFidelite(app: FastifyInstance, { base }: { base: Bas
           total: t.ttc,
           annule: t.annule,
           points: r && !t.annule ? Math.floor(t.ttc / 100) * r.pointsParEuro : r ? 0 : null,
+          pointsDepenses: t.annule ? 0 : t.depense,
         })),
         mouvements: mouvements.map((m) => ({ motif: m.motif, points: m.points, commentaire: m.commentaire, par: m.par, le: m.le.toISOString() })),
       };

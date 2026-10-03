@@ -5,6 +5,7 @@ import {
   scellerVente,
   type Ajustement,
   type EvenementTablette,
+  type FideliteVente,
   type ModeReglement,
   type Produit,
   type ReponseSynchro,
@@ -42,7 +43,7 @@ export const ligne = (p: Produit, quantite = 1) => ({
 export function vendreHorsLigne(
   t: Tablette,
   lignes: ReturnType<typeof ligne>[],
-  extra: { modeReglement?: ModeReglement; montantDonne?: number | null; ajustement?: Partial<Ajustement>; horodatage?: Date; utilisateurId?: string } = {},
+  extra: { modeReglement?: ModeReglement; montantDonne?: number | null; ajustement?: Partial<Ajustement>; horodatage?: Date; utilisateurId?: string; fidelite?: FideliteVente | null } = {},
 ): EvenementTablette {
   const { evenement, tete } = scellerVente(t.reprise.contexte, t.tete, {
     id: randomUUID(),
@@ -52,6 +53,7 @@ export function vendreHorsLigne(
     montantDonne: extra.montantDonne ?? null,
     horodatage: extra.horodatage ?? new Date(),
     utilisateurId: extra.utilisateurId,
+    fidelite: extra.fidelite ?? null,
   });
   t.tete = tete;
   t.tickets.push(evenement);

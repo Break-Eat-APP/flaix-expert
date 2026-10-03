@@ -26,6 +26,7 @@ import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { inscrireCaisse, inscrireEvenementTablette, teteChaine, verifierCaisses } from "../journal-caisse.ts";
 import { ParamId, Uuid, contexte, corps } from "./outils.ts";
+import { consommerFidelite } from "./fidelite-caisse.ts";
 
 /*
  * Ma caisse, Mes caisses, journal des tickets (modules 1 et 3, dossier §14, §15.26, §15.62,
@@ -177,6 +178,7 @@ interface LigneJournalVue {
     ventilation: TicketVue["ventilation"];
     ajustement?: { motif: string | null; motifTexte: string | null; reference: string | null };
     paiement?: { montantDonne: number | null; rendu: number | null };
+    fidelite?: DetailsVente["fidelite"];
     motifAnnulation?: string;
   };
   lie_id: string | null;
@@ -216,6 +218,12 @@ function versTicket(j: LigneJournalVue): TicketVue {
     brut: d.brut,
     remise: d.remise,
     offert: d.offert,
+    fidelite: d.fidelite
+      ? {
+          codePromo: d.fidelite.codePromo ? { code: d.fidelite.codePromo.code, montant: d.fidelite.codePromo.montant } : null,
+          points: d.fidelite.points ? { points: d.fidelite.points.points, montant: d.fidelite.points.montant } : null,
+        }
+      : null,
     motif: j.type === "annulation" ? "annulation" : (d.ajustement?.motif ?? null),
     motifTexte: j.type === "annulation" ? (d.motifAnnulation ?? null) : (d.ajustement?.motifTexte ?? null),
     reference: d.ajustement?.reference ?? null,
@@ -260,9 +268,9 @@ async function insererLignes(c: Client, lieuId: string, journalId: string, ligne
     rang++;
     await c.query(
       `INSERT INTO ligne_ticket (lieu_id, journal_id, rang, produit_id, libelle, quantite, prix_unitaire_centimes, taux_tva_pb,
-                                 brut_centimes, remise_centimes, offert_centimes, net_ttc_centimes, ht_centimes, tva_centimes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-      [lieuId, journalId, rang, l.produitId, l.libelle, l.quantite, l.prixUnitaire, l.tauxTva, l.brut, l.remise, l.offert, l.net, l.ht, l.tva],
+                                 brut_centimes, remise_centimes, offert_centimes, fidelite_centimes, net_ttc_centimes, ht_centimes, tva_centimes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+      [lieuId, journalId, rang, l.produitId, l.libelle, l.quantite, l.prixUnitaire, l.tauxTva, l.brut, l.remise, l.offert, l.fidelite ?? 0, l.net, l.ht, l.tva],
     );
   }
 }
@@ -597,6 +605,11 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
           if (ecarts.length) controle.ecartTarif = ecarts;
           if (horsStand.length) controle.horsStand = horsStand;
           if (d.ajustement.motif === "abonne" && d.ajustement.remisePb !== remiseAbonneLieu) controle.remiseAbonneEcart = { applique: d.ajustement.remisePb, lieu: remiseAbonneLieu };
+          // Code promo et points (§15.127) : les réservations du serveur sont consommées ; un écart est signalé, jamais refusé.
+          if (d.fidelite) {
+            const anomalies = await consommerFidelite(c, auth.lieuId, e.id, new Date(heureVente), d.fidelite);
+            if (anomalies.length) controle.fidelite = anomalies;
+          }
         }
 
         await inscrireEvenementTablette(c, { ...ctx, utilisateurId: vendeur }, e, maintenant, Object.keys(controle).length ? controle : null);

@@ -186,6 +186,8 @@ export interface TicketVue {
   brut: Centimes;
   remise: Centimes;
   offert: Centimes;
+  /** Code promo et points dépensés (§15.127) ; null sans fidélité. */
+  fidelite: { codePromo: { code: string; montant: Centimes } | null; points: { points: number; montant: Centimes } | null } | null;
   motif: string | null;
   motifTexte: string | null;
   reference: string | null;
@@ -215,6 +217,8 @@ export interface ControleTicket {
   remiseAbonneEcart?: { applique: number; lieu: number | null };
   /** Heure de vente antérieure à l'ouverture de la caisse ou postérieure à la réception. */
   horodatageIncoherent?: boolean;
+  /** Code promo ou points qui ne correspondent pas à ce que le serveur a réservé (§15.127). */
+  fidelite?: string[];
 }
 
 /** Remis à la tablette à l'ouverture ou à la reprise d'une caisse : de quoi sceller seule (§15.97). */

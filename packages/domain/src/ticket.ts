@@ -4,7 +4,10 @@ import { ventilerTtc, type TauxTvaPb } from "./tva.ts";
 /**
  * Calcul d'un ticket de caisse (module Ma caisse, dossier §14 module 1 et §15.26).
  *
- *   total = max(0, brut − remise − offert)
+ *   total = max(0, brut − remise − offert − code promo − points)
+ *
+ * Code promo et points de fidélité (§15.127) sont des réductions en euros consenties au client,
+ * appliquées après la remise et l'offert et réparties sur les lignes comme l'offert.
  *
  * Tout est en centimes. La remise en % s'applique ligne par ligne ; l'offert en euros
  * est réparti sur les lignes au prorata de leur montant après remise. C'est ce qui
@@ -50,6 +53,8 @@ export interface LigneCalculee extends LigneTarifee {
   brut: Centimes;
   remise: Centimes;
   offert: Centimes;
+  /** Part de la réduction fidélité (code promo + points) ; absente quand le ticket n'en a pas. */
+  fidelite?: Centimes;
   net: Centimes;
   ht: Centimes;
   tva: Centimes;
@@ -67,6 +72,8 @@ export interface TicketCalcule {
   brut: Centimes;
   remise: Centimes;
   offert: Centimes; // offert réellement appliqué (plafonné au montant restant)
+  promo: Centimes; // réduction du code promo réellement appliquée
+  points: Centimes; // réduction payée en points réellement appliquée
   total: Centimes;
   ventilation: VentilationTva[];
 }
@@ -88,7 +95,13 @@ export function repartirProrata(montant: Centimes, poids: readonly Centimes[]): 
   return parts;
 }
 
-export function calculerTicket(lignes: readonly LigneTarifee[], ajustement: Ajustement = AUCUN_AJUSTEMENT): TicketCalcule {
+/** Réductions de fidélité en euros (§15.127) : code promo et points dépensés. */
+export interface ReductionsFidelite {
+  promo: Centimes;
+  points: Centimes;
+}
+
+export function calculerTicket(lignes: readonly LigneTarifee[], ajustement: Ajustement = AUCUN_AJUSTEMENT, fidelite: ReductionsFidelite | null = null): TicketCalcule {
   const avecRemise = lignes.map((l) => {
     const brut = l.prixUnitaire * l.quantite;
     const remise = diviserArrondi(brut * ajustement.remisePb, 10_000);
@@ -101,10 +114,16 @@ export function calculerTicket(lignes: readonly LigneTarifee[], ajustement: Ajus
     avecRemise.map((l) => l.apresRemise),
   );
 
+  const restes = avecRemise.map((l, i) => l.apresRemise - partsOffert[i]!);
+  const reste = restes.reduce((s, x) => s + x, 0);
+  const promo = fidelite ? Math.min(Math.max(0, fidelite.promo), reste) : 0;
+  const points = fidelite ? Math.min(Math.max(0, fidelite.points), reste - promo) : 0;
+  const partsFidelite = repartirProrata(promo + points, restes);
+
   const calculees: LigneCalculee[] = avecRemise.map(({ apresRemise: base, ...l }, i) => {
-    const net = base - partsOffert[i]!;
+    const net = base - partsOffert[i]! - partsFidelite[i]!;
     const { ht, tva } = ventilerTtc(net, l.tauxTva);
-    return { ...l, offert: partsOffert[i]!, net, ht, tva };
+    return { ...l, offert: partsOffert[i]!, ...(promo + points > 0 ? { fidelite: partsFidelite[i]! } : {}), net, ht, tva };
   });
 
   const parTaux = new Map<TauxTvaPb, VentilationTva>();
@@ -121,6 +140,8 @@ export function calculerTicket(lignes: readonly LigneTarifee[], ajustement: Ajus
     brut: calculees.reduce((s, l) => s + l.brut, 0),
     remise: calculees.reduce((s, l) => s + l.remise, 0),
     offert,
+    promo,
+    points,
     total: calculees.reduce((s, l) => s + l.net, 0),
     ventilation: [...parTaux.values()].sort((a, b) => a.tauxTva - b.tauxTva),
   };

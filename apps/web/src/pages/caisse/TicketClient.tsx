@@ -111,6 +111,8 @@ function Ticket({ edition }: { edition: EditionTicket }) {
       ))}
       {t.remise !== 0 && ligne(t.motif === "abonne" ? "Remise abonné" : "Remise", `− ${formaterMontant(Math.abs(t.remise))}`)}
       {t.offert !== 0 && ligne("Offert", `− ${formaterMontant(Math.abs(t.offert))}`)}
+      {t.fidelite?.codePromo && ligne(`Code ${t.fidelite.codePromo.code}`, `− ${formaterMontant(t.fidelite.codePromo.montant)}`)}
+      {t.fidelite?.points && ligne(`Points fidélité (${t.fidelite.points.points})`, `− ${formaterMontant(t.fidelite.points.montant)}`)}
       <hr />
       {ligne("TOTAL TTC", formaterMontant(t.totalTtc), true)}
       {ligne(t.modeReglement === "especes" ? "Espèces" : "Carte bancaire", formaterMontant(t.montantDonne ?? t.totalTtc))}

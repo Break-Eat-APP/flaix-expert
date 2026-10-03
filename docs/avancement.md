@@ -73,6 +73,8 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 
 **Conformité — démarré le 2026-10-03** : `docs/conformite/dossier-conformite-flaix-expert.md` (v0.1, plan de Rémi en 20 parties réécrit pour FlaiX Expert + parties 21 à 28). À construire ensuite, dans l'ordre : numéro de version et registre des versions (12), attestation téléchargeable (01, 20), archive annuelle (09), compte vérificateur (07, 25), étiquette Git par version (26).
 
+**En cours (2026-10-03, à reprendre)** : fidélité à la caisse (§15.127, option A) — code promo et points dans le ticket scellé, réservations du serveur (migration 0024), anomalies signalées sans refus. Moteur et serveur faits et testés (376 tests au vert). Écran de caisse (bloc Fidélité) écrit et compilé, **pas encore vérifié dans le navigateur ni mis en ligne**. Rémi veut tout le logiciel de A à Z, 100 % fonctionnel pour son test avec le directeur des Spartiates : ensuite rapport de soirée, cibles de marge et gestion financière, centre d'alertes et optimisation, alertes rupture sur téléphone, copie de configuration, conformité (registre, attestation, archive, vérificateur), wallet (comptes Apple/Google de Rémi), facturation (prix plus tard), import C&C.
+
 **À voir avec Rémi, ne pas construire seul** : Conformité (dossier bien structuré à préparer ; y joindre les points prévus à revoir ensemble), IA ; serveur de production (Rémi s'en occupe).
 
 ## Ancienne proposition d'ordre (remplacée par le tableau ci-dessus)

@@ -5,6 +5,7 @@ import { ArrowLeft, Banknote, CreditCard, Lock, ReceiptText, RefreshCw, Tablet }
 import {
   MOTIFS_AJUSTEMENT,
   PALIERS_REMISE_PB,
+  apercuFidelite,
   calculerTicket,
   erreurAjustement,
   formaterMontant,
@@ -21,7 +22,8 @@ import {
 } from "@flaix/domain";
 import { api, ErreurApi, formaterDateHeure } from "../../api.ts";
 import { Chargement, MessageErreur, Regles } from "../../composants/communs.tsx";
-import { useSession } from "../../session.tsx";
+import { useOptions, useSession } from "../../session.tsx";
+import { BlocFidelite, useFideliteCaisse } from "./FideliteCaisse.tsx";
 import {
   effacerEtat,
   ecrireEtat,
@@ -289,6 +291,8 @@ function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresClo
   const ecran = etat.ecran;
   const vendeur = useSession().data?.utilisateur.id;
   const caisseId = etat.caisseId;
+  const options = useOptions();
+  const fid = useFideliteCaisse(caisseId, options.fidelite);
   const produits = ecran.produits;
   const categories = useMemo(() => {
     const vues = new Map<string, string>();
@@ -327,12 +331,15 @@ function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresClo
   const offert = offertSaisi.trim() ? (lireMontant(offertSaisi) ?? 0) : 0;
   const ajustement: Ajustement = { remisePb, offert, motif, motifTexte: motifTexte.trim() || null, reference: reference.trim() || null };
   const ticket = calculerTicket(lignes, ajustement);
+  // Code promo et points (§15.127) : même calcul que le ticket scellé.
+  const ap = apercuFidelite(lignes, ajustement, fid.vente);
+  const total = ap.total;
   const nbArticles = panier.reduce((s, l) => s + l.quantite, 0);
   const ajuste = remisePb > 0 || offert > 0;
   const erreurAj = erreurAjustement(ajustement, ecran.remiseAbonnePb);
   const donne = lireMontant(donneSaisi) ?? 0;
-  const especesOk = paiement !== "especes" || donne >= ticket.total;
-  const pret = nbArticles > 0 && paiement !== null && especesOk && !erreurAj;
+  const especesOk = paiement !== "especes" || donne >= total;
+  const pret = nbArticles > 0 && paiement !== null && especesOk && !erreurAj && !ap.pointsTropEleves;
 
   /**
    * Encaisser : le ticket est scellé et écrit dans la mémoire de la tablette AVANT d'être affiché
@@ -350,6 +357,7 @@ function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresClo
       montantDonne: paiement === "especes" ? donne : null,
       horodatage: heureCaisse(courant),
       utilisateurId: vendeur,
+      fidelite: fid.vente,
     });
     try {
       memoriserTicket(courant, evenement, tete);
@@ -368,6 +376,7 @@ function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresClo
     setReference("");
     setPaiement(null);
     setDonneSaisi("");
+    fid.vider();
     void envoyer(caisseId);
   }
 
@@ -438,7 +447,7 @@ function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresClo
     else if (m !== "abonne") setReference("");
   }
 
-  const montantsRapides = [...new Set([ticket.total, ...[500, 1000, 2000, 5000].filter((v) => v >= ticket.total)])].slice(0, 4);
+  const montantsRapides = [...new Set([total, ...[500, 1000, 2000, 5000].filter((v) => v >= total)])].slice(0, 4);
 
   if (produits.length === 0) {
     return (
@@ -565,9 +574,22 @@ function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresClo
             <span className="chiffre">− {formaterMontant(ticket.offert)}</span>
           </div>
         )}
+        {options.fidelite && <BlocFidelite f={fid} numeroAbonne={abonne && reference.trim() ? reference : null} resteAPayer={ticket.total - ap.promo} />}
+        {ap.promo > 0 && (
+          <div className="cmd-subtot">
+            <span>Code {fid.code?.code}</span>
+            <span className="chiffre">− {formaterMontant(ap.promo)}</span>
+          </div>
+        )}
+        {ap.points > 0 && (
+          <div className="cmd-subtot">
+            <span>Points ({fid.points?.points})</span>
+            <span className="chiffre">− {formaterMontant(ap.points)}</span>
+          </div>
+        )}
         <div className="cmd-total">
           <span>Total TTC</span>
-          <span className="chiffre">{formaterMontant(ticket.total)}</span>
+          <span className="chiffre">{formaterMontant(total)}</span>
         </div>
 
         <div className="cmd-payrow">
@@ -594,8 +616,8 @@ function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresClo
             <input type="text" inputMode="decimal" value={donneSaisi} onChange={(e) => setDonneSaisi(e.target.value)} placeholder="Saisir un montant" />
             <div className="cmd-rendu">
               <span>Rendu monnaie</span>
-              <span className="chiffre" style={{ color: !donneSaisi ? "var(--muted)" : donne < ticket.total ? "var(--red)" : "var(--green)" }}>
-                {!donneSaisi ? "—" : donne < ticket.total ? `Manque ${formaterMontant(ticket.total - donne)}` : formaterMontant(donne - ticket.total)}
+              <span className="chiffre" style={{ color: !donneSaisi ? "var(--muted)" : donne < total ? "var(--red)" : "var(--green)" }}>
+                {!donneSaisi ? "—" : donne < total ? `Manque ${formaterMontant(total - donne)}` : formaterMontant(donne - total)}
               </span>
             </div>
           </div>
@@ -606,6 +628,7 @@ function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresClo
           {paiement === "carte" ? "Valider le paiement" : "Encaisser"}
         </button>
         {nbArticles > 0 && erreurAj && <div className="cmd-blockmsg">{erreurAj}</div>}
+        {nbArticles > 0 && ap.pointsTropEleves && <div className="cmd-blockmsg">Les points dépassent ce qui reste à payer : rends-les (×) et choisis moins de paliers.</div>}
 
         <ClotureBouton confirmer={confirmerCloture} setConfirmer={setConfirmerCloture} cloturer={cloturer} />
       </div>

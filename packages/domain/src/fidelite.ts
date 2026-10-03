@@ -58,6 +58,35 @@ export function remiseCodePromo(c: Pick<CodePromo, "type" | "valeur">, panier: C
 export const FORMAT_CODE_PROMO = /^[A-Z0-9_-]{3,30}$/;
 
 // ---------------------------------------------------------------------------
+// À la caisse (§15.127, option A) : solde lu et points ou usage réservés par le serveur avant d'encaisser.
+// ---------------------------------------------------------------------------
+
+export interface CodePromoCaisse {
+  code: string;
+  type: TypeCodePromo;
+  valeur: number;
+}
+
+export interface PointsAbonneCaisse {
+  numero: string;
+  nom: string;
+  solde: number;
+  /** Solde moins les points réservés par d'autres caisses et pas encore encaissés. */
+  disponibles: number;
+  palierPoints: number;
+  valeurPalier: Centimes;
+  paliersMax: number;
+}
+
+export interface ReservationCaisse {
+  /** null : code sans plafond, aucune réservation nécessaire. */
+  reservation: string | null;
+  expireLe: string | null;
+  points: { numero: string; points: number; montant: Centimes } | null;
+  codePromo: CodePromoCaisse | null;
+}
+
+// ---------------------------------------------------------------------------
 // Import tolérant de la base d'abonnés existante (fichier CSV exporté d'un tableur).
 // ---------------------------------------------------------------------------
 
@@ -189,6 +218,6 @@ export interface EtatFidelite {
 
 export interface HistoriqueAbonne {
   abonne: AbonneVue;
-  tickets: { id: string; numeroJustificatif: string; horodatage: string; match: string; total: Centimes; annule: boolean; points: number | null }[];
+  tickets: { id: string; numeroJustificatif: string; horodatage: string; match: string; total: Centimes; annule: boolean; points: number | null; pointsDepenses: number }[];
   mouvements: { motif: "depart" | "ajustement"; points: number; commentaire: string | null; par: string; le: string }[];
 }

@@ -404,6 +404,7 @@ function Signalements({ ticket: t, detail = false }: { ticket: TicketVue; detail
     c.horsStand && <span key="hs" className="puce puce-ambre">Hors stand</span>,
     c.remiseAbonneEcart && <span key="ra" className="puce puce-ambre">Taux abonné</span>,
     c.horodatageIncoherent && <span key="hi" className="puce puce-rouge">Heure incohérente</span>,
+    c.fidelite && <span key="fi" className="puce puce-rouge">Fidélité</span>,
   ].filter(Boolean);
   if (!detail) return <>{puces}</>;
   return (
@@ -424,6 +425,7 @@ function Signalements({ ticket: t, detail = false }: { ticket: TicketVue; detail
             {c.remiseAbonneEcart.lieu !== null ? `${(c.remiseAbonneEcart.lieu / 100).toLocaleString("fr-FR")} %` : "non réglé"}.
           </li>
         )}
+        {c.fidelite?.map((f) => <li key={f}>Fidélité : {f}.</li>)}
         {c.horodatageIncoherent && <li>Heure de vente antérieure à l'ouverture de la caisse ou postérieure à sa réception : horloge de la tablette à vérifier.</li>}
       </ul>
     </div>

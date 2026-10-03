@@ -12,6 +12,7 @@ import {
   type VentilationTva,
 } from "./ticket.ts";
 import { estTauxTva } from "./tva.ts";
+import { FORMAT_CODE_PROMO, normaliserNumeroAbonne, remiseCodePromo, type TypeCodePromo } from "./fidelite.ts";
 
 /**
  * Vente sans réseau (dossier §15.97) : la caisse scelle, le serveur vérifie.
@@ -51,6 +52,23 @@ export interface DetailsVente {
   ventilation: VentilationTva[];
   ajustement: { remisePb: number; offertDemande: number; motif: MotifAjustement | null; motifTexte: string | null; reference: string | null };
   paiement: { montantDonne: number | null; rendu: number | null };
+  /** Code promo et points dépensés (§15.127) ; absent quand le ticket n'en a pas. */
+  fidelite?: DetailsFidelite;
+}
+
+/**
+ * Fidélité à la caisse (§15.127, option A de Rémi) : un code promo plafonné et des points ne se
+ * dépensent qu'avec le réseau — le serveur les a réservés avant l'encaissement (`reservation`).
+ * Un code sans plafond marche aussi hors ligne (`reservation` nulle).
+ */
+export interface FideliteVente {
+  codePromo: { code: string; type: TypeCodePromo; valeur: number; reservation: string | null } | null;
+  points: { numero: string; points: number; montant: number; reservation: string } | null;
+}
+
+export interface DetailsFidelite {
+  codePromo: { code: string; type: TypeCodePromo; valeur: number; reservation: string | null; montant: number } | null;
+  points: { numero: string; points: number; montant: number; reservation: string } | null;
 }
 
 export interface DetailsAnnulation {
@@ -150,14 +168,19 @@ export interface EntreeVente {
   modeReglement: ModeReglement;
   montantDonne: number | null;
   horodatage: Date;
+  fidelite?: FideliteVente | null;
 }
 
 /** Détail scellé d'une vente — exactement celui qu'écrivait le serveur avant le §15.97. */
-function detailsDeVente(v: Omit<EntreeVente, "id" | "horodatage">): { details: DetailsVente; total: number } {
-  const ticket = calculerTicket(v.lignes, v.ajustement);
+function detailsDeVente(v: Omit<EntreeVente, "id" | "horodatage">): { details: DetailsVente; total: number; pointsAppliques: number } {
+  const f = v.fidelite ?? null;
+  // Le code promo s'applique sur ce qui reste à payer après la remise et l'offert.
+  const promo = f?.codePromo ? remiseCodePromo(f.codePromo, calculerTicket(v.lignes, v.ajustement).total) : 0;
+  const ticket = calculerTicket(v.lignes, v.ajustement, f ? { promo, points: f.points?.montant ?? 0 } : null);
   const especes = v.modeReglement === "especes";
   return {
     total: ticket.total,
+    pointsAppliques: ticket.points,
     details: {
       lignes: ticket.lignes,
       brut: ticket.brut,
@@ -172,8 +195,40 @@ function detailsDeVente(v: Omit<EntreeVente, "id" | "horodatage">): { details: D
         reference: v.ajustement.reference || null,
       },
       paiement: { montantDonne: especes ? v.montantDonne : null, rendu: especes ? (v.montantDonne ?? 0) - ticket.total : null },
+      ...(f
+        ? {
+            fidelite: {
+              codePromo: f.codePromo ? { code: f.codePromo.code, type: f.codePromo.type, valeur: f.codePromo.valeur, reservation: f.codePromo.reservation, montant: ticket.promo } : null,
+              points: f.points ? { numero: f.points.numero, points: f.points.points, montant: f.points.montant, reservation: f.points.reservation } : null,
+            },
+          }
+        : {}),
     },
   };
+}
+
+/** Ce que la tablette doit savoir avant d'encaisser : réduction du code, et si les points tiennent dans le ticket. */
+export function apercuFidelite(lignes: LigneTarifee[], ajustement: Ajustement, f: FideliteVente | null): { promo: number; points: number; total: number; pointsTropEleves: boolean } {
+  const { details, total, pointsAppliques } = detailsDeVente({ lignes, ajustement, modeReglement: "carte", montantDonne: null, fidelite: f });
+  return { promo: details.fidelite?.codePromo?.montant ?? 0, points: pointsAppliques, total, pointsTropEleves: !!f?.points && pointsAppliques !== f.points.montant };
+}
+
+/** Contrôle de forme de la fidélité d'un ticket reçu ; null si tout va bien. */
+function erreurFidelite(f: DetailsFidelite, ajustement: Ajustement): string | null {
+  const k = f.codePromo;
+  if (k) {
+    if (typeof k.code !== "string" || !FORMAT_CODE_PROMO.test(k.code)) return "code promo invalide";
+    if (k.type !== "pourcentage" && k.type !== "montant") return "type de code promo invalide";
+    if (!Number.isInteger(k.valeur) || k.valeur <= 0 || (k.type === "pourcentage" && k.valeur > 10_000)) return "valeur de code promo invalide";
+    if (k.reservation !== null && typeof k.reservation !== "string") return "réservation du code promo invalide";
+  }
+  const pt = f.points;
+  if (pt) {
+    if (!Number.isInteger(pt.points) || pt.points <= 0 || !Number.isInteger(pt.montant) || pt.montant <= 0) return "points invalides";
+    if (typeof pt.reservation !== "string" || !pt.reservation) return "points sans réservation du serveur";
+    if (ajustement.motif !== "abonne" || normaliserNumeroAbonne(ajustement.reference ?? "") !== pt.numero) return "les points doivent être ceux de l'abonné du ticket";
+  }
+  return null;
 }
 
 /** Scelle une vente sur la tablette. Les contrôles de saisie (motif, espèces suffisantes…) sont faits avant, à l'écran. */
@@ -187,7 +242,7 @@ function detailsInverses(origine: EvenementTablette, motif: string): DetailsAnnu
   return {
     ticketAnnule: origine.numeroJustificatif,
     motifAnnulation: motif,
-    lignes: d.lignes.map((l) => ({ ...l, quantite: -l.quantite, brut: -l.brut, remise: -l.remise, offert: -l.offert, net: -l.net, ht: -l.ht, tva: -l.tva })),
+    lignes: d.lignes.map((l) => ({ ...l, quantite: -l.quantite, brut: -l.brut, remise: -l.remise, offert: -l.offert, ...(l.fidelite !== undefined ? { fidelite: -l.fidelite } : {}), net: -l.net, ht: -l.ht, tva: -l.tva })),
     brut: -d.brut,
     remise: -d.remise,
     offert: -d.offert,
@@ -248,7 +303,20 @@ export function controlerEvenementTablette(ctx: ContexteScellement, tete: TeteCh
     const erreur = erreurAjustement(ajustement, ajustement.motif === "abonne" ? ajustement.remisePb : null);
     if (erreur) return erreur;
     const lignes: LigneTarifee[] = d.lignes.map((l) => ({ produitId: l.produitId, libelle: l.libelle, quantite: l.quantite, prixUnitaire: l.prixUnitaire, tauxTva: l.tauxTva }));
-    const attendu = detailsDeVente({ lignes, ajustement, modeReglement: e.modeReglement, montantDonne: d.paiement?.montantDonne ?? null });
+    let fidelite: FideliteVente | null = null;
+    if (d.fidelite !== undefined) {
+      if (d.fidelite === null || typeof d.fidelite !== "object") return "fidélité illisible";
+      const ef = erreurFidelite(d.fidelite, ajustement);
+      if (ef) return ef;
+      const k = d.fidelite.codePromo;
+      const pt = d.fidelite.points;
+      fidelite = {
+        codePromo: k ? { code: k.code, type: k.type, valeur: k.valeur, reservation: k.reservation } : null,
+        points: pt ? { numero: pt.numero, points: pt.points, montant: pt.montant, reservation: pt.reservation } : null,
+      };
+    }
+    const attendu = detailsDeVente({ lignes, ajustement, modeReglement: e.modeReglement, montantDonne: d.paiement?.montantDonne ?? null, fidelite });
+    if (fidelite?.points && attendu.pointsAppliques !== fidelite.points.montant) return "les points dépassent le montant du ticket";
     if (e.modeReglement === "especes" && (d.paiement?.montantDonne ?? -1) < attendu.total) return "montant donné insuffisant";
     if (e.totalTtc !== attendu.total || jsonCanonique(d) !== jsonCanonique(attendu.details)) return "montants du ticket incohérents";
     return null;
