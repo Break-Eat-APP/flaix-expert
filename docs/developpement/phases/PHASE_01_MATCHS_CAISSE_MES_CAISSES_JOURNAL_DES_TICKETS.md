@@ -88,10 +88,10 @@
 
 ### `apps/api/test/caisse.test.ts`
 
-- **cycle d'un match**
-  - une caisse ne s'ouvre pas sans match ouvert
-  - ouvre le match ; un second match ne peut pas être ouvert en même temps
-  - le libellé d'un match ouvert ne se modifie plus, mais les spectateurs oui
+- **cycle d'un événement**
+  - une caisse ne s'ouvre pas sans événement ouvert ni prévu aujourd'hui
+  - ouvre l'événement ; un second match ne peut pas être ouvert en même temps
+  - le libellé d'un événement ouvert ne se modifie plus, mais les spectateurs oui
 - **Ma caisse — la tablette scelle, le serveur vérifie (§15.97)**
   - ouverture : fond obligatoire si la caisse accepte les espèces ; la tablette reçoit la tête de chaîne et son jeton
   - l'écran de caisse ne propose que les produits du stand, au prix en vigueur
@@ -107,9 +107,9 @@
   - [F] un lot dont un ticket a été trafiqué est refusé en entier : rien n'est inscrit
   - prix changé pendant une coupure : la vente au prix de la tablette est inscrite et l'écart signalé
   - reprise sur un autre appareil : l'ancien jeton est refusé, le nouvel appareil continue la chaîne
-  - Mes caisses : état ouvert en direct et chiffres du match par caisse
+  - Mes caisses : état ouvert en direct et chiffres de l'événement par caisse
   - F4 — clôture : refusée tant qu'un ticket manque, puis faite en une fois ; une seconde clôture est refusée
-  - un match ne se clôt pas tant qu'une caisse est ouverte ni tant qu'un tiroir n'a pas son Z, puis se clôt définitivement
+  - un événement ne se clôt pas tant qu'une caisse est ouverte ni tant qu'un tiroir n'a pas son Z, puis se clôt définitivement
   - la chaîne de chaque caisse est intacte, tickets scellés par la tablette compris
 - **Groupe A — journal de caisse inaltérable [F]**
   - A1/A2 [F] — ni le serveur ni le propriétaire ne peuvent modifier ou supprimer un ticket ou une ligne

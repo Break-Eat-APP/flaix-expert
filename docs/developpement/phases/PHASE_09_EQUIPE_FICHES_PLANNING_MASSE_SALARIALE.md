@@ -80,14 +80,14 @@ Demande de Rémi (§15.99). Sources relues avant d'écrire : module 14 (§14, pr
   - une caissière créée par son compte a aussi sa fiche employé (taux à compléter)
   - fiche sans accès caisse ; fiche avec accès : un code à 4 chiffres, remis une fois ; l'agence ne vaut que pour un intérimaire
   - donner puis retirer l'accès caisse ; une fiche désactivée perd son accès
-- **planning d'un match à venir, prévu puis réel**
+- **planning d'un événement à venir, prévu puis réel**
   - exemple validé du module 14 : Julie 104,40 € prévus ; Karim 159,60 € ; Sophie 130,00 €
   - tant que le réel n'est pas corrigé, il suit le prévu ; une correction garde son auteur et son heure
   - le taux est figé sur l'affectation : changer la fiche ne réécrit pas le planning
   - poste invalide, employé inactif, taux manquant : refusé ou signalé, jamais un coût inventé
 - **masse salariale et Résultats → Finances**
-  - masse salariale : par match, par statut, par rôle — la somme du planning, jamais un autre calcul
-  - le personnel du planning est déduit dans Résultats → Finances une fois le match joué
+  - masse salariale : par événement, par statut, par rôle — la somme du planning, jamais un autre calcul
+  - le personnel du planning est déduit dans Résultats → Finances une fois l'événement joué
 
 ### `packages/domain/src/planning.test.ts`
 

@@ -71,11 +71,11 @@
 ### `apps/api/test/export-comptable.test.ts`
 
 - **aperçu du mois**
-  - le mois du match est proposé ; le Z porte les ventes, la TVA par taux et l'écart du tiroir
+  - le mois de l'événement est proposé ; le Z porte les ventes, la TVA par taux et l'écart du tiroir
 - **fichiers**
   - écritures : CSV équilibré, provisoire tant que le mois n'est pas clôturé, téléchargement journalisé
-  - récapitulatif : une ligne par match et le total ; définitif une fois le mois clôturé
-  - un mois sans match clos n'a rien à exporter
+  - récapitulatif : une ligne par événement et le total ; définitif une fois le mois clôturé
+  - un mois sans événement clos n'a rien à exporter
 - **plan de comptes**
   - [F] un numéro de compte invalide est refusé
   - le plan réglé par le lieu sert à l'export ; le remettre à zéro revient aux valeurs proposées
@@ -87,11 +87,11 @@
   - un manquant de caisse : charge au débit, caisse au crédit ; un excédent : l'inverse
   - aucune ligne à zéro ; un montant négatif passe de l'autre côté, jamais en négatif
 - **journal du mois et fichiers**
-  - les pièces sont dans l'ordre des matchs ; débit total = crédit total
+  - les pièces sont dans l'ordre des événements ; débit total = crédit total
   - un Z dont la ventilation ne tombe pas juste est signalé, pas corrigé en silence
   - CSV des écritures : BOM, point-virgule, date JJ/MM/AAAA, virgule décimale, CRLF
   - un libellé qui contient un point-virgule ou un guillemet est protégé
-  - récapitulatif : une colonne HT et TVA par taux présent, une ligne par match, une ligne de total
+  - récapitulatif : une colonne HT et TVA par taux présent, une ligne par événement, une ligne de total
 - **plan de comptes**
   - un plan enregistré partiellement est complété par les valeurs par défaut
 

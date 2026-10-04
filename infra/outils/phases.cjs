@@ -36,6 +36,7 @@ const PHASES = [
   { n: 30, titre: "Fidélité à la caisse : code promo et points dans le ticket scellé", dossier: "§15.127", commits: ["87c46b8", "c3d3041"] },
   { n: 31, titre: "Suivi du développement et préparation de l'audit Codex", dossier: "§15.128", commits: ["0b59036", "2859233", "0c29f8f", "a23a7fb"] },
   { n: 32, titre: "Premier audit Codex et corrections", dossier: "§15.129", commits: ["4e289bd"] },
+  { n: 33, titre: "Caisse automatique selon la date, clôture par le directeur, « événement » partout", dossier: "§15.130", commits: ["d9720eb", "b6bb919"] },
 ];
 
 module.exports = { PHASES };

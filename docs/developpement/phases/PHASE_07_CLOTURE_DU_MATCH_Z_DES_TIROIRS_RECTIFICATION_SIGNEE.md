@@ -85,12 +85,12 @@ Demande de Rémi : *« la suite des Clôtures […] fait aussi »* (§15.99). So
   - tant qu'une caisse est ouverte, l'étape n'est pas faite et son tiroir ne se compte pas
   - caisses clôturées : l'étape ventes est faite ; la caisse carte n'a pas de tiroir
 - **étape 3 — espèces : comptage par coupure, Z définitif (module 7)**
-  - le match ne se clôt pas tant que le tiroir n'a pas son Z
+  - l'événement ne se clôt pas tant que le tiroir n'a pas son Z
   - écart au-delà de la tolérance (5,00 €) : motif obligatoire ; une coupure inconnue est refusée
   - avec motif, le Z est enregistré, attribué, et inscrit au journal technique qui le scelle
   - un second Z pour le même tiroir est refusé : on corrige par une rectification
   - rectification : motif et signature obligatoires ; elle s'ajoute, le Z d'origine reste inchangé
-  - étape 4 : le match se clôt ; ensuite, plus de Z tardif, mais une rectification reste possible
+  - étape 4 : l'événement se clôt ; ensuite, plus de Z tardif, mais une rectification reste possible
 - **tolérance réglable par le lieu**
   - 5,00 € par défaut ; modifiable, et la modification est journalisée
 - **[F] le Z est protégé par la base elle-même**

@@ -91,11 +91,11 @@ Demande de Rémi (§15.99). Sources relues avant d'écrire : module 4 (§14, tou
   - mise en place avant l'ouverture : la réserve se décrémente, l'auteur et l'heure sont gardés ; pas d'historique = pas de suggestion
   - pas de réassort avant l'ouverture ; après l'ouverture, plus de mise en place
   - exemple validé : départ 160, réassort 30, vendu 160 → restant 30 ; « − » ne dépasse pas le réassort
-  - la clôture du match exige le comptage des restes
+  - la clôture de l'événement exige le comptage des restes
   - compté 28 → écart −2, −3,84 € au CUMP ; sous 3 % du départ, pas de motif. Compté 20 → motif exigé
-  - [F] match clos : le comptage est figé par la base ; un mouvement ne se modifie ni ne se supprime
-- **match suivant : reste reporté, suggestion, inventaire réserve**
-  - le reste compté au match 1 devient le départ du match 2 ; suggestion = ventes moyennes − reste
+  - [F] événement clos : le comptage est figé par la base ; un mouvement ne se modifie ni ne se supprime
+- **événement suivant : reste reporté, suggestion, inventaire réserve**
+  - le reste compté à l'événement 1 devient le départ de l'événement 2 ; suggestion = ventes moyennes − reste
   - inventaire réserve : solde calculé 500 − 160 − 30 − 132 = 178, compté 170 → écart −8 ; le compté devient le point de départ
   - Résultats valorise au CUMP : le coût matière de la fiche est celui des livraisons
 

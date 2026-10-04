@@ -38,6 +38,7 @@
 | 30 | [Fidélité à la caisse : code promo et points dans le ticket scellé](#phase-30) | §15.127 | [`87c46b8`](https://github.com/Break-Eat-APP/flaix-expert/commit/87c46b8234d355b7db4e2dbdf6c328fa5574c301) [`c3d3041`](https://github.com/Break-Eat-APP/flaix-expert/commit/c3d3041ab4b8eb3b2031ccd4fd072c4291b02874) | livrée |
 | 31 | [Suivi du développement et préparation de l'audit Codex](#phase-31) | §15.128 | [`0b59036`](https://github.com/Break-Eat-APP/flaix-expert/commit/0b590362a71a8549b053dcfb0e1a6ff474fd3d5e) [`2859233`](https://github.com/Break-Eat-APP/flaix-expert/commit/2859233de0a1cd9bc6dd27b388e7f97fd32f575a) [`0c29f8f`](https://github.com/Break-Eat-APP/flaix-expert/commit/0c29f8f88e666c02e4f7e3a5a95cda100937c5bc) [`a23a7fb`](https://github.com/Break-Eat-APP/flaix-expert/commit/a23a7fb359ee3958deeb4b2d09c87f633f8f0006) | livrée |
 | 32 | [Premier audit Codex et corrections](#phase-32) | §15.129 | [`4e289bd`](https://github.com/Break-Eat-APP/flaix-expert/commit/4e289bdbfab09ac9ed5a682ac58ec08c393ee586) | livrée |
+| 33 | [Caisse automatique selon la date, clôture par le directeur, « événement » partout](#phase-33) | §15.130 | [`d9720eb`](https://github.com/Break-Eat-APP/flaix-expert/commit/d9720eba1f8ebaab55b147a4a3cb210b225f4b5f) [`b6bb919`](https://github.com/Break-Eat-APP/flaix-expert/commit/b6bb919a85b17c60f159741648473bf5a37f1ad2) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -1271,6 +1272,90 @@
 - **Autres** :
   - [`pnpm-lock.yaml`](../../pnpm-lock.yaml) — modifié
 
+<a id="phase-33"></a>
+## Phase 33 — Caisse automatique selon la date, clôture par le directeur, « événement » partout
+
+- **Dates** : 2026-10-04
+- **Décision et raisonnement** : dossier projet §15.130
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`d9720eb`](https://github.com/Break-Eat-APP/flaix-expert/commit/d9720eba1f8ebaab55b147a4a3cb210b225f4b5f) 2026-10-04 — « Événement » à la place de « match » dans tous les textes affichés (dossier §15.130)
+  - [`b6bb919`](https://github.com/Break-Eat-APP/flaix-expert/commit/b6bb919a85b17c60f159741648473bf5a37f1ad2) 2026-10-04 — Caisse automatique selon la date : ouverture seule le jour J avec le fond prévu, clôture par le directeur seul (dossier §15.130)
+- **Migrations (base)** :
+  - [`db/migrations/0025_caisse_automatique.sql`](../../db/migrations/0025_caisse_automatique.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/caisse-auto.ts`](../../packages/domain/src/caisse-auto.ts) — créé
+  - [`packages/domain/src/cloture-periode.ts`](../../packages/domain/src/cloture-periode.ts) — modifié
+  - [`packages/domain/src/couts-buvette.ts`](../../packages/domain/src/couts-buvette.ts) — modifié
+  - [`packages/domain/src/editeur.ts`](../../packages/domain/src/editeur.ts) — modifié
+  - [`packages/domain/src/export-comptable.ts`](../../packages/domain/src/export-comptable.ts) — modifié
+  - [`packages/domain/src/index.ts`](../../packages/domain/src/index.ts) — modifié
+  - [`packages/domain/src/journal-caisse.ts`](../../packages/domain/src/journal-caisse.ts) — modifié
+  - [`packages/domain/src/journal-technique.ts`](../../packages/domain/src/journal-technique.ts) — modifié
+  - [`packages/domain/src/modele.ts`](../../packages/domain/src/modele.ts) — modifié
+  - [`packages/domain/src/planning.ts`](../../packages/domain/src/planning.ts) — modifié
+  - [`packages/domain/src/resultats.ts`](../../packages/domain/src/resultats.ts) — modifié
+  - [`packages/domain/src/stock-ingredients.ts`](../../packages/domain/src/stock-ingredients.ts) — modifié
+  - [`packages/domain/src/stock.ts`](../../packages/domain/src/stock.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/caisse.ts`](../../apps/api/src/routes/caisse.ts) — modifié
+  - [`apps/api/src/routes/clotures.ts`](../../apps/api/src/routes/clotures.ts) — modifié
+  - [`apps/api/src/routes/couts-buvette.ts`](../../apps/api/src/routes/couts-buvette.ts) — modifié
+  - [`apps/api/src/routes/evenements.ts`](../../apps/api/src/routes/evenements.ts) — modifié
+  - [`apps/api/src/routes/export-comptable.ts`](../../apps/api/src/routes/export-comptable.ts) — modifié
+  - [`apps/api/src/routes/periodes.ts`](../../apps/api/src/routes/periodes.ts) — modifié
+  - [`apps/api/src/routes/planning.ts`](../../apps/api/src/routes/planning.ts) — modifié
+  - [`apps/api/src/routes/resultats.ts`](../../apps/api/src/routes/resultats.ts) — modifié
+  - [`apps/api/src/routes/stands.ts`](../../apps/api/src/routes/stands.ts) — modifié
+  - [`apps/api/src/routes/stock-ingredients.ts`](../../apps/api/src/routes/stock-ingredients.ts) — modifié
+  - [`apps/api/src/routes/stock.ts`](../../apps/api/src/routes/stock.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/caisse/EcranCaisse.test.tsx`](../../apps/web/src/pages/caisse/EcranCaisse.test.tsx) — créé
+  - [`apps/web/src/pages/caisse/EcranCaisse.tsx`](../../apps/web/src/pages/caisse/EcranCaisse.tsx) — modifié
+  - [`apps/web/src/pages/caisse/memoire.ts`](../../apps/web/src/pages/caisse/memoire.ts) — modifié
+  - [`apps/web/src/pages/caisse/MesCaisses.tsx`](../../apps/web/src/pages/caisse/MesCaisses.tsx) — modifié
+  - [`apps/web/src/pages/clotures/Clotures.tsx`](../../apps/web/src/pages/clotures/Clotures.tsx) — modifié
+  - [`apps/web/src/pages/clotures/ExportComptable.tsx`](../../apps/web/src/pages/clotures/ExportComptable.tsx) — modifié
+  - [`apps/web/src/pages/clotures/Periodes.tsx`](../../apps/web/src/pages/clotures/Periodes.tsx) — modifié
+  - [`apps/web/src/pages/direct/EnDirect.tsx`](../../apps/web/src/pages/direct/EnDirect.tsx) — modifié
+  - [`apps/web/src/pages/editeur/EspaceEditeur.tsx`](../../apps/web/src/pages/editeur/EspaceEditeur.tsx) — modifié
+  - [`apps/web/src/pages/equipe/Equipe.tsx`](../../apps/web/src/pages/equipe/Equipe.tsx) — modifié
+  - [`apps/web/src/pages/equipe/Planning.tsx`](../../apps/web/src/pages/equipe/Planning.tsx) — modifié
+  - [`apps/web/src/pages/parametres/CoutsBuvette.tsx`](../../apps/web/src/pages/parametres/CoutsBuvette.tsx) — modifié
+  - [`apps/web/src/pages/parametres/Formation.tsx`](../../apps/web/src/pages/parametres/Formation.tsx) — modifié
+  - [`apps/web/src/pages/parametres/Identite.tsx`](../../apps/web/src/pages/parametres/Identite.tsx) — modifié
+  - [`apps/web/src/pages/parametres/Parametres.tsx`](../../apps/web/src/pages/parametres/Parametres.tsx) — modifié
+  - [`apps/web/src/pages/parametres/Produits.tsx`](../../apps/web/src/pages/parametres/Produits.tsx) — modifié
+  - [`apps/web/src/pages/parametres/Saison.tsx`](../../apps/web/src/pages/parametres/Saison.tsx) — modifié
+  - [`apps/web/src/pages/parametres/StandsCaisses.tsx`](../../apps/web/src/pages/parametres/StandsCaisses.tsx) — modifié
+  - [`apps/web/src/pages/Resultats.tsx`](../../apps/web/src/pages/Resultats.tsx) — modifié
+  - [`apps/web/src/pages/resultats/graphiques.tsx`](../../apps/web/src/pages/resultats/graphiques.tsx) — modifié
+  - [`apps/web/src/pages/resultats/Tableaux.tsx`](../../apps/web/src/pages/resultats/Tableaux.tsx) — modifié
+  - [`apps/web/src/pages/stock/Stock.tsx`](../../apps/web/src/pages/stock/Stock.tsx) — modifié
+  - [`apps/web/src/pages/stock/StockIngredients.tsx`](../../apps/web/src/pages/stock/StockIngredients.tsx) — modifié
+- **Tests** :
+  - [`apps/api/test/caisse-auto.test.ts`](../../apps/api/test/caisse-auto.test.ts) — créé
+  - [`apps/api/test/caisse.test.ts`](../../apps/api/test/caisse.test.ts) — modifié
+  - [`apps/api/test/caissieres.test.ts`](../../apps/api/test/caissieres.test.ts) — modifié
+  - [`apps/api/test/clotures.test.ts`](../../apps/api/test/clotures.test.ts) — modifié
+  - [`apps/api/test/coffre.test.ts`](../../apps/api/test/coffre.test.ts) — modifié
+  - [`apps/api/test/conformite-base.test.ts`](../../apps/api/test/conformite-base.test.ts) — modifié
+  - [`apps/api/test/equipe.test.ts`](../../apps/api/test/equipe.test.ts) — modifié
+  - [`apps/api/test/export-comptable.test.ts`](../../apps/api/test/export-comptable.test.ts) — modifié
+  - [`apps/api/test/formation.test.ts`](../../apps/api/test/formation.test.ts) — modifié
+  - [`apps/api/test/periodes.test.ts`](../../apps/api/test/periodes.test.ts) — modifié
+  - [`apps/api/test/resultats.test.ts`](../../apps/api/test/resultats.test.ts) — modifié
+  - [`apps/api/test/stock-ingredients.test.ts`](../../apps/api/test/stock-ingredients.test.ts) — modifié
+  - [`apps/api/test/stock.test.ts`](../../apps/api/test/stock.test.ts) — modifié
+  - [`apps/web/src/pages/caisse/memoire.test.ts`](../../apps/web/src/pages/caisse/memoire.test.ts) — modifié
+  - [`packages/domain/src/caisse-auto.test.ts`](../../packages/domain/src/caisse-auto.test.ts) — créé
+  - [`packages/domain/src/cloture-periode.test.ts`](../../packages/domain/src/cloture-periode.test.ts) — modifié
+  - [`packages/domain/src/export-comptable.test.ts`](../../packages/domain/src/export-comptable.test.ts) — modifié
+- **Documentation** :
+  - [`docs/avancement.md`](../../docs/avancement.md) — modifié
+  - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
+- [`1423401`](https://github.com/Break-Eat-APP/flaix-expert/commit/14234013f2ca514de339db098259adcb48f11285) 2026-10-04 — Journal : phase 32 (audit Codex et corrections)

@@ -74,11 +74,11 @@ Décision de Rémi (§15.124, point 6), premier cas : la bière pression. Migrat
 - **match 1 : la bière pression**
   - mise en place de 30 L au stand avant l'ouverture : la réserve descend à 60 L
   - 52 pintes vendues : 26 L consommés selon la recette, restant attendu 4 L
-  - la clôture du match exige le comptage du fût
-  - fût vide en fin de match : −4 L, au-delà de 3 % du départ → motif exigé ; valorisé au prix moyen
-  - match clos : la consommation est figée, une recette changée ensuite ne réécrit pas le passé
+  - la clôture de l'événement exige le comptage du fût
+  - fût vide en fin d'événement : −4 L, au-delà de 3 % du départ → motif exigé ; valorisé au prix moyen
+  - événement clos : la consommation est figée, une recette changée ensuite ne réécrit pas le passé
   - [F] la base refuse de modifier ou supprimer un mouvement ou une consommation figée
-- **match suivant et inventaire**
+- **événement suivant et inventaire**
   - reste 0 L reporté ; suggestion = consommation moyenne (26 L) − reste
   - inventaire de la réserve : calculé 90 − 30 − 26 = 34 L, compté 33,5 L → écart −0,5 L
 

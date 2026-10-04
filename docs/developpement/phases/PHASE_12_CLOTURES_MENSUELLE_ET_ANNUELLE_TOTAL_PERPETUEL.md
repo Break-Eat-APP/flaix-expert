@@ -75,13 +75,13 @@ Suite des Clôtures demandée par Rémi (§15.99). Sources relues : module 2, on
 
 - **premier mois de l'exercice : à régler par le directeur (§15.108)**
   - vide sur un lieu neuf : aucun exercice proposé, clôture d'exercice refusée ; puis réglé à janvier
-- **C1 — Z du match (clôture journalière)**
-  - à la clôture du match : totaux figés, TVA par taux exacte, perpétuel avancé, empreinte produite
+- **C1 — Z de l'événement (clôture journalière)**
+  - à la clôture de l'événement : totaux figés, TVA par taux exacte, perpétuel avancé, empreinte produite
 - **clôture mensuelle**
-  - bloquée tant qu'un match du mois n'est pas clos
-  - un mois ne se clôt pas avant le précédent qui a des matchs ; le mois en cours n'est jamais clôturable
-  - C3 / C4 — grand total du mois = somme de ses matchs ; perpétuel après = avant + grand total
-  - un mois clôturé ne reçoit plus de match, ni créé, ni déplacé, ni ouvert
+  - bloquée tant qu'un événement du mois n'est pas clos
+  - un mois ne se clôt pas avant le précédent qui a des événements ; le mois en cours n'est jamais clôturable
+  - C3 / C4 — grand total du mois = somme de ses événements ; perpétuel après = avant + grand total
+  - un mois clôturé ne reçoit plus d'événement, ni créé, ni déplacé, ni ouvert
 - **clôture de l'exercice**
   - C2 / C6 — exercice 2025 : somme de ses mois, perpétuel chaîné ; l'exercice en cours n'est pas terminé
   - le premier mois de l'exercice ne se change plus une fois un exercice clôturé
@@ -91,7 +91,7 @@ Suite des Clôtures demandée par Rémi (§15.99). Sources relues : module 2, on
 ### `packages/domain/src/cloture-periode.test.ts`
 
 - **clôtures de période (§15.107)**
-  - le mois d'un match se lit à l'heure de Paris
+  - le mois d'un événement se lit à l'heure de Paris
   - bornes et nom d'un mois, années bissextiles comprises
   - un mois n'est terminé qu'à partir du mois suivant, à Paris
   - exercice civil par défaut ; exercice de juillet à juin

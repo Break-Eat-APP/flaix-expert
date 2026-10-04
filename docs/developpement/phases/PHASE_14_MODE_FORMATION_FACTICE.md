@@ -89,7 +89,7 @@
 - **le directeur entre en formation**
   - B3 — la session est marquée formation, dans un lieu à part où la configuration est recopiée
   - [F] la configuration ne se modifie pas en formation
-  - B4 [F] — ventes, clôture de caisse et Z du match en formation : aucun effet sur le vrai lieu
+  - B4 [F] — ventes, clôture de caisse et Z de l'événement en formation : aucun effet sur le vrai lieu
   - entrées et sorties sont inscrites au journal technique du vrai lieu
   - la connexion par e-mail mène toujours au vrai lieu, jamais au lieu de formation
   - à la rentrée : même lieu de formation, entraînements gardés, configuration remise à jour

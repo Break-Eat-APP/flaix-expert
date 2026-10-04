@@ -37,3 +37,4 @@
 | 30 | [Fidélité à la caisse : code promo et points dans le ticket scellé](PHASE_30_FIDELITE_A_LA_CAISSE_CODE_PROMO_ET_POINTS_DANS_LE_TICKET_SCELLE.md) · [Word](word/PHASE_30_FIDELITE_A_LA_CAISSE_CODE_PROMO_ET_POINTS_DANS_LE_TICKET_SCELLE.docx) | §15.127 | livrée |
 | 31 | [Suivi du développement et préparation de l'audit Codex](PHASE_31_SUIVI_DU_DEVELOPPEMENT_ET_PREPARATION_DE_LAUDIT_CODEX.md) · [Word](word/PHASE_31_SUIVI_DU_DEVELOPPEMENT_ET_PREPARATION_DE_LAUDIT_CODEX.docx) | §15.128 | livrée |
 | 32 | [Premier audit Codex et corrections](PHASE_32_PREMIER_AUDIT_CODEX_ET_CORRECTIONS.md) · [Word](word/PHASE_32_PREMIER_AUDIT_CODEX_ET_CORRECTIONS.docx) | §15.129 | livrée |
+| 33 | [Caisse automatique selon la date, clôture par le directeur, « événement » partout](PHASE_33_CAISSE_AUTOMATIQUE_SELON_LA_DATE_CLOTURE_PAR_LE_DIRECTEUR_EVENEMENT_PA.md) · [Word](word/PHASE_33_CAISSE_AUTOMATIQUE_SELON_LA_DATE_CLOTURE_PAR_LE_DIRECTEUR_EVENEMENT_PA.docx) | §15.130 | livrée |

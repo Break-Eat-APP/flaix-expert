@@ -77,11 +77,11 @@
 
 ### `apps/api/test/coffre.test.ts`
 
-- **remontées au coffre pendant le match**
+- **remontées au coffre pendant l'événement**
   - une remontée se déduit de l'attendu du tiroir ; une erreur s'annule avec motif, sans être effacée
   - le coffre ne se compte pas tant qu'une caisse est ouverte
   - Z du tiroir : les remontées sont inscrites avec lui ; plus aucune remontée ensuite
-  - le match ne se clôt pas tant que le coffre n'est pas compté
+  - l'événement ne se clôt pas tant que le coffre n'est pas compté
   - Z du coffre : attendu = total des remontées ; un second Z est refusé ; la rectification s'ajoute
   - [F] remontées et Z du coffre en écriture seule, même pour le propriétaire
 

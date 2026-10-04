@@ -72,12 +72,12 @@ Demande de Rémi (§15.99) : construire les tableaux de Résultats. Référence 
 
 ### `apps/api/test/resultats.test.ts`
 
-- **Résultats — le dernier match, comparé au précédent**
-  - par défaut : le match le plus récent, comparé au précédent qui a des ventes
+- **Résultats — le dernier événement, comparé au précédent**
+  - par défaut : l'événement le plus récent, comparé au précédent qui a des ventes
   - chiffres clés : les annulations sont déduites, jamais comptées comme des ventes
   - coût manquant : pas de marge brute tant qu'un produit vendu n'a pas de coût, et l'alerte le dit
   - une fois le coût saisi, la marge brute est calculée
-  - le match précédent se choisit ; ses chiffres et son CA par spectateur
+  - l'événement précédent se choisit ; ses chiffres et son CA par spectateur
   - CA par heure : la somme des heures égale le CA
 
 ### `packages/domain/src/resultats.test.ts`

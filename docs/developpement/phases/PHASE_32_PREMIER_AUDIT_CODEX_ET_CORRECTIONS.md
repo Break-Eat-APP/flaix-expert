@@ -116,6 +116,12 @@ Rémi a fait auditer le code et les documents par Codex (`docs/audits/AUDIT_2026
   - une vente faite pendant l'envoi part au tour suivant, sans doublon
   - deux envois demandés en même temps : un seul part
   - 250 tickets après une longue coupure : envoyés par lots de 200, dans l'ordre
+- **nouvelles de la tablette au serveur (caisse automatique, §15.130)**
+  - caisse ouverte : la tablette dit son dernier ticket et ce qui attend ; pas de nouvelles redonnées avant 30 s si rien n'a bougé
+  - le directeur a clôturé la caisse, tout était envoyé : la tablette se libère pour le prochain événement
+  - [F] clôture forcée avec 2 tickets pas envoyés : la caisse se libère, les 2 tickets restent sur la tablette, mis de côté
+  - [F] mémoire pleine au moment de mettre les tickets de côté : la caisse reste affichée, avec ses tickets
+  - réseau coupé : rien ne change sur la tablette
 
 ## 5. Pour reprendre ou vérifier cette phase
 

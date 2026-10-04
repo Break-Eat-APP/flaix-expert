@@ -5,6 +5,129 @@
 
 ## 2026-10-04
 
+### [`b6bb919`](https://github.com/Break-Eat-APP/flaix-expert/commit/b6bb919a85b17c60f159741648473bf5a37f1ad2) — Caisse automatique selon la date : ouverture seule le jour J avec le fond prévu, clôture par le directeur seul (dossier §15.130) *(phase 33)*
+
+- modifié : `apps/api/src/routes/caisse.ts`
+- modifié : `apps/api/src/routes/stands.ts`
+- créé : `apps/api/test/caisse-auto.test.ts`
+- modifié : `apps/api/test/caisse.test.ts`
+- modifié : `apps/api/test/caissieres.test.ts`
+- modifié : `apps/web/src/pages/Resultats.tsx`
+- créé : `apps/web/src/pages/caisse/EcranCaisse.test.tsx`
+- modifié : `apps/web/src/pages/caisse/EcranCaisse.tsx`
+- modifié : `apps/web/src/pages/caisse/MesCaisses.tsx`
+- modifié : `apps/web/src/pages/caisse/memoire.test.ts`
+- modifié : `apps/web/src/pages/caisse/memoire.ts`
+- modifié : `apps/web/src/pages/parametres/StandsCaisses.tsx`
+- créé : `db/migrations/0025_caisse_automatique.sql`
+- modifié : `docs/avancement.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- créé : `packages/domain/src/caisse-auto.test.ts`
+- créé : `packages/domain/src/caisse-auto.ts`
+- modifié : `packages/domain/src/index.ts`
+- modifié : `packages/domain/src/modele.ts`
+
+### [`d9720eb`](https://github.com/Break-Eat-APP/flaix-expert/commit/d9720eba1f8ebaab55b147a4a3cb210b225f4b5f) — « Événement » à la place de « match » dans tous les textes affichés (dossier §15.130) *(phase 33)*
+
+- modifié : `apps/api/src/routes/caisse.ts`
+- modifié : `apps/api/src/routes/clotures.ts`
+- modifié : `apps/api/src/routes/couts-buvette.ts`
+- modifié : `apps/api/src/routes/evenements.ts`
+- modifié : `apps/api/src/routes/export-comptable.ts`
+- modifié : `apps/api/src/routes/periodes.ts`
+- modifié : `apps/api/src/routes/planning.ts`
+- modifié : `apps/api/src/routes/resultats.ts`
+- modifié : `apps/api/src/routes/stock-ingredients.ts`
+- modifié : `apps/api/src/routes/stock.ts`
+- modifié : `apps/api/test/caisse.test.ts`
+- modifié : `apps/api/test/caissieres.test.ts`
+- modifié : `apps/api/test/clotures.test.ts`
+- modifié : `apps/api/test/coffre.test.ts`
+- modifié : `apps/api/test/conformite-base.test.ts`
+- modifié : `apps/api/test/equipe.test.ts`
+- modifié : `apps/api/test/export-comptable.test.ts`
+- modifié : `apps/api/test/formation.test.ts`
+- modifié : `apps/api/test/periodes.test.ts`
+- modifié : `apps/api/test/resultats.test.ts`
+- modifié : `apps/api/test/stock-ingredients.test.ts`
+- modifié : `apps/api/test/stock.test.ts`
+- modifié : `apps/web/src/pages/Resultats.tsx`
+- modifié : `apps/web/src/pages/caisse/EcranCaisse.tsx`
+- modifié : `apps/web/src/pages/caisse/MesCaisses.tsx`
+- modifié : `apps/web/src/pages/clotures/Clotures.tsx`
+- modifié : `apps/web/src/pages/clotures/ExportComptable.tsx`
+- modifié : `apps/web/src/pages/clotures/Periodes.tsx`
+- modifié : `apps/web/src/pages/direct/EnDirect.tsx`
+- modifié : `apps/web/src/pages/editeur/EspaceEditeur.tsx`
+- modifié : `apps/web/src/pages/equipe/Equipe.tsx`
+- modifié : `apps/web/src/pages/equipe/Planning.tsx`
+- modifié : `apps/web/src/pages/parametres/CoutsBuvette.tsx`
+- modifié : `apps/web/src/pages/parametres/Formation.tsx`
+- modifié : `apps/web/src/pages/parametres/Identite.tsx`
+- modifié : `apps/web/src/pages/parametres/Parametres.tsx`
+- modifié : `apps/web/src/pages/parametres/Produits.tsx`
+- modifié : `apps/web/src/pages/parametres/Saison.tsx`
+- modifié : `apps/web/src/pages/resultats/Tableaux.tsx`
+- modifié : `apps/web/src/pages/resultats/graphiques.tsx`
+- modifié : `apps/web/src/pages/stock/Stock.tsx`
+- modifié : `apps/web/src/pages/stock/StockIngredients.tsx`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `packages/domain/src/cloture-periode.test.ts`
+- modifié : `packages/domain/src/cloture-periode.ts`
+- modifié : `packages/domain/src/couts-buvette.ts`
+- modifié : `packages/domain/src/editeur.ts`
+- modifié : `packages/domain/src/export-comptable.test.ts`
+- modifié : `packages/domain/src/export-comptable.ts`
+- modifié : `packages/domain/src/journal-caisse.ts`
+- modifié : `packages/domain/src/journal-technique.ts`
+- modifié : `packages/domain/src/modele.ts`
+- modifié : `packages/domain/src/planning.ts`
+- modifié : `packages/domain/src/resultats.ts`
+- modifié : `packages/domain/src/stock-ingredients.ts`
+- modifié : `packages/domain/src/stock.ts`
+
+### [`1423401`](https://github.com/Break-Eat-APP/flaix-expert/commit/14234013f2ca514de339db098259adcb48f11285) — Journal : phase 32 (audit Codex et corrections)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- créé : `docs/developpement/phases/PHASE_32_PREMIER_AUDIT_CODEX_ET_CORRECTIONS.md`
+- modifié : `docs/developpement/phases/README.md`
+- modifié : `docs/developpement/phases/word/PHASE_00_SOCLE_DE_PRODUCTION_ET_CONFIGURATION_DUN_LIEU_VIDE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_01_MATCHS_CAISSE_MES_CAISSES_JOURNAL_DES_TICKETS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_02_RETOUR_DE_DEMONSTRATION_ORGANISATION_EN_6_ENTREES_MAQUETTES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_03_VENTE_SANS_RESEAU_LA_TABLETTE_SCELLE_LE_SERVEUR_VERIFIE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_04_SERVEUR_DE_TEST_OVH.docx`
+- modifié : `docs/developpement/phases/word/PHASE_05_COMPTES_DES_CAISSIERES_ET_TABLETTES_ENREGISTREES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_06_TICKET_CLIENT_SUR_DEMANDE_ET_DUPLICATA.docx`
+- modifié : `docs/developpement/phases/word/PHASE_07_CLOTURE_DU_MATCH_Z_DES_TIROIRS_RECTIFICATION_SIGNEE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_08_RESULTATS_SUR_LES_VRAIES_VENTES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_09_EQUIPE_FICHES_PLANNING_MASSE_SALARIALE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_10_STOCK_RESERVE_LIVRAISONS_AU_CUMP_MISE_EN_PLACE_COMPTAGE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_11_REMONTEES_AU_COFFRE_ET_Z_DU_COFFRE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_12_CLOTURES_MENSUELLE_ET_ANNUELLE_TOTAL_PERPETUEL.docx`
+- modifié : `docs/developpement/phases/word/PHASE_13_EXERCICE_PAR_LIEU_SAUVEGARDES_CHIFFREES_HORS_SERVEUR.docx`
+- modifié : `docs/developpement/phases/word/PHASE_14_MODE_FORMATION_FACTICE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_15_EXPORT_POUR_LEXPERT_COMPTABLE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_16_CLICK_COLLECT_MOTEUR_DE_PRIX_ET_CATALOGUE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_17_VUE_TELEPHONE_EN_DIRECT.docx`
+- modifié : `docs/developpement/phases/word/PHASE_18_COUTS_PAR_BUVETTE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_19_FIDELITE_PARTIE_GESTION.docx`
+- modifié : `docs/developpement/phases/word/PHASE_20_FACTURES_FOURNISSEURS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_21_BACK_OFFICE_EDITEUR_NIVEAU_1.docx`
+- modifié : `docs/developpement/phases/word/PHASE_22_DECISIONS_DU_2026_10_01_ET_RECETTES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_23_OPTIONS_PAR_LIEU_APPLICATION_INSTALLABLE_LOGO.docx`
+- modifié : `docs/developpement/phases/word/PHASE_24_ADRESSE_DU_SITE_FLAIXEXPERT_FLAIXLABS_COM.docx`
+- modifié : `docs/developpement/phases/word/PHASE_25_MARQUE_FLAIX_EXPERT_LIEUX_ET_DIRECTEURS_DEPUIS_LE_BACK_OFFICE_MOTS_DE_.docx`
+- modifié : `docs/developpement/phases/word/PHASE_26_CLICK_COLLECT_NEUTRE_EXPORT_COMPTABLE_DANS_LA_BASE_ASSIETTE_DE_LA_COMM.docx`
+- modifié : `docs/developpement/phases/word/PHASE_27_STOCK_DES_INGREDIENTS_AU_CHOIX_BIERE_PRESSION.docx`
+- modifié : `docs/developpement/phases/word/PHASE_28_LOGO_OFFICIEL_V2.docx`
+- modifié : `docs/developpement/phases/word/PHASE_29_DOSSIER_DE_CONFORMITE_V0_1.docx`
+- modifié : `docs/developpement/phases/word/PHASE_30_FIDELITE_A_LA_CAISSE_CODE_PROMO_ET_POINTS_DANS_LE_TICKET_SCELLE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_31_SUIVI_DU_DEVELOPPEMENT_ET_PREPARATION_DE_LAUDIT_CODEX.docx`
+- créé : `docs/developpement/phases/word/PHASE_32_PREMIER_AUDIT_CODEX_ET_CORRECTIONS.docx`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`4e289bd`](https://github.com/Break-Eat-APP/flaix-expert/commit/4e289bdbfab09ac9ed5a682ac58ec08c393ee586) — Audit Codex : P1 réservation de fidélité vérifiée avant d'être consommée ; option équipe, tests des écrans, documents tout ou rien, chargement allégé *(phase 32)*
 
 - modifié : `AGENTS.md`
