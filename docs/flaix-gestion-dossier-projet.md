@@ -4609,3 +4609,16 @@ Rémi a partagé une note produit rédigée avec ChatGPT (`FLAIX_EXPERT_PRODUCT_
 - **Écran** : entrée « Assistant » du menu (si l'option est active), questions suggérées, sources lues, nombre de questions restantes ; guide serveur complété (création de la clé par Rémi).
 - **À valider** : contrat de traitement des données avec Mistral (RGPD) ; durée de conservation des échanges (à fixer avec Rémi).
 - **Tests** : moteur 3, serveur 7 (option fermée par défaut, clé absente, lecture par outil et source citée, chiffre non retrouvé, limite du jour, reformulation fidèle retenue, reformulation inventée refusée), écrans 3 (dont le menu).
+
+### 15.137 Un agent, des moteurs ; Mistral interchangeable, secours OVHcloud (2026-10-04)
+
+**Questions de Rémi** (sa note `FLAIX_AI_RUNTIME_AGENTS_ARCHITECTURE.md`) : dépendance à Mistral ? ses propres agents ? combien d'agents ? Puis son schéma : **« 1 agent + plusieurs moteurs spécialisés »** (Financial, Forecast, Revenue, Stock, Staffing, Operations, Simulation, Benchmark, Alert).
+
+**Décisions** :
+- **Un seul agent** (l'Assistant) qui comprend, choisit ses lectures et rédige ; **des moteurs déterministes** qui calculent (jamais l'IA pour un chiffre). Un deuxième agent seulement s'il faut des droits différents (créer des tâches) ou si un agent a trop d'outils.
+- **Mistral est un fournisseur, pas une dépendance** : passerelle unique (`ia/fournisseur.ts`), interface « chat/completions » avec outils commune à Mistral et à OVHcloud AI Endpoints ; l'agent (outils, consignes, contrôle des chiffres, trace) appartient à FlaiX.
+- **Secours OVHcloud AI Endpoints** (choix de Rémi) : hébergé en Europe, même compte OVH que le serveur, modèle Mistral Small 3.2 ; bascule automatique si Mistral ne répond pas. Jeton posé par Rémi avec `sudo flaix-admin cle-ovh-ia`, qui vérifie aussi que les outils sont acceptés (les sources consultées divergeaient sur ce point).
+- **Pas de modèle installé chez nous** pour l'instant (pas de carte graphique sur le serveur ; coût sans rapport avec l'usage).
+- **Ordre des moteurs** : Revenue Engine (« où je perds de l'argent ») d'abord, choix de Rémi.
+
+**Tests** : passerelle 5 (Mistral répond, secours qui prend le relais, tous en panne, même interface pour les deux, erreur du fournisseur).

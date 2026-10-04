@@ -82,6 +82,8 @@ WorkingDirectory=/srv/flaix/app/apps/api
 EnvironmentFile=/etc/flaix/flaix.env
 # Clé Mistral de l'assistant IA (§15.136), posée par « flaix-admin cle-mistral » ; facultative.
 EnvironmentFile=-/etc/flaix/mistral.env
+# Secours OVHcloud AI Endpoints (§15.137), posé par « flaix-admin cle-ovh-ia » ; facultatif.
+EnvironmentFile=-/etc/flaix/ovh-ia.env
 Environment=PATH=/opt/node/bin:/usr/bin:/bin
 ExecStart=/srv/flaix/app/apps/api/node_modules/.bin/tsx src/index.ts
 Restart=on-failure

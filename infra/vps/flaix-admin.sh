@@ -6,6 +6,7 @@
 #   flaix-admin sauvegarde-externe    règle la copie chiffrée des sauvegardes chez OVHcloud (dossier §15.108)
 #   flaix-admin essai-restauration    restaure la dernière copie OVH dans une base temporaire et la compare
 #   flaix-admin cle-mistral           règle (ou retire) la clé de l'API Mistral de l'assistant IA (dossier §15.136)
+#   flaix-admin cle-ovh-ia            règle (ou retire) le secours OVHcloud AI Endpoints de l'assistant (dossier §15.137)
 # Mots de passe, clés et codes s'affichent une seule fois, dans cette fenêtre seulement.
 set -euo pipefail
 
@@ -157,8 +158,40 @@ ENV
     echo "Clé vérifiée et enregistrée. L'assistant est branché ; active l'option « Assistant IA » du lieu dans le back-office."
     ;;
 
+  cle-ovh-ia)
+    # Secours de l'assistant si Mistral ne répond pas : OVHcloud AI Endpoints (dossier §15.137).
+    echo "Jeton d'accès OVHcloud AI Endpoints (secours de l'assistant IA)."
+    echo "Il se crée dans l'espace OVHcloud : Public Cloud > AI Endpoints > API keys."
+    echo
+    read -r -s -p "Jeton OVHcloud AI Endpoints (il ne s'affiche pas ; vide = retirer le secours) : " JETON
+    echo
+    ENV_OVH_IA=/etc/flaix/ovh-ia.env
+    if [ -z "$JETON" ]; then
+      rm -f "$ENV_OVH_IA"
+      systemctl restart flaix-api
+      echo "Secours retiré."
+      exit 0
+    fi
+    [[ "$JETON" =~ ^[A-Za-z0-9._=-]{20,2000}$ ]] || { unset JETON; echo "Ce jeton n'a pas la bonne forme : rien n'est enregistré."; exit 1; }
+    echo "Vérification auprès d'OVHcloud (une question avec un outil, comme l'assistant)…"
+    CORPS='{"model":"Mistral-Small-3.2-24B-Instruct-2506","max_tokens":20,"messages":[{"role":"user","content":"Bonjour"}],"tools":[{"type":"function","function":{"name":"essai","description":"Outil d essai","parameters":{"type":"object","properties":{}}}}]}'
+    # Le jeton passe par l'entrée standard de curl : il n'apparaît jamais dans la liste des processus.
+    CODE="$(printf 'Authorization: Bearer %s\n' "$JETON" | curl -s -o /dev/null -w '%{http_code}' -m 30 -H @- -H 'Content-Type: application/json' -d "$CORPS" https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions || true)"
+    if [ "$CODE" != "200" ]; then
+      unset JETON
+      echo "OVHcloud refuse ce jeton ou les outils (réponse ${CODE:-aucune}) : vérifie-le, puis recommence. Rien n'est enregistré."
+      exit 1
+    fi
+    umask 027
+    printf 'OVH_AI_ENDPOINTS_ACCESS_TOKEN=%s\n' "$JETON" > "$ENV_OVH_IA"
+    unset JETON
+    chown root:flaix "$ENV_OVH_IA" && chmod 640 "$ENV_OVH_IA"
+    systemctl restart flaix-api
+    echo "Jeton vérifié et enregistré : si Mistral ne répond pas, l'assistant passe par OVHcloud."
+    ;;
+
   *)
-    echo "Usage : flaix-admin creer-lieu | nouveau-mot-de-passe | creer-editeur | sauvegarde-externe | essai-restauration | cle-mistral"
+    echo "Usage : flaix-admin creer-lieu | nouveau-mot-de-passe | creer-editeur | sauvegarde-externe | essai-restauration | cle-mistral | cle-ovh-ia"
     exit 1
     ;;
 esac

@@ -46,4 +46,7 @@ export const config = {
    */
   mistralCle: process.env.MISTRAL_API_KEY || null,
   mistralModele: process.env.MISTRAL_MODELE || "mistral-medium-latest",
+  /** Secours si Mistral ne répond pas (§15.137) : OVHcloud AI Endpoints, réglé avec `sudo flaix-admin cle-ovh-ia`. */
+  ovhIaJeton: process.env.OVH_AI_ENDPOINTS_ACCESS_TOKEN || null,
+  ovhIaModele: process.env.OVH_AI_MODELE || "Mistral-Small-3.2-24B-Instruct-2506",
 } as const;

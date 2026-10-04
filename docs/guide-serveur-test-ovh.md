@@ -99,6 +99,11 @@ Pourquoi : l'assistant « pose ta question » et le brief de fin de soirée refo
 3. Le serveur la vérifie auprès de Mistral, l'enregistre et redémarre l'application. Message attendu : « Clé vérifiée et enregistrée ».
 4. Pour la retirer : relancer la même commande et valider sans rien coller.
 
+**Secours si Mistral ne répond pas (recommandé, environ 5 minutes)** : OVHcloud AI Endpoints, hébergé en Europe, avec ton compte OVH existant.
+1. Espace OVHcloud → **Public Cloud** → **AI Endpoints** → **API keys** → créer un jeton (garde la page ouverte ; ne me l'envoie pas).
+2. Sur le serveur : `sudo flaix-admin cle-ovh-ia`, puis coller le jeton. Le serveur vérifie qu'OVH répond et accepte les outils de l'assistant, puis l'enregistre.
+3. Désormais, si Mistral est en panne ou saturé, l'assistant passe par OVH (modèle Mistral Small hébergé par OVH) ; l'écran indique quel modèle a répondu.
+
 **3. L'activer pour un lieu** : back-office (`/editeur`) → le lieu → option **« Assistant IA »** (désactivée par défaut, parce que chaque question coûte). L'entrée « Assistant » apparaît alors dans le menu du directeur, et le brief de fin de soirée est reformulé par Mistral — seulement si la reformulation ne change aucun chiffre.
 
 ## À retenir

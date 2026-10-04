@@ -1,6 +1,6 @@
 # Avancement — reprise après coupure
 
-Mis à jour le 2026-10-04 (caisse automatique, rapport de soirée, cibles de marge et gestion financière). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.136.
+Mis à jour le 2026-10-04 (caisse automatique, rapport de soirée, cibles de marge et gestion financière). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.137.
 
 ## Ordre de construction (dossier §15.99)
 
