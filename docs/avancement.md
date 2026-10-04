@@ -32,22 +32,19 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 | 14 Masse salariale | Équipe (fiches, planning, masse salariale, accès caisse) | — |
 | 15 Configuration du lieu / produits | Paramètres (lieu, saison, stands & caisses, produits & prix) | — |
 
-**Repris en partie**
+**Repris en partie — état au 2026-10-04**
 
 | Prototype | Déjà dans le logiciel | Manque |
 |---|---|---|
-| 5 Marges & ratios | Résultats → marge produit par produit (coût matière CUMP du Stock) | cibles de marge par catégorie et par produit (§15.78) |
-| 6 Optimisation | Résultats → « Pistes pour le prochain match » | croisement volume × marge complet, écarts entre stands, coût des ruptures, actions classées par impact |
-| 9 Reporting de soirée | les chiffres sont dans Résultats | rapport figé du match, imprimable, envoyé par e-mail à la clôture |
-| 11 Gestion financière | Résultats → TVA collectée, moyens de paiement, personnel | dépenses catégorisées, commission Click & Collect, cascade marge brute → nette, cible de marge nette de la soirée (écran « Configuration cible & marge ») |
-| 16 Conformité / Profil & documentation | journal technique, vérification des chaînes, clôtures scellées | attestation, registre des versions, connexions par caisse, archive annuelle en format ouvert, accès vérificateur |
-| 18 Centre d'alertes | Résultats → « À surveiller » | le centre et ses 6 alertes (dépend des cibles de marge et des prix fournisseurs) |
+| 5 Marges & ratios | marge produit par produit ; **cibles par catégorie et par produit, alerte dès la saisie d'un prix** (§15.132) | comparaison fournisseurs au prix unitaire et alerte de sur-conditionnement |
+| 6 Optimisation | « Pistes pour le prochain événement » | croisement volume × marge complet, écarts entre stands, coût des ruptures, actions classées par impact → **Revenue Engine** (prochain) |
+| 9 Reporting de soirée | **rapport figé à la clôture, imprimable/PDF** (§15.131) ; **brief sur le téléphone** (§15.135) | envoi par e-mail (service d'e-mails Brevo à brancher) |
+| 11 Gestion financière | **cascade jusqu'à la marge nette, dépenses en € ou en %, cible de la soirée, bilan sur une période** (§15.132, §15.133) | commission et frais du Click & Collect (attendent l'import des ventes C&C) |
+| 16 Conformité | journal technique, vérification des chaînes, clôtures scellées ; dossier v0.1 | attestation, registre des versions, connexions par caisse, archive annuelle, accès vérificateur (**à voir avec Rémi**) |
+| 18 Centre d'alertes | « À surveiller » ; marge sous la cible ; brief de fin de soirée | le centre lui-même, hausse d'un prix fournisseur, écart à la mercuriale, rupture en direct |
+| 4 Stock | mise en place, comptages, réserve, ingrédients au poids | alerte de rupture **en direct**, poussée sur le téléphone |
 
-**Pas encore commencé**
-
-| Travail | Remarque |
-|---|---|
-| Alerte de rupture poussée sur téléphone | suppose l'envoi de notifications |
+**Reste à construire (état au 2026-10-04)** : Revenue Engine « où je perds de l'argent » (choisi par Rémi) ; prévision du prochain événement ; centre d'alertes et rupture en direct ; comparaison fournisseurs ; copie de configuration entre lieux (Spartiates) ; conformité (avec Rémi) ; facture FlaiX Expert au lieu (prix plus tard) ; import des ventes C&C ; e-mails (Brevo : rapport, rectifications, campagnes) ; wallet (comptes Apple/Google de Rémi) ; back-office niveau 2 ; passage en production. **Attend Rémi** : clé Mistral et jeton OVH (`sudo flaix-admin cle-mistral`, `cle-ovh-ia`), option « Assistant IA » des Spartiates, notifications à activer sur son téléphone, stockage OVH des sauvegardes.
 
 **Plus tard (décidé par Rémi)** : 19 Fidélité, 20 Wallet & campagnes, Facturation (facture FlaiX Expert, rapprochement fournisseur), 17 Back-office éditeur, assistant IA, recettes et matières premières.
 
