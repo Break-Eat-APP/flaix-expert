@@ -37,6 +37,7 @@
 | 29 | [Dossier de conformité v0.1](#phase-29) | §15.126 | [`f75e8a7`](https://github.com/Break-Eat-APP/flaix-expert/commit/f75e8a722681b183641c02e16efd38a6ac4b38ff) [`d26e10e`](https://github.com/Break-Eat-APP/flaix-expert/commit/d26e10ef12863773b521852e0d84a9ffd2415a1d) | livrée |
 | 30 | [Fidélité à la caisse : code promo et points dans le ticket scellé](#phase-30) | §15.127 | [`87c46b8`](https://github.com/Break-Eat-APP/flaix-expert/commit/87c46b8234d355b7db4e2dbdf6c328fa5574c301) [`c3d3041`](https://github.com/Break-Eat-APP/flaix-expert/commit/c3d3041ab4b8eb3b2031ccd4fd072c4291b02874) | livrée |
 | 31 | [Suivi du développement et préparation de l'audit Codex](#phase-31) | §15.128 | [`0b59036`](https://github.com/Break-Eat-APP/flaix-expert/commit/0b590362a71a8549b053dcfb0e1a6ff474fd3d5e) [`2859233`](https://github.com/Break-Eat-APP/flaix-expert/commit/2859233de0a1cd9bc6dd27b388e7f97fd32f575a) [`0c29f8f`](https://github.com/Break-Eat-APP/flaix-expert/commit/0c29f8f88e666c02e4f7e3a5a95cda100937c5bc) [`a23a7fb`](https://github.com/Break-Eat-APP/flaix-expert/commit/a23a7fb359ee3958deeb4b2d09c87f633f8f0006) | livrée |
+| 32 | [Premier audit Codex et corrections](#phase-32) | §15.129 | [`4e289bd`](https://github.com/Break-Eat-APP/flaix-expert/commit/4e289bdbfab09ac9ed5a682ac58ec08c393ee586) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -1201,3 +1202,75 @@
 - **Autres** :
   - [`package.json`](../../package.json) — modifié
   - [`pnpm-lock.yaml`](../../pnpm-lock.yaml) — modifié
+
+<a id="phase-32"></a>
+## Phase 32 — Premier audit Codex et corrections
+
+- **Dates** : 2026-10-04
+- **Décision et raisonnement** : dossier projet §15.129
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`4e289bd`](https://github.com/Break-Eat-APP/flaix-expert/commit/4e289bdbfab09ac9ed5a682ac58ec08c393ee586) 2026-10-04 — Audit Codex : P1 réservation de fidélité vérifiée avant d'être consommée ; option équipe, tests des écrans, documents tout ou rien, chargement allégé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/editeur.ts`](../../packages/domain/src/editeur.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/caisse.ts`](../../apps/api/src/routes/caisse.ts) — modifié
+  - [`apps/api/src/routes/fidelite-caisse.ts`](../../apps/api/src/routes/fidelite-caisse.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/package.json`](../../apps/web/package.json) — modifié
+  - [`apps/web/src/App.tsx`](../../apps/web/src/App.tsx) — modifié
+  - [`apps/web/src/composants/Coquille.tsx`](../../apps/web/src/composants/Coquille.tsx) — modifié
+  - [`apps/web/src/pages/caisse/FideliteCaisse.test.tsx`](../../apps/web/src/pages/caisse/FideliteCaisse.test.tsx) — créé
+  - [`apps/web/vitest.config.ts`](../../apps/web/vitest.config.ts) — créé
+- **Tests** :
+  - [`apps/api/test/fidelite-caisse.test.ts`](../../apps/api/test/fidelite-caisse.test.ts) — modifié
+  - [`apps/api/test/options.test.ts`](../../apps/api/test/options.test.ts) — modifié
+  - [`apps/web/src/composants/Coquille.test.ts`](../../apps/web/src/composants/Coquille.test.ts) — créé
+  - [`apps/web/src/pages/caisse/memoire.test.ts`](../../apps/web/src/pages/caisse/memoire.test.ts) — créé
+- **Serveur et outils (infra)** :
+  - [`infra/outils/phases-word.cjs`](../../infra/outils/phases-word.cjs) — modifié
+- **Documentation** :
+  - [`AGENTS.md`](../../AGENTS.md) — modifié
+  - [`docs/audits/AUDIT_2026-10-04_revue-code.md`](../../docs/audits/AUDIT_2026-10-04_revue-code.md) — modifié
+  - [`docs/developpement/phases/PHASE_23_OPTIONS_PAR_LIEU_APPLICATION_INSTALLABLE_LOGO.md`](../../docs/developpement/phases/PHASE_23_OPTIONS_PAR_LIEU_APPLICATION_INSTALLABLE_LOGO.md) — modifié
+  - [`docs/developpement/phases/PHASE_30_FIDELITE_A_LA_CAISSE_CODE_PROMO_ET_POINTS_DANS_LE_TICKET_SCELLE.md`](../../docs/developpement/phases/PHASE_30_FIDELITE_A_LA_CAISSE_CODE_PROMO_ET_POINTS_DANS_LE_TICKET_SCELLE.md) — modifié
+  - [`docs/developpement/phases/PHASE_31_SUIVI_DU_DEVELOPPEMENT_ET_PREPARATION_DE_LAUDIT_CODEX.md`](../../docs/developpement/phases/PHASE_31_SUIVI_DU_DEVELOPPEMENT_ET_PREPARATION_DE_LAUDIT_CODEX.md) — modifié
+  - [`docs/developpement/phases/word/PHASE_00_SOCLE_DE_PRODUCTION_ET_CONFIGURATION_DUN_LIEU_VIDE.docx`](../../docs/developpement/phases/word/PHASE_00_SOCLE_DE_PRODUCTION_ET_CONFIGURATION_DUN_LIEU_VIDE.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_01_MATCHS_CAISSE_MES_CAISSES_JOURNAL_DES_TICKETS.docx`](../../docs/developpement/phases/word/PHASE_01_MATCHS_CAISSE_MES_CAISSES_JOURNAL_DES_TICKETS.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_02_RETOUR_DE_DEMONSTRATION_ORGANISATION_EN_6_ENTREES_MAQUETTES.docx`](../../docs/developpement/phases/word/PHASE_02_RETOUR_DE_DEMONSTRATION_ORGANISATION_EN_6_ENTREES_MAQUETTES.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_03_VENTE_SANS_RESEAU_LA_TABLETTE_SCELLE_LE_SERVEUR_VERIFIE.docx`](../../docs/developpement/phases/word/PHASE_03_VENTE_SANS_RESEAU_LA_TABLETTE_SCELLE_LE_SERVEUR_VERIFIE.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_04_SERVEUR_DE_TEST_OVH.docx`](../../docs/developpement/phases/word/PHASE_04_SERVEUR_DE_TEST_OVH.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_05_COMPTES_DES_CAISSIERES_ET_TABLETTES_ENREGISTREES.docx`](../../docs/developpement/phases/word/PHASE_05_COMPTES_DES_CAISSIERES_ET_TABLETTES_ENREGISTREES.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_06_TICKET_CLIENT_SUR_DEMANDE_ET_DUPLICATA.docx`](../../docs/developpement/phases/word/PHASE_06_TICKET_CLIENT_SUR_DEMANDE_ET_DUPLICATA.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_07_CLOTURE_DU_MATCH_Z_DES_TIROIRS_RECTIFICATION_SIGNEE.docx`](../../docs/developpement/phases/word/PHASE_07_CLOTURE_DU_MATCH_Z_DES_TIROIRS_RECTIFICATION_SIGNEE.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_08_RESULTATS_SUR_LES_VRAIES_VENTES.docx`](../../docs/developpement/phases/word/PHASE_08_RESULTATS_SUR_LES_VRAIES_VENTES.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_09_EQUIPE_FICHES_PLANNING_MASSE_SALARIALE.docx`](../../docs/developpement/phases/word/PHASE_09_EQUIPE_FICHES_PLANNING_MASSE_SALARIALE.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_10_STOCK_RESERVE_LIVRAISONS_AU_CUMP_MISE_EN_PLACE_COMPTAGE.docx`](../../docs/developpement/phases/word/PHASE_10_STOCK_RESERVE_LIVRAISONS_AU_CUMP_MISE_EN_PLACE_COMPTAGE.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_11_REMONTEES_AU_COFFRE_ET_Z_DU_COFFRE.docx`](../../docs/developpement/phases/word/PHASE_11_REMONTEES_AU_COFFRE_ET_Z_DU_COFFRE.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_12_CLOTURES_MENSUELLE_ET_ANNUELLE_TOTAL_PERPETUEL.docx`](../../docs/developpement/phases/word/PHASE_12_CLOTURES_MENSUELLE_ET_ANNUELLE_TOTAL_PERPETUEL.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_13_EXERCICE_PAR_LIEU_SAUVEGARDES_CHIFFREES_HORS_SERVEUR.docx`](../../docs/developpement/phases/word/PHASE_13_EXERCICE_PAR_LIEU_SAUVEGARDES_CHIFFREES_HORS_SERVEUR.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_14_MODE_FORMATION_FACTICE.docx`](../../docs/developpement/phases/word/PHASE_14_MODE_FORMATION_FACTICE.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_15_EXPORT_POUR_LEXPERT_COMPTABLE.docx`](../../docs/developpement/phases/word/PHASE_15_EXPORT_POUR_LEXPERT_COMPTABLE.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_16_CLICK_COLLECT_MOTEUR_DE_PRIX_ET_CATALOGUE.docx`](../../docs/developpement/phases/word/PHASE_16_CLICK_COLLECT_MOTEUR_DE_PRIX_ET_CATALOGUE.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_17_VUE_TELEPHONE_EN_DIRECT.docx`](../../docs/developpement/phases/word/PHASE_17_VUE_TELEPHONE_EN_DIRECT.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_18_COUTS_PAR_BUVETTE.docx`](../../docs/developpement/phases/word/PHASE_18_COUTS_PAR_BUVETTE.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_19_FIDELITE_PARTIE_GESTION.docx`](../../docs/developpement/phases/word/PHASE_19_FIDELITE_PARTIE_GESTION.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_20_FACTURES_FOURNISSEURS.docx`](../../docs/developpement/phases/word/PHASE_20_FACTURES_FOURNISSEURS.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_21_BACK_OFFICE_EDITEUR_NIVEAU_1.docx`](../../docs/developpement/phases/word/PHASE_21_BACK_OFFICE_EDITEUR_NIVEAU_1.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_22_DECISIONS_DU_2026_10_01_ET_RECETTES.docx`](../../docs/developpement/phases/word/PHASE_22_DECISIONS_DU_2026_10_01_ET_RECETTES.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_23_OPTIONS_PAR_LIEU_APPLICATION_INSTALLABLE_LOGO.docx`](../../docs/developpement/phases/word/PHASE_23_OPTIONS_PAR_LIEU_APPLICATION_INSTALLABLE_LOGO.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_24_ADRESSE_DU_SITE_FLAIXEXPERT_FLAIXLABS_COM.docx`](../../docs/developpement/phases/word/PHASE_24_ADRESSE_DU_SITE_FLAIXEXPERT_FLAIXLABS_COM.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_25_MARQUE_FLAIX_EXPERT_LIEUX_ET_DIRECTEURS_DEPUIS_LE_BACK_OFFICE_MOTS_DE_.docx`](../../docs/developpement/phases/word/PHASE_25_MARQUE_FLAIX_EXPERT_LIEUX_ET_DIRECTEURS_DEPUIS_LE_BACK_OFFICE_MOTS_DE_.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_26_CLICK_COLLECT_NEUTRE_EXPORT_COMPTABLE_DANS_LA_BASE_ASSIETTE_DE_LA_COMM.docx`](../../docs/developpement/phases/word/PHASE_26_CLICK_COLLECT_NEUTRE_EXPORT_COMPTABLE_DANS_LA_BASE_ASSIETTE_DE_LA_COMM.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_27_STOCK_DES_INGREDIENTS_AU_CHOIX_BIERE_PRESSION.docx`](../../docs/developpement/phases/word/PHASE_27_STOCK_DES_INGREDIENTS_AU_CHOIX_BIERE_PRESSION.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_28_LOGO_OFFICIEL_V2.docx`](../../docs/developpement/phases/word/PHASE_28_LOGO_OFFICIEL_V2.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_29_DOSSIER_DE_CONFORMITE_V0_1.docx`](../../docs/developpement/phases/word/PHASE_29_DOSSIER_DE_CONFORMITE_V0_1.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_30_FIDELITE_A_LA_CAISSE_CODE_PROMO_ET_POINTS_DANS_LE_TICKET_SCELLE.docx`](../../docs/developpement/phases/word/PHASE_30_FIDELITE_A_LA_CAISSE_CODE_PROMO_ET_POINTS_DANS_LE_TICKET_SCELLE.docx) — modifié
+  - [`docs/developpement/phases/word/PHASE_31_SUIVI_DU_DEVELOPPEMENT_ET_PREPARATION_DE_LAUDIT_CODEX.docx`](../../docs/developpement/phases/word/PHASE_31_SUIVI_DU_DEVELOPPEMENT_ET_PREPARATION_DE_LAUDIT_CODEX.docx) — modifié
+  - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
+- **Autres** :
+  - [`pnpm-lock.yaml`](../../pnpm-lock.yaml) — modifié
+
+## Commits non rattachés à une phase
+
+- [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
