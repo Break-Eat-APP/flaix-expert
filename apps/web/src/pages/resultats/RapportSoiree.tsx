@@ -1,11 +1,11 @@
 import { Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Printer, ShieldCheck, ShieldAlert } from "lucide-react";
-import { formaterMontant, formaterPourcentage, libelleTauxTva, type Ecart, type LigneCascade, type RapportSoireeFige } from "@flaix/domain";
+import { formaterMontant, formaterPourcentage, libelleTauxTva, type Ecart, type LigneCascade, type BriefSoiree, type RapportSoireeFige } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Chargement, MessageErreur } from "../../composants/communs.tsx";
 
-type Lu = RapportSoireeFige & { integre: boolean };
+type Lu = RapportSoireeFige & { integre: boolean; brief?: BriefSoiree };
 
 const dateLongue = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
 const nombre = (n: number) => n.toLocaleString("fr-FR");
@@ -59,6 +59,19 @@ function Document({ lu }: { lu: Lu }) {
           {r.z && <span>Z de l'événement n° {r.z.sequence}</span>}
         </div>
       </header>
+
+      {lu.brief && lu.brief.points.length > 0 && (
+        <section className="rapport-brief" aria-label="Brief de la soirée">
+          <h2>Le brief de la soirée</h2>
+          <ul>
+            {lu.brief.points.map((p) => (
+              <li key={p.texte} className={p.niveau}>
+                {p.texte}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="rapport-chiffres" aria-label="L'essentiel">
         <Chiffre libelle="Encaissé TTC" valeur={formaterMontant(v.encaisseTtc)} />

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import {
+  briefDeSoiree,
   ecartEvenement,
   ecartsDeStock,
   empreinteRapport,
@@ -7,6 +8,7 @@ import {
   topProduits,
   type Evenement,
   type RapportSoiree,
+  type BriefSoiree,
   type RapportSoireeFige,
 } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
@@ -107,7 +109,7 @@ interface LigneRapport {
   empreinte: string;
 }
 
-async function lireRapport(c: Client, lieuId: string, evenementId: string): Promise<RapportSoireeFige | null> {
+export async function lireRapport(c: Client, lieuId: string, evenementId: string): Promise<RapportSoireeFige | null> {
   const { rows } = await c.query<LigneRapport>(
     `SELECT r.contenu, r.etabli_le, r.etabli_a, u.nom AS etabli_par, r.empreinte
        FROM rapport_soiree r JOIN utilisateur u ON u.id = r.etabli_par
@@ -140,14 +142,15 @@ export async function figerRapportSoiree(c: Client, lieuId: string, utilisateurI
 
 export async function routesRapportSoiree(app: FastifyInstance, { base }: { base: Base }) {
   // Lecture du rapport figé ; un événement clos avant l'existence du rapport reçoit le sien à la première lecture.
-  app.get("/api/rapports-soiree/:id", async (req): Promise<RapportSoireeFige & { integre: boolean }> => {
+  app.get("/api/rapports-soiree/:id", async (req): Promise<RapportSoireeFige & { integre: boolean; brief: BriefSoiree }> => {
     const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);
     return base.transaction(contexte(auth), async (c) => {
       await figerRapportSoiree(c, auth.lieuId, auth.utilisateurId, id, "a_posteriori");
       const r = (await lireRapport(c, auth.lieuId, id))!;
       // Contrôle à chaque lecture : le contenu relu donne-t-il toujours la même empreinte ?
-      return { ...r, integre: empreinteRapport(id, r.etabliLe, r.etabliA, r.rapport) === r.empreinte };
+      // Le brief de fin de soirée se déduit du rapport figé (§15.135) : le même que celui envoyé sur le téléphone.
+      return { ...r, integre: empreinteRapport(id, r.etabliLe, r.etabliA, r.rapport) === r.empreinte, brief: briefDeSoiree(r.rapport) };
     });
   });
 }

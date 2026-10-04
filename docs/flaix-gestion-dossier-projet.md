@@ -4580,3 +4580,18 @@ Rémi a fait auditer le code et les documents par Codex (`docs/audits/AUDIT_2026
 ### 15.134 Note produit de Rémi (ChatGPT) : Flaix Ops / Expert / Autopilot, agents IA (2026-10-04)
 
 Rémi a partagé une note produit rédigée avec ChatGPT (`FLAIX_EXPERT_PRODUCT_SPEC_CLAUDE_CODE.md` : couche d'intelligence décisionnelle, détecteur de fuites de revenus, cerveau d'événement, agents IA, simulation, jumeau numérique, mémoire du stade, Autopilot). Avis rendu le 2026-10-04 dans la conversation, avec une recherche sur les concurrents (Oracle Simphony, Shift4/VenueNext, SpotOn/Appetize, Nory, WaitTime, Safari AI) et sur l'AI Act. **IA : à décider avec Rémi, rien de construit seul** ; priorités à arrêter ensemble.
+
+**Analyse remise** : `docs/strategie/analyse-intelligence-2026-10.md`, en Word et PDF (`FlaiX-Expert-Intelligence-prevision-decision-v1`), copiés dans le dossier OneDrive « FlaixX Expert ».
+
+**Décisions de Rémi (2026-10-04)** : (1) on commence par **le brief de fin de soirée et l'assistant** ; (2) fournisseur d'IA : **Mistral** (entreprise française, hébergement en Europe) ; (3) le brief arrive en **notification sur le téléphone** (application installée), sans e-mail pour l'instant.
+
+### 15.135 Brief de fin de soirée en notification sur le téléphone (2026-10-04)
+
+**Réalisé** (migration 0028, moteur `brief.ts`, phase 37) :
+- **Le brief** : établi par des règles fixes à partir du rapport de soirée figé — titre (« Spartiates – Rouen : 18 640,00 € encaissés »), une ligne (tickets, panier moyen, marge nette), puis au plus quatre points dans l'ordre : la marge nette face à sa cible, l'évolution par rapport à l'événement précédent, ce qui demande une vérification (écart d'espèces au-delà de la tolérance, écart de stock, alertes fortes), le meilleur produit. Chaque chiffre est un chiffre du rapport, recopié ; une marge incalculable est dite comme telle.
+- **Garde-fou pour l'IA à venir** : `reformulationFidele` refuse toute reformulation qui contient un nombre absent du brief d'origine — Mistral pourra réécrire, jamais inventer.
+- **Envoi** : à la clôture de l'événement, une fois la transaction de clôture validée, vers chaque appareil abonné d'un directeur du lieu (Web Push de l'application installée ; aucun service extérieur à part celui du téléphone). Une seule fois par événement (table `brief_soiree`, écriture seule : contenu, « rédigé par les règles », nombre d'appareils atteints). Une notification qui échoue n'annule jamais la clôture ; un téléphone désabonné (réponse 404/410) est retiré.
+- **Clés du serveur** (VAPID) : créées au premier besoin, gardées dans la base, sur le serveur.
+- **Écrans** : Paramètres → **Notifications** (activer sur cet appareil, envoyer une notification d'essai, désactiver ; explication pour l'iPhone : ajouter l'application à l'écran d'accueil) ; toucher la notification ouvre le rapport de soirée ; « Le brief de la soirée » en tête du rapport.
+- **Pas encore** : la reformulation et l'assistant par Mistral (il faut le compte et la clé de Rémi) ; le brief de veille (avec la prévision).
+- **Tests** : moteur 6, serveur 7, écrans 2. Vérifié dans le navigateur (le navigateur intégré bloque les notifications : l'essai réel se fait sur le téléphone de Rémi).

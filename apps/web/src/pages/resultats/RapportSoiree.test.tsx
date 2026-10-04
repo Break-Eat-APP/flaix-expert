@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { cascadeSoiree, ecartEvenement, type RapportSoiree as Rapport, type RapportSoireeFige } from "@flaix/domain";
+import { briefDeSoiree, cascadeSoiree, ecartEvenement, type BriefSoiree, type RapportSoiree as Rapport, type RapportSoireeFige } from "@flaix/domain";
 import { RapportSoiree } from "./RapportSoiree.tsx";
 
 const reponse = (statut: number, corps: unknown) => new Response(JSON.stringify(corps), { status: statut, headers: { "content-type": "application/json" } });
@@ -113,5 +113,12 @@ describe("rapport de soirée à l'écran", () => {
     lu.rapport = rapport({ lieu: { nom: "Palais des sports", raisonSociale: null, formation: true } });
     monter();
     await screen.findByText(/FACTICE/);
+  });
+
+  it("le brief de la soirée (celui envoyé sur le téléphone) s'affiche en tête du rapport", async () => {
+    (lu as typeof lu & { brief: BriefSoiree }).brief = briefDeSoiree(lu.rapport);
+    monter();
+    await screen.findByText("Le brief de la soirée");
+    expect(screen.getByText(/par rapport à « Gap »/)).toBeTruthy();
   });
 });

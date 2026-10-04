@@ -8,6 +8,7 @@ import { inscrireJet } from "../journal-technique.ts";
 import { restesDuMatch } from "./stock.ts";
 import { figerConsommationIngredients } from "./stock-ingredients.ts";
 import { figerRapportSoiree } from "./rapport-soiree.ts";
+import { envoyerBriefSoiree } from "./notifications.ts";
 import { exigerMoisOuvert, zDuMatch } from "./periodes.ts";
 import { ParamId, contexte, corps, differences, texte } from "./outils.ts";
 
@@ -142,7 +143,7 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
   app.post("/api/evenements/:id/cloture", async (req) => {
     const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);
-    return base.transaction(contexte(auth), async (c) => {
+    const liste = await base.transaction(contexte(auth), async (c) => {
       const e = await lireEvenement(c, auth.lieuId, id);
       if (e.etat !== "ouvert") throw new ErreurMetier(409, "Seul un événement ouvert peut être clos.");
       if (e.caisses_ouvertes > 0) {
@@ -182,5 +183,13 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
       await figerRapportSoiree(c, auth.lieuId, auth.utilisateurId, id, "cloture");
       return listerEvenements(c, auth.lieuId);
     });
+    // Brief de fin de soirée sur le téléphone du directeur (§15.135), une fois l'événement bien clos.
+    // Une notification qui échoue n'annule jamais la clôture.
+    try {
+      await envoyerBriefSoiree(base, contexte(auth), auth.lieuId, id);
+    } catch (erreur) {
+      req.log.error({ err: erreur, evenementId: id }, "brief de fin de soirée non envoyé");
+    }
+    return liste;
   });
 }

@@ -588,3 +588,12 @@ details.inventaire summary { cursor: pointer; font-size: 13px; }
   .rapport-tableau tr { break-inside: avoid; }
   .rapport-avertissement { border: 1px solid #8a5a08; }
 }
+
+/* Brief de la soirée, en tête du rapport (dossier §15.135). */
+.rapport-brief { border-left: 3px solid var(--violet); background: var(--violet-soft); border-radius: 0 10px 10px 0; padding: 10px 14px; }
+.rapport-brief h2 { margin: 0 0 6px; font-size: 15px; }
+.rapport-brief ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.rapport-brief li.bon::marker { color: var(--green); }
+.rapport-brief li.attention { font-weight: 600; }
+.rapport-brief li.attention::marker { color: var(--amber); }
+@media print { .rapport-brief { background: #fff; border-left-color: #4d04f4; } }

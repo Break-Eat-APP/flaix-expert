@@ -55,3 +55,29 @@ self.addEventListener("fetch", (evenement) => {
     );
   }
 });
+
+// Notifications : brief de fin de soirée envoyé à la clôture de l'événement (dossier §15.135).
+self.addEventListener("push", (evenement) => {
+  let donnees = { titre: "FlaiX Expert", corps: "", url: "/" };
+  try {
+    donnees = { ...donnees, ...evenement.data.json() };
+  } catch {
+    /* charge illisible : notification générique */
+  }
+  evenement.waitUntil(
+    self.registration.showNotification(donnees.titre, { body: donnees.corps, icon: "/icone-192.png", badge: "/icone-192.png", lang: "fr", data: { url: donnees.url } }),
+  );
+});
+
+// Toucher la notification ouvre le rapport de soirée, dans l'application si elle est déjà ouverte.
+self.addEventListener("notificationclick", (evenement) => {
+  evenement.notification.close();
+  const url = (evenement.notification.data && evenement.notification.data.url) || "/";
+  evenement.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((fenetres) => {
+      const ouverte = fenetres.find((f) => new URL(f.url).origin === self.location.origin);
+      if (ouverte) return ouverte.focus().then((f) => f.navigate(url));
+      return self.clients.openWindow(url);
+    }),
+  );
+});
