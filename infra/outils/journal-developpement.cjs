@@ -46,8 +46,8 @@ const PHASES = [
   { n: 27, titre: "Stock des ingrédients au choix (bière pression)", dossier: "§15.125", commits: ["f5a8b5a"] },
   { n: 28, titre: "Logo officiel v2", dossier: "—", commits: ["1259fb6"] },
   { n: 29, titre: "Dossier de conformité v0.1", dossier: "§15.126", commits: ["f75e8a7", "d26e10e"] },
-  { n: 30, titre: "Fidélité à la caisse : code promo et points dans le ticket scellé", dossier: "§15.127", commits: ["87c46b8"] },
-  { n: 31, titre: "Suivi du développement et préparation de l'audit Codex", dossier: "§15.128", commits: ["0b59036"] },
+  { n: 30, titre: "Fidélité à la caisse : code promo et points dans le ticket scellé", dossier: "§15.127", commits: ["87c46b8", "c3d3041"] },
+  { n: 31, titre: "Suivi du développement et préparation de l'audit Codex", dossier: "§15.128", commits: ["0b59036", "2859233"] },
 ];
 
 /** Fonctions et routes clés : la carte du code donne leur ligne exacte (recalculée à chaque génération). */

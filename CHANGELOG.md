@@ -5,7 +5,16 @@
 
 ## 2026-10-04
 
-### [`2859233`](https://github.com/Break-Eat-APP/flaix-expert/commit/2859233de0a1cd9bc6dd27b388e7f97fd32f575a) — Journal des phases : phase 31 (suivi du développement)
+### [`c3d3041`](https://github.com/Break-Eat-APP/flaix-expert/commit/c3d3041ab4b8eb3b2031ccd4fd072c4291b02874) — Fidélité à la caisse vérifiée à l'écran ; journal des phases à jour *(phase 30)*
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/journal-developpement.cjs`
+
+### [`2859233`](https://github.com/Break-Eat-APP/flaix-expert/commit/2859233de0a1cd9bc6dd27b388e7f97fd32f575a) — Journal des phases : phase 31 (suivi du développement) *(phase 31)*
 
 - modifié : `CHANGELOG.md`
 - modifié : `docs/developpement/CARTE_DU_CODE.md`
