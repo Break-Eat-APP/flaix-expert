@@ -35,7 +35,7 @@
 | 27 | [Stock des ingrédients au choix (bière pression)](#phase-27) | §15.125 | [`f5a8b5a`](https://github.com/Break-Eat-APP/flaix-expert/commit/f5a8b5a9526bd0fc4def45a7782fd9e07b6750b9) | livrée |
 | 28 | [Logo officiel v2](#phase-28) | — | [`1259fb6`](https://github.com/Break-Eat-APP/flaix-expert/commit/1259fb69e57fa0e3ed5843fd8a5b32a6dd56b256) | livrée |
 | 29 | [Dossier de conformité v0.1](#phase-29) | §15.126 | [`f75e8a7`](https://github.com/Break-Eat-APP/flaix-expert/commit/f75e8a722681b183641c02e16efd38a6ac4b38ff) [`d26e10e`](https://github.com/Break-Eat-APP/flaix-expert/commit/d26e10ef12863773b521852e0d84a9ffd2415a1d) | livrée |
-| 30 | [Fidélité à la caisse : code promo et points dans le ticket scellé](#phase-30) | §15.127 | [`87c46b8`](https://github.com/Break-Eat-APP/flaix-expert/commit/87c46b8234d355b7db4e2dbdf6c328fa5574c301) | en cours |
+| 30 | [Fidélité à la caisse : code promo et points dans le ticket scellé](#phase-30) | §15.127 | [`87c46b8`](https://github.com/Break-Eat-APP/flaix-expert/commit/87c46b8234d355b7db4e2dbdf6c328fa5574c301) | livrée |
 | 31 | [Suivi du développement et préparation de l'audit Codex](#phase-31) | §15.128 | [`0b59036`](https://github.com/Break-Eat-APP/flaix-expert/commit/0b590362a71a8549b053dcfb0e1a6ff474fd3d5e) | livrée |
 
 <a id="phase-0"></a>
@@ -1070,7 +1070,7 @@
 
 - **Dates** : 2026-10-03
 - **Décision et raisonnement** : dossier projet §15.127
-- **État** : en cours : écran de caisse à vérifier dans le navigateur, pas encore en ligne
+- **État** : livrée (tests au vert au moment du commit)
 - **Commits** :
   - [`87c46b8`](https://github.com/Break-Eat-APP/flaix-expert/commit/87c46b8234d355b7db4e2dbdf6c328fa5574c301) 2026-10-03 — Fidélité à la caisse : code promo et points dans le ticket scellé, réservations du serveur (écran à vérifier)
 - **Migrations (base)** :
@@ -1119,3 +1119,7 @@
   - [`docs/developpement/JOURNAL_DES_PHASES.md`](../../docs/developpement/JOURNAL_DES_PHASES.md) — créé
   - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
   - [`README.md`](../../README.md) — modifié
+
+## Commits non rattachés à une phase
+
+- [`2859233`](https://github.com/Break-Eat-APP/flaix-expert/commit/2859233de0a1cd9bc6dd27b388e7f97fd32f575a) 2026-10-04 — Journal des phases : phase 31 (suivi du développement)

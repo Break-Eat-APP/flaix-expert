@@ -4499,7 +4499,7 @@ Suite de §15.114 et de l'option A choisie par Rémi (§15.115) ; Rémi : *« fa
 - **Un ticket scellé n'est jamais refusé pour une raison de fidélité** (la vente a eu lieu) : réservation inconnue, déjà utilisée, rendue, code plafonné sans réservation, valeur différente → **signalé** au directeur (« Fidélité » dans Mes caisses). Seule une incohérence de calcul (montant gonflé, points au-delà du ticket, points d'un autre abonné) est refusée.
 - **Écran de caisse** : bloc « Fidélité » (code promo ; « Points de l'abonné » → solde, paliers, Utiliser) ; lignes « Code … » et « Points (…) » sur le ticket client.
 - Tests : 6 du moteur, 8 contre la base (réservation, épuisement, annulation, libération, hors ligne, anomalies, refus de la base).
-- **État au 2026-10-04** : moteur et serveur faits et testés ; écran écrit, **à vérifier dans le navigateur avant la mise en ligne**. Le traitement en TVA des réductions de fidélité est à confirmer par l'expert-comptable (question C).
+- **État au 2026-10-04** : vérifié à l'écran (21,00 € − abonné 10 % − code 10 % − 200 points = 7,01 € ; ticket reçu sans anomalie ; solde 300 → 107 points) et mis en ligne. Le traitement en TVA des réductions de fidélité est à confirmer par l'expert-comptable (question C).
 
 ### 15.128 Suivi du développement et préparation de l'audit Codex (2026-10-04)
 
