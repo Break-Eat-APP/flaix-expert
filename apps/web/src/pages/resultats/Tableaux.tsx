@@ -2,8 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
+  estIdPeriode,
+  estJour,
   etatCible,
   libelleTauxTva,
+  raccourcisPeriode,
+  type Periode,
   tauxMargePb,
   margeParVente,
   pistesMarges,
@@ -32,7 +36,14 @@ const VUES: [Vue, string][] = [
 ];
 const COULEURS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--c5)"];
 const dateCourte = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
-const court = (e: { libelle: string; debut: string }) => `${e.libelle} · ${dateCourte.format(new Date(e.debut))}`;
+const court = (e: { id?: string; libelle: string; debut: string }) => (e.id && estIdPeriode(e.id) ? e.libelle : `${e.libelle} · ${dateCourte.format(new Date(e.debut))}`);
+/** Date courte d'un événement, ou bornes d'une période (« 1 sept. – 30 sept. »). */
+function quand(e: { id: string; debut: string }): string {
+  if (!estIdPeriode(e.id)) return dateCourte.format(new Date(e.debut));
+  const [, du, au] = e.id.split(":") as [string, string, string];
+  const f = (j: string) => dateCourte.format(new Date(`${j}T12:00:00Z`));
+  return du === au ? f(du) : `${f(du)} – ${f(au)}`;
+}
 const pourcent = (v: number, d = 1) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d })} %`;
 
 /** Évolution écrite en toutes lettres : jamais un pourcentage inventé quand la comparaison manque. */
@@ -40,7 +51,7 @@ function Evolution({ actuel, avant, comparaison }: { actuel: number | null; avan
   if (!comparaison) return <span className="variation neutre">aucun événement de comparaison</span>;
   const v = variation(actuel, avant);
   if (v === null) return <span className="variation neutre">pas de comparaison possible</span>;
-  return <span className={`variation ${v >= 0 ? "hausse" : "baisse"}`}>{pourcent(v)} vs {dateCourte.format(new Date(comparaison.debut))}</span>;
+  return <span className={`variation ${v >= 0 ? "hausse" : "baisse"}`}>{pourcent(v)} vs {estIdPeriode(comparaison.id) ? "période précédente" : quand(comparaison)}</span>;
 }
 
 /**
@@ -51,15 +62,23 @@ export function Tableaux() {
   const [vue, setVue] = useState<Vue>("ensemble");
   const [evenementId, setEvenementId] = useState<string | null>(null);
   const [comparaisonId, setComparaisonId] = useState<string | null>(null);
+  // Bilan d'un événement, ou d'une période « du … au … » (§15.133).
+  const [mode, setMode] = useState<"evenement" | "periode">("evenement");
+  const [periode, setPeriode] = useState<Periode>(() => raccourcisPeriode()[0]!.periode);
   const q = new URLSearchParams();
-  if (evenementId) q.set("evenementId", evenementId);
-  if (comparaisonId) q.set("comparaison", comparaisonId);
-  const r = useQuery({ queryKey: ["resultats", evenementId, comparaisonId], queryFn: () => api.get<Resultats>(`/resultats?${q}`), placeholderData: (avant) => avant });
+  if (mode === "periode") {
+    q.set("du", periode.du);
+    q.set("au", periode.au);
+  } else {
+    if (evenementId) q.set("evenementId", evenementId);
+    if (comparaisonId) q.set("comparaison", comparaisonId);
+  }
+  const r = useQuery({ queryKey: ["resultats", mode, q.toString()], queryFn: () => api.get<Resultats>(`/resultats?${q}`), placeholderData: (avant) => avant });
 
   if (r.isPending) return <Chargement />;
   if (r.error) return <MessageErreur erreur={r.error} />;
   const d = r.data!;
-  if (!d.evenement || !d.actuel) {
+  if ((!d.evenement || !d.actuel) && mode === "evenement") {
     return (
       <Carte titre="Résultats des événements">
         <EtatVide titre="Aucune vente pour l'instant">
@@ -68,8 +87,9 @@ export function Tableaux() {
       </Carte>
     );
   }
-  const e = d.evenement;
-  const autres = d.matchs.filter((m) => m.id !== e.id);
+  const e = d.evenement!;
+  const enPeriode = !!d.periode;
+  const autres = enPeriode ? [] : d.matchs.filter((m) => m.id !== e.id);
 
   return (
     <>
@@ -81,37 +101,57 @@ export function Tableaux() {
             </button>
           ))}
         </div>
-        <label className="choix-match">
-          Événement
-          <select
-            value={e.id}
-            onChange={(ev) => {
-              setEvenementId(ev.target.value);
-              setComparaisonId(null);
-            }}
-          >
-            {d.matchs.map((m) => (
-              <option key={m.id} value={m.id}>
-                {court(m)}
-                {m.etat === "ouvert" ? " (en cours)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="choix-bilan">
+          <div className="bascule" role="group" aria-label="Bilan">
+            <button aria-pressed={mode === "evenement"} onClick={() => setMode("evenement")}>
+              Un événement
+            </button>
+            <button aria-pressed={mode === "periode"} onClick={() => setMode("periode")}>
+              Une période
+            </button>
+          </div>
+          {mode === "evenement" ? (
+            <label className="choix-match">
+              Événement
+              <select
+                value={e.id}
+                onChange={(ev) => {
+                  setEvenementId(ev.target.value);
+                  setComparaisonId(null);
+                }}
+              >
+                {d.matchs.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {court(m)}
+                    {m.etat === "ouvert" ? " (en cours)" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <ChoixPeriode periode={periode} changer={setPeriode} />
+          )}
+        </div>
       </div>
+      {d.periode && (
+        <p className="note" style={{ marginTop: 0 }}>
+          Bilan {e.libelle} : {d.periode.evenements.length === 0 ? "aucun événement dans cette période." : `${d.periode.evenements.length} événement${d.periode.evenements.length > 1 ? "s" : ""} (${d.periode.evenements.map((m) => court(m)).join(", ")}).`}{" "}
+          Comparé à la période précédente de même durée{d.comparaison ? ` (${d.comparaison.libelle})` : " : aucune vente, pas de comparaison"}.
+        </p>
+      )}
 
       <div className="resultats-grille">
         <div className="resultats-colonne">
           {vue === "ensemble" && <VueEnsemble d={d} />}
           {vue === "ventes" && <VueVentes d={d} autres={autres} choisir={setComparaisonId} />}
-          {vue === "finances" && <VueFinances evenementId={d.evenement.id} s={d.actuel} />}
-          {vue === "marges" && <VueMarges s={d.actuel} />}
+          {vue === "finances" && (d.periode ? <VueFinances periode={{ du: d.periode.du, au: d.periode.au }} s={d.actuel!} /> : <VueFinances evenementId={e.id} s={d.actuel!} />)}
+          {vue === "marges" && <VueMarges s={d.actuel!} />}
           {vue === "rapports" && <VueRapports d={d} choisir={(id) => { setEvenementId(id); setComparaisonId(null); }} />}
         </div>
         <aside className="resultats-panneau">
           <Carte titre="À surveiller">
             {d.alertes.length === 0 ? (
-              <div className="discret" style={{ fontSize: 12.5 }}>Rien à signaler sur cet événement.</div>
+              <div className="discret" style={{ fontSize: 12.5 }}>Rien à signaler sur {enPeriode ? "cette période" : "cet événement"}.</div>
             ) : (
               <div className="alertes-liste">
                 {d.alertes.map((a) => (
@@ -147,6 +187,7 @@ export function Tableaux() {
           <li><strong>Source</strong> : le journal de caisse de l'événement (ventes moins annulations). Rien n'est saisi ni estimé sur cet écran.</li>
           <li><strong>Tickets</strong> = ventes − annulations. <strong>Panier moyen</strong> = CA TTC ÷ tickets. <strong>CA par spectateur</strong> = CA TTC ÷ affluence saisie dans Paramètres → Saison ; sans affluence, il n'est pas calculé.</li>
           <li><strong>Évolution</strong> : par rapport à l'événement de comparaison (par défaut l'événement précédent qui a des ventes ; il se choisit dans l'onglet Ventes). Aucune évolution n'est affichée si la comparaison manque.</li>
+          <li><strong>Une période</strong> (« du … au … ») : additionne les événements dont la date de début (heure de Paris) tombe entre ces deux jours inclus, comme les clôtures mensuelles. Elle se compare à la période précédente de même durée. CA par spectateur seulement si l'affluence est saisie pour chaque événement de la période.</li>
           <li><strong>Heures</strong> : heure de Paris ; une soirée qui passe minuit reste dans l'ordre.</li>
           <li><strong>CA HT et TVA</strong> : somme des lignes de ticket, TVA calculée à chaque vente selon le taux du produit.</li>
           <li><strong>Coût matière</strong> = quantité vendue × coût saisi aujourd'hui sur la fiche produit (Paramètres → Produits & prix). FlaiX ne garde pas encore l'historique des coûts : si un coût change, la marge des événements passés change aussi. <strong>Si un produit vendu n'a pas de coût, la marge brute n'est pas calculée</strong> (« coût manquant »), jamais affichée à 100 %.</li>
@@ -228,15 +269,15 @@ function VueEnsemble({ d }: { d: Resultats }) {
         }
       >
         <div className="graphe-defile">
-          <CourbeHeures heures={series.heures} actuel={series.actuel} avant={series.avant} libelleActuel={dateCourte.format(new Date(d.evenement!.debut))} libelleAvant={c ? dateCourte.format(new Date(c.debut)) : null} />
+          <CourbeHeures heures={series.heures} actuel={series.actuel} avant={series.avant} libelleActuel={quand(d.evenement!)} libelleAvant={c ? quand(c) : null} />
         </div>
       </Carte>
 
       <div className="deux">
         <Carte titre="Ventes par catégorie" description="Part du CA TTC">
-          {parts.length ? <Anneau parts={parts} centre={{ valeur: euros(a.caTtc), libelle: "CA TTC de l'événement" }} /> : <EtatVide titre="Aucune vente" />}
+          {parts.length ? <Anneau parts={parts} centre={{ valeur: euros(a.caTtc), libelle: d.periode ? "CA TTC de la période" : "CA TTC de l'événement" }} /> : <EtatVide titre="Aucune vente" />}
         </Carte>
-        <Carte titre="Meilleurs produits de l'événement">
+        <Carte titre={d.periode ? "Meilleurs produits de la période" : "Meilleurs produits de l'événement"}>
           <div className="scroll-x">
             <table className="tableau">
               <thead>
@@ -303,7 +344,9 @@ function VueVentes({ d, autres, choisir }: { d: Resultats; autres: Resultats["ma
         }
       >
         {!c ? (
-          <EtatVide titre="Aucun autre événement avec des ventes">La comparaison sera possible dès le deuxième événement.</EtatVide>
+          <EtatVide titre={enPeriodeId(e.id) ? "Aucune vente sur la période précédente" : "Aucun autre événement avec des ventes"}>
+            {enPeriodeId(e.id) ? "La comparaison porte sur la période précédente de même durée." : "La comparaison sera possible dès le deuxième événement."}
+          </EtatVide>
         ) : (
           <div className="comparaison">
             {cmp.map((k) => {
@@ -314,7 +357,7 @@ function VueVentes({ d, autres, choisir }: { d: Resultats; autres: Resultats["ma
                   <span className="valeur">{k.v}</span>
                   {v === null ? <span className="variation neutre">—</span> : <span className={`variation ${v >= 0 ? "hausse" : "baisse"}`}>{pourcent(v)}</span>}
                   <span className="avant">
-                    {dateCourte.format(new Date(c.debut))} : {k.avant}
+                    {quand(c)} : {k.avant}
                   </span>
                 </div>
               );
@@ -330,16 +373,16 @@ function VueVentes({ d, autres, choisir }: { d: Resultats; autres: Resultats["ma
             <div className="leg-inline">
               <span>
                 <i className="pastille" style={{ background: "var(--gris-graph)", borderRadius: "50%" }} />
-                {dateCourte.format(new Date(c.debut))}
+                {quand(c)}
               </span>
               <span>
                 <i className="pastille" style={{ background: "var(--violet)", borderRadius: "50%" }} />
-                {dateCourte.format(new Date(e.debut))}
+                {quand(e)}
               </span>
             </div>
           }
         >
-          <Duo lignes={stands} libelleA={dateCourte.format(new Date(c.debut))} libelleB={dateCourte.format(new Date(e.debut))} />
+          <Duo lignes={stands} libelleA={quand(c)} libelleB={quand(e)} />
         </Carte>
       )}
 
@@ -350,7 +393,7 @@ function VueVentes({ d, autres, choisir }: { d: Resultats; autres: Resultats["ma
               <tr>
                 <th>Produit</th>
                 <th className="d">Vendus</th>
-                {c && <th className="d">{dateCourte.format(new Date(c.debut))}</th>}
+                {c && <th className="d">{quand(c)}</th>}
                 <th className="d">CA TTC</th>
                 {c && <th className="d">Évolution</th>}
               </tr>
@@ -459,7 +502,9 @@ function VueMarges({ s }: { s: StatsMatch }) {
 }
 
 function VueRapports({ d, choisir }: { d: Resultats; choisir: (id: string) => void }) {
-  const chrono = [...d.matchs].sort((a, b) => Date.parse(a.debut) - Date.parse(b.debut));
+  const dans = d.periode ? new Set(d.periode.evenements.map((m) => m.id)) : null;
+  const liste = dans ? d.matchs.filter((m) => dans.has(m.id)) : d.matchs;
+  const chrono = [...liste].sort((a, b) => Date.parse(a.debut) - Date.parse(b.debut));
   const total = chrono.reduce((s, m) => s + m.caTtc, 0);
   const max = Math.max(...chrono.map((m) => m.caTtc), 1);
   return (
@@ -490,7 +535,7 @@ function VueRapports({ d, choisir }: { d: Resultats; choisir: (id: string) => vo
               </tr>
             </thead>
             <tbody>
-              {d.matchs.map((m) => (
+              {liste.map((m) => (
                 <tr key={m.id}>
                   <td>{court(m)}</td>
                   <td>{m.etat === "clos" ? <span className="puce puce-violet">Clos</span> : <span className="puce puce-vert">En cours</span>}</td>
@@ -517,5 +562,42 @@ function VueRapports({ d, choisir }: { d: Resultats; choisir: (id: string) => vo
         </div>
       </Carte>
     </>
+  );
+}
+
+const enPeriodeId = (id: string) => estIdPeriode(id);
+
+/** Choix d'une période « du … au … », avec quelques raccourcis (§15.133). */
+function ChoixPeriode({ periode, changer }: { periode: Periode; changer: (p: Periode) => void }) {
+  const [du, setDu] = useState(periode.du);
+  const [au, setAu] = useState(periode.au);
+  const valide = estJour(du) && estJour(au) && du <= au;
+  const appliquer = (p: Periode) => {
+    setDu(p.du);
+    setAu(p.au);
+    changer(p);
+  };
+  return (
+    <div className="choix-periode">
+      <label>
+        Du
+        <input type="date" value={du} onChange={(e) => setDu(e.target.value)} onBlur={() => valide && changer({ du, au })} aria-label="Premier jour" />
+      </label>
+      <label>
+        au
+        <input type="date" value={au} onChange={(e) => setAu(e.target.value)} onBlur={() => valide && changer({ du, au })} aria-label="Dernier jour" />
+      </label>
+      <button className="btn" disabled={!valide || (du === periode.du && au === periode.au)} onClick={() => changer({ du, au })}>
+        Voir
+      </button>
+      {!valide && <span className="texte-ambre">Dates à vérifier</span>}
+      <div className="raccourcis-periode">
+        {raccourcisPeriode().map((r) => (
+          <button key={r.libelle} className="puce-choix" aria-pressed={r.periode.du === periode.du && r.periode.au === periode.au} onClick={() => appliquer(r.periode)}>
+            {r.libelle}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

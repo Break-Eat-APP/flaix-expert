@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { formaterPourcentage, libelleTauxTva, lireMontant, lirePourcentage, montantPourSaisie, type FinancesSoiree, type LigneDepense, type ModeDepense, type StatsMatch } from "@flaix/domain";
+import { formaterPourcentage, libellePeriode, libelleTauxTva, type Periode, lireMontant, lirePourcentage, montantPourSaisie, type FinancesSoiree, type LigneDepense, type ModeDepense, type StatsMatch } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, MessageErreur } from "../../composants/communs.tsx";
 import { Cascade, Empile, euros, type EtapeCascade } from "./graphiques.tsx";
@@ -14,8 +14,10 @@ const signe = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${euros(Math.ab
  * Gestion financière de la soirée (module 11 ; dossier §14 module 11, §15.79, §15.132) : ce qui est entré,
  * ce qui est sorti, ce qu'il reste. Les chiffres calculés se lisent ; seules les dépenses se saisissent.
  */
-export function VueFinances({ evenementId, s }: { evenementId: string; s: StatsMatch }) {
-  const q = useQuery({ queryKey: ["finances", evenementId], queryFn: () => api.get<FinancesSoiree>(`/finances?evenementId=${evenementId}`) });
+export function VueFinances({ evenementId, periode, s }: { evenementId?: string; periode?: Periode; s: StatsMatch }) {
+  const cle = evenementId ?? `${periode!.du}:${periode!.au}`;
+  const chemin = evenementId ? `/finances?evenementId=${evenementId}` : `/finances?du=${periode!.du}&au=${periode!.au}`;
+  const q = useQuery({ queryKey: ["finances", cle], queryFn: () => api.get<FinancesSoiree>(chemin) });
   if (q.isPending) return <Chargement />;
   if (q.error) return <MessageErreur erreur={q.error} />;
   const f = q.data!;
@@ -42,15 +44,24 @@ export function VueFinances({ evenementId, s }: { evenementId: string; s: StatsM
   return (
     <>
       <p className="note" style={{ marginTop: 0 }}>
-        Tout cet écran porte sur la seule soirée <strong>{f.evenement.libelle}</strong> du {dateCourte.format(new Date(f.evenement.debut))} : {n.toLocaleString("fr-FR")} ticket{n > 1 ? "s" : ""}
-        {sp ? `, ${sp.toLocaleString("fr-FR")} spectateurs` : ", affluence non saisie"}.
+        {f.periode ? (
+          <>
+            Tout cet écran porte sur la période <strong>{libellePeriode(f.periode)}</strong> : {f.periode.soirees.length} soirée{f.periode.soirees.length > 1 ? "s" : ""}, {n.toLocaleString("fr-FR")} ticket{n > 1 ? "s" : ""}
+            {sp ? `, ${sp.toLocaleString("fr-FR")} spectateurs` : ", affluence incomplète"}.
+          </>
+        ) : (
+          <>
+            Tout cet écran porte sur la seule soirée <strong>{f.evenement.libelle}</strong> du {dateCourte.format(new Date(f.evenement.debut))} : {n.toLocaleString("fr-FR")} ticket{n > 1 ? "s" : ""}
+            {sp ? `, ${sp.toLocaleString("fr-FR")} spectateurs` : ", affluence non saisie"}.
+          </>
+        )}
       </p>
       <div className="chiffres">
         <Chiffre etiquette="Encaissé TTC" valeur={euros(f.encaisseTtc)} detail={par(f.encaisseTtc)} misEnAvant />
         <Chiffre etiquette="Chiffre d'affaires HT" valeur={euros(f.caHt)} detail={`TVA collectée ${euros(f.tva)}`} />
         <Chiffre etiquette="Marge brute" valeur={f.margeBrute === null ? "Coût manquant" : euros(f.margeBrute)} detail={f.margeBrute === null ? null : `${pct(f.margeBrute, f.caHt) ?? "—"} du CA HT`} />
         <Chiffre
-          etiquette="Marge nette de la soirée"
+          etiquette={f.periode ? "Marge nette de la période" : "Marge nette de la soirée"}
           valeur={f.margeNette === null ? (f.margeBrute === null ? "Coût manquant" : "Taux manquant") : euros(f.margeNette)}
           detail={
             c && c.ecart !== null ? (
@@ -65,7 +76,7 @@ export function VueFinances({ evenementId, s }: { evenementId: string; s: StatsM
       </div>
 
       <Carte
-        titre="De l'encaissé à la marge nette de la soirée"
+        titre={f.periode ? "De l'encaissé à la marge nette de la période" : "De l'encaissé à la marge nette de la soirée"}
         actions={
           <div className="leg-inline">
             <span>
@@ -100,7 +111,7 @@ export function VueFinances({ evenementId, s }: { evenementId: string; s: StatsM
 
       <div className="deux egal">
         <Depenses f={f} />
-        <CibleSoiree f={f} />
+        {f.periode ? <SoireesDeLaPeriode f={f} /> : <CibleSoiree f={f} />}
       </div>
 
       <div className="deux egal">
@@ -133,7 +144,7 @@ export function VueFinances({ evenementId, s }: { evenementId: string; s: StatsM
               </tbody>
             </table>
           </div>
-          <p className="note">Contribution de l'événement à la déclaration de TVA, à remettre à l'expert-comptable : il y manque la TVA déductible sur les achats.</p>
+          <p className="note">Contribution {f.periode ? "de la période" : "de l'événement"} à la déclaration de TVA, à remettre à l'expert-comptable : il y manque la TVA déductible sur les achats.</p>
         </Carte>
         <Carte titre="Comment les clients ont payé" description={`${euros(s.caTtc)} TTC`}>
           <Empile
@@ -163,7 +174,11 @@ function Chiffre({ etiquette, valeur, detail, misEnAvant }: { etiquette: string;
 function Depenses({ f }: { f: FinancesSoiree }) {
   const lignes = f.depenses;
   return (
-    <Carte titre="Dépenses de la soirée" description="Les postes se nomment dans Paramètres → Objectifs de marge. Une dépense en % porte sur le CA HT de cette soirée." actions={<Link to="/parametres/objectifs" className="btn btn-fantome">Gérer les postes</Link>}>
+    <Carte
+      titre={f.periode ? "Dépenses de la période" : "Dépenses de la soirée"}
+      description={f.periode ? "Somme des dépenses saisies sur chaque soirée. Elles se saisissent soirée par soirée : choisis « Un événement »." : "Les postes se nomment dans Paramètres → Objectifs de marge. Une dépense en % porte sur le CA HT de cette soirée."}
+      actions={<Link to="/parametres/objectifs" className="btn btn-fantome">Gérer les postes</Link>}
+    >
       <div className="scroll-x">
         <table className="tableau">
           <thead>
@@ -186,9 +201,17 @@ function Depenses({ f }: { f: FinancesSoiree }) {
               </td>
               <td className="d chiffre">{f.personnel.reel === null ? "taux manquant" : euros(f.personnel.reel)}</td>
             </tr>
-            {lignes.map((d) => (
-              <LigneSaisie key={d.posteId} evenementId={f.evenement.id} d={d} />
-            ))}
+            {lignes.map((d) =>
+              f.periode ? (
+                <tr key={d.posteId}>
+                  <td>{d.nom}</td>
+                  <td className="discret">total des soirées</td>
+                  <td className="d chiffre">{euros(d.montant)}</td>
+                </tr>
+              ) : (
+                <LigneSaisie key={d.posteId} evenementId={f.evenement.id} d={d} />
+              ),
+            )}
             <tr>
               <td colSpan={2}>
                 <strong>Total des dépenses saisies</strong>
@@ -200,7 +223,7 @@ function Depenses({ f }: { f: FinancesSoiree }) {
           </tbody>
         </table>
       </div>
-      {lignes.length === 0 && (
+      {lignes.length === 0 && !f.periode && (
         <p className="note">
           Aucun poste de dépense : ajoute-en (gobelets, sécurité, nettoyage, frais bancaires…) dans <Link to="/parametres/objectifs">Paramètres → Objectifs de marge</Link>.
         </p>
@@ -274,6 +297,58 @@ function LigneSaisie({ evenementId, d }: { evenementId: string; d: LigneDepense 
       </td>
       <td className="d chiffre">{d.mode === null ? "—" : euros(d.montant)}</td>
     </tr>
+  );
+}
+
+/** Bilan d'une période : chaque soirée, sa marge nette et sa cible. */
+function SoireesDeLaPeriode({ f }: { f: FinancesSoiree }) {
+  const c = f.etatCible;
+  return (
+    <Carte titre="Soirée par soirée" description="Marge nette de chaque soirée de la période, comparée à sa cible.">
+      {f.periode!.soirees.length === 0 ? (
+        <p className="note" style={{ margin: 0 }}>Aucun événement dans cette période.</p>
+      ) : (
+        <div className="scroll-x">
+          <table className="tableau">
+            <thead>
+              <tr>
+                <th>Soirée</th>
+                <th className="d">Encaissé TTC</th>
+                <th className="d">Marge nette</th>
+                <th>Cible</th>
+              </tr>
+            </thead>
+            <tbody>
+              {f.periode!.soirees.map((s) => (
+                <tr key={s.id}>
+                  <td>
+                    {s.libelle} <span className="discret">· {dateCourte.format(new Date(s.debut))}</span>
+                  </td>
+                  <td className="d chiffre">{euros(s.encaisseTtc)}</td>
+                  <td className="d chiffre">{s.margeNette === null ? "—" : euros(s.margeNette)}</td>
+                  <td>
+                    {s.etatCible === null ? (
+                      <span className="discret">aucune</span>
+                    ) : s.etatCible.ecart === null ? (
+                      <span className="discret">{formaterPourcentage(s.etatCible.ciblePb)}</span>
+                    ) : (
+                      <span className={`etat-cible ${s.etatCible.tenue ? "tenue" : "sous"}`}>{signe(s.etatCible.ecart)}</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="note">
+        {c
+          ? c.ecart === null
+            ? `Cible de la période : ${euros(c.cible)} (somme des cibles des soirées).`
+            : `Cible de la période : ${euros(c.cible)} (somme des cibles des soirées) — ${c.tenue ? "tenue" : "manquée"} de ${euros(Math.abs(c.ecart))}.`
+          : "La cible de la période n'est jugée que si chaque soirée a une cible (Paramètres → Objectifs de marge)."}
+      </p>
+    </Carte>
   );
 }
 

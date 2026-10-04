@@ -2,7 +2,13 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
   cascadeSoiree,
+  dansPeriode,
+  estJour,
   etatCibleSoiree,
+  idPeriode,
+  libellePeriode,
+  tauxMargePb,
+  type Periode,
   formaterMontant,
   formaterPourcentage,
   montantDepense,
@@ -29,7 +35,11 @@ import { ParamId, Uuid, contexte, corps, texte } from "./outils.ts";
  * gabarit du lieu, ajustable par événement. Chaque saisie est journalisée.
  */
 
-const ParEvenement = z.object({ evenementId: Uuid });
+const Jour = z.string().refine(estJour, "Date invalide (AAAA-MM-JJ).");
+const Choix = z
+  .object({ evenementId: Uuid.optional(), du: Jour.optional(), au: Jour.optional() })
+  .refine((x) => !!x.evenementId !== !!(x.du && x.au), "Choisis un événement, ou le premier et le dernier jour d'une période.")
+  .refine((x) => !x.du || !x.au || x.du <= x.au, "Le premier jour doit précéder le dernier.");
 const ParPoste = z.object({ id: Uuid, posteId: Uuid });
 const NouveauPoste = z.object({ nom: texte(60, "Le nom du poste") });
 const ModifPoste = z.object({ nom: texte(60, "Le nom du poste").optional(), actif: z.boolean().optional() });
@@ -112,13 +122,89 @@ export async function financesSoiree(c: Client, lieuId: string, e: Evenement): P
   };
 }
 
+/**
+ * Gestion financière d'une période « du … au … » (§15.133) : la somme des soirées qui la composent.
+ * La marge nette n'existe que si elle existe pour chaque soirée ; la cible en euros est la somme des
+ * cibles des soirées, et n'est jugée que si chaque soirée en a une.
+ */
+export async function financesPeriode(c: Client, lieuId: string, p: Periode): Promise<FinancesSoiree> {
+  const evs = (await listerEvenements(c, lieuId)).filter((e) => dansPeriode(e.debut, p)).sort((a, b) => Date.parse(a.debut) - Date.parse(b.debut));
+  const soirees: FinancesSoiree[] = [];
+  for (const e of evs) soirees.push(await financesSoiree(c, lieuId, e));
+  const somme = (f: (s: FinancesSoiree) => number) => soirees.reduce((t, s) => t + f(s), 0);
+  const tous = <T,>(f: (s: FinancesSoiree) => T | null) => (soirees.some((s) => f(s) === null) ? null : soirees.reduce((t, s) => t + (f(s) as number), 0));
+
+  const encaisseTtc = somme((s) => s.encaisseTtc);
+  const tva = somme((s) => s.tva);
+  const coutMatiere = tous((s) => s.coutMatiere);
+  const personnel = { reel: tous((s) => s.personnel.reel), affectations: somme((s) => s.personnel.affectations), tauxManquants: somme((s) => s.personnel.tauxManquants) };
+  const parPoste = new Map<string, LigneDepense>();
+  for (const d of soirees.flatMap((s) => s.depenses)) {
+    const x = parPoste.get(d.posteId) ?? { ...d, mode: null, valeur: null, montant: 0, saisiPar: null, saisiLe: null };
+    x.montant += d.montant;
+    parPoste.set(d.posteId, x);
+  }
+  const depenses = [...parPoste.values()].filter((d) => d.montant > 0);
+  const totalDepenses = depenses.reduce((t, d) => t + d.montant, 0);
+  const cascade = cascadeSoiree({ encaisseTtc, tva, coutMatiere, personnel: personnel.reel, depenses: totalDepenses });
+  const { rows } = await c.query<{ cible: number | null }>("SELECT cible_marge_nette_pb AS cible FROM lieu WHERE id = $1", [lieuId]);
+
+  let etatCible: FinancesSoiree["etatCible"] = null;
+  if (soirees.length > 0 && soirees.every((s) => s.etatCible !== null)) {
+    const cible = somme((s) => s.etatCible!.cible);
+    const tauxPb = tauxMargePb(cascade.margeNette, cascade.caHt);
+    const ciblePb = cascade.caHt > 0 ? Math.round((cible / cascade.caHt) * 10_000) : 0;
+    const ecart = cascade.margeNette === null ? null : cascade.margeNette - cible;
+    etatCible = { ciblePb, cible, tauxPb, ecart, ecartPb: tauxPb === null ? null : tauxPb - ciblePb, tenue: ecart === null ? null : ecart >= 0 };
+  }
+
+  return {
+    evenement: {
+      id: idPeriode(p),
+      libelle: libellePeriode(p),
+      debut: `${p.du}T12:00:00.000Z`,
+      etat: evs.some((e) => e.etat === "ouvert") ? "ouvert" : "clos",
+      spectateurs: evs.length > 0 && evs.every((e) => e.spectateurs !== null) ? evs.reduce((t, e) => t + e.spectateurs!, 0) : null,
+    },
+    encaisseTtc,
+    tva,
+    caHt: cascade.caHt,
+    tickets: somme((s) => s.tickets),
+    coutMatiere,
+    produitsSansCout: [...new Set(soirees.flatMap((s) => s.produitsSansCout))],
+    personnel,
+    depenses,
+    totalDepenses,
+    margeBrute: cascade.margeBrute,
+    margeNette: cascade.margeNette,
+    cascade: cascade.lignes,
+    cible: { lieu: rows[0]!.cible, evenement: null, effective: null },
+    etatCible,
+    periode: {
+      ...p,
+      soirees: soirees.map((s) => ({
+        id: s.evenement.id,
+        libelle: s.evenement.libelle,
+        debut: s.evenement.debut,
+        encaisseTtc: s.encaisseTtc,
+        caHt: s.caHt,
+        margeBrute: s.margeBrute,
+        margeNette: s.margeNette,
+        etatCible: s.etatCible,
+      })),
+    },
+  };
+}
+
 const libelleCible = (pb: number | null) => (pb === null ? "aucune" : formaterPourcentage(pb));
 
 export async function routesFinances(app: FastifyInstance, { base }: { base: Base }) {
   app.get("/api/finances", async (req): Promise<FinancesSoiree> => {
     const auth = await exigerDirecteur(req, base);
-    const { evenementId } = ParEvenement.parse(req.query);
-    return base.transaction(contexte(auth), async (c) => financesSoiree(c, auth.lieuId, await evenementPour(c, auth.lieuId, evenementId)));
+    const choix = Choix.parse(req.query);
+    return base.transaction(contexte(auth), async (c) =>
+      choix.evenementId ? financesSoiree(c, auth.lieuId, await evenementPour(c, auth.lieuId, choix.evenementId)) : financesPeriode(c, auth.lieuId, { du: choix.du!, au: choix.au! }),
+    );
   });
 
   // ---------- Dépense d'un poste pour un événement ----------

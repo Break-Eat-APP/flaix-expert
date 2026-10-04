@@ -495,6 +495,14 @@ export interface Resultats {
   precedent: StatsMatch | null;
   alertes: AlerteResultat[];
   prochains: { id: string; libelle: string; debut: string }[];
+  /** Bilan sur une période « du … au … » (§15.133) : `evenement` et `comparaison` décrivent alors les deux périodes. */
+  periode?: {
+    du: string;
+    au: string;
+    /** Événements de la période (avec ou sans ventes), du plus récent au plus ancien. */
+    evenements: MatchResume[];
+    precedente: { du: string; au: string; evenements: number };
+  } | null;
 }
 
 // ---------------------------------------------------------------------------

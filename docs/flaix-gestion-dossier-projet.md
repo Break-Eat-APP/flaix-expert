@@ -4563,5 +4563,20 @@ Rémi a fait auditer le code et les documents par Codex (`docs/audits/AUDIT_2026
 - **Cible de marge nette de la soirée** (§15.79) : gabarit du lieu (Paramètres → Objectifs de marge), ajustable pour une soirée (Résultats → Finances), « Revenir à la cible du lieu ». Affichée en % et en euros ; « cible tenue » ou « sous la cible » avec l'écart en euros.
 - **Rapport de soirée** : la cascade comprend désormais les dépenses de la soirée ; le rapport fige les dépenses et la cible **telles qu'au moment de la clôture**. Une facture saisie après la clôture modifie Finances, pas le rapport. Les rapports établis avant le 2026-10-04 le disent.
 - **Mode formation** : cibles et postes recopiés dans le jumeau à chaque entrée.
-- **Pas encore** : commission et frais de paiement du Click & Collect dans la cascade (attendent l'import des ventes C&C) ; vue « saison » de Finances ; charges de structure (hors périmètre, décision de Rémi du 11/09).
+- **Pas encore** : commission et frais de paiement du Click & Collect dans la cascade (attendent l'import des ventes C&C) ; vue « saison » de Finances (faite ensuite, §15.133) ; charges de structure (hors périmètre, décision de Rémi du 11/09).
 - **Tests** : moteur 11 (dont l'exemple des frites du dossier : 68,3 % pour une cible de 70 %, −0,07 € par vente), serveur 12, écran 3. Vérifié dans le navigateur.
+
+### 15.133 Bilan sur une période « du … au … » (2026-10-04)
+
+**Demande de Rémi** : *« tout doit être possible d'avoir un bilan de plusieurs jours en choisissant soit une date à une date »*.
+
+**Réalisé** (moteur `periode-bilan.ts`, phase 36) :
+- **Résultats** : bascule « Un événement / Une période ». Une période regroupe les événements dont la date de début (jour de Paris) tombe entre les deux jours inclus — la même règle que les clôtures mensuelles. Tous les onglets la prennent : Vue d'ensemble, Ventes, Finances, Marges, Rapports de soirée (liste filtrée), « À surveiller ». Raccourcis : ce mois-ci, le mois dernier, 30 derniers jours, depuis le 1er août (début de saison).
+- **Comparaison** : avec la période précédente de même durée, qui se termine la veille (septembre → du 2 au 31 août). Jamais une moyenne ; sans vente sur la période précédente, pas de comparaison.
+- **Finances d'une période** : somme des soirées ; dépenses additionnées par poste, en lecture (elles se saisissent soirée par soirée) ; tableau « Soirée par soirée » avec la marge nette et la cible de chacune ; cible de la période = somme des cibles des soirées, jugée seulement si chaque soirée en a une.
+- **Règles d'honnêteté conservées** : CA par spectateur seulement si l'affluence est saisie pour chaque événement de la période (sinon « affluence incomplète », et l'alerte le dit) ; marge nette seulement si elle existe pour chaque soirée.
+- **Tests** : moteur 5 (durée, période précédente, jour de Paris à minuit, libellés, dates impossibles), serveur 6, écrans 2. Vérifié dans le navigateur. Un plantage de l'écran (une fonction de date qui s'appelait elle-même) a été trouvé à la vérification et corrigé ; le test d'écran ajouté le couvre.
+
+### 15.134 Note produit de Rémi (ChatGPT) : Flaix Ops / Expert / Autopilot, agents IA (2026-10-04)
+
+Rémi a partagé une note produit rédigée avec ChatGPT (`FLAIX_EXPERT_PRODUCT_SPEC_CLAUDE_CODE.md` : couche d'intelligence décisionnelle, détecteur de fuites de revenus, cerveau d'événement, agents IA, simulation, jumeau numérique, mémoire du stade, Autopilot). Avis rendu le 2026-10-04 dans la conversation, avec une recherche sur les concurrents (Oracle Simphony, Shift4/VenueNext, SpotOn/Appetize, Nory, WaitTime, Safari AI) et sur l'AI Act. **IA : à décider avec Rémi, rien de construit seul** ; priorités à arrêter ensemble.

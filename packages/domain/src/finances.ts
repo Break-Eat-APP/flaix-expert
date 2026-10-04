@@ -136,4 +136,19 @@ export interface FinancesSoiree {
   cascade: import("./rapport-soiree.ts").LigneCascade[];
   cible: { lieu: number | null; evenement: number | null; effective: number | null };
   etatCible: EtatCibleSoiree | null;
+  /** Bilan d'une période (§15.133) : les soirées qui la composent ; les dépenses s'y lisent, elles se saisissent soirée par soirée. */
+  periode?: {
+    du: string;
+    au: string;
+    soirees: {
+      id: string;
+      libelle: string;
+      debut: string;
+      encaisseTtc: Centimes;
+      caHt: Centimes;
+      margeBrute: Centimes | null;
+      margeNette: Centimes | null;
+      etatCible: EtatCibleSoiree | null;
+    }[];
+  };
 }

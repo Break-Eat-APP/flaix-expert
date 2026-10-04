@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { etatCible, formaterMontant, rangHeure, tauxMargePb, type AlerteResultat, type Evenement, type MatchResume, type ProduitVendu, type Resultats, type StatsMatch, type TauxTvaPb } from "@flaix/domain";
+import { dansPeriode, estJour, etatCible, formaterMontant, idPeriode, libellePeriode, periodePrecedente, rangHeure, tauxMargePb, type Periode, type AlerteResultat, type Evenement, type MatchResume, type ProduitVendu, type Resultats, type StatsMatch, type TauxTvaPb } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { listerEvenements } from "./evenements.ts";
@@ -12,7 +12,25 @@ import { Uuid, contexte } from "./outils.ts";
  * (ventes moins annulations). Une donnée manquante reste null — jamais estimée.
  */
 
-const Choix = z.object({ evenementId: Uuid.optional(), comparaison: Uuid.optional() });
+const Jour = z.string().refine(estJour, "Date invalide (AAAA-MM-JJ).");
+const Choix = z
+  .object({ evenementId: Uuid.optional(), comparaison: Uuid.optional(), du: Jour.optional(), au: Jour.optional() })
+  .refine((x) => (x.du === undefined) === (x.au === undefined), "Indique le premier et le dernier jour de la période.")
+  .refine((x) => !x.du || !x.au || x.du <= x.au, "Le premier jour doit précéder le dernier.");
+
+/** Une période vue comme un événement : ce que les écrans de Résultats savent afficher (§15.133). */
+export function evenementDePeriode(p: Periode, evs: readonly Evenement[]): Evenement {
+  return {
+    id: idPeriode(p),
+    libelle: libellePeriode(p),
+    debut: `${p.du}T12:00:00.000Z`,
+    spectateurs: evs.length > 0 && evs.every((e) => e.spectateurs !== null) ? evs.reduce((s, e) => s + e.spectateurs!, 0) : null,
+    etat: evs.some((e) => e.etat === "ouvert") ? "ouvert" : "clos",
+    ouvertLe: null,
+    closLe: null,
+    caissesOuvertes: evs.reduce((n, e) => n + e.caissesOuvertes, 0),
+  };
+}
 
 export async function resumeMatchs(c: Client, lieuId: string): Promise<MatchResume[]> {
   const { rows } = await c.query<{ id: string; libelle: string; debut: Date; etat: MatchResume["etat"]; spectateurs: number | null; ca: number; tickets: number }>(
@@ -29,7 +47,12 @@ export async function resumeMatchs(c: Client, lieuId: string): Promise<MatchResu
 }
 
 export async function statsMatch(c: Client, lieuId: string, e: Evenement): Promise<StatsMatch> {
-  const p = [lieuId, e.id];
+  return statsEvenements(c, lieuId, [e], e.id);
+}
+
+/** Statistiques additionnées sur un ou plusieurs événements (bilan d'une période, §15.133). */
+export async function statsEvenements(c: Client, lieuId: string, evs: readonly Evenement[], id: string): Promise<StatsMatch> {
+  const p = [lieuId, evs.map((e) => e.id)];
   const { rows: tot } = await c.query<{ ca: number; ventes: number; annulations: number; montant_annule: number; especes: number; carte: number }>(
     `SELECT coalesce(sum(total_ttc_centimes), 0)::int AS ca,
             count(*) FILTER (WHERE type = 'vente')::int AS ventes,
@@ -37,20 +60,20 @@ export async function statsMatch(c: Client, lieuId: string, e: Evenement): Promi
             coalesce(-sum(total_ttc_centimes) FILTER (WHERE type = 'annulation'), 0)::int AS montant_annule,
             coalesce(sum(total_ttc_centimes) FILTER (WHERE mode_reglement = 'especes'), 0)::int AS especes,
             coalesce(sum(total_ttc_centimes) FILTER (WHERE mode_reglement = 'carte'), 0)::int AS carte
-       FROM journal_caisse WHERE lieu_id = $1 AND evenement_id = $2 AND type IN ('vente', 'annulation')`,
+       FROM journal_caisse WHERE lieu_id = $1 AND evenement_id = ANY($2::uuid[]) AND type IN ('vente', 'annulation')`,
     p,
   );
   const { rows: heures } = await c.query<{ heure: number; ca: number; tickets: number }>(
     `SELECT extract(hour FROM horodatage AT TIME ZONE 'Europe/Paris')::int AS heure, sum(total_ttc_centimes)::int AS ca,
             (count(*) FILTER (WHERE type = 'vente') - count(*) FILTER (WHERE type = 'annulation'))::int AS tickets
-       FROM journal_caisse WHERE lieu_id = $1 AND evenement_id = $2 AND type IN ('vente', 'annulation')
+       FROM journal_caisse WHERE lieu_id = $1 AND evenement_id = ANY($2::uuid[]) AND type IN ('vente', 'annulation')
       GROUP BY 1`,
     p,
   );
   const { rows: stands } = await c.query<{ stand_id: string; nom: string; ca: number }>(
     `SELECT j.stand_id, s.nom, sum(j.total_ttc_centimes)::int AS ca
        FROM journal_caisse j JOIN stand s ON s.lieu_id = j.lieu_id AND s.id = j.stand_id
-      WHERE j.lieu_id = $1 AND j.evenement_id = $2 AND j.type IN ('vente', 'annulation')
+      WHERE j.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[]) AND j.type IN ('vente', 'annulation')
       GROUP BY j.stand_id, s.nom ORDER BY 3 DESC`,
     p,
   );
@@ -62,7 +85,7 @@ export async function statsMatch(c: Client, lieuId: string, e: Evenement): Promi
        JOIN journal_caisse j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
        JOIN produit p ON p.lieu_id = l.lieu_id AND p.id = l.produit_id
        LEFT JOIN categorie cat ON cat.lieu_id = p.lieu_id AND cat.id = p.categorie_id
-      WHERE l.lieu_id = $1 AND j.evenement_id = $2
+      WHERE l.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[])
       GROUP BY l.produit_id, p.nom, cat.nom, p.cout_matiere_centimes, p.cible_marge_pb, cat.cible_marge_pb
       ORDER BY 6 DESC`,
     p,
@@ -70,12 +93,21 @@ export async function statsMatch(c: Client, lieuId: string, e: Evenement): Promi
   const { rows: taux } = await c.query<{ taux: TauxTvaPb; ht: number; tva: number; ttc: number }>(
     `SELECT l.taux_tva_pb AS taux, sum(l.ht_centimes)::int AS ht, sum(l.tva_centimes)::int AS tva, sum(l.net_ttc_centimes)::int AS ttc
        FROM ligne_ticket l JOIN journal_caisse j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
-      WHERE l.lieu_id = $1 AND j.evenement_id = $2
+      WHERE l.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[])
       GROUP BY 1 ORDER BY 1`,
     p,
   );
 
   const t = tot[0]!;
+  // Affluence : seulement si elle est connue pour chaque événement (jamais un total partiel présenté comme complet).
+  const spectateurs = evs.length > 0 && evs.every((e) => e.spectateurs !== null) ? evs.reduce((s, e) => s + e.spectateurs!, 0) : null;
+  const personnel = { reel: 0 as number | null, affectations: 0, tauxManquants: 0 };
+  for (const e of evs) {
+    const x = await personnelDuMatch(c, lieuId, e.id);
+    personnel.reel = personnel.reel === null || x.reel === null ? null : personnel.reel + x.reel;
+    personnel.affectations += x.affectations;
+    personnel.tauxManquants += x.tauxManquants;
+  }
   const tickets = t.ventes - t.annulations;
   const produits: ProduitVendu[] = lignes
     .filter((l) => l.quantite !== 0 || l.ttc !== 0)
@@ -97,15 +129,15 @@ export async function statsMatch(c: Client, lieuId: string, e: Evenement): Promi
   for (const x of produits) categories.set(x.categorie ?? "Sans catégorie", (categories.get(x.categorie ?? "Sans catégorie") ?? 0) + x.caTtc);
 
   return {
-    evenementId: e.id,
+    evenementId: id,
     caTtc: t.ca,
     caHt,
     tva: taux.reduce((s, x) => s + x.tva, 0),
     tickets,
     annulations: { nombre: t.annulations, montant: t.montant_annule },
     panierMoyen: tickets > 0 ? Math.round(t.ca / tickets) : null,
-    spectateurs: e.spectateurs,
-    caParSpectateur: e.spectateurs ? Math.round(t.ca / e.spectateurs) : null,
+    spectateurs,
+    caParSpectateur: spectateurs ? Math.round(t.ca / spectateurs) : null,
     parHeure: heures.sort((a, b) => rangHeure(a.heure) - rangHeure(b.heure)).map((h) => ({ heure: h.heure, ca: h.ca, tickets: h.tickets })),
     parCategorie: [...categories].map(([nom, ca]) => ({ nom, ca })).sort((a, b) => b.ca - a.ca),
     parStand: stands.map((s) => ({ standId: s.stand_id, nom: s.nom, ca: s.ca })),
@@ -116,19 +148,25 @@ export async function statsMatch(c: Client, lieuId: string, e: Evenement): Promi
     margeBrute: coutMatiere === null ? null : caHt - coutMatiere,
     produitsSansCout: sansCout.map((x) => x.nom),
     caHtSansCout: sansCout.reduce((s, x) => s + x.caHt, 0),
-    personnel: await personnelDuMatch(c, lieuId, e.id),
+    personnel,
   };
 }
 
 /** « À surveiller » : ce qui mérite un regard du directeur sur cet événement, sans rien interpréter. */
 export async function alertes(c: Client, lieuId: string, e: Evenement, s: StatsMatch): Promise<AlerteResultat[]> {
+  return alertesDe(c, lieuId, [e], s);
+}
+
+/** « À surveiller » sur un ou plusieurs événements (bilan d'une période). */
+async function alertesDe(c: Client, lieuId: string, evs: readonly Evenement[], s: StatsMatch): Promise<AlerteResultat[]> {
   const liste: AlerteResultat[] = [];
+  const ids = evs.map((e) => e.id);
   const { rows: signal } = await c.query<{ prix: number; heure: number; hors_ligne: number }>(
     `SELECT count(*) FILTER (WHERE controle ? 'ecartTarif')::int AS prix,
             count(*) FILTER (WHERE controle ? 'horodatageIncoherent')::int AS heure,
             count(*) FILTER (WHERE controle ? 'horsLigne')::int AS hors_ligne
-       FROM journal_caisse WHERE lieu_id = $1 AND evenement_id = $2 AND controle IS NOT NULL`,
-    [lieuId, e.id],
+       FROM journal_caisse WHERE lieu_id = $1 AND evenement_id = ANY($2::uuid[]) AND controle IS NOT NULL`,
+    [lieuId, ids],
   );
   const g = signal[0]!;
   if (g.prix) liste.push({ niveau: "forte", titre: `${g.prix} ticket${g.prix > 1 ? "s" : ""} avec un écart de prix`, detail: "Vendu à un autre prix que le tarif en vigueur : Caisses → Tickets de l'événement" });
@@ -136,14 +174,15 @@ export async function alertes(c: Client, lieuId: string, e: Evenement, s: StatsM
   const { rows: ecarts } = await c.query<{ numero: number; ecart: number; seuil: number }>(
     `SELECT DISTINCT ON (ce.session_id) k.numero, ce.ecart_centimes AS ecart, ce.seuil_centimes AS seuil
        FROM comptage_especes ce JOIN caisse k ON k.lieu_id = ce.lieu_id AND k.id = ce.caisse_id
-      WHERE ce.lieu_id = $1 AND ce.evenement_id = $2
+      WHERE ce.lieu_id = $1 AND ce.evenement_id = ANY($2::uuid[])
       ORDER BY ce.session_id, ce.le DESC`,
-    [lieuId, e.id],
+    [lieuId, ids],
   );
   for (const x of ecarts.filter((x) => Math.abs(x.ecart) > x.seuil)) {
     liste.push({ niveau: "forte", titre: `Caisse ${x.numero} : écart d'espèces de ${formaterMontant(x.ecart)}`, detail: `Au-delà de la tolérance de ${formaterMontant(x.seuil)} : Clôtures` });
   }
-  if (e.etat === "ouvert" && e.caissesOuvertes > 0) liste.push({ niveau: "normale", titre: `${e.caissesOuvertes} caisse${e.caissesOuvertes > 1 ? "s" : ""} encore ouverte${e.caissesOuvertes > 1 ? "s" : ""}`, detail: "Les chiffres bougent encore" });
+  const ouvertes = evs.filter((e) => e.etat === "ouvert").reduce((n, e) => n + e.caissesOuvertes, 0);
+  if (ouvertes > 0) liste.push({ niveau: "normale", titre: `${ouvertes} caisse${ouvertes > 1 ? "s" : ""} encore ouverte${ouvertes > 1 ? "s" : ""}`, detail: "Les chiffres bougent encore" });
   if (s.annulations.nombre) liste.push({ niveau: "normale", titre: `${s.annulations.nombre} annulation${s.annulations.nombre > 1 ? "s" : ""}`, detail: `${formaterMontant(s.annulations.montant)} annulés : Caisses → Tickets de l'événement` });
   if (s.produitsSansCout.length) {
     const part = s.caHt > 0 ? Math.round((s.caHtSansCout / s.caHt) * 100) : 0;
@@ -158,7 +197,10 @@ export async function alertes(c: Client, lieuId: string, e: Evenement, s: StatsM
       detail: `${sousCible.slice(0, 3).map((p) => p.nom).join(", ")}${sousCible.length > 3 ? "…" : ""} : Résultats → Marges`,
     });
   }
-  if (e.spectateurs === null) liste.push({ niveau: "normale", titre: "Affluence non saisie", detail: "Pour le CA par spectateur : Paramètres → Saison" });
+  const sansAffluence = evs.filter((e) => e.spectateurs === null).length;
+  if (sansAffluence) {
+    liste.push({ niveau: "normale", titre: evs.length > 1 ? `Affluence non saisie sur ${sansAffluence} événement${sansAffluence > 1 ? "s" : ""}` : "Affluence non saisie", detail: "Pour le CA par spectateur : Paramètres → Saison" });
+  }
   if (g.hors_ligne) liste.push({ niveau: "normale", titre: `${g.hors_ligne} ticket${g.hors_ligne > 1 ? "s" : ""} enregistré${g.hors_ligne > 1 ? "s" : ""} hors ligne`, detail: "Réseau coupé pendant l'événement : tickets reçus ensuite" });
   return liste;
 }
@@ -177,6 +219,32 @@ export async function routesResultats(app: FastifyInstance, { base }: { base: Ba
         .sort((a, b) => Date.parse(a.debut) - Date.parse(b.debut))
         .slice(0, 3)
         .map((e) => ({ id: e.id, libelle: e.libelle, debut: e.debut }));
+
+      // Bilan d'une période « du … au … », comparé à la période précédente de même durée (§15.133).
+      if (choix.du && choix.au) {
+        const p = { du: choix.du, au: choix.au };
+        const avant = periodePrecedente(p);
+        const dedans = evenements.filter((e) => dansPeriode(e.debut, p));
+        const precedents = evenements.filter((e) => dansPeriode(e.debut, avant));
+        const resume = new Map(matchs.map((m) => [m.id, m]));
+        const actuel = await statsEvenements(c, auth.lieuId, dedans, idPeriode(p));
+        const avecVentesAvant = precedents.filter((e) => avecVentes.has(e.id));
+        const precedent = avecVentesAvant.length ? await statsEvenements(c, auth.lieuId, precedents, idPeriode(avant)) : null;
+        return {
+          matchs,
+          evenement: evenementDePeriode(p, dedans),
+          comparaison: precedent ? evenementDePeriode(avant, precedents) : null,
+          actuel,
+          precedent,
+          alertes: dedans.length ? await alertesDe(c, auth.lieuId, dedans, actuel) : [],
+          prochains,
+          periode: {
+            ...p,
+            evenements: dedans.map((e) => resume.get(e.id) ?? { id: e.id, libelle: e.libelle, debut: e.debut, etat: e.etat, caTtc: 0, tickets: 0, spectateurs: e.spectateurs }),
+            precedente: { ...avant, evenements: precedents.length },
+          },
+        };
+      }
 
       // Événement affiché : celui demandé ; sinon l'événement ouvert s'il a des ventes ; sinon le plus récent qui en a.
       const ouvert = evenements.find((e) => e.etat === "ouvert" && avecVentes.has(e.id));

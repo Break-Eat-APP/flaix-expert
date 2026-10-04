@@ -39,6 +39,10 @@ let serveur: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   serveur = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === "/api/finances?evenementId=rouen") return reponse(200, finances(null, 9_000));
+    if (url === "/api/finances?du=2026-09-01&au=2026-09-30") {
+      const f = finances({ mode: "euros", valeur: 300 }, null);
+      return reponse(200, { ...f, evenement: { ...f.evenement, id: "periode:2026-09-01:2026-09-30", libelle: "du 1er au 30 septembre 2026" }, depenses: [{ ...f.depenses[0], mode: null, valeur: null }], periode: { du: "2026-09-01", au: "2026-09-30", soirees: [{ id: "gap", libelle: "Gap", debut: "2026-09-05T18:00:00Z", encaisseTtc: 1_200, caHt: 1_000, margeBrute: 700, margeNette: 600, etatCible: null }, { id: "rouen", libelle: "Rouen", debut: "2026-09-20T18:00:00Z", encaisseTtc: 1_500, caHt: 1_295, margeBrute: 1_085, margeNette: 885, etatCible: null }] } });
+    }
     if (url === "/api/finances/rouen/depenses/secu" && init?.method === "PUT") return reponse(200, finances(JSON.parse(init.body as string), 9_000));
     return reponse(404, { erreur: "Inconnu" });
   });
@@ -86,5 +90,21 @@ describe("gestion financière de la soirée à l'écran", () => {
     fireEvent.change(champ, { target: { value: "douze" } });
     fireEvent.blur(champ);
     expect(serveur.mock.calls.some(([url]) => url === "/api/finances/rouen/depenses/secu")).toBe(false);
+  });
+
+  it("bilan d'une période : les soirées une par une, les dépenses en lecture (elles se saisissent soirée par soirée)", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <VueFinances periode={{ du: "2026-09-01", au: "2026-09-30" }} s={stats} />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    await screen.findByText(/Tout cet écran porte sur la période/);
+    expect(screen.getByText("Soirée par soirée")).toBeTruthy();
+    expect(screen.getByText("Dépenses de la période")).toBeTruthy();
+    expect(screen.queryByLabelText("Montant Sécurité")).toBeNull();
+    expect(screen.getByText(/n'est jugée que si chaque soirée a une cible/)).toBeTruthy();
   });
 });
