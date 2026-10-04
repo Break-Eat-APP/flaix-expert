@@ -139,3 +139,16 @@
 .choix-periode label { display: inline-flex; gap: 6px; align-items: center; }
 .choix-periode input[type="date"] { width: auto; }
 .raccourcis-periode { display: flex; gap: 6px; flex-wrap: wrap; flex-basis: 100%; justify-content: flex-end; }
+
+/* Où je perds de l'argent (dossier §15.138) : barres classées par montant, fourchette en clair */
+.tornado { display: grid; gap: 10px; }
+.tornado-ligne { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 14px; padding: 12px; border-radius: 14px; background: var(--paper); font-size: 13px; }
+.tornado-ligne .texte { display: grid; gap: 3px; justify-items: start; min-width: 0; }
+.tornado-ligne .texte strong { font-size: 13.5px; }
+.tornado-ligne .texte > span:last-child { color: var(--muted); font-size: 12.5px; }
+.tornado-ligne .montant { display: grid; gap: 4px; justify-items: end; align-content: start; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tornado-barre { grid-column: 1 / -1; position: relative; height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.tornado-barre i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--red); }
+.tornado-barre i.fourchette { opacity: 0.35; }
+.tornado-ligne.piste .tornado-barre i { background: var(--violet); }
+@container (max-width: 520px) { .tornado-ligne { grid-template-columns: minmax(0, 1fr); } .tornado-ligne .montant { justify-items: start; } }

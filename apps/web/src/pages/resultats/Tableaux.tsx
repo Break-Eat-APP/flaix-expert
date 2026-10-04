@@ -24,14 +24,16 @@ import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 import { Anneau, CourbeHeures, Duo, MiniCourbe, Nuage, euros, eurosAxe } from "./graphiques.tsx";
 import { VueFinances } from "./Finances.tsx";
+import { VuePertes } from "./Pertes.tsx";
 import { EtatCibleMarge } from "../../composants/cibles.tsx";
 
-type Vue = "ensemble" | "ventes" | "finances" | "marges" | "rapports";
+type Vue = "ensemble" | "ventes" | "finances" | "marges" | "pertes" | "rapports";
 const VUES: [Vue, string][] = [
   ["ensemble", "Vue d'ensemble"],
   ["ventes", "Ventes"],
   ["finances", "Finances"],
   ["marges", "Marges"],
+  ["pertes", "Où je perds de l'argent"],
   ["rapports", "Rapports de soirée"],
 ];
 const COULEURS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--c5)"];
@@ -146,6 +148,7 @@ export function Tableaux() {
           {vue === "ventes" && <VueVentes d={d} autres={autres} choisir={setComparaisonId} />}
           {vue === "finances" && (d.periode ? <VueFinances periode={{ du: d.periode.du, au: d.periode.au }} s={d.actuel!} /> : <VueFinances evenementId={e.id} s={d.actuel!} />)}
           {vue === "marges" && <VueMarges s={d.actuel!} />}
+          {vue === "pertes" && (d.periode ? <VuePertes periode={{ du: d.periode.du, au: d.periode.au }} /> : <VuePertes evenementId={e.id} />)}
           {vue === "rapports" && <VueRapports d={d} choisir={(id) => { setEvenementId(id); setComparaisonId(null); }} />}
         </div>
         <aside className="resultats-panneau">
@@ -192,6 +195,7 @@ export function Tableaux() {
           <li><strong>CA HT et TVA</strong> : somme des lignes de ticket, TVA calculée à chaque vente selon le taux du produit.</li>
           <li><strong>Coût matière</strong> = quantité vendue × coût saisi aujourd'hui sur la fiche produit (Paramètres → Produits & prix). FlaiX ne garde pas encore l'historique des coûts : si un coût change, la marge des événements passés change aussi. <strong>Si un produit vendu n'a pas de coût, la marge brute n'est pas calculée</strong> (« coût manquant »), jamais affichée à 100 %.</li>
           <li><strong>Marge brute</strong> = CA HT − coût matière. Le personnel, la commission, les frais et les autres dépenses ne sont pas encore saisis dans FlaiX : la marge nette de la soirée viendra avec eux.</li>
+          <li><strong>Où je perds de l'argent</strong> : règles fixes, sans IA. Constaté = écarts de stock (les stands se compensent), manques d'espèces du comptage qui fait foi, ventes sous le tarif. Estimation = ventes manquées par une rupture, au rythme du stand (unités par ticket avant la rupture × tickets du stand après), en fourchette ; non chiffrée sous 20 tickets avant la rupture. Pistes = ordres de grandeur (sous la cible, volume × marge, écarts entre stands pour 100 tickets). Caisse à plein régime : 85 % de son maximum pendant 15 min, sans montant. Ces familles ne s'additionnent jamais.</li>
           <li><strong>Marges</strong> : les repères du nuage sont les médianes de l'événement (ventes et marge par vente des produits dont le coût est connu). « À revoir » = vendu plus que la médiane pour une marge par vente sous la médiane. Les pistes sont des calculs « à volume égal », pas des conseils.</li>
         </ul>
       </Regles>
