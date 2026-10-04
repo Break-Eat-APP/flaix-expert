@@ -1,6 +1,7 @@
 # FlaiX Expert
 
-Caisse et gestion financière des buvettes de stade — Break Eat.
+Caisse et gestion financière des buvettes de stade — FlaiX Expert (éditeur Break Eat App).
+Suivi du développement : [`docs/developpement/JOURNAL_DES_PHASES.md`](docs/developpement/JOURNAL_DES_PHASES.md), [`docs/developpement/CARTE_DU_CODE.md`](docs/developpement/CARTE_DU_CODE.md), [`CHANGELOG.md`](CHANGELOG.md).
 Décisions d'architecture : [`docs/decisions-architecture-production.md`](docs/decisions-architecture-production.md). Dossier projet (source de vérité) : [`docs/flaix-gestion-dossier-projet.md`](docs/flaix-gestion-dossier-projet.md).
 
 ## Organisation
@@ -26,7 +27,7 @@ pnpm db:migrate     # applique le schéma
 pnpm dev            # serveur (3001) + écrans (http://localhost:5173)
 ```
 
-Créer un lieu **vide** et son directeur (outil éditeur Break Eat, en attendant le back-office) :
+Créer un lieu **vide** et son directeur : depuis le back-office FlaiX Expert (`/editeur`), ou en secours avec l'outil d'administration :
 
 ```bash
 pnpm cli creer-lieu --nom "Nom du lieu" --email directeur@exemple.fr --directeur "Prénom Nom"
@@ -48,4 +49,4 @@ Les tests de conformité (`apps/api/test/conformite-base.test.ts`) provoquent r�
 
 ## Règles de travail
 
-Voir [`CLAUDE.md`](CLAUDE.md) : décision écrite avant code, aucune donnée de démonstration, lecture complète d'un module avant de le modifier, validation visuelle par Rémi module par module.
+Voir [`AGENTS.md`](AGENTS.md) (règles pour tous les outils d'IA) et [`CLAUDE.md`](CLAUDE.md) : décision écrite avant code, aucune donnée de démonstration, lecture complète d'un module avant de le modifier, validation visuelle par Rémi module par module.

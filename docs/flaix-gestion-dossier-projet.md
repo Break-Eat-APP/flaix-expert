@@ -4487,3 +4487,27 @@ Décision de Rémi (§15.124, point 6), premier cas : la bière pression. Migrat
 - **Éditeur et hébergeur** : *« la société qui héberge Flaix et FlaiX Expert, c'est Break Eat App »*. Les écrans disent **FlaiX Expert** (le produit) ; l'attestation d'éditeur, les factures aux lieux et les mentions légales sont au nom de **Break Eat App** (point 11 de `decisions-architecture-production.md` : forme sociale et SIREN à confirmer sur l'extrait Kbis).
 - **Dossier de conformité** : Rémi a rédigé un plan en 20 parties (OneDrive, « FLAIX EXPERT — DOSSIER DE CONFORMITÉ DU SYSTÈME DE CAISSE »). Il valide sa réécriture pour la caisse FlaiX Expert (parties 03, 04, 11, 14, 18) et l'ajout des points propres à notre caisse (vente sans réseau, mode formation, clôtures et totaux, ticket et duplicata, contrôle inopiné, conservation du code de chaque version, version majeure / mineure, annulation, offerts et rectification au lieu du « remboursement partiel »).
 - **Évolution annoncée** : *« il se peut que le logiciel évolue pour faire des tickets et ne pas encaisser directement sur nos TPE à nous ; demain je développe peut-être nos propres TPE Android qui encaisseront toujours avec un PSP style Stripe »*. Le dossier de conformité la prévoit : paiement intégré, référence de transaction du prestataire, remboursements par le prestataire → **version majeure, nouvelle attestation**, et réexamen des questions A (champ du logiciel de caisse) par l'expert-comptable.
+
+### 15.127 Fidélité à la caisse : code promo et points dans le ticket scellé (2026-10-03)
+
+Suite de §15.114 et de l'option A choisie par Rémi (§15.115) ; Rémi : *« faut mettre en place tous les modules, faut développer le logiciel de A à Z »*. Migration `0024`.
+- **Deux nouvelles réductions en euros**, appliquées **après** la remise et l'offert et réparties sur les lignes comme l'offert (la TVA reste ventilée au centime) : le **code promo** (pourcentage ou montant) et les **points** (paliers × valeur du palier). Chaque ligne du ticket porte sa part (`fidelite`, colonne `ligne_ticket.fidelite_centimes`) ; la contrainte de la base devient brut − remise − offert − fidélité = net.
+- **Un ticket sans fidélité garde exactement sa forme d'avant** (aucune clé ajoutée) : une tablette pas encore mise à jour continue d'être acceptée.
+- **Option A** : le serveur **réserve** les points (sous verrou de la fiche de l'abonné) ou un usage d'un code **plafonné** avant l'encaissement ; le ticket scellé porte la réservation, consommée par le serveur à la réception. Une réservation abandonnée **expire au bout de 2 heures** ; la caissière peut la rendre tout de suite (×). Un code **sans plafond** marche aussi **hors ligne** : la tablette garde la liste des codes valables.
+- **Les points ne se dépensent que sur le ticket d'un abonné** (motif abonné, même n°) et jamais au-delà de ce qui reste à payer.
+- **Soldes jamais recopiés** : points = gagnés (euros entiers × points par euro) − dépensés + mouvements, lus dans les tickets **non annulés** ; une annulation rend les points et l'usage du code d'elle-même.
+- **Un ticket scellé n'est jamais refusé pour une raison de fidélité** (la vente a eu lieu) : réservation inconnue, déjà utilisée, rendue, code plafonné sans réservation, valeur différente → **signalé** au directeur (« Fidélité » dans Mes caisses). Seule une incohérence de calcul (montant gonflé, points au-delà du ticket, points d'un autre abonné) est refusée.
+- **Écran de caisse** : bloc « Fidélité » (code promo ; « Points de l'abonné » → solde, paliers, Utiliser) ; lignes « Code … » et « Points (…) » sur le ticket client.
+- Tests : 6 du moteur, 8 contre la base (réservation, épuisement, annulation, libération, hors ligne, anomalies, refus de la base).
+- **État au 2026-10-04** : moteur et serveur faits et testés ; écran écrit, **à vérifier dans le navigateur avant la mise en ligne**. Le traitement en TVA des réductions de fidélité est à confirmer par l'expert-comptable (question C).
+
+### 15.128 Suivi du développement et préparation de l'audit Codex (2026-10-04)
+
+Rémi : *« je vais faire faire un audit du code et des documents à Codex ; as-tu créé un dossier de développement de chaque phase, ligne de code, GitHub relié au document, comme avec Break Eat ? Le dossier de règles. »*
+Mis en place, sur le modèle de Break Eat (`brain/`, `CHANGELOG.md`, audits par phase) :
+- **`AGENTS.md`** (racine, lu automatiquement par Codex) : règles et invariants pour tous les outils d'IA, rôles (Claude Code construit, Codex audite sans modifier), commandes, format des rapports. `CLAUDE.md` et `README.md` mis à jour (éditeur Break Eat App, renvois).
+- **`docs/developpement/JOURNAL_DES_PHASES.md`** : 31 phases (0 à 30), chacune avec sa section du dossier, ses commits (liens GitHub), ses migrations, son moteur, son serveur, ses écrans, ses tests.
+- **`docs/developpement/CARTE_DU_CODE.md`** : où trouver quoi, et la **ligne exacte** des fonctions et routes clés (liens GitHub figés sur le commit).
+- **`CHANGELOG.md`** : chaque commit, sa date, son lien GitHub, ses fichiers.
+- **`docs/developpement/CODEX_AUDIT_PROMPT.md`** : le prompt à donner à Codex (audit complet ou d'une phase) ; rapports dans **`docs/audits/`**, défauts classés P1 / P2 / P3 avec fichier et ligne.
+- Le journal, le CHANGELOG et la carte sont **générés depuis Git** (`node infra/outils/journal-developpement.cjs`) : à relancer après chaque phase, ils ne peuvent pas diverger du code.

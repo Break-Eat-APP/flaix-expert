@@ -1,6 +1,6 @@
 # FlaiX Expert / Flex Expert — instructions de projet
 
-Ce projet construit la **première version de production** de FlaiX Expert (Break Eat SAS, fondateur Rémi Notta). Avant d'écrire une seule ligne de code, lis en entier :
+Ce projet construit la **première version de production** de FlaiX Expert (marque affichée à l'écran ; **éditeur et hébergeur : Break Eat App**, fondateur Rémi Notta). Règles communes à tous les outils d'IA (Claude Code, Codex…) : [`AGENTS.md`](AGENTS.md). Suivi du développement : [`docs/developpement/`](docs/developpement/) (journal des phases, carte du code, prompt d'audit Codex) et [`CHANGELOG.md`](CHANGELOG.md), régénérés par `node infra/outils/journal-developpement.cjs` **après chaque phase**. Avant d'écrire une seule ligne de code, lis en entier :
 
 1. `docs/flaix-gestion-dossier-projet.md` — le dossier projet complet : toutes les décisions déjà actées avec Rémi, module par module, avec leur raisonnement. C'est la seule source de vérité validée.
 2. `docs/flaix-brief-production-claude-code.md` — le brief de passage en production (2026-09-28) : périmètre retenu, ce qui manque, points bloquants encore ouverts (notamment une question fiscale NF525/Stripe non tranchée, voir sa section 2).
@@ -21,7 +21,7 @@ Le prototype de référence (`docs/reference/flaix-gestion-final.html`, artifact
 
 ## Périmètre de cette mise en production (résumé — le détail fait foi dans le brief)
 
-Confirmé avec Rémi le 2026-09-28 : le module **Ma caisse** (création de tickets par la caissière) est dans le périmètre. **Corrigé par Rémi le 2026-09-29 : aucun encaissement ne passe par Stripe ni par FlaiX Expert. Le paiement carte se fait sur le TPE du lieu (sa banque), non relié au logiciel ; la caisse enregistre « carte » une fois le paiement accepté** (dossier §15.95). Stripe ne concerne que le Click & Collect de l'application Break Eat. La question NF525 reste à trancher avant la mise en service réelle de la caisse (`docs/questions-expert-comptable.md`).
+Confirmé avec Rémi le 2026-09-28 : le module **Ma caisse** (création de tickets par la caissière) est dans le périmètre. **Corrigé par Rémi le 2026-09-29 : aucun encaissement ne passe par Stripe ni par FlaiX Expert. Le paiement carte se fait sur le TPE du lieu (sa banque), non relié au logiciel ; la caisse enregistre « carte » une fois le paiement accepté** (dossier §15.95). Stripe ne concerne que le Click & Collect d'une application de commande (écrans neutres depuis le 2026-10-03). Évolution annoncée par Rémi : des TPE Android FlaiX encaissant par un prestataire de paiement — version majeure, voir le dossier de conformité, partie 27. La question NF525 reste à trancher avant la mise en service réelle de la caisse (`docs/questions-expert-comptable.md`).
 
 ## Avant de commencer à coder
 
@@ -46,4 +46,6 @@ Confirmé avec Rémi le 2026-09-28 : le module **Ma caisse** (création de ticke
 - **Clôtures de période (dossier §15.107)** : le Z du match est créé à la clôture du match (`zDuMatch`) ; mois et exercice se clôturent dans l'ordre ; `cloture_periode` est chaînée et la base impose perpétuel après = avant + grand total. Ne jamais recalculer un perpétuel ailleurs.
 - Docker Desktop sur ce poste : en cas de plantage au démarrage (« The file cannot be accessed by the system » sur un fichier `.sock`), voir la note dans `docs/decisions-architecture-production.md` § 13.
 
+- **Fidélité à la caisse (dossier §15.127)** : points et codes promo plafonnés réservés par le serveur avant l'encaissement (`apps/api/src/routes/fidelite-caisse.ts`), portés par le ticket scellé (`details.fidelite`), consommés à la réception ; un ticket sans fidélité garde exactement sa forme d'avant. Les soldes se lisent dans les tickets non annulés.
+- **Stock des ingrédients (dossier §15.125)** : consommation = ventes × recettes, figée à la clôture du match (`ingredient_consommation`).
 - Mode formation (dossier §15.109) : lieu d'entraînement jumeau (`lieu.formation_de`), configuration recopiée par `synchroniser_formation` (migration 0012) à chaque entrée, en lecture seule (liste `CONFIGURATION` dans `apps/api/src/serveur.ts` : toute nouvelle route de configuration doit y figurer). Une session porte `formation` ; ne jamais filtrer « formation » dans les calculs : l'isolement vient du lieu.
