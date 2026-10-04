@@ -208,41 +208,69 @@ export async function routesFideliteCaisse(app: FastifyInstance, { base }: { bas
   });
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+interface ReservationLue {
+  id: string;
+  caisse_id: string;
+  abonne: string | null;
+  code: string | null;
+  points: number | null;
+  montant: number | null;
+  expire_le: Date;
+  liberee: boolean;
+  consommee: boolean;
+}
+
 /**
  * À la réception d'un ticket (caisse.ts) : consomme les réservations qu'il porte. Ne refuse jamais un
  * ticket scellé — la vente a eu lieu — mais renvoie les anomalies à signaler au directeur.
+ * Une réservation n'est consommée que si TOUT concorde (audit Codex du 2026-10-04, P1-001) : même
+ * caisse, même abonné ou même code, mêmes points et même montant, ni utilisée, ni rendue, et pas
+ * expirée à l'heure de la vente. Au moindre écart elle reste intacte (elle expirera seule).
  */
 export async function consommerFidelite(
   c: Client,
   lieuId: string,
+  caisseId: string,
   ticketId: string,
   heureVente: Date,
   f: { codePromo: { code: string; type: TypeCodePromo; valeur: number; reservation: string | null } | null; points: { numero: string; points: number; montant: number; reservation: string } | null },
 ): Promise<string[]> {
   const anomalies: string[] = [];
-  const consommer = async (reservation: string, type: "points" | "code_promo") => {
-    const { rows } = await c.query<{ id: string; abonne: string | null; code: string | null; points: number | null; montant: number | null; liberee: boolean; consommee: boolean }>(
-      `SELECT r.id, a.numero AS abonne, k.code, r.points, r.montant_centimes AS montant, r.liberee_le IS NOT NULL AS liberee, r.consommee_par IS NOT NULL AS consommee
+  const lire = async (reservation: string | null, type: "points" | "code_promo"): Promise<ReservationLue | null> => {
+    if (!reservation || !UUID.test(reservation)) return null;
+    const { rows } = await c.query<ReservationLue>(
+      `SELECT r.id, r.caisse_id, a.numero AS abonne, k.code, r.points, r.montant_centimes AS montant, r.expire_le,
+              r.liberee_le IS NOT NULL AS liberee, r.consommee_par IS NOT NULL AS consommee
          FROM reservation_fidelite r
          LEFT JOIN abonne_fidelite a ON a.lieu_id = r.lieu_id AND a.id = r.abonne_id
          LEFT JOIN code_promo k ON k.lieu_id = r.lieu_id AND k.id = r.code_promo_id
         WHERE r.lieu_id = $1 AND r.id = $2 AND r.type = $3 FOR UPDATE OF r`,
       [lieuId, reservation, type],
     );
-    const r = rows[0];
-    if (!r) return null;
-    if (!r.consommee && !r.liberee) await c.query("UPDATE reservation_fidelite SET consommee_par = $3 WHERE lieu_id = $1 AND id = $2", [lieuId, r.id, ticketId]);
-    return r;
+    return rows[0] ?? null;
   };
+  /** Ce qui empêche d'utiliser une réservation, quelle qu'elle soit. */
+  const obstacles = (r: ReservationLue): string[] => [
+    ...(r.consommee ? ["déjà utilisée par un autre ticket"] : []),
+    ...(r.liberee ? ["rendue avant l'encaissement"] : []),
+    ...(r.caisse_id !== caisseId ? ["faite sur une autre caisse"] : []),
+    ...(heureVente.getTime() > r.expire_le.getTime() ? ["expirée avant la vente"] : []),
+  ];
+  const consommer = (r: ReservationLue) => c.query("UPDATE reservation_fidelite SET consommee_par = $3 WHERE lieu_id = $1 AND id = $2", [lieuId, r.id, ticketId]);
+
   if (f.points) {
-    const r = /^[0-9a-f-]{36}$/i.test(f.points.reservation) ? await consommer(f.points.reservation, "points") : null;
+    const r = await lire(f.points.reservation, "points");
     if (!r) anomalies.push(`points sans réservation connue du serveur (${f.points.points} pts)`);
     else {
-      if (r.consommee) anomalies.push("réservation de points déjà utilisée par un autre ticket");
-      if (r.liberee) anomalies.push("réservation de points rendue avant l'encaissement");
-      if (r.abonne !== f.points.numero || r.points !== f.points.points || r.montant !== f.points.montant) anomalies.push("points différents de ceux réservés");
+      const probleme = obstacles(r);
+      if (r.abonne !== f.points.numero || r.points !== f.points.points || r.montant !== f.points.montant) probleme.push("points différents de ceux réservés");
+      if (probleme.length) anomalies.push(...probleme.map((x) => `réservation de points ${x}`));
+      else await consommer(r);
     }
   }
+
   if (f.codePromo) {
     const { rows } = await c.query<{ id: string; type: TypeCodePromo; valeur: number; debut: string; fin: string; usage_max: number | null; actif: boolean }>(
       "SELECT id, type, valeur, to_char(debut, 'YYYY-MM-DD') AS debut, to_char(fin, 'YYYY-MM-DD') AS fin, usage_max, actif FROM code_promo WHERE lieu_id = $1 AND code = $2",
@@ -252,12 +280,18 @@ export async function consommerFidelite(
     const jour = jourParis(heureVente);
     if (!k) anomalies.push(`code ${f.codePromo.code} inconnu`);
     else {
+      const avant = anomalies.length;
       if (k.type !== f.codePromo.type || k.valeur !== f.codePromo.valeur) anomalies.push(`code ${f.codePromo.code} appliqué avec une autre valeur que la sienne`);
       if (!k.actif || jour < k.debut || jour > k.fin) anomalies.push(`code ${f.codePromo.code} pas valable le jour de la vente`);
       if (k.usage_max !== null) {
-        const r = f.codePromo.reservation && /^[0-9a-f-]{36}$/i.test(f.codePromo.reservation) ? await consommer(f.codePromo.reservation, "code_promo") : null;
+        const r = await lire(f.codePromo.reservation, "code_promo");
         if (!r || r.code !== f.codePromo.code) anomalies.push(`code plafonné ${f.codePromo.code} utilisé sans réservation du serveur`);
-        else if (r.consommee || r.liberee) anomalies.push(`réservation du code ${f.codePromo.code} déjà utilisée ou rendue`);
+        else {
+          const probleme = obstacles(r);
+          if (probleme.length) anomalies.push(...probleme.map((x) => `réservation du code ${f.codePromo!.code} ${x}`));
+          // L'usage n'est pris que si le code lui-même était valable pour cette vente.
+          else if (anomalies.length === avant) await consommer(r);
+        }
       }
     }
   }

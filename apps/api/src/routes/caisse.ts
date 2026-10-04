@@ -607,7 +607,7 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
           if (d.ajustement.motif === "abonne" && d.ajustement.remisePb !== remiseAbonneLieu) controle.remiseAbonneEcart = { applique: d.ajustement.remisePb, lieu: remiseAbonneLieu };
           // Code promo et points (§15.127) : les réservations du serveur sont consommées ; un écart est signalé, jamais refusé.
           if (d.fidelite) {
-            const anomalies = await consommerFidelite(c, auth.lieuId, e.id, new Date(heureVente), d.fidelite);
+            const anomalies = await consommerFidelite(c, auth.lieuId, id, e.id, new Date(heureVente), d.fidelite);
             if (anomalies.length) controle.fidelite = anomalies;
           }
         }

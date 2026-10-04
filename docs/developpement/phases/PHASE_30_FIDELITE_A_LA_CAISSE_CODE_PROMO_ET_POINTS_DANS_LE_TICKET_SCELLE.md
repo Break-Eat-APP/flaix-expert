@@ -89,6 +89,12 @@ Suite de §15.114 et de l'option A choisie par Rémi (§15.115) ; Rémi : *« fa
   - code plafonné à 1 usage : la réservation prend l'usage, une seconde caisse le trouve épuisé
   - [F] tablette trafiquée : points sans réservation, code plafonné sans réseau → encaissés (la vente a eu lieu) mais signalés
   - [F] la base refuse de supprimer une réservation ou d'en changer le ticket
+- **audit Codex P1-001 : une réservation n'est consommée que si tout concorde**
+  - 200 points réservés, ticket à 100 points : signalé, réservation NON consommée
+  - réservation du code A utilisée avec le code B : signalé, l'usage de A n'est pas pris
+  - réservation faite sur une autre caisse : signalé, non consommée
+  - réservation expirée avant l'heure de la vente : signalé, non consommée
+  - tout concorde : la réservation est consommée par ce ticket
 
 ### `packages/domain/src/fidelite-caisse.test.ts`
 

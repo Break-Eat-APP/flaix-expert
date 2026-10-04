@@ -67,8 +67,8 @@ function casDeTest(fichier) {
 const dossierPhases = path.join(racine, "docs", "developpement", "phases");
 const dossierWord = path.join(dossierPhases, "word");
 fs.mkdirSync(dossierWord, { recursive: true });
-for (const f of fs.readdirSync(dossierPhases)) if (f.endsWith(".md")) fs.unlinkSync(path.join(dossierPhases, f));
-for (const f of fs.readdirSync(dossierWord)) if (f.endsWith(".docx")) fs.unlinkSync(path.join(dossierWord, f));
+// Tout ou rien (audit P3-001) : les documents sont d'abord produits en mémoire ; les anciens fichiers
+// ne sont remplacés qu'une fois chaque document réussi.
 const documents = [];
 
 const index = ["# Dossier de développement par phase — FlaiX Expert", "", `> Généré le ${aujourdhui} par \`node infra/outils/phases-word.cjs\` depuis le dépôt. Un document par phase, en Markdown (ici) et en Word (\`word/\`). Règles du projet : [\`AGENTS.md\`](../../../AGENTS.md).`, "", "| Phase | Document | Décision | État |", "|---|---|---|---|"];
@@ -133,14 +133,18 @@ for (const p of PHASES) {
   m.push("- Ordre de construction complet : `docs/developpement/JOURNAL_DES_PHASES.md` ; où trouver quoi : `docs/developpement/CARTE_DU_CODE.md`.", "");
 
   const md = m.join("\n");
-  fs.writeFileSync(path.join(dossierPhases, `${nom}.md`), md);
   documents.push({ nom, md, enTete: `FlaiX Expert — dossier de développement — Phase ${p.n} — ${p.titre}` });
   index.push(`| ${p.n} | [${p.titre}](${nom}.md) · [Word](word/${nom}.docx) | ${p.dossier} | ${p.etat ? "en cours" : "livrée"} |`);
 }
-fs.writeFileSync(path.join(dossierPhases, "README.md"), index.join("\n") + "\n");
-
 (async () => {
-  for (const d of documents) fs.writeFileSync(path.join(dossierWord, `${d.nom}.docx`), await mdVersDocx(d.md, d.enTete));
+  for (const d of documents) d.docx = await mdVersDocx(d.md, d.enTete);
+  for (const f of fs.readdirSync(dossierPhases)) if (f.endsWith(".md")) fs.unlinkSync(path.join(dossierPhases, f));
+  for (const f of fs.readdirSync(dossierWord)) if (f.endsWith(".docx")) fs.unlinkSync(path.join(dossierWord, f));
+  for (const d of documents) {
+    fs.writeFileSync(path.join(dossierPhases, `${d.nom}.md`), d.md);
+    fs.writeFileSync(path.join(dossierWord, `${d.nom}.docx`), d.docx);
+  }
+  fs.writeFileSync(path.join(dossierPhases, "README.md"), index.join("\n") + "\n");
   console.log(`${PHASES.length} phases : Markdown et Word dans docs/developpement/phases`);
 })().catch((e) => {
   console.error(e);

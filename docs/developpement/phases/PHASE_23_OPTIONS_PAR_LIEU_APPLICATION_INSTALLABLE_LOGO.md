@@ -99,6 +99,7 @@
   - FlaiX Expert désactive le Stock : ses adresses sont fermées, le lieu le voit dans son journal
   - le lieu de formation suit les options du vrai lieu
   - réactivée, l'option rouvre ses adresses
+  - chaque option ferme toutes ses adresses, et seulement elles (audit P2-002)
   - [F] seul un compte FlaiX Expert change une option, jusque dans la base ; lieu inconnu refusé
 
 ## 5. Pour reprendre ou vérifier cette phase

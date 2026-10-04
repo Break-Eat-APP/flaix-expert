@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import type { AccueilTablette } from "@flaix/domain";
@@ -8,31 +8,41 @@ import { Coquille } from "./composants/Coquille.tsx";
 import { Chargement, MessageErreur } from "./composants/communs.tsx";
 import { Connexion } from "./pages/Connexion.tsx";
 import { ConnexionCaissiere } from "./pages/ConnexionCaissiere.tsx";
-import { Resultats } from "./pages/Resultats.tsx";
-import { Compte } from "./pages/Compte.tsx";
-import { Parametres } from "./pages/parametres/Parametres.tsx";
-import { Identite } from "./pages/parametres/Identite.tsx";
-import { StandsCaisses } from "./pages/parametres/StandsCaisses.tsx";
-import { Produits } from "./pages/parametres/Produits.tsx";
-import { Saison } from "./pages/parametres/Saison.tsx";
-import { JournalTechnique } from "./pages/parametres/JournalTechnique.tsx";
 import { MesCaisses } from "./pages/caisse/MesCaisses.tsx";
 import { EcranCaisse } from "./pages/caisse/EcranCaisse.tsx";
 import { PosteCaissiere } from "./pages/caisse/PosteCaissiere.tsx";
-import { Clotures } from "./pages/clotures/Clotures.tsx";
-import { Equipe } from "./pages/equipe/Equipe.tsx";
-import { Stock } from "./pages/stock/Stock.tsx";
-import { Formation } from "./pages/parametres/Formation.tsx";
-import { ClickCollect } from "./pages/parametres/ClickCollect.tsx";
-import { EnDirect } from "./pages/direct/EnDirect.tsx";
-import { CoutsBuvette } from "./pages/parametres/CoutsBuvette.tsx";
-import { Fidelite } from "./pages/fidelite/Fidelite.tsx";
-import { Factures } from "./pages/factures/Factures.tsx";
-import { EspaceEditeur } from "./pages/editeur/EspaceEditeur.tsx";
+
+// Écrans du directeur et back-office chargés à la demande (audit Codex P3-002) : le premier chargement
+// d'une tablette reste léger. L'écran de caisse, lui, reste dans le chargement principal : une tablette
+// qui perd le réseau ne doit jamais attendre un morceau d'application qu'elle n'a pas encore reçu.
+const Resultats = lazy(() => import("./pages/Resultats.tsx").then((m) => ({ default: m.Resultats })));
+const Compte = lazy(() => import("./pages/Compte.tsx").then((m) => ({ default: m.Compte })));
+const Parametres = lazy(() => import("./pages/parametres/Parametres.tsx").then((m) => ({ default: m.Parametres })));
+const Identite = lazy(() => import("./pages/parametres/Identite.tsx").then((m) => ({ default: m.Identite })));
+const StandsCaisses = lazy(() => import("./pages/parametres/StandsCaisses.tsx").then((m) => ({ default: m.StandsCaisses })));
+const Produits = lazy(() => import("./pages/parametres/Produits.tsx").then((m) => ({ default: m.Produits })));
+const Saison = lazy(() => import("./pages/parametres/Saison.tsx").then((m) => ({ default: m.Saison })));
+const JournalTechnique = lazy(() => import("./pages/parametres/JournalTechnique.tsx").then((m) => ({ default: m.JournalTechnique })));
+const Clotures = lazy(() => import("./pages/clotures/Clotures.tsx").then((m) => ({ default: m.Clotures })));
+const Equipe = lazy(() => import("./pages/equipe/Equipe.tsx").then((m) => ({ default: m.Equipe })));
+const Stock = lazy(() => import("./pages/stock/Stock.tsx").then((m) => ({ default: m.Stock })));
+const Formation = lazy(() => import("./pages/parametres/Formation.tsx").then((m) => ({ default: m.Formation })));
+const ClickCollect = lazy(() => import("./pages/parametres/ClickCollect.tsx").then((m) => ({ default: m.ClickCollect })));
+const EnDirect = lazy(() => import("./pages/direct/EnDirect.tsx").then((m) => ({ default: m.EnDirect })));
+const CoutsBuvette = lazy(() => import("./pages/parametres/CoutsBuvette.tsx").then((m) => ({ default: m.CoutsBuvette })));
+const Fidelite = lazy(() => import("./pages/fidelite/Fidelite.tsx").then((m) => ({ default: m.Fidelite })));
+const Factures = lazy(() => import("./pages/factures/Factures.tsx").then((m) => ({ default: m.Factures })));
+const EspaceEditeur = lazy(() => import("./pages/editeur/EspaceEditeur.tsx").then((m) => ({ default: m.EspaceEditeur })));
 
 /** Le back-office FlaiX Expert (/editeur) est un espace à part : autres comptes, autre cookie (dossier §15.116). */
 export function App() {
-  return window.location.pathname.startsWith("/editeur") ? <EspaceEditeur /> : <AppLieu />;
+  return window.location.pathname.startsWith("/editeur") ? (
+    <Suspense fallback={<Chargement />}>
+      <EspaceEditeur />
+    </Suspense>
+  ) : (
+    <AppLieu />
+  );
 }
 
 function AppLieu() {

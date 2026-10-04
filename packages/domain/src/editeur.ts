@@ -84,7 +84,7 @@ export type OptionsLieu = Record<OptionLieu, boolean>;
 
 export const OPTIONS_LIEU: { cle: OptionLieu; libelle: string; aide: string }[] = [
   { cle: "stock", libelle: "Stock", aide: "Mise en place, comptages, réserve, livraisons, ruptures" },
-  { cle: "equipe", libelle: "Planning & masse salariale", aide: "Affectations par match, coût du personnel" },
+  { cle: "equipe", libelle: "Planning & masse salariale", aide: "Affectations par match, coût du personnel (les fiches et l'accès caisse restent dans la base)" },
   { cle: "fidelite", libelle: "Fidélité", aide: "Abonnés, points, codes promo" },
   { cle: "click_collect", libelle: "Click & Collect", aide: "Prix sur l'application de commande" },
   { cle: "factures", libelle: "Factures fournisseurs", aide: "Saisie, rapprochement avec les livraisons" },
@@ -96,7 +96,9 @@ export const OPTIONS_PAR_DEFAUT: OptionsLieu = { stock: true, equipe: true, fide
 /** Option dont dépend une adresse du serveur (null : la base, toujours ouverte). */
 export function optionDeLaRoute(url: string): OptionLieu | null {
   if (/^\/api\/stock(\/|$)/.test(url)) return "stock";
-  if (/^\/api\/planning(\/|$)/.test(url)) return "equipe";
+  // « Planning & masse salariale » : le planning et la masse salariale. Les fiches employés, l'accès
+  // caisse des caissières et les tablettes restent dans la base : la caisse en a besoin (audit P2-002).
+  if (/^\/api\/planning(\/|$)/.test(url) || /^\/api\/equipe\/masse-salariale(\/|$)/.test(url)) return "equipe";
   if (/^\/api\/fidelite(\/|$)/.test(url)) return "fidelite";
   if (/^\/api\/click-collect(\/|$)/.test(url)) return "click_collect";
   if (/^\/api\/factures(\/|$)/.test(url)) return "factures";

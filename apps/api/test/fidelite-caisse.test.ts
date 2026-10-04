@@ -141,3 +141,62 @@ describe("codes promo à la caisse", () => {
     await expect(proprietaire.pool.query("UPDATE reservation_fidelite SET consommee_par = gen_random_uuid() WHERE id = $1", [rows[0]!.id])).rejects.toMatchObject({ code: "23514" });
   });
 });
+
+describe("audit Codex P1-001 : une réservation n'est consommée que si tout concorde", () => {
+  beforeAll(async () => {
+    // Les tests précédents ont dépensé ses points : de quoi réserver dans chacun des cas ci-dessous.
+    const id = (await appel<EtatFidelite>("GET", "/api/fidelite")).corps.abonnes.find((x) => x.numero === "AB-1")!.id;
+    await appel("POST", `/api/fidelite/abonnes/${id}/points`, { points: 1000, commentaire: "Recharge pour les tests d'audit" });
+  });
+  const consommee = async (reservation: string) =>
+    (await proprietaire.pool.query<{ c: string | null }>("SELECT consommee_par AS c FROM reservation_fidelite WHERE id = $1", [reservation])).rows[0]!.c;
+  const reserverPoints = async (caisseId: string, paliers: number) =>
+    (await appel<ReservationCaisse>("POST", `/api/caisses/${caisseId}/fidelite/points`, { numero: "AB-1", paliers })).corps;
+  const anomalies = async (id: string) => (await tickets()).find((x) => x.id === id)!.controle?.fidelite ?? [];
+
+  it("200 points réservés, ticket à 100 points : signalé, réservation NON consommée", async () => {
+    const r = await reserverPoints(caisse, 2);
+    const v = vendreHorsLigne(t, [ligne(biere, 3)], { ajustement: abonne, fidelite: { codePromo: null, points: { numero: "AB-1", points: 100, montant: 500, reservation: r.reservation! } } });
+    expect((await envoyer(appel, t)).statut).toBe(200);
+    expect(await anomalies(v.id)).toEqual(["réservation de points points différents de ceux réservés"]);
+    expect(await consommee(r.reservation!)).toBeNull();
+    await appel("POST", `/api/caisses/${caisse}/fidelite/reservations/${r.reservation}/liberation`);
+  });
+
+  it("réservation du code A utilisée avec le code B : signalé, l'usage de A n'est pas pris", async () => {
+    await appel("POST", "/api/fidelite/codes", { code: "CODEA", type: "montant", valeur: 100, debut: "2026-01-01", fin: "2099-12-31", usageMax: 5 });
+    await appel("POST", "/api/fidelite/codes", { code: "CODEB", type: "montant", valeur: 100, debut: "2026-01-01", fin: "2099-12-31", usageMax: 5 });
+    const a = (await appel<ReservationCaisse>("POST", `/api/caisses/${caisse}/fidelite/codes`, { code: "CODEA" })).corps;
+    const v = vendreHorsLigne(t, [ligne(biere)], { fidelite: { codePromo: { code: "CODEB", type: "montant", valeur: 100, reservation: a.reservation }, points: null } });
+    expect((await envoyer(appel, t)).statut).toBe(200);
+    expect(await anomalies(v.id)).toEqual(["code plafonné CODEB utilisé sans réservation du serveur"]);
+    expect(await consommee(a.reservation!)).toBeNull();
+  });
+
+  it("réservation faite sur une autre caisse : signalé, non consommée", async () => {
+    let nord = (await appel<Stand[]>("POST", "/api/stands", { nom: "Nord" })).corps.find((x) => x.nom === "Nord")!;
+    nord = (await appel<Stand[]>("POST", `/api/stands/${nord.id}/caisses`, {})).corps.find((x) => x.nom === "Nord")!;
+    const r = await reserverPoints(nord.caisses[0]!.id, 1);
+    const v = vendreHorsLigne(t, [ligne(biere, 2)], { ajustement: abonne, fidelite: { codePromo: null, points: { numero: "AB-1", points: 100, montant: 500, reservation: r.reservation! } } });
+    expect((await envoyer(appel, t)).statut).toBe(200);
+    expect(await anomalies(v.id)).toEqual(["réservation de points faite sur une autre caisse"]);
+    expect(await consommee(r.reservation!)).toBeNull();
+  });
+
+  it("réservation expirée avant l'heure de la vente : signalé, non consommée", async () => {
+    const r = await reserverPoints(caisse, 1);
+    await proprietaire.pool.query("UPDATE reservation_fidelite SET expire_le = now() - interval '1 minute' WHERE id = $1", [r.reservation]);
+    const v = vendreHorsLigne(t, [ligne(biere, 2)], { ajustement: abonne, fidelite: { codePromo: null, points: { numero: "AB-1", points: 100, montant: 500, reservation: r.reservation! } } });
+    expect((await envoyer(appel, t)).statut).toBe(200);
+    expect(await anomalies(v.id)).toEqual(["réservation de points expirée avant la vente"]);
+    expect(await consommee(r.reservation!)).toBeNull();
+  });
+
+  it("tout concorde : la réservation est consommée par ce ticket", async () => {
+    const r = await reserverPoints(caisse, 1);
+    const v = vendreHorsLigne(t, [ligne(biere, 2)], { ajustement: abonne, fidelite: { codePromo: null, points: { numero: "AB-1", points: 100, montant: 500, reservation: r.reservation! } } });
+    expect((await envoyer(appel, t)).statut).toBe(200);
+    expect(await anomalies(v.id)).toEqual([]);
+    expect(await consommee(r.reservation!)).toBe(v.id);
+  });
+});

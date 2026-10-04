@@ -55,7 +55,7 @@ Statut : **version de test** sur `flaixexpert.flaixlabs.com` ; la production att
 pnpm install
 pnpm db:up            # PostgreSQL local (Docker, port 5433) : bases flaix (développement) et flaix_test (tests)
 pnpm db:migrate       # applique les migrations à la base de développement
-pnpm test             # moteur + serveur contre la vraie base (environ 390 tests)
+pnpm test             # moteur, serveur contre la vraie base, écrans (jsdom) — environ 400 tests
 pnpm typecheck
 node infra/outils/journal-developpement.cjs   # régénère CHANGELOG, journal des phases, carte du code
 node infra/outils/phases-word.cjs             # dossier de développement par phase (Markdown + Word) pour un développeur

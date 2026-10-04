@@ -75,6 +75,24 @@ describe("options d'un lieu", () => {
     expect((await requete(directeur, "GET", "/api/stock")).statut).toBe(200);
   });
 
+  it("chaque option ferme toutes ses adresses, et seulement elles (audit P2-002)", async () => {
+    const FAMILLES: Record<string, string[]> = {
+      stock: ["/api/stock", "/api/stock/reserve", "/api/stock/ingredients"],
+      equipe: ["/api/planning", "/api/equipe/masse-salariale"],
+      fidelite: ["/api/fidelite"],
+      click_collect: ["/api/click-collect"],
+      factures: ["/api/factures"],
+      couts_buvette: ["/api/couts-buvette"],
+    };
+    const BASE = ["/api/evenements", "/api/equipe/employes", "/api/equipe/caissieres", "/api/appareils", "/api/resultats"];
+    for (const [option, adresses] of Object.entries(FAMILLES)) {
+      expect((await requete(editeur, "PUT", `/api/editeur/lieux/${lieu.lieuId}/options`, { option, active: false })).statut).toBe(200);
+      for (const a of adresses) expect([option, a, (await requete(directeur, "GET", a)).statut]).toEqual([option, a, 403]);
+      for (const a of BASE) expect([option, a, (await requete(directeur, "GET", a)).statut]).toEqual([option, a, 200]);
+      await requete(editeur, "PUT", `/api/editeur/lieux/${lieu.lieuId}/options`, { option, active: true });
+    }
+  });
+
   it("[F] seul un compte FlaiX Expert change une option, jusque dans la base ; lieu inconnu refusé", async () => {
     expect((await requete(directeur, "PUT", `/api/editeur/lieux/${lieu.lieuId}/options`, { option: "stock", active: false })).statut).toBe(401);
     const ctx = { lieuId: lieu.lieuId, utilisateurId: lieu.utilisateurId };

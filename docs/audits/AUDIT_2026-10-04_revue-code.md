@@ -103,3 +103,19 @@ Le build produit un chunk JavaScript minifié d'environ 707 kB et Vite émet un 
 2. Décider et corriger le périmètre des options `export_comptable` et `equipe`.
 3. Intégrer toutes les dépendances non suivies du générateur dans le même commit.
 4. Ajouter la couverture web avant les essais de production.
+
+---
+
+## Réponses et corrections (Claude Code, 2026-10-04)
+
+| Constat | Suite donnée | Preuve |
+|---|---|---|
+| **P1-001** — réservation consommée avant validation | **Corrigé.** `consommerFidelite` reçoit la caisse, lit et verrouille la réservation, vérifie *avant* toute écriture : utilisée, rendue, **autre caisse**, **expirée à l'heure de la vente**, abonné / points / montant, ou code (et validité du code lui-même). Elle n'est consommée que si tout concorde ; sinon l'écart est signalé et la réservation reste intacte. | `apps/api/src/routes/fidelite-caisse.ts` (`consommerFidelite`) ; 5 tests ajoutés dans `apps/api/test/fidelite-caisse.test.ts` (les 4 scénarios du rapport + le cas valide) |
+| **P2-001** — option `export_comptable` | **Non retenu : voulu.** Décision de Rémi du 2026-10-03 (dossier §15.124 point 3) : l'export comptable fait partie de la base. La migration `0022` a supprimé les lignes `export_comptable` et retiré la valeur de la contrainte : la base ne peut plus contenir `export_comptable=false`. Le rapport s'est appuyé sur `0020` sans `0022`. | `db/migrations/0022_export_base_assiette_cc.sql` |
+| **P2-002** — périmètre de l'option `equipe` | **Corrigé et précisé.** Défaut réel trouvé en vérifiant : `/api/equipe/masse-salariale` (route du planning) n'était pas fermée par l'option. Périmètre écrit : l'option couvre le **planning et la masse salariale** ; les fiches employés, l'accès caisse des caissières et les tablettes restent dans la base (la caisse en a besoin). Test ajouté pour **chaque** option : toutes ses adresses fermées, la base ouverte. | `packages/domain/src/editeur.ts` (`optionDeLaRoute`) ; `apps/api/test/options.test.ts` |
+| **P2-003** — outils non suivis | **Déjà réglé** par les commits suivants (`a23a7fb`, `c2c517e`) : `phases.cjs`, `phases-word.cjs`, `md-vers-docx.cjs` et `docs/developpement/phases/` sont suivis. `md-vers-html.cjs` et `html-vers-word.ps1` ont été abandonnés (l'import HTML par Word restait bloqué) au profit de la bibliothèque `docx`, devenue dépendance de développement. | `git ls-files infra/outils` |
+| **P2-004** — pas de tests des écrans | **Corrigé (premier lot).** Vitest + jsdom dans `apps/web` : file d'envoi hors ligne de la tablette (9 tests : coupure, 502, refus, 401, vente pendant l'envoi, envois simultanés, lots de 200, mémoire pleine), fidélité à la caisse (6 tests : code sans plafond hors ligne, refus, points sans réseau, retrait), menu selon les options (2 tests). `pnpm test` les lance. **Reste** : un parcours complet de la caisse et du mode formation rendu à l'écran. | `apps/web/src/pages/caisse/memoire.test.ts`, `FideliteCaisse.test.tsx`, `apps/web/src/composants/Coquille.test.ts` |
+| **P3-001** — génération non atomique | **Corrigé.** Tous les documents sont produits en mémoire d'abord ; les anciens fichiers ne sont remplacés qu'une fois chaque document réussi. | `infra/outils/phases-word.cjs` |
+| **P3-002** — chargement de 707 kB | **Corrigé.** Écrans du directeur et back-office chargés à la demande : chargement principal **305 kB** (avertissement de Vite disparu). L'écran de caisse reste dans le chargement principal, volontairement : une tablette sans réseau ne doit jamais attendre un morceau d'application pas encore reçu (le service worker ne garde que ce qui a déjà été ouvert). | `apps/web/src/App.tsx` |
+
+Suites complètes après corrections : moteur 150, serveur 236, écrans 18 — **404 tests au vert**.

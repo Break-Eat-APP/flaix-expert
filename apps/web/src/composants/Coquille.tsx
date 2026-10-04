@@ -1,12 +1,13 @@
-import { useEffect, useState, type ComponentType } from "react";
+import { Suspense, useEffect, useState, type ComponentType } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChartLine, FileText, Heart, KeyRound, Lock, LogOut, Menu, Package, Receipt, SlidersHorizontal, Users, X } from "lucide-react";
-import type { OptionLieu, SessionInfo, Stand } from "@flaix/domain";
+import type { OptionLieu, OptionsLieu, SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
 import { useDeconnexion, useOptions } from "../session.tsx";
 import { BandeauFormation } from "./Formation.tsx";
 import { Logo } from "./Logo.tsx";
+import { Chargement } from "./communs.tsx";
 
 interface Entree {
   id: string;
@@ -30,6 +31,11 @@ const MENU: Entree[] = [
   { id: "factures", libelle: "Factures", icone: FileText, route: "/factures", option: "factures" },
   { id: "parametres", libelle: "Paramètres", icone: SlidersHorizontal, route: "/parametres" },
 ];
+
+/** Entrées du menu pour les options du lieu : une option désactivée par FlaiX Expert disparaît du menu. */
+export function menuDuLieu(options: OptionsLieu): Entree[] {
+  return MENU.filter((e) => !e.option || options[e.option]);
+}
 
 export function Coquille({ session }: { session: SessionInfo }) {
   const { pathname } = useLocation();
@@ -75,7 +81,7 @@ export function Coquille({ session }: { session: SessionInfo }) {
         </NavLink>
 
         <nav className="nav" aria-label="Menu principal">
-          {MENU.filter((e) => !e.option || options[e.option]).map((entree) => {
+          {menuDuLieu(options).map((entree) => {
             const Icone = entree.icone;
             return entree.route ? (
               <NavLink key={entree.id} to={entree.route} end={entree.route === "/"} className={({ isActive }) => `nav-section${isActive ? " active" : ""}`}>
@@ -124,7 +130,9 @@ export function Coquille({ session }: { session: SessionInfo }) {
           </div>
         )}
         <main className="contenu">
-          <Outlet />
+          <Suspense fallback={<Chargement />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>
