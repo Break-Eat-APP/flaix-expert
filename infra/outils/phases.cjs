@@ -1,0 +1,40 @@
+/**
+ * Les phases du développement de FlaiX Expert et leurs commits (hash court). Une phase nouvelle s'ajoute ici,
+ * puis : node infra/outils/journal-developpement.cjs && node infra/outils/phases-word.cjs
+ */
+const PHASES = [
+  { n: 0, titre: "Socle de production et configuration d'un lieu vide", dossier: "§15.93", commits: ["4a205cb", "40693c8"] },
+  { n: 1, titre: "Matchs, caisse, Mes caisses, journal des tickets", dossier: "§15.94", commits: ["f454873"] },
+  { n: 2, titre: "Retour de démonstration, organisation en 6 entrées, maquettes", dossier: "§15.95, §15.96, §15.98", commits: ["9c7d7a9", "0ef6cf1", "26237fc", "0219e7e", "6f272dd", "c3c6168"] },
+  { n: 3, titre: "Vente sans réseau : la tablette scelle, le serveur vérifie", dossier: "§15.97", commits: ["6fb5840"] },
+  { n: 4, titre: "Serveur de test OVH", dossier: "guide-serveur-test-ovh.md", commits: ["249f3f5", "ef7c9fa"] },
+  { n: 5, titre: "Comptes des caissières et tablettes enregistrées", dossier: "§15.99, §15.100", commits: ["d51b910", "3f03ee8", "9253115", "9324475"] },
+  { n: 6, titre: "Ticket client sur demande et duplicata", dossier: "§15.101", commits: ["911d4b3"] },
+  { n: 7, titre: "Clôture du match : Z des tiroirs, rectification signée", dossier: "§15.102", commits: ["c8e6246", "3398ccb", "d3670c6"] },
+  { n: 8, titre: "Résultats sur les vraies ventes", dossier: "§15.103", commits: ["d0985d1", "d29e769", "d3194ab"] },
+  { n: 9, titre: "Équipe : fiches, planning, masse salariale", dossier: "§15.104", commits: ["40c3f7b", "bbf7f4b", "3509f19"] },
+  { n: 10, titre: "Stock : réserve, livraisons au CUMP, mise en place, comptage", dossier: "§15.105", commits: ["d8163c3", "292fe39", "9b43fdd"] },
+  { n: 11, titre: "Remontées au coffre et Z du coffre", dossier: "§15.106", commits: ["27be12a", "4aa3109", "2ba4293", "69d161f"] },
+  { n: 12, titre: "Clôtures mensuelle et annuelle, total perpétuel", dossier: "§15.107", commits: ["8b02048", "1141f9c", "284f366"] },
+  { n: 13, titre: "Exercice par lieu, sauvegardes chiffrées hors serveur", dossier: "§15.108", commits: ["8542bbf", "43fd2f2", "8903b24", "ec9398d"] },
+  { n: 14, titre: "Mode formation « FACTICE »", dossier: "§15.109", commits: ["019dbcd", "4711c41", "7c65a1b"] },
+  { n: 15, titre: "Export pour l'expert-comptable", dossier: "§15.110", commits: ["187fdf5", "7429ef2"] },
+  { n: 16, titre: "Click & Collect : moteur de prix et catalogue", dossier: "§15.111", commits: ["07e608a", "c969d9f", "d9708e0", "d5c624d"] },
+  { n: 17, titre: "Vue téléphone « En direct »", dossier: "§15.112", commits: ["8fec2c4"] },
+  { n: 18, titre: "Coûts par buvette", dossier: "§15.113", commits: ["66936e8", "5a2fe6a"] },
+  { n: 19, titre: "Fidélité, partie gestion", dossier: "§15.114", commits: ["e110233", "f9ce7f4", "bd1b604"] },
+  { n: 20, titre: "Factures fournisseurs", dossier: "§15.115", commits: ["be6307c", "e847e75"] },
+  { n: 21, titre: "Back-office éditeur, niveau 1", dossier: "§15.116", commits: ["e83eaf3", "a698a23"] },
+  { n: 22, titre: "Décisions du 2026-10-01 et recettes", dossier: "§15.117, §15.119", commits: ["3abfb38", "92de462", "c6aae54", "929f16a"] },
+  { n: 23, titre: "Options par lieu, application installable, logo", dossier: "§15.118", commits: ["80c5742", "0579d24", "9287bce"] },
+  { n: 24, titre: "Adresse du site flaixexpert.flaixlabs.com", dossier: "§15.120", commits: ["e18b9ea", "f6a4820"] },
+  { n: 25, titre: "Marque FlaiX Expert ; lieux et directeurs depuis le back-office ; mots de passe", dossier: "§15.121, §15.122", commits: ["c694bbe", "66326dc", "d8d7990"] },
+  { n: 26, titre: "Click & Collect neutre, export comptable dans la base, assiette de la commission", dossier: "§15.123, §15.124", commits: ["3979502", "7294651"] },
+  { n: 27, titre: "Stock des ingrédients au choix (bière pression)", dossier: "§15.125", commits: ["f5a8b5a"] },
+  { n: 28, titre: "Logo officiel v2", dossier: "—", commits: ["1259fb6"] },
+  { n: 29, titre: "Dossier de conformité v0.1", dossier: "§15.126", commits: ["f75e8a7", "d26e10e"] },
+  { n: 30, titre: "Fidélité à la caisse : code promo et points dans le ticket scellé", dossier: "§15.127", commits: ["87c46b8", "c3d3041"] },
+  { n: 31, titre: "Suivi du développement et préparation de l'audit Codex", dossier: "§15.128", commits: ["0b59036", "2859233", "0c29f8f"] },
+];
+
+module.exports = { PHASES };

@@ -13,6 +13,7 @@ Statut : **version de test** sur `flaixexpert.flaixlabs.com` ; la production att
 1. [`docs/avancement.md`](docs/avancement.md) — où on en est, ce qui est en cours, ce qui reste.
 2. [`docs/developpement/JOURNAL_DES_PHASES.md`](docs/developpement/JOURNAL_DES_PHASES.md) — chaque phase : décision, commits GitHub, fichiers.
 3. [`docs/developpement/CARTE_DU_CODE.md`](docs/developpement/CARTE_DU_CODE.md) — où trouver quoi, ligne exacte des fonctions clés.
+   Pour un développeur : [`docs/developpement/phases/`](docs/developpement/phases/README.md) — un dossier par phase (décision complète, commits, fichiers, cas de test), en Markdown et en Word.
 4. [`docs/flaix-gestion-dossier-projet.md`](docs/flaix-gestion-dossier-projet.md) — **toutes les décisions et leur raisonnement** (§15.x, une section par phase). Fait foi en cas de doute.
 5. [`docs/decisions-architecture-production.md`](docs/decisions-architecture-production.md) — architecture validée.
 6. [`docs/conformite/dossier-conformite-flaix-expert.md`](docs/conformite/dossier-conformite-flaix-expert.md) — conformité du système de caisse (art. 286 I-3° bis du CGI).
@@ -57,6 +58,7 @@ pnpm db:migrate       # applique les migrations à la base de développement
 pnpm test             # moteur + serveur contre la vraie base (environ 390 tests)
 pnpm typecheck
 node infra/outils/journal-developpement.cjs   # régénère CHANGELOG, journal des phases, carte du code
+node infra/outils/phases-word.cjs             # dossier de développement par phase (Markdown + Word) pour un développeur
 ```
 
 Poste de développement à 6 Go de mémoire : en cas de manque, lancer les tests d'un paquet avec `--maxWorkers=1` (`cd apps/api && ./node_modules/.bin/vitest run --maxWorkers=1`).

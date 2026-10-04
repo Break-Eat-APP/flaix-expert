@@ -36,7 +36,7 @@
 | 28 | [Logo officiel v2](#phase-28) | — | [`1259fb6`](https://github.com/Break-Eat-APP/flaix-expert/commit/1259fb69e57fa0e3ed5843fd8a5b32a6dd56b256) | livrée |
 | 29 | [Dossier de conformité v0.1](#phase-29) | §15.126 | [`f75e8a7`](https://github.com/Break-Eat-APP/flaix-expert/commit/f75e8a722681b183641c02e16efd38a6ac4b38ff) [`d26e10e`](https://github.com/Break-Eat-APP/flaix-expert/commit/d26e10ef12863773b521852e0d84a9ffd2415a1d) | livrée |
 | 30 | [Fidélité à la caisse : code promo et points dans le ticket scellé](#phase-30) | §15.127 | [`87c46b8`](https://github.com/Break-Eat-APP/flaix-expert/commit/87c46b8234d355b7db4e2dbdf6c328fa5574c301) [`c3d3041`](https://github.com/Break-Eat-APP/flaix-expert/commit/c3d3041ab4b8eb3b2031ccd4fd072c4291b02874) | livrée |
-| 31 | [Suivi du développement et préparation de l'audit Codex](#phase-31) | §15.128 | [`0b59036`](https://github.com/Break-Eat-APP/flaix-expert/commit/0b590362a71a8549b053dcfb0e1a6ff474fd3d5e) [`2859233`](https://github.com/Break-Eat-APP/flaix-expert/commit/2859233de0a1cd9bc6dd27b388e7f97fd32f575a) | livrée |
+| 31 | [Suivi du développement et préparation de l'audit Codex](#phase-31) | §15.128 | [`0b59036`](https://github.com/Break-Eat-APP/flaix-expert/commit/0b590362a71a8549b053dcfb0e1a6ff474fd3d5e) [`2859233`](https://github.com/Break-Eat-APP/flaix-expert/commit/2859233de0a1cd9bc6dd27b388e7f97fd32f575a) [`0c29f8f`](https://github.com/Break-Eat-APP/flaix-expert/commit/0c29f8f88e666c02e4f7e3a5a95cda100937c5bc) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -1114,6 +1114,7 @@
 - **Commits** :
   - [`0b59036`](https://github.com/Break-Eat-APP/flaix-expert/commit/0b590362a71a8549b053dcfb0e1a6ff474fd3d5e) 2026-10-04 — Dossier de développement pour l'audit Codex : AGENTS.md, journal des phases, carte du code, CHANGELOG, prompt d'audit
   - [`2859233`](https://github.com/Break-Eat-APP/flaix-expert/commit/2859233de0a1cd9bc6dd27b388e7f97fd32f575a) 2026-10-04 — Journal des phases : phase 31 (suivi du développement)
+  - [`0c29f8f`](https://github.com/Break-Eat-APP/flaix-expert/commit/0c29f8f88e666c02e4f7e3a5a95cda100937c5bc) 2026-10-04 — Journal des phases : commits rattachés
 - **Serveur et outils (infra)** :
   - [`infra/outils/carte-du-code-intro.md`](../../infra/outils/carte-du-code-intro.md) — créé
   - [`infra/outils/journal-developpement.cjs`](../../infra/outils/journal-developpement.cjs) — créé

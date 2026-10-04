@@ -15,5 +15,8 @@
     "dev": "pnpm --parallel --filter @flaix/api --filter @flaix/web dev",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "docx": "9.7.1"
   }
 }
