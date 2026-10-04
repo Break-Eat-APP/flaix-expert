@@ -1,6 +1,26 @@
 # Avancement — reprise après coupure
 
-Mis à jour le 2026-10-04 (caisse automatique, rapport de soirée, cibles de marge et gestion financière). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.137.
+Mis à jour le 2026-10-04 au soir (Revenue Engine fait ; temps de prise de commande en cours). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.139.
+
+## Consigne de Rémi du 2026-10-04 au soir
+
+« Avant de développer les agents IA, je veux qu'on continue à développer l'ensemble des modules, à terminer. » Ordre : liste « Reste à construire » ci-dessous, dans l'ordre. Ne rien construire de nouveau côté IA (assistant, agents) avant la fin des modules.
+
+| # | Module | État |
+|---|---|---|
+| 1 | Revenue Engine « Où je perds de l'argent » | **fait le 2026-10-04** (§15.138) — Résultats → onglet « Où je perds de l'argent » |
+| 1 bis | Temps de prise de commande, par caisse et par stand (demande de Rémi) | **en cours** (§15.139) — décision écrite, rien de codé |
+| 2 | Prévision du prochain événement | à faire |
+| 3 | Centre d'alertes, rupture de stock en direct sur le téléphone | à faire |
+| 4 | Comparaison des prix entre fournisseurs | à faire |
+| 5 | Copie de la configuration d'un lieu à l'autre | à faire |
+| 6 | Conformité : attestation, registre des versions, archive annuelle, accès vérificateur | **à voir avec Rémi** |
+| 7 | Facture FlaiX Expert au lieu | attend les prix de Rémi |
+| 8 | Import des ventes Click & Collect, commission et frais dans le résultat | à faire |
+| 9 | E-mails par Brevo (rapport, rectifications, campagnes) | attend le compte Brevo de Rémi |
+| 10 | Wallet | attend les comptes Apple et Google de Rémi |
+| 11 | Back-office niveau 2 | avec la conformité |
+| 12 | Passage en production | Rémi (serveur) |
 
 ## Ordre de construction (dossier §15.99)
 
@@ -37,14 +57,14 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 | Prototype | Déjà dans le logiciel | Manque |
 |---|---|---|
 | 5 Marges & ratios | marge produit par produit ; **cibles par catégorie et par produit, alerte dès la saisie d'un prix** (§15.132) | comparaison fournisseurs au prix unitaire et alerte de sur-conditionnement |
-| 6 Optimisation | « Pistes pour le prochain événement » | croisement volume × marge complet, écarts entre stands, coût des ruptures, actions classées par impact → **Revenue Engine** (prochain) |
+| 6 Optimisation | « Pistes pour le prochain événement » ; **Revenue Engine « Où je perds de l'argent »** (§15.138) : ruptures chiffrées, écarts de stock et d'espèces, ventes sous le tarif, volume × marge, écarts entre stands, caisse à plein régime, classés par montant | temps de prise de commande par caisse (§15.139, en cours) ; avant/après vérifié sur l'événement suivant |
 | 9 Reporting de soirée | **rapport figé à la clôture, imprimable/PDF** (§15.131) ; **brief sur le téléphone** (§15.135) | envoi par e-mail (service d'e-mails Brevo à brancher) |
 | 11 Gestion financière | **cascade jusqu'à la marge nette, dépenses en € ou en %, cible de la soirée, bilan sur une période** (§15.132, §15.133) | commission et frais du Click & Collect (attendent l'import des ventes C&C) |
 | 16 Conformité | journal technique, vérification des chaînes, clôtures scellées ; dossier v0.1 | attestation, registre des versions, connexions par caisse, archive annuelle, accès vérificateur (**à voir avec Rémi**) |
 | 18 Centre d'alertes | « À surveiller » ; marge sous la cible ; brief de fin de soirée | le centre lui-même, hausse d'un prix fournisseur, écart à la mercuriale, rupture en direct |
 | 4 Stock | mise en place, comptages, réserve, ingrédients au poids | alerte de rupture **en direct**, poussée sur le téléphone |
 
-**Reste à construire (état au 2026-10-04)** : Revenue Engine « où je perds de l'argent » (choisi par Rémi) ; prévision du prochain événement ; centre d'alertes et rupture en direct ; comparaison fournisseurs ; copie de configuration entre lieux (Spartiates) ; conformité (avec Rémi) ; facture FlaiX Expert au lieu (prix plus tard) ; import des ventes C&C ; e-mails (Brevo : rapport, rectifications, campagnes) ; wallet (comptes Apple/Google de Rémi) ; back-office niveau 2 ; passage en production. **Attend Rémi** : clé Mistral et jeton OVH (`sudo flaix-admin cle-mistral`, `cle-ovh-ia`), option « Assistant IA » des Spartiates, notifications à activer sur son téléphone, stockage OVH des sauvegardes.
+**Reste à construire (état au 2026-10-04 au soir)** : ~~Revenue Engine~~ (fait, §15.138) ; temps de prise de commande par caisse (§15.139) ; prévision du prochain événement ; centre d'alertes et rupture en direct ; comparaison fournisseurs ; copie de configuration entre lieux (Spartiates) ; conformité (avec Rémi) ; facture FlaiX Expert au lieu (prix plus tard) ; import des ventes C&C ; e-mails (Brevo : rapport, rectifications, campagnes) ; wallet (comptes Apple/Google de Rémi) ; back-office niveau 2 ; passage en production. **Attend Rémi** : clé Mistral et jeton OVH (`sudo flaix-admin cle-mistral`, `cle-ovh-ia`), option « Assistant IA » des Spartiates, notifications à activer sur son téléphone, stockage OVH des sauvegardes.
 
 **Plus tard (décidé par Rémi)** : 19 Fidélité, 20 Wallet & campagnes, Facturation (facture FlaiX Expert, rapprochement fournisseur), 17 Back-office éditeur, assistant IA, recettes et matières premières.
 

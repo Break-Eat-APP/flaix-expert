@@ -44,6 +44,7 @@
 | 36 | [Bilan sur une période du … au …](#phase-36) | §15.133 | [`10e0186`](https://github.com/Break-Eat-APP/flaix-expert/commit/10e018659b30bb2cf3a005ec4ef65994e92ce077) | livrée |
 | 37 | [Brief de fin de soirée en notification sur le téléphone](#phase-37) | §15.134, §15.135 | [`bcb9455`](https://github.com/Break-Eat-APP/flaix-expert/commit/bcb9455bc942b80996d2302d3467a2a1a9316a56) | livrée |
 | 38 | [Assistant « pose ta question » et brief reformulé par Mistral](#phase-38) | §15.136, §15.137 | [`4a30d13`](https://github.com/Break-Eat-APP/flaix-expert/commit/4a30d1373cebf546b6614e731c9fb280fa9d41d6) [`047ce76`](https://github.com/Break-Eat-APP/flaix-expert/commit/047ce760656a8c5a5ba720501ede4c6bcedf593a) | livrée |
+| 39 | [Revenue Engine : « Où je perds de l'argent »](#phase-39) | §15.138 | [`21c7f53`](https://github.com/Break-Eat-APP/flaix-expert/commit/21c7f53ff7f62de497df5079a50ec1bafa83e392) [`6679d7e`](https://github.com/Break-Eat-APP/flaix-expert/commit/6679d7e3b95a5b0a3d944201499bac16b653694e) [`f001e72`](https://github.com/Break-Eat-APP/flaix-expert/commit/f001e72807328fbfd90912174919d11b7dd5f91b) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -1544,6 +1545,33 @@
   - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
   - [`docs/guide-serveur-test-ovh.md`](../../docs/guide-serveur-test-ovh.md) — modifié
 
+<a id="phase-39"></a>
+## Phase 39 — Revenue Engine : « Où je perds de l'argent »
+
+- **Dates** : 2026-10-04
+- **Décision et raisonnement** : dossier projet §15.138
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`21c7f53`](https://github.com/Break-Eat-APP/flaix-expert/commit/21c7f53ff7f62de497df5079a50ec1bafa83e392) 2026-10-04 — Revenue Engine : moteur « où je perds de l'argent » et décision (dossier §15.138)
+  - [`6679d7e`](https://github.com/Break-Eat-APP/flaix-expert/commit/6679d7e3b95a5b0a3d944201499bac16b653694e) 2026-10-04 — Revenue Engine : route GET /api/pertes, événement ou période (dossier §15.138)
+  - [`f001e72`](https://github.com/Break-Eat-APP/flaix-expert/commit/f001e72807328fbfd90912174919d11b7dd5f91b) 2026-10-04 — Revenue Engine : onglet « Où je perds de l'argent » dans Résultats (dossier §15.138)
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/index.ts`](../../packages/domain/src/index.ts) — modifié
+  - [`packages/domain/src/pertes.ts`](../../packages/domain/src/pertes.ts) — créé
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/pertes.ts`](../../apps/api/src/routes/pertes.ts) — créé
+  - [`apps/api/src/serveur.ts`](../../apps/api/src/serveur.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/resultats/Pertes.test.tsx`](../../apps/web/src/pages/resultats/Pertes.test.tsx) — créé
+  - [`apps/web/src/pages/resultats/Pertes.tsx`](../../apps/web/src/pages/resultats/Pertes.tsx) — créé
+  - [`apps/web/src/pages/resultats/Tableaux.tsx`](../../apps/web/src/pages/resultats/Tableaux.tsx) — modifié
+  - [`apps/web/src/resultats.css`](../../apps/web/src/resultats.css) — modifié
+- **Tests** :
+  - [`apps/api/test/pertes.test.ts`](../../apps/api/test/pertes.test.ts) — créé
+  - [`packages/domain/src/pertes.test.ts`](../../packages/domain/src/pertes.test.ts) — créé
+- **Documentation** :
+  - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -1555,3 +1583,5 @@
 - [`2f42193`](https://github.com/Break-Eat-APP/flaix-expert/commit/2f42193e3a18d9e7a30cfbfc6c6e739f3c00c4ab) 2026-10-04 — Analyse « Intelligence, prévision et décision » v1 : avis sur la note produit, marché, propositions, IA, cadre juridique (dossier §15.134)
 - [`8354e35`](https://github.com/Break-Eat-APP/flaix-expert/commit/8354e354ef96657d911a1b10f615058d6fdbbd4d) 2026-10-04 — Journal : phase 37 (brief de fin de soirée)
 - [`7175d0b`](https://github.com/Break-Eat-APP/flaix-expert/commit/7175d0b6da4bd25db4dfe1b15a394b1b296070b8) 2026-10-04 — Journal : phase 38 (assistant Mistral)
+- [`aa091ea`](https://github.com/Break-Eat-APP/flaix-expert/commit/aa091ea651d6d39adf78be704c765b8aaf035d81) 2026-10-04 — Journal : passerelle d'IA rattachée à la phase 38
+- [`ffe43d3`](https://github.com/Break-Eat-APP/flaix-expert/commit/ffe43d3af21b6ddbc869b3f7da205f7d904c1aa1) 2026-10-04 — Avancement : inventaire des modules remis à jour au 2026-10-04

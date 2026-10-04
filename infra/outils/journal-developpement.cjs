@@ -43,6 +43,8 @@ const CLES = [
   ["Options", "packages/domain/src/editeur.ts", ["optionDeLaRoute", "OPTIONS_LIEU"]],
   ["Mots de passe", "packages/domain/src/mot-de-passe.ts", ["refusMotDePasse"]],
   ["Tablette", "apps/web/src/pages/caisse/memoire.ts", ["memoriserTicket", "envoyer"]],
+  ["Revenue Engine", "packages/domain/src/pertes.ts", ["estimerRupture", "pleinRegime", "analyserPertes"]],
+  ["Revenue Engine", "apps/api/src/routes/pertes.ts", ["analysePertes", "/api/pertes"]],
 ];
 
 const commitsTous = git("log", "--reverse", "--date=short", "--pretty=format:%H|%h|%ad|%s").trim().split("\n").map((l) => {

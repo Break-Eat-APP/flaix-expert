@@ -42,6 +42,7 @@ const PHASES = [
   { n: 36, titre: "Bilan sur une période du … au …", dossier: "§15.133", commits: ["10e0186"] },
   { n: 37, titre: "Brief de fin de soirée en notification sur le téléphone", dossier: "§15.134, §15.135", commits: ["bcb9455"] },
   { n: 38, titre: "Assistant « pose ta question » et brief reformulé par Mistral", dossier: "§15.136, §15.137", commits: ["4a30d13", "047ce76"] },
+  { n: 39, titre: "Revenue Engine : « Où je perds de l'argent »", dossier: "§15.138", commits: ["21c7f53", "6679d7e", "f001e72"] },
 ];
 
 module.exports = { PHASES };

@@ -4652,3 +4652,21 @@ Rémi a partagé une note produit rédigée avec ChatGPT (`FLAIX_EXPERT_PRODUCT_
 **Période** : chaque événement est analysé, puis les lignes de même nature sont regroupées (rupture d'un même produit au même stand sur plusieurs événements, écarts de stock et d'espèces additionnés) ; cibles, volume × marge et écarts entre stands se calculent sur la période entière.
 
 **Limites dites à l'écran** : la fourchette des ruptures est une estimation ; les pistes ne tiennent compte ni du report des ventes vers un autre produit ni de l'effet d'un changement de prix (aucune élasticité mesurée, §15.22) ; pas de recommandation de prix (posture prudente du module 6, toujours en vigueur).
+
+**Réalisé le 2026-10-04** (moteur `pertes.ts`, route `GET /api/pertes`, onglet Résultats → « Où je perds de l'argent », phase 39) : quatre chiffres clés (perdu constaté, ventes manquées en fourchette, accordé, signes à regarder) ; argent perdu et pistes en barres classées par montant, chaque ligne avec sa phrase de décision, son calcul et un lien vers l'écran où agir ; signes sans montant ; accordé à part. L'écran dit quand le stock n'est pas suivi ou qu'aucun comptage d'espèces n'existe (jamais un 0 € qui rassure à tort). Un ticket annulé ne compte nulle part, ni dans les ventes ni dans le rythme d'un stand. **Tests** : moteur 12, serveur 4, écran 2. Vérifié dans le navigateur (écran et téléphone).
+
+### 15.139 Temps de prise de commande, par caisse et par stand (2026-10-04)
+
+**Demande de Rémi** : *« une fonctionnalité du calcul de temps de la caissière […] du moment où la caissière tape le premier produit jusqu'à l'encaissement, ou peut-être mieux jusqu'au moment où elle réouvre un ticket avec un produit, donc un nouveau client. Il se peut qu'il n'y ait pas de commande à prendre derrière le client […] afin de savoir la moyenne de traitement de commande. »*
+
+**Avis rendu** : faisable et utile — c'est la mesure qui manquait au signal « caisse à plein régime » (§15.138) : la durée d'une commande donne la cadence maximale d'une caisse, et l'écart entre deux clients dit s'il y avait une file. **Risque signalé** : mesurer le temps d'une personne nommée est une surveillance de salarié — information écrite préalable de chaque salariée (Code du travail, art. L1222-4), consultation du CSE à partir de 50 salariés, et une IA qui noterait les caissières serait « à haut risque » au sens du règlement européen sur l'IA (annexe III). À faire valider par un avocat si un jour on mesure par personne.
+
+**Choix de Rémi** (les deux recommandations) : **mesure par caisse et par stand, personne n'est nommé** ; construite **juste après le Revenue Engine**.
+
+**Règles** :
+- La tablette note l'heure du **premier produit tapé** de chaque ticket. Cette heure **n'entre pas dans le ticket scellé** (le journal fiscal ne change pas) : elle part à côté, comme une mesure d'exploitation, et le serveur la range dans une table à part, rattachée au ticket.
+- **Durée de la commande** = encaissement − premier produit tapé.
+- **Client suivant** = premier produit du ticket suivant de la même caisse − encaissement du précédent. **Moins de 20 secondes : le client suivant attendait (file)** ; au-delà, la caisse attendait un client et ce temps n'entre dans aucune moyenne.
+- Chiffres affichés, par caisse et par stand : durée médiane d'une commande (la médiane plutôt que la moyenne, qu'une commande oubliée ouverte fausserait), cadence en file (commandes par heure quand la file est là), part des commandes servies avec une file derrière.
+- Aucune donnée par caissière, ni à l'écran ni dans l'assistant.
+
