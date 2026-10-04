@@ -220,8 +220,12 @@ describe("B2 [F] — une caissière ne voit que l'écran de SA caisse", () => {
     expect(tickets.map((x) => x.operateur).sort()).toEqual(["Julie M.", "Julie M.", "Marc D."]);
     const v = await parDirecteur<{ ok: boolean }>("POST", "/api/caisses/verification");
     expect(v.corps.ok).toBe(true);
-    // Il clôture la caisse.
-    const cl = await requete<{ nbVentes: number; net: number }>(marcSession, "POST", `/api/caisses/${caisse1}/cloture`, { jeton: t.reprise.jeton, derniereSequence: t.tete.sequence });
+    // Il ne clôture pas la caisse : c'est le directeur (§15.130).
+    expect((await requete(marcSession, "POST", `/api/caisses/${caisse1}/cloture`, { jeton: t.reprise.jeton, derniereSequence: t.tete.sequence })).statut).toBe(403);
+    // La tablette donne de ses nouvelles (tout est envoyé) : le directeur clôture à distance.
+    const nouvelles = await requete<{ etat: string }>(marcSession, "POST", `/api/caisses/${caisse1}/nouvelles`, { sessionId: t.reprise.contexte.sessionId, jeton: t.reprise.jeton, sequence: t.tete.sequence, attente: 0 });
+    expect(nouvelles.corps.etat).toBe("ouverte");
+    const cl = await parDirecteur<{ nbVentes: number; net: number }>("POST", `/api/caisses/${caisse1}/cloture`, {});
     expect(cl.corps).toMatchObject({ nbVentes: 3, net: 2400 });
   });
 

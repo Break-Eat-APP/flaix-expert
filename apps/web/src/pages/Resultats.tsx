@@ -60,7 +60,7 @@ export function Resultats({ session }: { session: SessionInfo }) {
       fait: nbMatchs > 0,
       titre: "Préparer la saison",
       texte: nbMatchs
-        ? `${nbMatchs} événement(s) dans la saison. Le jour de l'événement, ouvre-le depuis « Caisses », puis ouvre les caisses.`
+        ? `${nbMatchs} événement(s) dans la saison. Le jour de l'événement, les caisses des caissières s'ouvrent toutes seules dessus.`
         : "Chaque événement auquel se rattacheront les ventes de la soirée.",
       lien: "/parametres/saison",
     },

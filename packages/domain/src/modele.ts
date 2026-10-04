@@ -6,6 +6,7 @@ import type { Centimes } from "./argent.ts";
 import type { TauxTvaPb } from "./tva.ts";
 import type { TypeJet } from "./journal-technique.ts";
 import type { ContexteScellement, TeteChaine } from "./caisse-scellee.ts";
+import type { OuvertureCaisse } from "./caisse-auto.ts";
 
 export type Role = "directeur" | "operateur" | "verificateur";
 
@@ -59,6 +60,8 @@ export interface Caisse {
   nom: string | null;
   especesAutorisees: boolean;
   actif: boolean;
+  /** Fond de caisse prévu par le directeur (§15.130) ; null : saisi à l'ouverture. */
+  fondPrevu: Centimes | null;
 }
 
 export interface Stand {
@@ -147,10 +150,12 @@ export interface ProduitCaisse {
 }
 
 export interface EcranCaisse {
-  caisse: { id: string; numero: number; nom: string | null; standId: string; standNom: string; especesAutorisees: boolean; actif: boolean };
+  caisse: { id: string; numero: number; nom: string | null; standId: string; standNom: string; especesAutorisees: boolean; actif: boolean; fondPrevu: Centimes | null };
   standActif: boolean;
   session: SessionCaisseVue | null;
   evenementOuvert: { id: string; libelle: string } | null;
+  /** Ouverture automatique selon la date (§15.130). */
+  ouverture: OuvertureCaisse;
   produits: ProduitCaisse[];
   remiseAbonnePb: number | null;
   environnementTest: boolean;
@@ -245,7 +250,13 @@ export interface StatsCaisse {
   actif: boolean;
   especesAutorisees: boolean;
   /** Session ouverte en ce moment, quel que soit l'événement affiché. */
-  ouverteMaintenant: { par: string; depuis: string; evenementLibelle: string } | null;
+  ouverteMaintenant: {
+    par: string;
+    depuis: string;
+    evenementLibelle: string;
+    /** Nouvelles de la tablette et clôture à distance possible ou non (§15.130). */
+    tablette: { vueLe: string | null; aEnvoyer: number | null; cloturable: boolean; raison: string | null };
+  } | null;
   nbVentes: number;
   nbAnnulations: number;
   caNet: Centimes;

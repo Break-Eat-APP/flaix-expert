@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import type { Caisse, Stand } from "@flaix/domain";
+import { formaterMontant, lireMontant, type Caisse, type Stand } from "@flaix/domain";
 import { api } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 
@@ -9,7 +9,7 @@ type Action =
   | { type: "creer-stand"; nom: string; pointRetraitCc: boolean }
   | { type: "modifier-stand"; id: string; modif: Partial<Pick<Stand, "nom" | "pointRetraitCc" | "actif">> }
   | { type: "creer-caisse"; standId: string; nom: string | null; especesAutorisees: boolean }
-  | { type: "modifier-caisse"; id: string; modif: Partial<Pick<Caisse, "nom" | "especesAutorisees" | "actif" | "standId">> };
+  | { type: "modifier-caisse"; id: string; modif: Partial<Pick<Caisse, "nom" | "especesAutorisees" | "actif" | "standId" | "fondPrevu">> };
 
 function executer(a: Action): Promise<Stand[]> {
   switch (a.type) {
@@ -94,6 +94,7 @@ export function StandsCaisses() {
           <li>Un stand ne peut être désactivé que lorsqu'il n'a plus de caisse active (désactive-les ou déplace-les d'abord).</li>
           <li><strong>Les caisses sont numérotées sur tout le lieu</strong> (1, 2, 3…), dans l'ordre de création, quel que soit leur stand. Un numéro n'est jamais réattribué. Chaque caisse numérotera ensuite ses propres tickets (ex. 2026-C3-000125), pour qu'une coupure de réseau sur une caisse ne crée jamais de trou ni de doublon.</li>
           <li><strong>Espèces</strong> : une caisse « carte uniquement » s'ouvrira sans fond de caisse et n'affichera pas le bouton Espèces. Attention : dès qu'une seule caisse du lieu accepte des espèces, tout le lieu relève de l'obligation de logiciel de caisse sécurisé (question posée à l'expert-comptable).</li>
+          <li><strong>Fond prévu</strong> : pour une caisse qui accepte les espèces, le fond de caisse avec lequel elle s'ouvre toute seule sur la tablette de la caissière, le jour de l'événement. Sans fond prévu, la caissière le compte et le saisit à l'ouverture.</li>
           <li><strong>Point de retrait Click & Collect</strong> : le stand sert de point de retrait des commandes passées sur l'application, et puise dans son propre stock.</li>
           <li>Chaque création ou modification est inscrite au journal technique avec son auteur et l'heure.</li>
         </ul>
@@ -206,6 +207,9 @@ function CarteStand({ stand, stands, occupe, agir }: { stand: Stand; stands: Sta
 
 function LigneCaisse({ caisse, stands, occupe, agir }: { caisse: Caisse; stands: Stand[]; occupe: boolean; agir: (a: Action) => void }) {
   const [nom, setNom] = useState<string | null>(null);
+  const [fond, setFond] = useState<string | null>(null);
+  const fondSaisi = fond?.trim() ? lireMontant(fond) : null;
+  const fondInvalide = !!fond?.trim() && (fondSaisi === null || fondSaisi > 1_000_000);
   const destinations = stands.filter((s) => s.actif && s.id !== caisse.standId);
 
   return (
@@ -228,9 +232,34 @@ function LigneCaisse({ caisse, stands, occupe, agir }: { caisse: Caisse; stands:
         </form>
       )}
       <span className={`puce ${caisse.especesAutorisees ? "puce-ambre" : "puce-violet"}`}>{caisse.especesAutorisees ? "Espèces + carte" : "Carte uniquement"}</span>
+      {caisse.especesAutorisees &&
+        (fond === null ? (
+          <span className={`puce${caisse.fondPrevu !== null ? " puce-vert" : ""}`} title="Fond avec lequel la caisse s'ouvre toute seule sur la tablette de la caissière">
+            {caisse.fondPrevu !== null ? `Fond prévu ${formaterMontant(caisse.fondPrevu)}` : "Fond non prévu"}
+          </span>
+        ) : (
+          <form
+            className="en-ligne"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (fondInvalide) return;
+              agir({ type: "modifier-caisse", id: caisse.id, modif: { fondPrevu: fondSaisi } });
+              setFond(null);
+            }}
+          >
+            <input type="text" inputMode="decimal" value={fond} onChange={(e) => setFond(e.target.value)} placeholder="ex. 150,00 (vide : saisi à l'ouverture)" aria-label={`Fond prévu de la caisse ${caisse.numero}`} autoFocus style={{ width: 230 }} />
+            <button className="btn" disabled={occupe || fondInvalide}>OK</button>
+            <button type="button" className="btn btn-fantome" onClick={() => setFond(null)}>Annuler</button>
+          </form>
+        ))}
       {!caisse.actif && <span className="puce puce-rouge">Désactivée</span>}
       <div className="actions">
         {nom === null && <button className="btn btn-fantome" onClick={() => setNom(caisse.nom ?? "")}>Renommer</button>}
+        {caisse.actif && caisse.especesAutorisees && fond === null && (
+          <button className="btn btn-fantome" onClick={() => setFond(caisse.fondPrevu !== null ? (caisse.fondPrevu / 100).toFixed(2).replace(".", ",") : "")}>
+            Fond prévu
+          </button>
+        )}
         {caisse.actif && (
           <button
             className="btn btn-fantome"

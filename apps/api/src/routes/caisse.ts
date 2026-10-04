@@ -2,7 +2,9 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
+  clotureADistance,
   controlerEvenementTablette,
+  ouvertureCaisse,
   formaterMontant,
   type ContexteScellement,
   type ControleTicket,
@@ -10,9 +12,12 @@ import {
   type DetailsVente,
   type EcranCaisse,
   type EditionTicket,
+  type EvenementPlanifie,
   type EvenementTablette,
   type LigneCalculee,
   type LigneTicketVue,
+  type NouvellesCaisse,
+  type OuvertureCaisse,
   type ReponseSynchro,
   type RepriseCaisse,
   type StatsCaisse,
@@ -27,6 +32,7 @@ import { inscrireJet } from "../journal-technique.ts";
 import { inscrireCaisse, inscrireEvenementTablette, teteChaine, verifierCaisses } from "../journal-caisse.ts";
 import { ParamId, Uuid, contexte, corps } from "./outils.ts";
 import { consommerFidelite } from "./fidelite-caisse.ts";
+import { exigerMoisOuvert } from "./periodes.ts";
 
 /*
  * Ma caisse, Mes caisses, journal des tickets (modules 1 et 3, dossier §14, §15.26, §15.62,
@@ -37,6 +43,10 @@ import { consommerFidelite } from "./fidelite-caisse.ts";
  * Vente sans réseau (§15.97) : pendant une session, la tablette scelle elle-même ses ventes et
  * ses annulations ; le serveur les vérifie à la réception (/journal) avant de les inscrire.
  * Le serveur n'écrit dans la chaîne de la caisse qu'à l'ouverture et à la clôture.
+ *
+ * Caisse automatique (§15.130) : la caisse s'ouvre seule sur l'événement du jour (qui s'ouvre avec
+ * la première caisse), avec le fond prévu par le directeur ; seul le directeur clôture, depuis la
+ * tablette ou à distance si la tablette a tout envoyé, sinon en forçant avec motif et signature.
  */
 
 const Centimes = z.number().int().min(0).max(10_000_000);
@@ -66,7 +76,26 @@ const Synchro = z.object({
   utilisateurId: Uuid,
   evenements: z.array(EvenementRecu).min(1).max(500),
 });
-const ClotureCaisse = z.object({ jeton: Jeton, derniereSequence: z.number().int().min(1) });
+const ClotureCaisse = z.object({
+  /** Clôture depuis la tablette qui tient la caisse : son jeton et son dernier rang scellé. Sans jeton : à distance. */
+  jeton: Jeton.optional(),
+  derniereSequence: z.number().int().min(1).optional(),
+  /** Clôture à distance malgré une tablette muette ou des tickets pas encore envoyés (§15.130). */
+  forcage: z
+    .object({
+      motif: z.string().trim().min(5, "Motif obligatoire (5 caractères au moins).").max(300),
+      signature: z.string().trim().min(3, "Signe en toutes lettres (prénom et nom).").max(120),
+    })
+    .optional(),
+});
+const Nouvelles = z.object({
+  sessionId: Uuid,
+  jeton: Jeton,
+  /** Dernier rang scellé sur la tablette, envoyé ou non. */
+  sequence: z.number().int().min(0),
+  /** Tickets encore sur la tablette. */
+  attente: z.number().int().min(0).max(100_000),
+});
 const ParEvenement = z.object({ evenementId: Uuid });
 
 // Jeton d'appareil : une caisse ouverte appartient à un seul appareil (§15.97 point 9).
@@ -88,12 +117,13 @@ interface LigneCaisse {
   stand_actif: boolean;
   especes_autorisees: boolean;
   actif: boolean;
+  fond_prevu_centimes: number | null;
 }
 
 async function lireCaisse(c: Client, lieuId: string, id: string): Promise<LigneCaisse> {
   await c.query("SELECT 1 FROM caisse WHERE lieu_id = $1 AND id = $2 FOR UPDATE", [lieuId, id]);
   const { rows } = await c.query<LigneCaisse>(
-    `SELECT k.id, k.numero, k.nom, k.stand_id, s.nom AS stand_nom, s.actif AS stand_actif, k.especes_autorisees, k.actif
+    `SELECT k.id, k.numero, k.nom, k.stand_id, s.nom AS stand_nom, s.actif AS stand_actif, k.especes_autorisees, k.actif, k.fond_prevu_centimes
        FROM caisse k JOIN stand s ON s.lieu_id = k.lieu_id AND s.id = k.stand_id
       WHERE k.lieu_id = $1 AND k.id = $2`,
     [lieuId, id],
@@ -112,12 +142,16 @@ interface SessionOuverte {
   ouverte_par: string;
   fond_centimes: number | null;
   appareil_jeton_empreinte: string | null;
+  tablette_vue_le: Date | null;
+  tablette_sequence: number | null;
+  tablette_attente: number | null;
 }
 
 async function sessionOuverte(c: Client, caisseId: string): Promise<SessionOuverte | null> {
   const { rows } = await c.query<SessionOuverte>(
     `SELECT s.id, s.evenement_id, e.libelle AS evenement_libelle, e.etat AS evenement_etat, s.stand_id, s.ouverte_le,
-            u.nom AS ouverte_par, s.fond_centimes, s.appareil_jeton_empreinte
+            u.nom AS ouverte_par, s.fond_centimes, s.appareil_jeton_empreinte,
+            s.tablette_vue_le, s.tablette_sequence, s.tablette_attente
        FROM session_caisse s
        JOIN evenement e ON e.id = s.evenement_id
        JOIN utilisateur u ON u.id = s.ouverte_par
@@ -130,6 +164,23 @@ async function sessionOuverte(c: Client, caisseId: string): Promise<SessionOuver
 async function evenementOuvert(c: Client, lieuId: string): Promise<{ id: string; libelle: string } | null> {
   const { rows } = await c.query<{ id: string; libelle: string }>("SELECT id, libelle FROM evenement WHERE lieu_id = $1 AND etat = 'ouvert'", [lieuId]);
   return rows[0] ?? null;
+}
+
+/** Sur quel événement cette caisse s'ouvre maintenant (§15.130). */
+async function ouvertureDeLaCaisse(c: Client, lieuId: string, caisseId: string): Promise<OuvertureCaisse> {
+  const { rows } = await c.query<{ id: string; libelle: string; debut: Date; etat: EvenementPlanifie["etat"] }>(
+    `SELECT id, libelle, debut, etat FROM evenement
+      WHERE lieu_id = $1 AND (etat = 'ouvert' OR (etat = 'a_venir' AND debut >= now() - interval '2 days'))
+      ORDER BY etat = 'ouvert' DESC, debut LIMIT 200`,
+    [lieuId],
+  );
+  const { rows: clotures } = await c.query<{ evenement_id: string }>(
+    `SELECT DISTINCT s.evenement_id FROM session_caisse s JOIN evenement e ON e.id = s.evenement_id
+      WHERE s.caisse_id = $1 AND s.fermee_le IS NOT NULL AND e.etat = 'ouvert'`,
+    [caisseId],
+  );
+  const evenements = rows.map((r) => ({ id: r.id, libelle: r.libelle, debut: r.debut.toISOString(), etat: r.etat }));
+  return ouvertureCaisse(evenements, new Date(), new Set(clotures.map((r) => r.evenement_id)));
 }
 
 /** Produits vendables à un stand, au prix en vigueur maintenant (jamais un prix envoyé par l'écran). */
@@ -284,6 +335,8 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
       const { rows } = await c.query(
         `SELECT k.id, k.numero, k.nom, k.stand_id, st.nom AS stand_nom, k.actif, k.especes_autorisees,
                 so.ouverte_le, uo.nom AS ouverte_par, eo.libelle AS evenement_libelle,
+                so.tablette_vue_le, so.tablette_sequence, so.tablette_attente,
+                (SELECT coalesce(max(jc.sequence), 0) FROM journal_caisse jc WHERE jc.caisse_id = k.id)::int AS sequence_serveur,
                 count(j.id) FILTER (WHERE j.type = 'vente')::int AS nb_ventes,
                 count(j.id) FILTER (WHERE j.type = 'annulation')::int AS nb_annulations,
                 coalesce(sum(j.total_ttc_centimes), 0)::int AS ca_net,
@@ -297,12 +350,15 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
            LEFT JOIN evenement eo ON eo.id = so.evenement_id
            LEFT JOIN journal_caisse j ON j.caisse_id = k.id AND j.evenement_id = $2 AND j.type IN ('vente', 'annulation')
           WHERE k.lieu_id = $1
-          GROUP BY k.id, st.nom, so.ouverte_le, uo.nom, eo.libelle
+          GROUP BY k.id, st.nom, so.ouverte_le, uo.nom, eo.libelle, so.tablette_vue_le, so.tablette_sequence, so.tablette_attente
           ORDER BY lower(st.nom), k.numero`,
         [auth.lieuId, evenementId],
       );
+      const maintenant = new Date();
       return rows.map((r) => {
         const valides = r.nb_ventes - r.nb_annulations;
+        const vueLe: string | null = r.tablette_vue_le ? r.tablette_vue_le.toISOString() : null;
+        const distance = clotureADistance({ vueLe, sequence: r.tablette_sequence, attente: r.tablette_attente }, r.sequence_serveur, maintenant);
         return {
           caisseId: r.id,
           numero: r.numero,
@@ -311,7 +367,14 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
           standNom: r.stand_nom,
           actif: r.actif,
           especesAutorisees: r.especes_autorisees,
-          ouverteMaintenant: r.ouverte_le ? { par: r.ouverte_par, depuis: r.ouverte_le.toISOString(), evenementLibelle: r.evenement_libelle } : null,
+          ouverteMaintenant: r.ouverte_le
+            ? {
+                par: r.ouverte_par,
+                depuis: r.ouverte_le.toISOString(),
+                evenementLibelle: r.evenement_libelle,
+                tablette: { vueLe, aEnvoyer: distance.aEnvoyer, cloturable: distance.possible, raison: distance.raison },
+              }
+            : null,
           nbVentes: r.nb_ventes,
           nbAnnulations: r.nb_annulations,
           caNet: r.ca_net,
@@ -401,7 +464,7 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
       // Pendant une session, on vend au stand où la caisse a été ouverte.
       const produits = await produitsDuStand(c, auth.lieuId, session?.stand_id ?? k.stand_id);
       return {
-        caisse: { id: k.id, numero: k.numero, nom: k.nom, standId: k.stand_id, standNom: k.stand_nom, especesAutorisees: k.especes_autorisees, actif: k.actif },
+        caisse: { id: k.id, numero: k.numero, nom: k.nom, standId: k.stand_id, standNom: k.stand_nom, especesAutorisees: k.especes_autorisees, actif: k.actif, fondPrevu: k.fond_prevu_centimes },
         standActif: k.stand_actif,
         session: session
           ? {
@@ -414,6 +477,7 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
             }
           : null,
         evenementOuvert: await evenementOuvert(c, auth.lieuId),
+        ouverture: await ouvertureDeLaCaisse(c, auth.lieuId, id),
         produits: produits.map((p) => ({ id: p.id, nom: p.nom, categorieId: p.categorie_id, categorie: p.categorie, prixTtc: p.prix_ttc_centimes, tauxTva: p.taux_tva_pb })),
         remiseAbonnePb: lieu[0]?.remise_abonne_pb ?? null,
         environnementTest: config.environnement !== "production",
@@ -421,7 +485,8 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
     });
   });
 
-  // ---------- Ouverture de caisse (§15.26 point 3) ----------
+  // ---------- Ouverture de caisse (§15.26 point 3, §15.130) ----------
+  // La caissière n'a rien à choisir : la caisse s'ouvre sur l'événement du jour, avec le fond prévu.
   app.post("/api/caisses/:id/ouverture", async (req): Promise<RepriseCaisse> => {
     const { id } = ParamId.parse(req.params);
     const auth = await exigerAccesCaisse(req, base, id);
@@ -430,11 +495,30 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
       const k = await lireCaisse(c, auth.lieuId, id);
       if (!k.actif || !k.stand_actif) throw new ErreurMetier(409, "Cette caisse ou son stand est désactivé.");
       if (await sessionOuverte(c, id)) throw new ErreurMetier(409, "Cette caisse est déjà ouverte.");
-      const evt = await evenementOuvert(c, auth.lieuId);
-      if (!evt) throw new ErreurMetier(409, "Aucun événement n'est ouvert : ouvre d'abord l'événement du jour dans Caisses.");
-      // Le fond de caisse n'est demandé que si la caisse accepte les espèces (§15.26 point 2).
-      if (k.especes_autorisees && fond === null) throw new ErreurMetier(400, "Saisis le fond de caisse (0 s'il n'y en a pas).");
-      const fondRetenu = k.especes_autorisees ? fond : null;
+      // Deux tablettes qui s'allument en même temps n'ouvrent pas deux fois l'événement du jour.
+      await verrouiller(c, `ouverture-evenement:${auth.lieuId}`);
+      const o = await ouvertureDeLaCaisse(c, auth.lieuId, id);
+      if (!o.evenement) throw new ErreurMetier(409, o.blocage ?? "Aucun événement à ouvrir.");
+      // Événement d'hier resté ouvert, caisse déjà clôturée pour cet événement : seul le directeur passe outre.
+      const refus = o.blocage ?? o.dejaCloturee;
+      if (refus && auth.role !== "directeur") throw new ErreurMetier(409, refus);
+      // Le fond de caisse n'est demandé que si la caisse accepte les espèces (§15.26 point 2) ; à défaut, celui prévu par le directeur.
+      const fondRetenu = k.especes_autorisees ? (fond ?? k.fond_prevu_centimes) : null;
+      if (k.especes_autorisees && fondRetenu === null) throw new ErreurMetier(400, "Saisis le fond de caisse (0 s'il n'y en a pas).");
+      const evt = { id: o.evenement.id, libelle: o.evenement.libelle };
+      if (o.evenement.aOuvrir) {
+        // L'événement du jour s'ouvre avec la première caisse, aux mêmes conditions que par le directeur.
+        await exigerMoisOuvert(c, auth.lieuId, o.evenement.debut);
+        const { rowCount } = await c.query("UPDATE evenement SET etat = 'ouvert', ouvert_le = now() WHERE lieu_id = $1 AND id = $2 AND etat = 'a_venir'", [auth.lieuId, evt.id]);
+        if (rowCount !== 1) throw new ErreurMetier(409, "L'événement vient de changer d'état : réessaie.");
+        await inscrireJet(c, {
+          lieuId: auth.lieuId,
+          type: "evenement_ouvert",
+          utilisateurId: auth.utilisateurId,
+          caisseId: id,
+          details: { evenementId: evt.id, match: evt.libelle, automatique: true, caisse: k.numero },
+        });
+      }
       const jeton = nouveauJeton();
       const { rows } = await c.query<{ id: string }>(
         `INSERT INTO session_caisse (lieu_id, caisse_id, evenement_id, stand_id, ouverte_par, ouverte_le, fond_centimes, appareil_jeton_empreinte)
@@ -460,7 +544,7 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
         utilisateurId: auth.utilisateurId,
         standId: k.stand_id,
         caisseId: id,
-        details: { numero: k.numero, match: evt.libelle, fond: fondRetenu },
+        details: { numero: k.numero, match: evt.libelle, fond: fondRetenu, ...(fond === null && fondRetenu !== null ? { fondPrevu: true } : {}) },
       });
       return repriseCaisse(c, auth, k, { id: sessionId, stand_id: k.stand_id, evenement_id: evt.id }, jeton);
     });
@@ -651,22 +735,57 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
     });
   });
 
-  // ---------- Clôture de caisse ----------
-  // Réseau nécessaire. La tablette envoie d'abord tout ce qui attend et annonce son dernier rang :
-  // la caisse n'est clôturée que si le serveur a bien tout reçu. Une seule transaction (test F4).
-  app.post("/api/caisses/:id/cloture", async (req) => {
+  // ---------- Nouvelles de la tablette (§15.130) ----------
+  // Régulièrement, la tablette dit où elle en est (dernier ticket scellé, tickets pas encore envoyés) :
+  // le directeur sait ainsi s'il peut clôturer à distance sans perdre de vente. En retour, elle apprend
+  // si sa caisse a été clôturée ou reprise ailleurs.
+  app.post("/api/caisses/:id/nouvelles", async (req): Promise<NouvellesCaisse> => {
     const { id } = ParamId.parse(req.params);
     const auth = await exigerAccesCaisse(req, base, id);
-    const { jeton, derniereSequence } = corps(ClotureCaisse, req);
+    const n = corps(Nouvelles, req);
+    return base.transaction(contexte(auth), async (c) => {
+      const { rows } = await c.query<{ id: string; fermee_le: Date | null; appareil_jeton_empreinte: string | null }>(
+        "SELECT id, fermee_le, appareil_jeton_empreinte FROM session_caisse WHERE lieu_id = $1 AND caisse_id = $2 AND id = $3",
+        [auth.lieuId, id, n.sessionId],
+      );
+      const s = rows[0];
+      if (!s) throw introuvable("Session de caisse");
+      const { sequence: sequenceServeur } = await teteChaine(c, id);
+      if (s.fermee_le) return { etat: "cloturee", sequenceServeur };
+      if (!jetonValide(n.jeton, s.appareil_jeton_empreinte)) return { etat: "reprise", sequenceServeur };
+      await c.query("UPDATE session_caisse SET tablette_vue_le = now(), tablette_sequence = $2, tablette_attente = $3 WHERE id = $1", [s.id, n.sequence, n.attente]);
+      return { etat: "ouverte", sequenceServeur };
+    });
+  });
+
+  // ---------- Clôture de caisse : le directeur seul (§15.130) ----------
+  // Réseau nécessaire. Depuis la tablette qui tient la caisse, elle envoie d'abord tout ce qui attend et
+  // annonce son dernier rang : la caisse n'est clôturée que si le serveur a bien tout reçu. À distance
+  // (Mes caisses), la tablette doit avoir tout envoyé et donné des nouvelles récemment ; sinon le
+  // directeur force, avec motif et signature inscrits au journal. Une seule transaction (test F4).
+  app.post("/api/caisses/:id/cloture", async (req) => {
+    const auth = await exigerDirecteur(req, base);
+    const { id } = ParamId.parse(req.params);
+    const { jeton, derniereSequence, forcage } = corps(ClotureCaisse, req);
     return base.transaction(contexte(auth), async (c) => {
       const k = await lireCaisse(c, auth.lieuId, id);
       await verrouiller(c, `caisse:${id}`);
       const session = await sessionOuverte(c, id);
       if (!session) throw new ErreurMetier(409, "Cette caisse n'est pas ouverte.");
-      if (!jetonValide(jeton, session.appareil_jeton_empreinte)) throw new ErreurMetier(409, "Cette caisse a été reprise sur un autre appareil : clôture-la depuis celui-ci.");
       const tete = await teteChaine(c, id);
-      if (tete.sequence !== derniereSequence) {
-        throw new ErreurMetier(409, "Des tickets de cette caisse ne sont pas encore arrivés au serveur : attends leur envoi avant de clôturer.");
+      const depuisLaTablette = jeton !== undefined && jetonValide(jeton, session.appareil_jeton_empreinte);
+      let forcee: { motif: string; signature: string; ticketsAEnvoyer: number | null; derniereNouvelle: string | null } | null = null;
+      if (depuisLaTablette) {
+        if (tete.sequence !== derniereSequence) {
+          throw new ErreurMetier(409, "Des tickets de cette caisse ne sont pas encore arrivés au serveur : attends leur envoi avant de clôturer.");
+        }
+      } else {
+        const derniereNouvelle = session.tablette_vue_le ? session.tablette_vue_le.toISOString() : null;
+        const distance = clotureADistance({ vueLe: derniereNouvelle, sequence: session.tablette_sequence, attente: session.tablette_attente }, tete.sequence, new Date());
+        if (!distance.possible) {
+          if (!forcage) throw new ErreurMetier(409, distance.raison ?? "La tablette n'a pas tout envoyé.");
+          forcee = { ...forcage, ticketsAEnvoyer: distance.aEnvoyer, derniereNouvelle };
+        }
       }
       const { rows } = await c.query<{ type: string; mode_reglement: "especes" | "carte"; total_ttc_centimes: number; details: { ventilation: TicketVue["ventilation"] } }>(
         "SELECT type, mode_reglement, total_ttc_centimes, details FROM journal_caisse WHERE session_id = $1 AND type IN ('vente', 'annulation')",
@@ -719,7 +838,14 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
         utilisateurId: auth.utilisateurId,
         standId: session.stand_id,
         caisseId: id,
-        details: { numero: k.numero, match: session.evenement_libelle, net: formaterMontant(totaux.net), tickets: totaux.nbVentes },
+        details: {
+          numero: k.numero,
+          match: session.evenement_libelle,
+          net: formaterMontant(totaux.net),
+          tickets: totaux.nbVentes,
+          ...(depuisLaTablette ? {} : { aDistance: true }),
+          ...(forcee ? { forcee } : {}),
+        },
       });
       return totaux;
     });

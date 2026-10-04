@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, ShieldCheck } from "lucide-react";
@@ -51,7 +51,7 @@ export function MesCaisses() {
       {evts.length === 0 ? (
         <Carte>
           <EtatVide titre="Aucun événement dans la saison">
-            Crée un événement dans <Link to="/parametres/saison">Paramètres → Saison</Link>, puis ouvre-le ici le jour de l'événement.
+            Crée un événement dans <Link to="/parametres/saison">Paramètres → Saison</Link>, le jour venu, il s'ouvrira tout seul avec la première caisse.
           </EtatVide>
         </Carte>
       ) : (
@@ -59,7 +59,7 @@ export function MesCaisses() {
           <MatchDuJour evts={evts} />
           {evt && evt.etat !== "ouvert" && (
             <div className="message message-info">
-              Cet événement est {ETAT[evt.etat]}. {evt.etat === "a_venir" ? "Ses caisses s'ouvriront quand tu l'auras ouvert ci-dessus." : "Ses chiffres sont définitifs."}
+              Cet événement est {ETAT[evt.etat]}. {evt.etat === "a_venir" ? "Le jour venu, il s'ouvrira avec la première caisse ouverte par une caissière (ou ouvre-le ci-dessus)." : "Ses chiffres sont définitifs."}
             </div>
           )}
           <div className="onglets">
@@ -75,7 +75,8 @@ export function MesCaisses() {
       )}
       <Regles>
         <ul>
-          <li><strong>Événement du jour</strong> : un seul événement peut être ouvert à la fois, et les caisses ne s'ouvrent que pendant un événement ouvert. L'ouverture est définitive (un événement ne revient jamais à « à venir ») ; il se clôt ensuite dans <strong>Clôtures</strong>, une fois toutes ses caisses clôturées.</li>
+          <li><strong>Événement du jour</strong> : un seul événement peut être ouvert à la fois, et les caisses ne s'ouvrent que pendant un événement ouvert. Le jour d'un événement prévu, il s'ouvre tout seul avec la première caisse ouverte sur la tablette d'une caissière ; tu peux aussi l'ouvrir ici. L'ouverture est définitive (un événement ne revient jamais à « à venir ») ; il se clôt ensuite dans <strong>Clôtures</strong>, une fois toutes ses caisses clôturées.</li>
+          <li><strong>Clôture des caisses</strong> : par le directeur seul. Ici, « Clôturer » ferme une caisse à distance si sa tablette a tout envoyé et a donné des nouvelles depuis moins de 2 minutes (elle en donne toutes les 30 secondes quand elle a du réseau). Sinon, « Forcer la clôture » demande un motif et ta signature, inscrits au journal : les tickets restés sur la tablette ne seront plus inscrits (ils y restent visibles). La tablette se met ensuite en attente du prochain événement.</li>
           <li><strong>En direct</strong> : pour chaque caisse, sur l'événement choisi, le nombre de tickets, le chiffre d'affaires net (ventes moins annulations), le panier moyen (CA net ÷ tickets non annulés), la part espèces et carte, et l'heure du dernier ticket. L'état « ouverte » est en direct, quel que soit l'événement affiché.</li>
           <li><strong>Tickets de l'événement</strong> : tous les tickets de l'événement, toutes caisses confondues, en lecture seule. Filtres par stand, caisse, opérateur, mode de règlement, n° de justificatif ou produit.</li>
           <li><strong>Annuler un ticket</strong> : sur l'écran de sa caisse (« Tickets de la session »), tant qu'elle est ouverte — la caisse est seule à écrire sa chaîne pendant la session, condition de la vente sans réseau. Le ticket d'origine n'est jamais modifié ni supprimé ; un ticket d'annulation, de montant opposé, le référence, avec son motif et son auteur. Après la clôture, une correction passe par une rectification tracée.</li>
@@ -127,7 +128,7 @@ function MatchDuJour({ evts }: { evts: Evenement[] }) {
   }
   return (
     <Carte titre="Événement du jour"
-        actions={ouvert ? <Link to="/direct" className="btn btn-fantome">Vue téléphone</Link> : undefined} description="Ouvre l'événement avant d'ouvrir les caisses. Un seul événement peut être ouvert à la fois, et l'ouverture est définitive.">
+        actions={ouvert ? <Link to="/direct" className="btn btn-fantome">Vue téléphone</Link> : undefined} description="Le jour J, l'événement s'ouvre tout seul avec la première caisse d'une caissière. Tu peux aussi l'ouvrir ici. Un seul événement peut être ouvert à la fois, et l'ouverture est définitive.">
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {aVenir.slice(0, 3).map((e) => (
           <div key={e.id} className="caisse">
@@ -169,6 +170,7 @@ function MatchDuJour({ evts }: { evts: Evenement[] }) {
 function TableauCaisses({ evenementId }: { evenementId: string }) {
   const stats = useQuery({ queryKey: ["tableau-caisses", evenementId], queryFn: () => api.get<StatsCaisse[]>(`/caisses/tableau?evenementId=${evenementId}`), refetchInterval: 15_000 });
   const verification = useMutation({ mutationFn: () => api.post<VerificationCaisses>("/caisses/verification") });
+  const [aCloturer, setACloturer] = useState<string | null>(null);
 
   if (stats.isPending) return <Chargement />;
   if (stats.error) return <MessageErreur erreur={stats.error} />;
@@ -234,7 +236,8 @@ function TableauCaisses({ evenementId }: { evenementId: string }) {
                 <span />
               </div>
               {caisses.map((k) => (
-                <div key={k.caisseId} className={`liste-ligne${k.actif ? "" : " inactive"}`} style={{ gridTemplateColumns: COL }}>
+                <Fragment key={k.caisseId}>
+                <div className={`liste-ligne${k.actif ? "" : " inactive"}`} style={{ gridTemplateColumns: COL }}>
                   <strong>
                     Caisse {k.numero}
                     {k.nom ? <span className="discret"> · {k.nom}</span> : null}
@@ -242,9 +245,14 @@ function TableauCaisses({ evenementId }: { evenementId: string }) {
                   <span>
                     <span className="cellule-libelle">État</span>
                     {k.ouverteMaintenant ? (
-                      <span className="puce puce-vert" title={`Ouverte par ${k.ouverteMaintenant.par} le ${formaterDateHeure(k.ouverteMaintenant.depuis)} — ${k.ouverteMaintenant.evenementLibelle}`}>
-                        Ouverte
-                      </span>
+                      <>
+                        <span className="puce puce-vert" title={`Ouverte par ${k.ouverteMaintenant.par} le ${formaterDateHeure(k.ouverteMaintenant.depuis)} — ${k.ouverteMaintenant.evenementLibelle}`}>
+                          Ouverte
+                        </span>
+                        <div style={{ fontSize: 12, marginTop: 3 }}>
+                          <EtatTablette t={k.ouverteMaintenant.tablette} />
+                        </div>
+                      </>
                     ) : (
                       <span className="puce">{k.actif ? "Fermée" : "Désactivée"}</span>
                     )}
@@ -270,14 +278,21 @@ function TableauCaisses({ evenementId }: { evenementId: string }) {
                     <span className="cellule-libelle">Dernier ticket</span>
                     {k.dernierTicket ? formaterDateHeure(k.dernierTicket) : "—"}
                   </span>
-                  <span>
+                  <span className="en-ligne" style={{ gap: 6 }}>
                     {k.actif && (
                       <Link className={k.ouverteMaintenant ? "btn" : "btn btn-fantome"} to={`/caisses/${k.caisseId}`}>
                         {k.ouverteMaintenant ? "Écran de caisse" : "Ouvrir"}
                       </Link>
                     )}
+                    {k.ouverteMaintenant && (
+                      <button className="btn btn-fantome" onClick={() => setACloturer(aCloturer === k.caisseId ? null : k.caisseId)}>
+                        Clôturer
+                      </button>
+                    )}
                   </span>
                 </div>
+                {aCloturer === k.caisseId && <ClotureADistance caisse={k} fermer={() => setACloturer(null)} />}
+                </Fragment>
               ))}
             </div>
           </Carte>
@@ -286,6 +301,116 @@ function TableauCaisses({ evenementId }: { evenementId: string }) {
     </>
   );
 }
+type Tablette = NonNullable<StatsCaisse["ouverteMaintenant"]>["tablette"];
+
+function ilYa(iso: string): string {
+  const secondes = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 1000));
+  if (secondes < 60) return `il y a ${secondes} s`;
+  if (secondes < 3600) return `il y a ${Math.round(secondes / 60)} min`;
+  return `le ${formaterDateHeure(iso)}`;
+}
+
+/** Ce que la tablette d'une caisse ouverte a dit au serveur (§15.130). */
+function EtatTablette({ t }: { t: Tablette }) {
+  if (t.aEnvoyer !== null && t.aEnvoyer > 0) {
+    return (
+      <span className="puce puce-ambre" title={t.raison ?? undefined}>
+        {t.aEnvoyer} ticket{t.aEnvoyer > 1 ? "s" : ""} à envoyer
+      </span>
+    );
+  }
+  if (!t.vueLe) return <span className="discret" title={t.raison ?? undefined}>Tablette pas encore vue</span>;
+  if (!t.cloturable) return <span className="puce puce-ambre" title={t.raison ?? undefined}>Sans nouvelles · {ilYa(t.vueLe)}</span>;
+  return <span className="discret">Tablette à jour · {ilYa(t.vueLe)}</span>;
+}
+
+interface TotauxCloture {
+  nbVentes: number;
+  net: number;
+  especesAttendues: number | null;
+}
+
+/**
+ * Clôture d'une caisse à distance par le directeur (§15.130) : possible si la tablette a tout envoyé
+ * et a donné des nouvelles récemment ; sinon, clôture forcée avec motif et signature, inscrits au journal.
+ */
+function ClotureADistance({ caisse: k, fermer }: { caisse: StatsCaisse; fermer: () => void }) {
+  const client = useQueryClient();
+  const t = k.ouverteMaintenant?.tablette ?? null;
+  const [motif, setMotif] = useState("");
+  const [signature, setSignature] = useState("");
+  const cloturer = useMutation({
+    mutationFn: (forcage: { motif: string; signature: string } | null) => api.post<TotauxCloture>(`/caisses/${k.caisseId}/cloture`, forcage ? { forcage } : {}),
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: ["tableau-caisses"] });
+      void client.invalidateQueries({ queryKey: ["evenements"] });
+    },
+  });
+  const totaux = cloturer.data;
+  // Après la clôture, la ligne se met à jour (caisse fermée) : le résumé reste affiché jusqu'à « Fermer ».
+  if (!totaux && !t) return null;
+
+  return (
+    <div className="detail" style={{ fontSize: 13 }}>
+      {totaux ? (
+        <div className="message message-ok" style={{ marginBottom: 0 }}>
+          Caisse {k.numero} clôturée : {totaux.nbVentes} ticket{totaux.nbVentes > 1 ? "s" : ""}, {formaterMontant(totaux.net)} net
+          {totaux.especesAttendues !== null ? `, ${formaterMontant(totaux.especesAttendues)} attendus dans le tiroir (à compter dans Clôtures)` : ""}. Sa tablette se met en attente du
+          prochain événement.{" "}
+          <button className="btn-lien" onClick={fermer}>
+            Fermer
+          </button>
+        </div>
+      ) : t!.cloturable ? (
+        <>
+          <p style={{ marginTop: 0 }}>
+            La tablette a tout envoyé ({t!.vueLe ? ilYa(t!.vueLe) : "à l'instant"}). La clôture fige les totaux de la session ; la tablette se met ensuite en attente du prochain événement.
+          </p>
+          <div className="ligne-actions">
+            <button className="btn" disabled={cloturer.isPending} onClick={() => cloturer.mutate(null)}>
+              {cloturer.isPending ? "Clôture…" : `Clôturer la caisse ${k.numero}`}
+            </button>
+            <button className="btn btn-fantome" onClick={fermer}>
+              Annuler
+            </button>
+          </div>
+        </>
+      ) : (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            cloturer.mutate({ motif: motif.trim(), signature: signature.trim() });
+          }}
+        >
+          <div className="message message-alerte">{t!.raison}</div>
+          <p className="aide">
+            Forcer la clôture : les tickets restés sur la tablette ne pourront plus être inscrits (ils y restent visibles). Ton motif et ta signature sont inscrits au journal technique.
+          </p>
+          <div className="en-ligne" style={{ alignItems: "flex-end" }}>
+            <label className="champ" style={{ flex: "2 1 260px" }}>
+              <span>Motif</span>
+              <input type="text" value={motif} onChange={(e) => setMotif(e.target.value)} maxLength={300} placeholder="Ex. tablette tombée en panne" />
+            </label>
+            <label className="champ" style={{ flex: "1 1 200px" }}>
+              <span>Signature (prénom et nom)</span>
+              <input type="text" value={signature} onChange={(e) => setSignature(e.target.value)} maxLength={120} />
+            </label>
+          </div>
+          <div className="ligne-actions">
+            <button className="btn btn-danger" disabled={cloturer.isPending || motif.trim().length < 5 || signature.trim().length < 3}>
+              {cloturer.isPending ? "Clôture…" : "Forcer la clôture"}
+            </button>
+            <button type="button" className="btn btn-fantome" onClick={fermer}>
+              Annuler
+            </button>
+          </div>
+        </form>
+      )}
+      <MessageErreur erreur={cloturer.error} />
+    </div>
+  );
+}
+
 const COL = "minmax(110px,1.4fr) minmax(70px,0.8fr) minmax(60px,0.7fr) minmax(90px,1fr) minmax(80px,0.9fr) minmax(100px,1.1fr) minmax(95px,1fr) auto";
 
 const COL_TICKETS = "minmax(150px,1.4fr) minmax(110px,1fr) minmax(90px,0.9fr) minmax(70px,0.7fr) minmax(90px,1fr) minmax(80px,0.8fr) minmax(95px,0.9fr) 20px";

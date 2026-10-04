@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Banknote, CreditCard, Lock, ReceiptText, RefreshCw, Tablet } from "lucide-react";
@@ -31,6 +31,7 @@ import {
   heureCaisse,
   initialiserEtat,
   lireEtat,
+  lireNonEnvoyes,
   memoriserTicket,
   useCaisseLocale,
   useEnvoiAutomatique,
@@ -74,6 +75,12 @@ export function EcranCaisse({ caisseId: caisseImposee, poste = false }: { caisse
   // Dernier écran du serveur : catalogue et prix à jour dès que le réseau est là.
   const ecran = useQuery({ queryKey: ["ecran-caisse", caisseId], queryFn: () => api.get<Ecran>(`/caisses/${caisseId}/ecran`), refetchInterval: 60_000, retry: false });
   useEnvoiAutomatique(caisseId, etat !== null);
+  // Caisse libérée sur cet appareil (clôturée par le directeur, reprise ailleurs) : relire l'écran du serveur.
+  const avaitEtat = useRef(false);
+  useEffect(() => {
+    if (avaitEtat.current && !etat) void client.invalidateQueries({ queryKey: ["ecran-caisse", caisseId] });
+    avaitEtat.current = etat !== null;
+  }, [etat, caisseId, client]);
 
   useEffect(() => {
     const courant = lireEtat(caisseId);
@@ -144,7 +151,7 @@ export function EcranCaisse({ caisseId: caisseImposee, poste = false }: { caisse
 
       <Regles>
         <ul>
-          <li><strong>Ouverture de caisse</strong> : obligatoire avant le premier ticket, et seulement pendant un événement ouvert. Le fond de caisse n'est demandé que si la caisse accepte les espèces. Elle demande le réseau.</li>
+          <li><strong>Ouverture de caisse</strong> : sur la tablette d'une caissière, automatique. Le jour d'un événement prévu, à la connexion, la caisse s'ouvre sur cet événement (qui s'ouvre avec la première caisse), avec le fond prévu par le directeur dans Paramètres → Stands & caisses. Sans événement prévu ce jour-là, la tablette attend et annonce le prochain. Si l'événement d'un jour précédent est resté ouvert alors qu'un autre est prévu aujourd'hui, elle ne s'ouvre pas : le directeur doit d'abord le clôturer. Le directeur ouvre une caisse d'un clic. L'ouverture demande le réseau.</li>
           <li><strong>Vente sans réseau</strong> : chaque ticket est numéroté, scellé et gardé dans la mémoire de cette tablette avant d'afficher « encaissé », puis envoyé au serveur — tout de suite, ou au retour du réseau, dans l'ordre. L'indicateur en haut de l'écran dit combien de tickets attendent. Ne pas utiliser de navigation privée ni vider le navigateur pendant un événement.</li>
           <li><strong>Prix</strong> : ceux du catalogue chargé sur la caisse, remis à jour dès que le réseau est là. Le serveur contrôle chaque ticket reçu : un prix différent du tarif en vigueur à l'heure de la vente est inscrit (la vente a eu lieu) et signalé dans Caisses → Tickets de l'événement.</li>
           <li><strong>Total du ticket</strong> = montant brut − remise − offert, jamais négatif. La remise (en %) s'applique à chaque ligne ; l'offert (en €) est réparti sur les lignes au prorata. La TVA est calculée sur le montant réellement payé.</li>
@@ -155,7 +162,7 @@ export function EcranCaisse({ caisseId: caisseImposee, poste = false }: { caisse
           <li><strong>Annulation</strong> : se fait ici, depuis « Tickets de la session », tant que la caisse est ouverte, avec un motif. Le ticket d'origine demeure ; un ticket inverse le référence.</li>
           <li><strong>Une caisse ouverte appartient à un seul appareil.</strong> Si la tablette casse, le directeur fait « Reprendre la caisse sur cet appareil » depuis un autre : les tickets que l'ancienne n'avait pas encore envoyés ne pourront plus être inscrits. Une caissière ne peut pas reprendre une caisse.</li>
           <li><strong>Caissières</strong> : chacune se connecte avec son code sur la tablette enregistrée comme cette caisse ; chaque ticket porte le nom de la personne connectée au moment de la vente. « Changer de caissière » laisse la caisse ouverte, avec ses tickets en mémoire. La connexion demande le réseau ; une caissière déjà connectée continue de vendre sans réseau.</li>
-          <li><strong>Clôture de caisse</strong> : demande le réseau ; tous les tickets en attente partent d'abord. Elle fige les totaux de la session (tickets, annulations, espèces, carte, TVA par taux) et calcule les espèces attendues dans le tiroir = fond + espèces encaissées. Le comptage du tiroir se fera ensuite dans Clôtures (étape « Espèces et carte », à venir).</li>
+          <li><strong>Clôture de caisse</strong> : par le directeur seul, avec le réseau. Depuis l'écran de la caisse, les tickets en attente partent d'abord. À distance (Caisses → En direct), seulement si la tablette a tout envoyé et a donné des nouvelles depuis moins de 2 minutes ; sinon il peut forcer, avec un motif et sa signature inscrits au journal : les tickets restés sur la tablette ne seront plus inscrits, ils y restent visibles. La clôture fige les totaux de la session (tickets, annulations, espèces, carte, TVA par taux) et calcule les espèces attendues dans le tiroir = fond + espèces encaissées ; le tiroir se compte ensuite dans Clôtures. Une caisse clôturée ne se rouvre pas seule : elle attend le prochain événement.</li>
         </ul>
       </Regles>
     </>
@@ -229,9 +236,18 @@ function AutreAppareil({ caisseId, ecran, poste }: { caisseId: string; ecran: Ec
   );
 }
 
+const centimesEnTexte = (c: number) => (c / 100).toFixed(2).replace(".", ",");
+
+/**
+ * Ouverture de caisse (§15.26, §15.130). Sur la tablette d'une caissière, rien à faire : la caisse
+ * s'ouvre seule sur l'événement du jour avec le fond prévu par le directeur, sinon elle attend le
+ * prochain événement. Le directeur ouvre d'un clic, fond prérempli, averti des cas particuliers.
+ */
 function Ouverture({ ecran, poste }: { ecran: Ecran; poste: boolean }) {
   const client = useQueryClient();
-  const [fond, setFond] = useState("");
+  const k = ecran.caisse;
+  const o = ecran.ouverture;
+  const [fond, setFond] = useState(k.fondPrevu !== null ? centimesEnTexte(k.fondPrevu) : "");
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<unknown>(null);
   const fondCentimes = lireMontant(fond);
@@ -239,51 +255,145 @@ function Ouverture({ ecran, poste }: { ecran: Ecran; poste: boolean }) {
     setEnCours(true);
     setErreur(null);
     try {
-      await preparerAppareil(ecran.caisse.id, await api.post<RepriseCaisse>(`/caisses/${ecran.caisse.id}/ouverture`, corps));
-      await client.invalidateQueries({ queryKey: ["ecran-caisse", ecran.caisse.id] });
+      await preparerAppareil(k.id, await api.post<RepriseCaisse>(`/caisses/${k.id}/ouverture`, corps));
+      await client.invalidateQueries({ queryKey: ["ecran-caisse", k.id] });
     } catch (e) {
       setErreur(e);
     } finally {
       setEnCours(false);
     }
   }
-  const ouvrir = { isPending: enCours, error: erreur, mutate: (c: unknown) => void ouvrirCaisse(c) };
-  const bloquant = !ecran.caisse.actif || !ecran.standActif ? "Cette caisse ou son stand est désactivé." : !ecran.evenementOuvert ? "Aucun événement n'est ouvert." : null;
-  const pret = !bloquant && (!ecran.caisse.especesAutorisees || fondCentimes !== null);
+  const desactivee = !k.actif || !ecran.standActif;
+  // Pour la caissière, l'événement d'hier resté ouvert et la caisse déjà clôturée bloquent aussi ; le directeur, lui, est averti.
+  const bloquant = desactivee ? "Cette caisse ou son stand est désactivé." : !o.evenement ? o.blocage : poste ? (o.blocage ?? o.dejaCloturee) : null;
+  const automatique = poste && !bloquant && (!k.especesAutorisees || k.fondPrevu !== null);
+  const tentee = useRef(false);
+  useEffect(() => {
+    if (!automatique || tentee.current) return;
+    tentee.current = true;
+    void ouvrirCaisse({});
+  }, [automatique]); // une seule tentative automatique par affichage ; ensuite, « Réessayer »
 
+  if (poste && bloquant) return <EnAttente ecran={ecran} message={bloquant} />;
+  if (automatique) {
+    return (
+      <div className="cmd-gate">
+        <h3>Ouverture de la caisse</h3>
+        <p>
+          Caisse {k.numero} · {k.standNom} — événement : <strong>{o.evenement!.libelle}</strong>
+        </p>
+        {erreur ? (
+          <>
+            <MessageErreur erreur={erreur} />
+            <button className="cmd-encaisser" disabled={enCours} onClick={() => void ouvrirCaisse({})}>
+              Réessayer
+            </button>
+          </>
+        ) : (
+          <Chargement />
+        )}
+      </div>
+    );
+  }
+
+  const pret = !bloquant && (!k.especesAutorisees || fondCentimes !== null);
   return (
     <form
       className="cmd-gate"
       onSubmit={(ev) => {
         ev.preventDefault();
-        if (pret) ouvrir.mutate({ fond: ecran.caisse.especesAutorisees ? fondCentimes : null });
+        if (pret) void ouvrirCaisse({ fond: k.especesAutorisees ? fondCentimes : null });
       }}
     >
       <h3>Ouverture de caisse</h3>
       <p>
-        Caisse {ecran.caisse.numero} · {ecran.caisse.standNom}
-        {ecran.evenementOuvert ? <> — événement : <strong>{ecran.evenementOuvert.libelle}</strong></> : null}
+        Caisse {k.numero} · {k.standNom}
+        {o.evenement ? <> — événement : <strong>{o.evenement.libelle}</strong></> : null}
       </p>
       {bloquant ? (
         <div className="message message-alerte" style={{ textAlign: "left" }}>
-          {bloquant}{" "}
-          {!ecran.evenementOuvert &&
-            (poste ? "Le directeur ouvre l'événement du jour ; réessaie ensuite." : <Link to="/caisses">Ouvrir l'événement du jour dans Caisses</Link>)}
+          {bloquant} {!desactivee && <Link to="/caisses">Caisses → événement du jour</Link>}
         </div>
       ) : (
-        ecran.caisse.especesAutorisees && (
-          <>
-            <label htmlFor="fond">Fond de caisse déclaré</label>
-            <input id="fond" type="text" inputMode="decimal" value={fond} onChange={(e) => setFond(e.target.value)} placeholder="0,00" autoFocus />
-          </>
-        )
+        <>
+          {o.blocage && <div className="message message-alerte" style={{ textAlign: "left" }}>{o.blocage} Sur la tablette d'une caissière, la caisse ne s'ouvre pas.</div>}
+          {o.dejaCloturee && (
+            <div className="message message-info" style={{ textAlign: "left" }}>
+              Cette caisse a déjà été clôturée pour « {o.evenement?.libelle} » : la rouvrir crée une nouvelle session sur cet événement.
+            </div>
+          )}
+          {o.evenement?.aOuvrir && (
+            <div className="message message-info" style={{ textAlign: "left" }}>
+              « {o.evenement.libelle} » est prévu aujourd'hui : il s'ouvrira avec cette caisse (ouverture définitive).
+            </div>
+          )}
+          {k.especesAutorisees ? (
+            <>
+              {poste && <p className="aide">Le directeur n'a pas prévu de fond pour cette caisse : compte le tiroir et saisis le montant.</p>}
+              <label htmlFor="fond">Fond de caisse déclaré</label>
+              <input id="fond" type="text" inputMode="decimal" value={fond} onChange={(e) => setFond(e.target.value)} placeholder="0,00" autoFocus />
+              {!poste && k.fondPrevu !== null && <p className="aide">Fond prévu pour cette caisse : {formaterMontant(k.fondPrevu)} (Paramètres → Stands & caisses).</p>}
+            </>
+          ) : (
+            <p style={{ marginTop: 8 }}>Caisse carte uniquement : pas de fond de caisse.</p>
+          )}
+        </>
       )}
-      {!ecran.caisse.especesAutorisees && !bloquant && <p style={{ marginTop: 8 }}>Caisse carte uniquement : pas de fond de caisse.</p>}
-      <MessageErreur erreur={ouvrir.error} />
-      <button className="cmd-encaisser" disabled={!pret || ouvrir.isPending}>
-        Ouvrir la caisse
+      <NonEnvoyes caisseId={k.id} />
+      <MessageErreur erreur={erreur} />
+      <button className="cmd-encaisser" disabled={!pret || enCours}>
+        {o.dejaCloturee ? "Rouvrir la caisse" : "Ouvrir la caisse"}
       </button>
     </form>
+  );
+}
+
+/** Tablette de la caissière en attente : rien de prévu aujourd'hui, caisse déjà clôturée, ou action du directeur nécessaire. */
+function EnAttente({ ecran, message }: { ecran: Ecran; message: string }) {
+  const client = useQueryClient();
+  const o = ecran.ouverture;
+  // Rien de prévu aujourd'hui, ou caisse déjà clôturée : elle se rouvrira seule. Sinon, c'est au directeur d'agir.
+  const seule = !o.evenement || (o.dejaCloturee !== null && o.blocage === null);
+  return (
+    <div className="cmd-gate">
+      <h3>{o.dejaCloturee && !o.blocage ? "Caisse clôturée" : "Caisse en attente"}</h3>
+      <p>
+        Caisse {ecran.caisse.numero} · {ecran.caisse.standNom}
+      </p>
+      <div className="message message-info" style={{ textAlign: "left" }}>
+        {message}
+      </div>
+      <p className="aide">{seule ? "Rien à faire : la caisse s'ouvrira toute seule le jour de l'événement, à la connexion." : "Préviens le directeur."}</p>
+      <NonEnvoyes caisseId={ecran.caisse.id} />
+      <button className="btn btn-fantome" onClick={() => void client.invalidateQueries({ queryKey: ["ecran-caisse", ecran.caisse.id] })}>
+        <RefreshCw size={15} /> Actualiser
+      </button>
+    </div>
+  );
+}
+
+/** Tickets restés sur cette tablette après une clôture forcée (§15.130) : plus inscrits, mais montrés au directeur. */
+function NonEnvoyes({ caisseId }: { caisseId: string }) {
+  const lots = lireNonEnvoyes(caisseId);
+  const n = lots.reduce((s, l) => s + l.tickets.length, 0);
+  if (n === 0) return null;
+  return (
+    <div className="message message-erreur" style={{ textAlign: "left" }}>
+      <strong>
+        {n} ticket{n > 1 ? "s" : ""} non inscrit{n > 1 ? "s" : ""}
+      </strong>{" "}
+      : la caisse a été clôturée par le directeur (ou reprise sur un autre appareil) avant leur envoi. Ils restent sur cette tablette : montre-les au directeur.
+      <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+        {lots.flatMap((l) =>
+          l.tickets.map((t) => (
+            <li key={t.id} className="chiffre">
+              {t.numeroJustificatif} · {formaterMontant(t.totalTtc)} · {formaterDateHeure(t.horodatage)}
+              {l.evenementLibelle ? ` · ${l.evenementLibelle}` : ""}
+            </li>
+          )),
+        )}
+      </ul>
+    </div>
   );
 }
 
@@ -456,7 +566,7 @@ function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresClo
           <strong>Aucun produit vendu à ce stand</strong>
           {poste ? "Préviens le directeur : aucun produit n'est coché pour ce stand." : <>Coche ce stand sur tes produits dans <Link to="/parametres/produits">Paramètres → Produits & prix</Link>.</>}
         </div>
-        <ClotureBouton confirmer={confirmerCloture} setConfirmer={setConfirmerCloture} cloturer={cloturer} />
+        <ClotureBouton confirmer={confirmerCloture} setConfirmer={setConfirmerCloture} cloturer={cloturer} poste={poste} />
       </div>
     );
   }
@@ -630,7 +740,7 @@ function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresClo
         {nbArticles > 0 && erreurAj && <div className="cmd-blockmsg">{erreurAj}</div>}
         {nbArticles > 0 && ap.pointsTropEleves && <div className="cmd-blockmsg">Les points dépassent ce qui reste à payer : rends-les (×) et choisis moins de paliers.</div>}
 
-        <ClotureBouton confirmer={confirmerCloture} setConfirmer={setConfirmerCloture} cloturer={cloturer} />
+        <ClotureBouton confirmer={confirmerCloture} setConfirmer={setConfirmerCloture} cloturer={cloturer} poste={poste} />
       </div>
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>
@@ -717,11 +827,21 @@ function ClotureBouton({
   confirmer,
   setConfirmer,
   cloturer,
+  poste,
 }: {
   confirmer: boolean;
   setConfirmer: (v: boolean) => void;
   cloturer: { lancer: () => void; enCours: boolean; erreur: string | null };
+  poste: boolean;
 }) {
+  // La caissière ne clôture pas : c'est le directeur, depuis cet écran ou à distance (§15.130).
+  if (poste) {
+    return (
+      <p className="aide" style={{ marginTop: 14, textAlign: "center" }}>
+        <Lock size={13} /> La clôture de la caisse est faite par le directeur.
+      </p>
+    );
+  }
   return (
     <div style={{ marginTop: 14 }}>
       {confirmer ? (

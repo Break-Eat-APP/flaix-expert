@@ -25,6 +25,8 @@ const ModifCaisse = z.object({
   especesAutorisees: z.boolean().optional(),
   actif: z.boolean().optional(),
   standId: Uuid.optional(),
+  /** Fond de caisse prévu (§15.130) : la caisse de la caissière s'ouvre seule avec ce fond ; null : saisi à l'ouverture. */
+  fondPrevu: z.number().int().min(0).max(1_000_000).nullable().optional(),
 });
 
 interface LigneStand {
@@ -40,6 +42,7 @@ interface LigneCaisse {
   nom: string | null;
   especes_autorisees: boolean;
   actif: boolean;
+  fond_prevu_centimes: number | null;
 }
 
 const versCaisse = (l: LigneCaisse): Caisse => ({
@@ -49,6 +52,7 @@ const versCaisse = (l: LigneCaisse): Caisse => ({
   nom: l.nom,
   especesAutorisees: l.especes_autorisees,
   actif: l.actif,
+  fondPrevu: l.fond_prevu_centimes,
 });
 
 export async function listerStands(c: Client, lieuId: string): Promise<Stand[]> {
@@ -57,7 +61,7 @@ export async function listerStands(c: Client, lieuId: string): Promise<Stand[]> 
     [lieuId],
   );
   const caisses = await c.query<LigneCaisse>(
-    "SELECT id, stand_id, numero, nom, especes_autorisees, actif FROM caisse WHERE lieu_id = $1 ORDER BY numero",
+    "SELECT id, stand_id, numero, nom, especes_autorisees, actif, fond_prevu_centimes FROM caisse WHERE lieu_id = $1 ORDER BY numero",
     [lieuId],
   );
   return stands.rows.map((s) => ({
@@ -180,12 +184,12 @@ export async function routesStands(app: FastifyInstance, { base }: { base: Base 
     const demande = corps(ModifCaisse, req);
     return base.transaction(contexte(auth), async (c) => {
       const { rows } = await c.query<LigneCaisse>(
-        "SELECT id, stand_id, numero, nom, especes_autorisees, actif FROM caisse WHERE lieu_id = $1 AND id = $2 FOR UPDATE",
+        "SELECT id, stand_id, numero, nom, especes_autorisees, actif, fond_prevu_centimes FROM caisse WHERE lieu_id = $1 AND id = $2 FOR UPDATE",
         [auth.lieuId, id],
       );
       const k = rows[0];
       if (!k) throw introuvable("Caisse");
-      const avant = { nom: k.nom, especesAutorisees: k.especes_autorisees, actif: k.actif, standId: k.stand_id };
+      const avant = { nom: k.nom, especesAutorisees: k.especes_autorisees, actif: k.actif, standId: k.stand_id, fondPrevu: k.fond_prevu_centimes };
       const modifications = differences(avant, demande);
       if (Object.keys(modifications).length === 0) return listerStands(c, auth.lieuId);
       const apres = { ...avant, ...Object.fromEntries(Object.entries(demande).filter(([, v]) => v !== undefined)) };
@@ -198,8 +202,8 @@ export async function routesStands(app: FastifyInstance, { base }: { base: Base 
         throw new ErreurMetier(409, "Une caisse active ne peut pas être rattachée à un stand désactivé.");
       }
       await c.query(
-        "UPDATE caisse SET nom = $3, especes_autorisees = $4, actif = $5, stand_id = $6 WHERE lieu_id = $1 AND id = $2",
-        [auth.lieuId, id, apres.nom, apres.especesAutorisees, apres.actif, apres.standId],
+        "UPDATE caisse SET nom = $3, especes_autorisees = $4, actif = $5, stand_id = $6, fond_prevu_centimes = $7 WHERE lieu_id = $1 AND id = $2",
+        [auth.lieuId, id, apres.nom, apres.especesAutorisees, apres.actif, apres.standId, apres.fondPrevu],
       );
       await inscrireJet(c, {
         lieuId: auth.lieuId,

@@ -5,7 +5,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { EcranCaisse, EvenementTablette, RepriseCaisse } from "@flaix/domain";
-import { effacerEtat, envoyer, initialiserEtat, lireEtat, memoriserTicket, statutEnvoi } from "./memoire.ts";
+import { donnerNouvelles, effacerEtat, envoyer, initialiserEtat, lireEtat, lireNonEnvoyes, memoriserTicket, statutEnvoi } from "./memoire.ts";
 
 const CAISSE = "caisse-test";
 const reprise = {
@@ -116,5 +116,59 @@ describe("envoi au serveur", () => {
     expect(lots.flat()[0]).toBe("t1");
     expect(lots.flat()[249]).toBe("t250");
     expect(lireEtat(CAISSE)!.attente).toEqual([]);
+  });
+});
+
+describe("nouvelles de la tablette au serveur (caisse automatique, §15.130)", () => {
+  const corps = (f: ReturnType<typeof vi.fn>, i = 0) => JSON.parse((f.mock.calls[i]![1] as RequestInit).body as string) as Record<string, unknown>;
+
+  it("caisse ouverte : la tablette dit son dernier ticket et ce qui attend ; pas de nouvelles redonnées avant 30 s si rien n'a bougé", async () => {
+    serveur.mockImplementation(async () => reponse(200, { etat: "ouverte", sequenceServeur: 1 }));
+    vendre(1);
+    expect(await donnerNouvelles(CAISSE)).toBe("ouverte");
+    expect(serveur.mock.calls[0]![0]).toBe("/api/caisses/caisse-test/nouvelles");
+    expect(corps(serveur)).toEqual({ sessionId: "session", jeton: "jeton", sequence: 2, attente: 1 });
+    expect(await donnerNouvelles(CAISSE)).toBeNull();
+    vendre(2); // une nouvelle vente : les nouvelles repartent tout de suite
+    expect(await donnerNouvelles(CAISSE)).toBe("ouverte");
+    expect(serveur).toHaveBeenCalledTimes(2);
+    expect(lireEtat(CAISSE)!.attente).toEqual(["t1", "t2"]);
+  });
+
+  it("le directeur a clôturé la caisse, tout était envoyé : la tablette se libère pour le prochain événement", async () => {
+    serveur.mockResolvedValue(reponse(200, { etat: "cloturee", sequenceServeur: 1 }));
+    expect(await donnerNouvelles(CAISSE)).toBe("cloturee");
+    expect(lireEtat(CAISSE)).toBeNull();
+    expect(lireNonEnvoyes(CAISSE)).toEqual([]);
+  });
+
+  it("[F] clôture forcée avec 2 tickets pas envoyés : la caisse se libère, les 2 tickets restent sur la tablette, mis de côté", async () => {
+    vendre(1);
+    vendre(2);
+    serveur.mockResolvedValue(reponse(200, { etat: "cloturee", sequenceServeur: 1 }));
+    await donnerNouvelles(CAISSE);
+    expect(lireEtat(CAISSE)).toBeNull();
+    const lots = lireNonEnvoyes(CAISSE);
+    expect(lots).toHaveLength(1);
+    expect(lots[0]).toMatchObject({ sessionId: "session", raison: "cloturee" });
+    expect(lots[0]!.tickets.map((t) => t.id)).toEqual(["t1", "t2"]);
+  });
+
+  it("[F] mémoire pleine au moment de mettre les tickets de côté : la caisse reste affichée, avec ses tickets", async () => {
+    vendre(1);
+    serveur.mockResolvedValue(reponse(200, { etat: "reprise", sequenceServeur: 1 }));
+    const ecrire = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("plein", "QuotaExceededError");
+    });
+    await donnerNouvelles(CAISSE);
+    ecrire.mockRestore();
+    expect(lireEtat(CAISSE)!.attente).toEqual(["t1"]);
+  });
+
+  it("réseau coupé : rien ne change sur la tablette", async () => {
+    vendre(1);
+    serveur.mockRejectedValue(new TypeError("Failed to fetch"));
+    expect(await donnerNouvelles(CAISSE)).toBeNull();
+    expect(lireEtat(CAISSE)!.attente).toEqual(["t1"]);
   });
 });

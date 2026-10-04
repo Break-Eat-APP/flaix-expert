@@ -58,7 +58,8 @@ beforeAll(async () => {
   hotDog = produits.find((p) => p.nom === "Hot dog")!;
   biere = produits.find((p) => p.nom === "Bière 50cl")!;
 
-  const evts = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Événement 1 — test", debut: new Date().toISOString(), spectateurs: 3000 })).corps;
+  // Prévu demain : aujourd'hui, rien n'est prévu, la caisse ne s'ouvre donc pas seule (caisse automatique : caisse-auto.test.ts).
+  const evts = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Événement 1 — test", debut: new Date(Date.now() + 86_400_000).toISOString(), spectateurs: 3000 })).corps;
   match1 = evts[0]!;
 });
 
@@ -82,10 +83,10 @@ function plusTard(minutes: number) {
 }
 
 describe("cycle d'un événement", () => {
-  it("une caisse ne s'ouvre pas sans événement ouvert", async () => {
+  it("une caisse ne s'ouvre pas sans événement ouvert ni prévu aujourd'hui", async () => {
     const r = await appel<{ erreur: string }>("POST", `/api/caisses/${caisseBar()}/ouverture`, {});
     expect(r.statut).toBe(409);
-    expect(r.corps.erreur).toContain("Aucun événement");
+    expect(r.corps.erreur).toContain("Aucun événement prévu aujourd'hui");
   });
 
   it("ouvre l'événement ; un second match ne peut pas être ouvert en même temps", async () => {
