@@ -7,6 +7,7 @@ import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { restesDuMatch } from "./stock.ts";
 import { figerConsommationIngredients } from "./stock-ingredients.ts";
+import { figerRapportSoiree } from "./rapport-soiree.ts";
 import { exigerMoisOuvert, zDuMatch } from "./periodes.ts";
 import { ParamId, contexte, corps, differences, texte } from "./outils.ts";
 
@@ -177,6 +178,8 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
       // Z de l'événement (clôture journalière) : totaux, TVA par taux, grand total et total perpétuel scellés (§15.107).
       await zDuMatch(c, auth.lieuId, auth.utilisateurId, (await listerEvenements(c, auth.lieuId)).find((x) => x.id === id)!);
       await inscrireJet(c, { lieuId: auth.lieuId, type: "evenement_clos", utilisateurId: auth.utilisateurId, details: { evenementId: id, match: e.libelle } });
+      // Rapport de soirée établi et figé dans la même transaction (§15.131).
+      await figerRapportSoiree(c, auth.lieuId, auth.utilisateurId, id, "cloture");
       return listerEvenements(c, auth.lieuId);
     });
   });

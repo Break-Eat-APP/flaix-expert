@@ -531,3 +531,60 @@ details.inventaire summary { cursor: pointer; font-size: 13px; }
 .remontees { padding: 8px 12px; border-top: 1px solid var(--border); display: grid; gap: 4px; }
 .remontee { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; }
 .recap-especes { margin-top: 10px; padding: 12px 14px; border-radius: 12px; background: var(--childbg); border: 1px solid var(--border); display: grid; gap: 2px; max-width: 460px; }
+
+/* Rapport de soirée (module 9, dossier §15.131) : un document à lire à l'écran, à imprimer ou à enregistrer en PDF. */
+.rapport-page { max-width: 920px; margin: 0 auto; padding: 20px 16px 48px; }
+.rapport-outils { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.rapport-feuille { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 32px; box-shadow: var(--ombre); display: flex; flex-direction: column; gap: 22px; }
+@media (max-width: 600px) { .rapport-feuille { padding: 18px 16px; } }
+.rapport-factice { background: var(--amber-soft); color: var(--amber); font-weight: 800; letter-spacing: 0.06em; text-align: center; padding: 8px; border-radius: 8px; }
+.rapport-entete { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 2px solid var(--violet); padding-bottom: 14px; }
+.rapport-entete h1 { margin: 4px 0; font-size: 26px; text-wrap: balance; }
+.rapport-entete p { margin: 0; color: var(--muted); }
+.rapport-marque { font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--violet); }
+.rapport-lieu { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 13px; color: var(--muted); }
+.rapport-lieu strong { color: var(--text); font-size: 14px; }
+@media (max-width: 600px) { .rapport-lieu { align-items: flex-start; } }
+.rapport-chiffres { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 700px) { .rapport-chiffres { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.rapport-chiffre { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; min-width: 0; }
+.rapport-chiffre span { font-size: 12px; color: var(--muted); }
+.rapport-chiffre strong { font-size: 20px; font-family: "Raleway", "Plus Jakarta Sans", sans-serif; overflow-wrap: anywhere; }
+.rapport-chiffre small { font-size: 11.5px; color: var(--muted); }
+.rapport-section { display: flex; flex-direction: column; gap: 8px; }
+.rapport-section h2 { margin: 0; font-size: 17px; }
+.rapport-description, .rapport-note { margin: 0; font-size: 12.5px; color: var(--muted); max-width: 75ch; }
+.rapport-grille { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; }
+@media (max-width: 700px) { .rapport-grille { grid-template-columns: 1fr; } }
+.rapport-bloc { min-width: 0; }
+.rapport-bloc h3 { margin: 0 0 4px; font-size: 13px; color: var(--muted); font-weight: 700; }
+.rapport-tableau { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rapport-tableau th { text-align: left; font-size: 11.5px; font-weight: 600; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.rapport-tableau td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.rapport-tableau .d { text-align: right; white-space: nowrap; }
+.rapport-cascade tr.total td { font-weight: 800; border-bottom-color: var(--text); }
+.rapport-cascade tr.depart td { font-weight: 700; }
+.rapport-cascade tr.retire td:first-child { padding-left: 20px; color: var(--muted); }
+.rapport-cascade tr:last-child td { font-size: 15px; color: var(--violet); border-bottom: 0; }
+.rapport-part { color: var(--muted); font-weight: 600; width: 80px; }
+.rapport-manque { color: var(--amber); font-weight: 600; }
+.rapport-avertissement { margin: 0; font-size: 12.5px; padding: 10px 12px; border-left: 3px solid var(--amber); background: var(--amber-soft); border-radius: 0 8px 8px 0; }
+.rapport-vide { margin: 0; font-size: 13px; color: var(--muted); font-style: italic; }
+.rapport-alertes { margin: 0; padding-left: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.rapport-alertes li.forte strong { color: var(--red); }
+.rapport-pied { border-top: 1px solid var(--border); padding-top: 12px; font-size: 11.5px; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
+.rapport-pied p { margin: 0; }
+.rapport-empreinte { display: flex; align-items: center; gap: 6px; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; overflow-wrap: anywhere; }
+@media print {
+  @page { size: A4; margin: 14mm 12mm; }
+  .rapport-feuille, .rapport-feuille * { visibility: visible; }
+  .rapport-page { max-width: none; padding: 0; }
+  /* Toujours sur papier blanc, même si l'écran est en mode sombre. */
+  .rapport-feuille {
+    --text: #1c1730; --muted: #5f5973; --border: #d9d5e6; --surface: #fff; --violet: #4d04f4; --red: #c4282d; --amber: #8a5a08; --amber-soft: #fff; --ombre: none;
+    color: var(--text); background: #fff; border: 0; border-radius: 0; padding: 0; box-shadow: none; gap: 14px;
+  }
+  .rapport-section, .rapport-chiffres, .rapport-bloc, .rapport-pied { break-inside: avoid; }
+  .rapport-tableau tr { break-inside: avoid; }
+  .rapport-avertissement { border: 1px solid #8a5a08; }
+}

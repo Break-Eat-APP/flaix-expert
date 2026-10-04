@@ -32,6 +32,7 @@ const EnDirect = lazy(() => import("./pages/direct/EnDirect.tsx").then((m) => ({
 const CoutsBuvette = lazy(() => import("./pages/parametres/CoutsBuvette.tsx").then((m) => ({ default: m.CoutsBuvette })));
 const Fidelite = lazy(() => import("./pages/fidelite/Fidelite.tsx").then((m) => ({ default: m.Fidelite })));
 const Factures = lazy(() => import("./pages/factures/Factures.tsx").then((m) => ({ default: m.Factures })));
+const RapportSoiree = lazy(() => import("./pages/resultats/RapportSoiree.tsx").then((m) => ({ default: m.RapportSoiree })));
 const EspaceEditeur = lazy(() => import("./pages/editeur/EspaceEditeur.tsx").then((m) => ({ default: m.EspaceEditeur })));
 
 /** Le back-office FlaiX Expert (/editeur) est un espace à part : autres comptes, autre cookie (dossier §15.116). */
@@ -68,6 +69,8 @@ function AppLieu() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Rapport de soirée : un document à part, sans menu, pour l'impression et le PDF (§15.131). */}
+        <Route path="rapport-soiree/:evenementId" element={<Suspense fallback={<Chargement />}><RapportSoiree /></Suspense>} />
         <Route element={<Coquille session={session.data} />}>
           {/* Organisation en 6 entrées (dossier §15.96) : Résultats, Caisses, Stock, Équipe, Clôtures, Paramètres. */}
           <Route index element={<Resultats session={session.data} />} />

@@ -96,6 +96,9 @@ export function Clotures() {
                       <button className="btn btn-fantome" onClick={() => setChoisi(e.id)}>
                         Voir sa clôture
                       </button>
+                      <Link className="btn btn-fantome" to={`/rapport-soiree/${e.id}`}>
+                        Rapport de soirée
+                      </Link>
                       <Link className="btn btn-fantome" to={`/caisses?match=${e.id}&vue=tickets`}>
                         Voir les tickets
                       </Link>
@@ -369,7 +372,8 @@ function Assistant({ evenementId, apresCloture, retour }: { evenementId: string;
       <Carte titre="4. Clôture de l'événement">
         {estClos ? (
           <div className="message message-ok" style={{ margin: 0 }}>
-            Événement clos le {formaterDateHeure(e.closLe!)}. Ses chiffres sont définitifs ; un Z se corrige encore par une rectification tracée.
+            Événement clos le {formaterDateHeure(e.closLe!)}. Ses chiffres sont définitifs ; un Z se corrige encore par une rectification tracée.{" "}
+            <Link to={`/rapport-soiree/${e.id}`}>Voir le rapport de soirée</Link>
           </div>
         ) : (
           <>

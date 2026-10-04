@@ -14,7 +14,7 @@ import { Uuid, contexte } from "./outils.ts";
 
 const Choix = z.object({ evenementId: Uuid.optional(), comparaison: Uuid.optional() });
 
-async function resumeMatchs(c: Client, lieuId: string): Promise<MatchResume[]> {
+export async function resumeMatchs(c: Client, lieuId: string): Promise<MatchResume[]> {
   const { rows } = await c.query<{ id: string; libelle: string; debut: Date; etat: MatchResume["etat"]; spectateurs: number | null; ca: number; tickets: number }>(
     `SELECT e.id, e.libelle, e.debut, e.etat, e.spectateurs, coalesce(e.ouvert_le, e.debut) AS joue_le,
             sum(j.total_ttc_centimes)::int AS ca,
@@ -120,7 +120,7 @@ export async function statsMatch(c: Client, lieuId: string, e: Evenement): Promi
 }
 
 /** « À surveiller » : ce qui mérite un regard du directeur sur cet événement, sans rien interpréter. */
-async function alertes(c: Client, lieuId: string, e: Evenement, s: StatsMatch): Promise<AlerteResultat[]> {
+export async function alertes(c: Client, lieuId: string, e: Evenement, s: StatsMatch): Promise<AlerteResultat[]> {
   const liste: AlerteResultat[] = [];
   const { rows: signal } = await c.query<{ prix: number; heure: number; hors_ligne: number }>(
     `SELECT count(*) FILTER (WHERE controle ? 'ecartTarif')::int AS prix,

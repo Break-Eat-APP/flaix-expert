@@ -566,7 +566,7 @@ function VueRapports({ d, choisir }: { d: Resultats; choisir: (id: string) => vo
           ))}
         </div>
       </Carte>
-      <Carte titre="Événements" description="Chiffres clés de chaque événement ; le rapport de soirée imprimable viendra ensuite.">
+      <Carte titre="Événements" description="Chiffres clés de chaque événement. Le rapport de soirée d'un événement clos est figé à sa clôture : à lire, imprimer ou enregistrer en PDF.">
         <div className="scroll-x">
           <table className="tableau">
             <thead>
@@ -590,9 +590,16 @@ function VueRapports({ d, choisir }: { d: Resultats; choisir: (id: string) => vo
                   <td className="d chiffre">{m.tickets > 0 ? euros(Math.round(m.caTtc / m.tickets)) : "—"}</td>
                   <td className="d chiffre">{m.spectateurs?.toLocaleString("fr-FR") ?? "non saisi"}</td>
                   <td className="d">
-                    <button className="btn-lien" onClick={() => choisir(m.id)}>
-                      Voir
-                    </button>
+                    <span className="en-ligne" style={{ gap: 10, justifyContent: "flex-end" }}>
+                      <button className="btn-lien" onClick={() => choisir(m.id)}>
+                        Voir
+                      </button>
+                      {m.etat === "clos" && (
+                        <Link className="btn-lien" to={`/rapport-soiree/${m.id}`}>
+                          Rapport de soirée
+                        </Link>
+                      )}
+                    </span>
                   </td>
                 </tr>
               ))}

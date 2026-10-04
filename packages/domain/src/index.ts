@@ -22,3 +22,4 @@ export * from "./recettes.ts";
 export * from "./mot-de-passe.ts";
 export * from "./stock-ingredients.ts";
 export * from "./caisse-auto.ts";
+export * from "./rapport-soiree.ts";
