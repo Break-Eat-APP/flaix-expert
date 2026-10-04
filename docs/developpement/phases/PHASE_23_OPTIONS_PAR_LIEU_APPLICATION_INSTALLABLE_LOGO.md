@@ -95,7 +95,7 @@
 ### `apps/api/test/options.test.ts`
 
 - **options d'un lieu**
-  - sans réglage, toutes les options sont actives (rien ne change pour un lieu existant)
+  - sans réglage, toutes les options sont actives (rien ne change pour un lieu existant), sauf l'assistant IA, payant à l'usage
   - FlaiX Expert désactive le Stock : ses adresses sont fermées, le lieu le voit dans son journal
   - le lieu de formation suit les options du vrai lieu
   - réactivée, l'option rouvre ses adresses

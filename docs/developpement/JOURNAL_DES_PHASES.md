@@ -43,6 +43,7 @@
 | 35 | [Cibles de marge et gestion financière de la soirée](#phase-35) | §15.132 | [`074647f`](https://github.com/Break-Eat-APP/flaix-expert/commit/074647f3a6d171ab1f4b33201e211395759a1efa) | livrée |
 | 36 | [Bilan sur une période du … au …](#phase-36) | §15.133 | [`10e0186`](https://github.com/Break-Eat-APP/flaix-expert/commit/10e018659b30bb2cf3a005ec4ef65994e92ce077) | livrée |
 | 37 | [Brief de fin de soirée en notification sur le téléphone](#phase-37) | §15.134, §15.135 | [`bcb9455`](https://github.com/Break-Eat-APP/flaix-expert/commit/bcb9455bc942b80996d2302d3467a2a1a9316a56) | livrée |
+| 38 | [Assistant « pose ta question » et brief reformulé par Mistral](#phase-38) | §15.136 | [`4a30d13`](https://github.com/Break-Eat-APP/flaix-expert/commit/4a30d1373cebf546b6614e731c9fb280fa9d41d6) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -1501,6 +1502,46 @@
 - **Autres** :
   - [`pnpm-lock.yaml`](../../pnpm-lock.yaml) — modifié
 
+<a id="phase-38"></a>
+## Phase 38 — Assistant « pose ta question » et brief reformulé par Mistral
+
+- **Dates** : 2026-10-04
+- **Décision et raisonnement** : dossier projet §15.136
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`4a30d13`](https://github.com/Break-Eat-APP/flaix-expert/commit/4a30d1373cebf546b6614e731c9fb280fa9d41d6) 2026-10-04 — Assistant « pose ta question » et brief reformulé par Mistral, derrière une option du lieu (dossier §15.136)
+- **Migrations (base)** :
+  - [`db/migrations/0029_assistant.sql`](../../db/migrations/0029_assistant.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/assistant.ts`](../../packages/domain/src/assistant.ts) — créé
+  - [`packages/domain/src/editeur.ts`](../../packages/domain/src/editeur.ts) — modifié
+  - [`packages/domain/src/index.ts`](../../packages/domain/src/index.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/config.ts`](../../apps/api/src/config.ts) — modifié
+  - [`apps/api/src/ia/fournisseur.ts`](../../apps/api/src/ia/fournisseur.ts) — créé
+  - [`apps/api/src/routes/assistant.ts`](../../apps/api/src/routes/assistant.ts) — créé
+  - [`apps/api/src/routes/notifications.ts`](../../apps/api/src/routes/notifications.ts) — modifié
+  - [`apps/api/src/routes/produits.ts`](../../apps/api/src/routes/produits.ts) — modifié
+  - [`apps/api/src/serveur.ts`](../../apps/api/src/serveur.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/App.tsx`](../../apps/web/src/App.tsx) — modifié
+  - [`apps/web/src/composants/Coquille.tsx`](../../apps/web/src/composants/Coquille.tsx) — modifié
+  - [`apps/web/src/pages/Assistant.test.tsx`](../../apps/web/src/pages/Assistant.test.tsx) — créé
+  - [`apps/web/src/pages/Assistant.tsx`](../../apps/web/src/pages/Assistant.tsx) — créé
+  - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
+- **Tests** :
+  - [`apps/api/test/assistant.test.ts`](../../apps/api/test/assistant.test.ts) — créé
+  - [`apps/api/test/options.test.ts`](../../apps/api/test/options.test.ts) — modifié
+  - [`apps/web/src/composants/Coquille.test.ts`](../../apps/web/src/composants/Coquille.test.ts) — modifié
+  - [`packages/domain/src/assistant.test.ts`](../../packages/domain/src/assistant.test.ts) — créé
+- **Serveur et outils (infra)** :
+  - [`infra/vps/deployer.sh`](../../infra/vps/deployer.sh) — modifié
+  - [`infra/vps/flaix-admin.sh`](../../infra/vps/flaix-admin.sh) — modifié
+- **Documentation** :
+  - [`docs/avancement.md`](../../docs/avancement.md) — modifié
+  - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
+  - [`docs/guide-serveur-test-ovh.md`](../../docs/guide-serveur-test-ovh.md) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -1510,3 +1551,4 @@
 - [`11ce1ec`](https://github.com/Break-Eat-APP/flaix-expert/commit/11ce1ecd57c4babe97af5e5d6d157f8225073384) 2026-10-04 — Journal : phase 35 (cibles de marge et gestion financière)
 - [`8ed1a2c`](https://github.com/Break-Eat-APP/flaix-expert/commit/8ed1a2c0c059f5d1613ab92bdd7b83c295e8d57a) 2026-10-04 — Journal : phase 36 (bilan sur une période)
 - [`2f42193`](https://github.com/Break-Eat-APP/flaix-expert/commit/2f42193e3a18d9e7a30cfbfc6c6e739f3c00c4ab) 2026-10-04 — Analyse « Intelligence, prévision et décision » v1 : avis sur la note produit, marché, propositions, IA, cadre juridique (dossier §15.134)
+- [`8354e35`](https://github.com/Break-Eat-APP/flaix-expert/commit/8354e354ef96657d911a1b10f615058d6fdbbd4d) 2026-10-04 — Journal : phase 37 (brief de fin de soirée)

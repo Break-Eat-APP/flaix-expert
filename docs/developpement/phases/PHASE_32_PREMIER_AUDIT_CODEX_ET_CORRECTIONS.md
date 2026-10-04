@@ -100,6 +100,7 @@ Rémi a fait auditer le code et les documents par Codex (`docs/audits/AUDIT_2026
 
 - **menu selon les options activées par FlaiX Expert**
   - toutes les options actives : les huit entrées
+  - assistant IA activé par FlaiX Expert : l'entrée Assistant apparaît juste après Résultats
   - Stock, Fidélité et Factures désactivées : leurs entrées disparaissent, la base reste
 
 ### `apps/web/src/pages/caisse/memoire.test.ts`

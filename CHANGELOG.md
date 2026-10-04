@@ -5,6 +5,80 @@
 
 ## 2026-10-04
 
+### [`4a30d13`](https://github.com/Break-Eat-APP/flaix-expert/commit/4a30d1373cebf546b6614e731c9fb280fa9d41d6) — Assistant « pose ta question » et brief reformulé par Mistral, derrière une option du lieu (dossier §15.136) *(phase 38)*
+
+- modifié : `apps/api/src/config.ts`
+- créé : `apps/api/src/ia/fournisseur.ts`
+- créé : `apps/api/src/routes/assistant.ts`
+- modifié : `apps/api/src/routes/notifications.ts`
+- modifié : `apps/api/src/routes/produits.ts`
+- modifié : `apps/api/src/serveur.ts`
+- créé : `apps/api/test/assistant.test.ts`
+- modifié : `apps/api/test/options.test.ts`
+- modifié : `apps/web/src/App.tsx`
+- modifié : `apps/web/src/composants/Coquille.test.ts`
+- modifié : `apps/web/src/composants/Coquille.tsx`
+- créé : `apps/web/src/pages/Assistant.test.tsx`
+- créé : `apps/web/src/pages/Assistant.tsx`
+- modifié : `apps/web/src/styles.css`
+- créé : `db/migrations/0029_assistant.sql`
+- modifié : `docs/avancement.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `docs/guide-serveur-test-ovh.md`
+- modifié : `infra/vps/deployer.sh`
+- modifié : `infra/vps/flaix-admin.sh`
+- créé : `packages/domain/src/assistant.test.ts`
+- créé : `packages/domain/src/assistant.ts`
+- modifié : `packages/domain/src/editeur.ts`
+- modifié : `packages/domain/src/index.ts`
+
+### [`8354e35`](https://github.com/Break-Eat-APP/flaix-expert/commit/8354e354ef96657d911a1b10f615058d6fdbbd4d) — Journal : phase 37 (brief de fin de soirée)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- créé : `docs/developpement/phases/PHASE_37_BRIEF_DE_FIN_DE_SOIREE_EN_NOTIFICATION_SUR_LE_TELEPHONE.md`
+- modifié : `docs/developpement/phases/README.md`
+- modifié : `docs/developpement/phases/word/PHASE_00_SOCLE_DE_PRODUCTION_ET_CONFIGURATION_DUN_LIEU_VIDE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_01_MATCHS_CAISSE_MES_CAISSES_JOURNAL_DES_TICKETS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_02_RETOUR_DE_DEMONSTRATION_ORGANISATION_EN_6_ENTREES_MAQUETTES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_03_VENTE_SANS_RESEAU_LA_TABLETTE_SCELLE_LE_SERVEUR_VERIFIE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_04_SERVEUR_DE_TEST_OVH.docx`
+- modifié : `docs/developpement/phases/word/PHASE_05_COMPTES_DES_CAISSIERES_ET_TABLETTES_ENREGISTREES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_06_TICKET_CLIENT_SUR_DEMANDE_ET_DUPLICATA.docx`
+- modifié : `docs/developpement/phases/word/PHASE_07_CLOTURE_DU_MATCH_Z_DES_TIROIRS_RECTIFICATION_SIGNEE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_08_RESULTATS_SUR_LES_VRAIES_VENTES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_09_EQUIPE_FICHES_PLANNING_MASSE_SALARIALE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_10_STOCK_RESERVE_LIVRAISONS_AU_CUMP_MISE_EN_PLACE_COMPTAGE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_11_REMONTEES_AU_COFFRE_ET_Z_DU_COFFRE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_12_CLOTURES_MENSUELLE_ET_ANNUELLE_TOTAL_PERPETUEL.docx`
+- modifié : `docs/developpement/phases/word/PHASE_13_EXERCICE_PAR_LIEU_SAUVEGARDES_CHIFFREES_HORS_SERVEUR.docx`
+- modifié : `docs/developpement/phases/word/PHASE_14_MODE_FORMATION_FACTICE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_15_EXPORT_POUR_LEXPERT_COMPTABLE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_16_CLICK_COLLECT_MOTEUR_DE_PRIX_ET_CATALOGUE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_17_VUE_TELEPHONE_EN_DIRECT.docx`
+- modifié : `docs/developpement/phases/word/PHASE_18_COUTS_PAR_BUVETTE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_19_FIDELITE_PARTIE_GESTION.docx`
+- modifié : `docs/developpement/phases/word/PHASE_20_FACTURES_FOURNISSEURS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_21_BACK_OFFICE_EDITEUR_NIVEAU_1.docx`
+- modifié : `docs/developpement/phases/word/PHASE_22_DECISIONS_DU_2026_10_01_ET_RECETTES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_23_OPTIONS_PAR_LIEU_APPLICATION_INSTALLABLE_LOGO.docx`
+- modifié : `docs/developpement/phases/word/PHASE_24_ADRESSE_DU_SITE_FLAIXEXPERT_FLAIXLABS_COM.docx`
+- modifié : `docs/developpement/phases/word/PHASE_25_MARQUE_FLAIX_EXPERT_LIEUX_ET_DIRECTEURS_DEPUIS_LE_BACK_OFFICE_MOTS_DE_.docx`
+- modifié : `docs/developpement/phases/word/PHASE_26_CLICK_COLLECT_NEUTRE_EXPORT_COMPTABLE_DANS_LA_BASE_ASSIETTE_DE_LA_COMM.docx`
+- modifié : `docs/developpement/phases/word/PHASE_27_STOCK_DES_INGREDIENTS_AU_CHOIX_BIERE_PRESSION.docx`
+- modifié : `docs/developpement/phases/word/PHASE_28_LOGO_OFFICIEL_V2.docx`
+- modifié : `docs/developpement/phases/word/PHASE_29_DOSSIER_DE_CONFORMITE_V0_1.docx`
+- modifié : `docs/developpement/phases/word/PHASE_30_FIDELITE_A_LA_CAISSE_CODE_PROMO_ET_POINTS_DANS_LE_TICKET_SCELLE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_31_SUIVI_DU_DEVELOPPEMENT_ET_PREPARATION_DE_LAUDIT_CODEX.docx`
+- modifié : `docs/developpement/phases/word/PHASE_32_PREMIER_AUDIT_CODEX_ET_CORRECTIONS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_33_CAISSE_AUTOMATIQUE_SELON_LA_DATE_CLOTURE_PAR_LE_DIRECTEUR_EVENEMENT_PA.docx`
+- modifié : `docs/developpement/phases/word/PHASE_34_RAPPORT_DE_SOIREE_FIGE_A_LA_CLOTURE_IMPRIMABLE_ET_EN_PDF.docx`
+- modifié : `docs/developpement/phases/word/PHASE_35_CIBLES_DE_MARGE_ET_GESTION_FINANCIERE_DE_LA_SOIREE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_36_BILAN_SUR_UNE_PERIODE_DU_AU.docx`
+- créé : `docs/developpement/phases/word/PHASE_37_BRIEF_DE_FIN_DE_SOIREE_EN_NOTIFICATION_SUR_LE_TELEPHONE.docx`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`bcb9455`](https://github.com/Break-Eat-APP/flaix-expert/commit/bcb9455bc942b80996d2302d3467a2a1a9316a56) — Brief de fin de soirée envoyé en notification sur le téléphone du directeur (dossier §15.135) *(phase 37)*
 
 - modifié : `apps/api/package.json`
