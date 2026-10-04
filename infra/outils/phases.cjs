@@ -34,7 +34,7 @@ const PHASES = [
   { n: 28, titre: "Logo officiel v2", dossier: "—", commits: ["1259fb6"] },
   { n: 29, titre: "Dossier de conformité v0.1", dossier: "§15.126", commits: ["f75e8a7", "d26e10e"] },
   { n: 30, titre: "Fidélité à la caisse : code promo et points dans le ticket scellé", dossier: "§15.127", commits: ["87c46b8", "c3d3041"] },
-  { n: 31, titre: "Suivi du développement et préparation de l'audit Codex", dossier: "§15.128", commits: ["0b59036", "2859233", "0c29f8f"] },
+  { n: 31, titre: "Suivi du développement et préparation de l'audit Codex", dossier: "§15.128", commits: ["0b59036", "2859233", "0c29f8f", "a23a7fb"] },
 ];
 
 module.exports = { PHASES };
