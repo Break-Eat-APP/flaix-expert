@@ -5,9 +5,9 @@
 | | |
 |---|---|
 | Dates | 2026-10-04 |
-| Décision | dossier projet §15.136 |
+| Décision | dossier projet §15.136, §15.137 |
 | État | livrée, tests au vert au moment du commit |
-| Commits | 1 |
+| Commits | 2 |
 
 ## 1. Ce qui a été décidé, et pourquoi
 
@@ -25,56 +25,71 @@
 - **À valider** : contrat de traitement des données avec Mistral (RGPD) ; durée de conservation des échanges (à fixer avec Rémi).
 - **Tests** : moteur 3, serveur 7 (option fermée par défaut, clé absente, lecture par outil et source citée, chiffre non retrouvé, limite du jour, reformulation fidèle retenue, reformulation inventée refusée), écrans 3 (dont le menu).
 
+### 15.137 Un agent, des moteurs ; Mistral interchangeable, secours OVHcloud (2026-10-04)
+
+**Questions de Rémi** (sa note `FLAIX_AI_RUNTIME_AGENTS_ARCHITECTURE.md`) : dépendance à Mistral ? ses propres agents ? combien d'agents ? Puis son schéma : **« 1 agent + plusieurs moteurs spécialisés »** (Financial, Forecast, Revenue, Stock, Staffing, Operations, Simulation, Benchmark, Alert).
+
+**Décisions** :
+- **Un seul agent** (l'Assistant) qui comprend, choisit ses lectures et rédige ; **des moteurs déterministes** qui calculent (jamais l'IA pour un chiffre). Un deuxième agent seulement s'il faut des droits différents (créer des tâches) ou si un agent a trop d'outils.
+- **Mistral est un fournisseur, pas une dépendance** : passerelle unique (`ia/fournisseur.ts`), interface « chat/completions » avec outils commune à Mistral et à OVHcloud AI Endpoints ; l'agent (outils, consignes, contrôle des chiffres, trace) appartient à FlaiX.
+- **Secours OVHcloud AI Endpoints** (choix de Rémi) : hébergé en Europe, même compte OVH que le serveur, modèle Mistral Small 3.2 ; bascule automatique si Mistral ne répond pas. Jeton posé par Rémi avec `sudo flaix-admin cle-ovh-ia`, qui vérifie aussi que les outils sont acceptés (les sources consultées divergeaient sur ce point).
+- **Pas de modèle installé chez nous** pour l'instant (pas de carte graphique sur le serveur ; coût sans rapport avec l'usage).
+- **Ordre des moteurs** : Revenue Engine (« où je perds de l'argent ») d'abord, choix de Rémi.
+
+**Tests** : passerelle 5 (Mistral répond, secours qui prend le relais, tous en panne, même interface pour les deux, erreur du fournisseur).
+
 ## 2. Ce qui a été construit — commits
 
 - [`4a30d13`](https://github.com/Break-Eat-APP/flaix-expert/commit/4a30d1373cebf546b6614e731c9fb280fa9d41d6) — 2026-10-04 — Assistant « pose ta question » et brief reformulé par Mistral, derrière une option du lieu (dossier §15.136)
+- [`047ce76`](https://github.com/Break-Eat-APP/flaix-expert/commit/047ce760656a8c5a5ba720501ede4c6bcedf593a) — 2026-10-04 — Passerelle d'IA : Mistral d'abord, OVHcloud AI Endpoints en secours (dossier §15.137)
 
 ## 3. Fichiers, par couche
 
 ### Base de données (migrations)
 
-- `db/migrations/0029_assistant.sql` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/db/migrations/0029_assistant.sql)
+- `db/migrations/0029_assistant.sql` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/db/migrations/0029_assistant.sql)
 
 ### Tests
 
-- `apps/api/test/assistant.test.ts` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/api/test/assistant.test.ts)
-- `apps/api/test/options.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/api/test/options.test.ts)
-- `apps/web/src/composants/Coquille.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/web/src/composants/Coquille.test.ts)
-- `packages/domain/src/assistant.test.ts` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/packages/domain/src/assistant.test.ts)
+- `apps/api/test/assistant.test.ts` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/api/test/assistant.test.ts)
+- `apps/api/test/ia.test.ts` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/api/test/ia.test.ts)
+- `apps/api/test/options.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/api/test/options.test.ts)
+- `apps/web/src/composants/Coquille.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/web/src/composants/Coquille.test.ts)
+- `packages/domain/src/assistant.test.ts` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/packages/domain/src/assistant.test.ts)
 
 ### Moteur de calcul (packages/domain)
 
-- `packages/domain/src/assistant.ts` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/packages/domain/src/assistant.ts)
-- `packages/domain/src/editeur.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/packages/domain/src/editeur.ts)
-- `packages/domain/src/index.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/packages/domain/src/index.ts)
+- `packages/domain/src/assistant.ts` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/packages/domain/src/assistant.ts)
+- `packages/domain/src/editeur.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/packages/domain/src/editeur.ts)
+- `packages/domain/src/index.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/packages/domain/src/index.ts)
 
 ### Serveur (apps/api)
 
-- `apps/api/src/config.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/api/src/config.ts)
-- `apps/api/src/ia/fournisseur.ts` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/api/src/ia/fournisseur.ts)
-- `apps/api/src/routes/assistant.ts` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/api/src/routes/assistant.ts)
-- `apps/api/src/routes/notifications.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/api/src/routes/notifications.ts)
-- `apps/api/src/routes/produits.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/api/src/routes/produits.ts)
-- `apps/api/src/serveur.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/api/src/serveur.ts)
+- `apps/api/src/config.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/api/src/config.ts)
+- `apps/api/src/ia/fournisseur.ts` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/api/src/ia/fournisseur.ts)
+- `apps/api/src/routes/assistant.ts` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/api/src/routes/assistant.ts)
+- `apps/api/src/routes/notifications.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/api/src/routes/notifications.ts)
+- `apps/api/src/routes/produits.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/api/src/routes/produits.ts)
+- `apps/api/src/serveur.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/api/src/serveur.ts)
 
 ### Écrans (apps/web)
 
-- `apps/web/src/App.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/web/src/App.tsx)
-- `apps/web/src/composants/Coquille.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/web/src/composants/Coquille.tsx)
-- `apps/web/src/pages/Assistant.test.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/web/src/pages/Assistant.test.tsx)
-- `apps/web/src/pages/Assistant.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/web/src/pages/Assistant.tsx)
-- `apps/web/src/styles.css` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/apps/web/src/styles.css)
+- `apps/web/src/App.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/web/src/App.tsx)
+- `apps/web/src/composants/Coquille.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/web/src/composants/Coquille.tsx)
+- `apps/web/src/pages/Assistant.test.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/web/src/pages/Assistant.test.tsx)
+- `apps/web/src/pages/Assistant.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/web/src/pages/Assistant.tsx)
+- `apps/web/src/styles.css` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/apps/web/src/styles.css)
 
 ### Serveur OVH et outils (infra)
 
-- `infra/vps/deployer.sh` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/infra/vps/deployer.sh)
-- `infra/vps/flaix-admin.sh` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/infra/vps/flaix-admin.sh)
+- `infra/vps/deployer.sh` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/infra/vps/deployer.sh)
+- `infra/vps/flaix-admin.sh` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/infra/vps/flaix-admin.sh)
 
 ### Documentation
 
-- `docs/avancement.md` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/docs/avancement.md)
-- `docs/flaix-gestion-dossier-projet.md` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/docs/flaix-gestion-dossier-projet.md)
-- `docs/guide-serveur-test-ovh.md` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/4a30d1373cebf546b6614e731c9fb280fa9d41d6/docs/guide-serveur-test-ovh.md)
+- `docs/avancement.md` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/docs/avancement.md)
+- `docs/flaix-gestion-dossier-projet.md` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/docs/flaix-gestion-dossier-projet.md)
+- `docs/guide-serveur-test-ovh.md` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/047ce760656a8c5a5ba720501ede4c6bcedf593a/docs/guide-serveur-test-ovh.md)
 
 ## 4. Tests créés dans cette phase
 
@@ -97,10 +112,19 @@
   - les petits comptes (jusqu'à 10) ne bloquent pas : « 3 produits », « 2 soirées »
   - [F] un montant absent des données lues, ou recalculé de tête : à vérifier
 
+### `apps/api/test/ia.test.ts`
+
+- **passerelle vers les modèles d'IA**
+  - Mistral répond : le secours n'est pas appelé
+  - [F] Mistral ne répond pas : le secours OVHcloud prend le relais
+  - [F] tous en panne : l'erreur remonte (l'écran dira de réessayer)
+  - même interface pour Mistral et OVHcloud : adresse, jeton, modèle et outils envoyés ; modèle et fournisseur notés
+  - [F] réponse en erreur du fournisseur : levée, pour que la passerelle passe au suivant
+
 ## 5. Pour reprendre ou vérifier cette phase
 
 1. `pnpm install`, `pnpm db:up` (PostgreSQL local dans Docker), `pnpm db:migrate`.
 2. Tests du moteur de cette phase : `cd packages/domain && ./node_modules/.bin/vitest run src/assistant.test.ts`.
-3. Tests contre la base : `cd apps/api && ./node_modules/.bin/vitest run test/assistant.test.ts`.
+3. Tests contre la base : `cd apps/api && ./node_modules/.bin/vitest run test/assistant.test.ts test/ia.test.ts`.
 - Avant toute modification : lire `AGENTS.md` (règles et invariants), puis la section du dossier projet indiquée ci-dessus. Une migration appliquée ne se modifie jamais ; un refus de la base est voulu.
 - Ordre de construction complet : `docs/developpement/JOURNAL_DES_PHASES.md` ; où trouver quoi : `docs/developpement/CARTE_DU_CODE.md`.

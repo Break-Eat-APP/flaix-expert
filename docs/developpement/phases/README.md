@@ -42,4 +42,4 @@
 | 35 | [Cibles de marge et gestion financière de la soirée](PHASE_35_CIBLES_DE_MARGE_ET_GESTION_FINANCIERE_DE_LA_SOIREE.md) · [Word](word/PHASE_35_CIBLES_DE_MARGE_ET_GESTION_FINANCIERE_DE_LA_SOIREE.docx) | §15.132 | livrée |
 | 36 | [Bilan sur une période du … au …](PHASE_36_BILAN_SUR_UNE_PERIODE_DU_AU.md) · [Word](word/PHASE_36_BILAN_SUR_UNE_PERIODE_DU_AU.docx) | §15.133 | livrée |
 | 37 | [Brief de fin de soirée en notification sur le téléphone](PHASE_37_BRIEF_DE_FIN_DE_SOIREE_EN_NOTIFICATION_SUR_LE_TELEPHONE.md) · [Word](word/PHASE_37_BRIEF_DE_FIN_DE_SOIREE_EN_NOTIFICATION_SUR_LE_TELEPHONE.docx) | §15.134, §15.135 | livrée |
-| 38 | [Assistant « pose ta question » et brief reformulé par Mistral](PHASE_38_ASSISTANT_POSE_TA_QUESTION_ET_BRIEF_REFORMULE_PAR_MISTRAL.md) · [Word](word/PHASE_38_ASSISTANT_POSE_TA_QUESTION_ET_BRIEF_REFORMULE_PAR_MISTRAL.docx) | §15.136 | livrée |
+| 38 | [Assistant « pose ta question » et brief reformulé par Mistral](PHASE_38_ASSISTANT_POSE_TA_QUESTION_ET_BRIEF_REFORMULE_PAR_MISTRAL.md) · [Word](word/PHASE_38_ASSISTANT_POSE_TA_QUESTION_ET_BRIEF_REFORMULE_PAR_MISTRAL.docx) | §15.136, §15.137 | livrée |
