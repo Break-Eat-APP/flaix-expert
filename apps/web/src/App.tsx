@@ -32,6 +32,7 @@ const EnDirect = lazy(() => import("./pages/direct/EnDirect.tsx").then((m) => ({
 const CoutsBuvette = lazy(() => import("./pages/parametres/CoutsBuvette.tsx").then((m) => ({ default: m.CoutsBuvette })));
 const Fidelite = lazy(() => import("./pages/fidelite/Fidelite.tsx").then((m) => ({ default: m.Fidelite })));
 const Factures = lazy(() => import("./pages/factures/Factures.tsx").then((m) => ({ default: m.Factures })));
+const Assistant = lazy(() => import("./pages/Assistant.tsx").then((m) => ({ default: m.Assistant })));
 const Notifications = lazy(() => import("./pages/parametres/Notifications.tsx").then((m) => ({ default: m.Notifications })));
 const Objectifs = lazy(() => import("./pages/parametres/Objectifs.tsx").then((m) => ({ default: m.Objectifs })));
 const RapportSoiree = lazy(() => import("./pages/resultats/RapportSoiree.tsx").then((m) => ({ default: m.RapportSoiree })));
@@ -77,6 +78,7 @@ function AppLieu() {
           {/* Organisation en 6 entrées (dossier §15.96) : Résultats, Caisses, Stock, Équipe, Clôtures, Paramètres. */}
           <Route index element={<Resultats session={session.data} />} />
           <Route path="direct" element={<EnDirect />} />
+          <Route path="assistant" element={<Assistant />} />
           <Route path="caisses" element={<MesCaisses />} />
           <Route path="caisses/:caisseId" element={<EcranCaisse />} />
           <Route path="stock" element={<Stock />} />

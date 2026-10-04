@@ -5,6 +5,7 @@
 #   flaix-admin creer-editeur         crée un compte FlaiX Expert pour le back-office (supervision, §15.116)
 #   flaix-admin sauvegarde-externe    règle la copie chiffrée des sauvegardes chez OVHcloud (dossier §15.108)
 #   flaix-admin essai-restauration    restaure la dernière copie OVH dans une base temporaire et la compare
+#   flaix-admin cle-mistral           règle (ou retire) la clé de l'API Mistral de l'assistant IA (dossier §15.136)
 # Mots de passe, clés et codes s'affichent une seule fois, dans cette fenêtre seulement.
 set -euo pipefail
 
@@ -125,8 +126,39 @@ ENV
     echo "La base temporaire va être supprimée."
     ;;
 
+  cle-mistral)
+    # Clé de l'API Mistral : assistant et brief reformulé (dossier §15.136). Tapée par Rémi, jamais affichée.
+    echo "Clé de l'API Mistral (assistant IA de FlaiX Expert)."
+    echo "Elle se crée sur console.mistral.ai : API Keys > Create new key."
+    echo
+    read -r -s -p "Clé Mistral (elle ne s'affiche pas ; vide = retirer la clé) : " CLE
+    echo
+    ENV_MISTRAL=/etc/flaix/mistral.env
+    if [ -z "$CLE" ]; then
+      rm -f "$ENV_MISTRAL"
+      systemctl restart flaix-api
+      echo "Clé retirée : l'assistant est débranché."
+      exit 0
+    fi
+    [[ "$CLE" =~ ^[A-Za-z0-9_-]{20,200}$ ]] || { unset CLE; echo "Cette clé n'a pas la bonne forme : rien n'est enregistré."; exit 1; }
+    echo "Vérification auprès de Mistral…"
+    # La clé passe par l'entrée standard de curl : elle n'apparaît jamais dans la liste des processus.
+    CODE="$(printf 'Authorization: Bearer %s\n' "$CLE" | curl -s -o /dev/null -w '%{http_code}' -m 20 -H @- https://api.mistral.ai/v1/models || true)"
+    if [ "$CODE" != "200" ]; then
+      unset CLE
+      echo "Mistral refuse cette clé (réponse ${CODE:-aucune}) : vérifie-la, puis recommence. Rien n'est enregistré."
+      exit 1
+    fi
+    umask 027
+    printf 'MISTRAL_API_KEY=%s\n' "$CLE" > "$ENV_MISTRAL"
+    unset CLE
+    chown root:flaix "$ENV_MISTRAL" && chmod 640 "$ENV_MISTRAL"
+    systemctl restart flaix-api
+    echo "Clé vérifiée et enregistrée. L'assistant est branché ; active l'option « Assistant IA » du lieu dans le back-office."
+    ;;
+
   *)
-    echo "Usage : flaix-admin creer-lieu | nouveau-mot-de-passe | creer-editeur | sauvegarde-externe | essai-restauration"
+    echo "Usage : flaix-admin creer-lieu | nouveau-mot-de-passe | creer-editeur | sauvegarde-externe | essai-restauration | cle-mistral"
     exit 1
     ;;
 esac

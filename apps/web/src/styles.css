@@ -597,3 +597,18 @@ details.inventaire summary { cursor: pointer; font-size: 13px; }
 .rapport-brief li.attention { font-weight: 600; }
 .rapport-brief li.attention::marker { color: var(--amber); }
 @media print { .rapport-brief { background: #fff; border-left-color: #4d04f4; } }
+
+/* Assistant « pose ta question » (dossier §15.136). */
+.assistant-fil { display: flex; flex-direction: column; gap: 12px; min-height: 120px; }
+.assistant-vide { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; color: var(--muted); }
+.assistant-vide p { margin: 0; font-size: 13px; }
+.assistant-echange { display: flex; flex-direction: column; gap: 6px; }
+.bulle { max-width: min(640px, 92%); padding: 10px 12px; border-radius: 14px; font-size: 13.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.bulle p { margin: 0; }
+.bulle.question { align-self: flex-end; background: var(--violet); color: #fff; border-bottom-right-radius: 4px; }
+.bulle.reponse { align-self: flex-start; background: var(--childbg); border: 1px solid var(--border); border-bottom-left-radius: 4px; display: flex; flex-direction: column; gap: 6px; }
+.assistant-ia { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: var(--violet); letter-spacing: 0.02em; }
+.assistant-verifier { display: flex; gap: 6px; align-items: flex-start; font-size: 12.5px; color: var(--amber); font-weight: 600; }
+.assistant-sources { display: flex; gap: 6px; align-items: flex-start; font-size: 11.5px; color: var(--muted); }
+.assistant-saisie { display: flex; gap: 8px; align-items: flex-end; margin-top: 14px; }
+.assistant-saisie textarea { flex: 1; min-width: 0; resize: vertical; }

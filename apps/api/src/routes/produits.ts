@@ -110,7 +110,7 @@ export async function listerProduits(c: Client, lieuId: string): Promise<Produit
   }));
 }
 
-async function listerCategories(c: Client, lieuId: string): Promise<Categorie[]> {
+export async function listerCategories(c: Client, lieuId: string): Promise<Categorie[]> {
   const { rows } = await c.query<Categorie>(
     "SELECT id, nom, actif, cible_marge_pb AS \"cibleMarge\" FROM categorie WHERE lieu_id = $1 ORDER BY actif DESC, lower(nom)",
     [lieuId],

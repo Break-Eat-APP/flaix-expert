@@ -79,7 +79,7 @@ export function alertesLieuParc(l: LieuParc, maintenant: number): string[] {
 // résultats, paramètres, formation) est toujours là ; une option absente des réglages est active.
 // ---------------------------------------------------------------------------
 
-export type OptionLieu = "stock" | "equipe" | "fidelite" | "click_collect" | "factures" | "couts_buvette";
+export type OptionLieu = "stock" | "equipe" | "fidelite" | "click_collect" | "factures" | "couts_buvette" | "assistant";
 export type OptionsLieu = Record<OptionLieu, boolean>;
 
 export const OPTIONS_LIEU: { cle: OptionLieu; libelle: string; aide: string }[] = [
@@ -89,9 +89,11 @@ export const OPTIONS_LIEU: { cle: OptionLieu; libelle: string; aide: string }[] 
   { cle: "click_collect", libelle: "Click & Collect", aide: "Prix sur l'application de commande" },
   { cle: "factures", libelle: "Factures fournisseurs", aide: "Saisie, rapprochement avec les livraisons" },
   { cle: "couts_buvette", libelle: "Coûts par buvette", aide: "Frais et coûts par stand" },
+  { cle: "assistant", libelle: "Assistant IA", aide: "Questions en langage courant et brief reformulé par Mistral (payant à l'usage, désactivé par défaut)" },
 ];
 
-export const OPTIONS_PAR_DEFAUT: OptionsLieu = { stock: true, equipe: true, fidelite: true, click_collect: true, factures: true, couts_buvette: true };
+/** Toutes les options sont actives sans réglage, sauf l'assistant IA : chaque question coûte (§15.136). */
+export const OPTIONS_PAR_DEFAUT: OptionsLieu = { stock: true, equipe: true, fidelite: true, click_collect: true, factures: true, couts_buvette: true, assistant: false };
 
 /** Option dont dépend une adresse du serveur (null : la base, toujours ouverte). */
 export function optionDeLaRoute(url: string): OptionLieu | null {
@@ -103,5 +105,6 @@ export function optionDeLaRoute(url: string): OptionLieu | null {
   if (/^\/api\/click-collect(\/|$)/.test(url)) return "click_collect";
   if (/^\/api\/factures(\/|$)/.test(url)) return "factures";
   if (/^\/api\/couts-buvette(\/|$)/.test(url)) return "couts_buvette";
+  if (/^\/api\/assistant(\/|$)/.test(url)) return "assistant";
   return null;
 }

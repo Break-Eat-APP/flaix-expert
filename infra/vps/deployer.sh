@@ -80,6 +80,8 @@ User=flaix
 Group=flaix
 WorkingDirectory=/srv/flaix/app/apps/api
 EnvironmentFile=/etc/flaix/flaix.env
+# Clé Mistral de l'assistant IA (§15.136), posée par « flaix-admin cle-mistral » ; facultative.
+EnvironmentFile=-/etc/flaix/mistral.env
 Environment=PATH=/opt/node/bin:/usr/bin:/bin
 ExecStart=/srv/flaix/app/apps/api/node_modules/.bin/tsx src/index.ts
 Restart=on-failure

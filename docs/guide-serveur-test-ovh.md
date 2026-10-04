@@ -84,6 +84,23 @@ Coût : les sauvegardes font aujourd'hui 0,3 Mo chacune ; le prix exact est affi
 **3. Vérifier qu'on sait restaurer (à refaire une fois par trimestre)**
 - `sudo flaix-admin essai-restauration` : télécharge la dernière copie, te demande la clé de restauration (elle ne s'affiche pas), restaure dans une base temporaire, compare avec la base en service, puis supprime la base temporaire. Rien n'est modifié dans la base en service.
 
+## Assistant IA : brancher Mistral (à faire par toi, environ 10 minutes)
+
+Pourquoi : l'assistant « pose ta question » et le brief de fin de soirée reformulé utilisent Mistral (décision du 2026-10-04, dossier §15.136). Sans clé, tout le reste fonctionne ; le brief part rédigé par les règles.
+
+**1. Créer la clé (toi seul : compte et paiement)**
+1. Va sur **console.mistral.ai** et crée un compte au nom de Break Eat App.
+2. Choisis l'offre **payante à l'usage** et ajoute le moyen de paiement (facturation à la question ; fixe-toi une limite de dépense mensuelle dans l'espace Mistral).
+3. Dans **API Keys**, crée une clé nommée par exemple `flaix-expert-serveur-test`. Mistral l'affiche une fois : garde la page ouverte. **Ne me l'envoie pas.**
+
+**2. La régler sur le serveur (dans ton terminal)**
+1. Se connecter au serveur : `ssh -i ~/.ssh/flaix_ovh debian@146.59.154.196`
+2. Lancer : `sudo flaix-admin cle-mistral`, puis coller la clé (elle ne s'affiche pas).
+3. Le serveur la vérifie auprès de Mistral, l'enregistre et redémarre l'application. Message attendu : « Clé vérifiée et enregistrée ».
+4. Pour la retirer : relancer la même commande et valider sans rien coller.
+
+**3. L'activer pour un lieu** : back-office (`/editeur`) → le lieu → option **« Assistant IA »** (désactivée par défaut, parce que chaque question coûte). L'entrée « Assistant » apparaît alors dans le menu du directeur, et le brief de fin de soirée est reformulé par Mistral — seulement si la reformulation ne change aucun chiffre.
+
 ## À retenir
 
 - Coût : environ **4,57 € TTC par mois** (à confirmer selon l'engagement choisi).

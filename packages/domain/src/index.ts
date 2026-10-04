@@ -26,3 +26,4 @@ export * from "./rapport-soiree.ts";
 export * from "./finances.ts";
 export * from "./periode-bilan.ts";
 export * from "./brief.ts";
+export * from "./assistant.ts";

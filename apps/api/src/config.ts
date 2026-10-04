@@ -40,4 +40,10 @@ export const config = {
    * Seul ce relais peut indiquer l'adresse réelle du visiteur ; vide = aucun relais, on ne croit personne.
    */
   relaisDeConfiance: process.env.RELAIS_DE_CONFIANCE || null,
+  /**
+   * Clé de l'API Mistral (assistant et brief reformulé, §15.136), réglée par Rémi sur le serveur avec
+   * `sudo flaix-admin cle-mistral` ; absente = pas d'IA, tout le reste fonctionne.
+   */
+  mistralCle: process.env.MISTRAL_API_KEY || null,
+  mistralModele: process.env.MISTRAL_MODELE || "mistral-medium-latest",
 } as const;

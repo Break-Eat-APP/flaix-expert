@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useState, type ComponentType } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, FileText, Heart, KeyRound, Lock, LogOut, Menu, Package, Receipt, SlidersHorizontal, Users, X } from "lucide-react";
+import { ChartLine, FileText, Heart, KeyRound, Lock, LogOut, Menu, Package, Receipt, SlidersHorizontal, Sparkles, Users, X } from "lucide-react";
 import type { OptionLieu, OptionsLieu, SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
 import { useDeconnexion, useOptions } from "../session.tsx";
@@ -23,6 +23,7 @@ interface Entree {
 // Chaque entrée ouvre un seul écran ; les sous-parties sont des onglets ou des tuiles dans l'écran.
 const MENU: Entree[] = [
   { id: "resultats", libelle: "Résultats", icone: ChartLine, route: "/" },
+  { id: "assistant", libelle: "Assistant", icone: Sparkles, route: "/assistant", option: "assistant" },
   { id: "caisses", libelle: "Caisses", icone: Receipt, route: "/caisses" },
   { id: "stock", libelle: "Stock", icone: Package, route: "/stock", option: "stock" },
   { id: "equipe", libelle: "Équipe", icone: Users, route: "/equipe" },

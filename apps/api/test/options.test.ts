@@ -42,10 +42,12 @@ afterAll(async () => {
 });
 
 describe("options d'un lieu", () => {
-  it("sans réglage, toutes les options sont actives (rien ne change pour un lieu existant)", async () => {
-    const o = (await requete<OptionsLieu>(directeur, "GET", "/api/lieu/options")).corps;
-    expect(Object.values(o).every(Boolean)).toBe(true);
+  it("sans réglage, toutes les options sont actives (rien ne change pour un lieu existant), sauf l'assistant IA, payant à l'usage", async () => {
+    const { assistant, ...autres } = (await requete<OptionsLieu>(directeur, "GET", "/api/lieu/options")).corps;
+    expect(Object.values(autres).every(Boolean)).toBe(true);
+    expect(assistant).toBe(false);
     expect((await requete(directeur, "GET", "/api/stock")).statut).toBe(200);
+    expect((await requete(directeur, "GET", "/api/assistant")).statut).toBe(403);
   });
 
   it("FlaiX Expert désactive le Stock : ses adresses sont fermées, le lieu le voit dans son journal", async () => {

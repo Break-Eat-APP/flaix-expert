@@ -4595,3 +4595,17 @@ Rémi a partagé une note produit rédigée avec ChatGPT (`FLAIX_EXPERT_PRODUCT_
 - **Écrans** : Paramètres → **Notifications** (activer sur cet appareil, envoyer une notification d'essai, désactiver ; explication pour l'iPhone : ajouter l'application à l'écran d'accueil) ; toucher la notification ouvre le rapport de soirée ; « Le brief de la soirée » en tête du rapport.
 - **Pas encore** : la reformulation et l'assistant par Mistral (il faut le compte et la clé de Rémi) ; le brief de veille (avec la prévision).
 - **Tests** : moteur 6, serveur 7, écrans 2. Vérifié dans le navigateur (le navigateur intégré bloque les notifications : l'essai réel se fait sur le téléphone de Rémi).
+
+### 15.136 Assistant « pose ta question » et brief reformulé par Mistral (2026-10-04)
+
+**Réalisé** (migration 0029, `ia/fournisseur.ts`, `routes/assistant.ts`, phase 38) :
+- **Fournisseur** : Mistral (décision de Rémi), par son interface de conversation avec outils ; modèle `mistral-medium-latest` (réglable). Clé posée par Rémi sur le serveur avec `sudo flaix-admin cle-mistral` (tapée sans affichage, vérifiée auprès de Mistral, fichier lisible par le seul service) — jamais vue ni manipulée par Claude. Sans clé : l'IA est absente, tout le reste fonctionne.
+- **Option du lieu « Assistant IA »**, désactivée par défaut (chaque question coûte), activée par FlaiX Expert dans le back-office. Limite : 60 questions par lieu et par jour.
+- **Ce que l'IA peut lire** : cinq outils **en lecture seule** — liste des événements, résultats d'un événement ou d'une période, finances (jusqu'à la marge nette et la cible), rapport de soirée figé, marges du catalogue au prix actuel. Les montants y sont écrits comme à l'écran (« 18 640,00 € »). L'IA ne peut rien modifier.
+- **Consignes** : répondre uniquement à partir des outils, recopier les montants, nommer l'événement ou la période, dire une donnée absente, aucun conseil juridique, fiscal ou social, « la marge nette de la soirée n'est pas le bénéfice du lieu ».
+- **Contrôle des chiffres** (`chiffresVerifies`) : chaque nombre de la réponse est cherché dans les données lues (les petits comptes jusqu'à 10 sont tolérés) ; sinon l'écran affiche « chiffre à vérifier ». **Trace** : chaque échange est gardé (question, réponse, outils lus, modèle, contrôle, jetons consommés), en écriture seule.
+- **Règlement européen sur l'IA, article 50** : chaque réponse porte « Rédigé par une IA (modèle) ».
+- **Brief reformulé** : si l'option est active, Mistral réécrit le brief en 2 ou 3 phrases ; la reformulation n'est retenue que si elle n'ajoute ni ne change aucun chiffre (`reformulationFidele`), sinon le brief par règles part. La trace dit qui l'a rédigé.
+- **Écran** : entrée « Assistant » du menu (si l'option est active), questions suggérées, sources lues, nombre de questions restantes ; guide serveur complété (création de la clé par Rémi).
+- **À valider** : contrat de traitement des données avec Mistral (RGPD) ; durée de conservation des échanges (à fixer avec Rémi).
+- **Tests** : moteur 3, serveur 7 (option fermée par défaut, clé absente, lecture par outil et source citée, chiffre non retrouvé, limite du jour, reformulation fidèle retenue, reformulation inventée refusée), écrans 3 (dont le menu).
