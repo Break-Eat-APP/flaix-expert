@@ -46,8 +46,8 @@ beforeAll(async () => {
   await appel("PUT", `/api/produits/${pinte.id}/recette`, { lignes: [{ ingredientId: fut.id, quantiteMilli: 500 }] });
   const evt = async (libelle: string, jours: number) =>
     (await appel<Evenement[]>("POST", "/api/evenements", { libelle, debut: new Date(Date.now() + jours * 86_400_000).toISOString() })).corps.find((e) => e.libelle === libelle)!;
-  match1 = await evt("Match 1", 1);
-  match2 = await evt("Match 2", 8);
+  match1 = await evt("Événement 1", 1);
+  match2 = await evt("Événement 2", 8);
 });
 
 afterAll(async () => {
@@ -106,7 +106,7 @@ describe("match 1 : la bière pression", () => {
     expect((await appel("PUT", "/api/stock/ingredients/mise-en-place", { ...champ(match1), quantiteMilli: 40_000 })).statut).toBe(409);
   });
 
-  it("la clôture du match exige le comptage du fût", async () => {
+  it("la clôture de l'événement exige le comptage du fût", async () => {
     const c = (await appel<ClotureMatch>("GET", `/api/clotures?evenementId=${match1.id}`)).corps;
     expect(c.etapes.restes).toEqual({ requis: true, manquants: 1 });
     const r = await appel<{ erreur: string }>("POST", `/api/evenements/${match1.id}/cloture`);
@@ -114,7 +114,7 @@ describe("match 1 : la bière pression", () => {
     expect(r.corps.erreur).toContain("ingrédient");
   });
 
-  it("fût vide en fin de match : −4 L, au-delà de 3 % du départ → motif exigé ; valorisé au prix moyen", async () => {
+  it("fût vide en fin d'événement : −4 L, au-delà de 3 % du départ → motif exigé ; valorisé au prix moyen", async () => {
     const sansMotif = await appel<{ erreur: string }>("PUT", "/api/stock/ingredients/comptage", { ...champ(match1), quantiteMilli: 0 });
     expect(sansMotif.statut).toBe(400);
     expect(sansMotif.corps.erreur).toContain("−4 L");
@@ -123,7 +123,7 @@ describe("match 1 : la bière pression", () => {
     expect((await appel("POST", `/api/evenements/${match1.id}/cloture`)).statut).toBe(200);
   });
 
-  it("match clos : la consommation est figée, une recette changée ensuite ne réécrit pas le passé", async () => {
+  it("événement clos : la consommation est figée, une recette changée ensuite ne réécrit pas le passé", async () => {
     await appel("PUT", `/api/produits/${pinte.id}/recette`, { lignes: [{ ingredientId: fut.id, quantiteMilli: 400 }] });
     expect(ligneFut(await stock(match1))).toMatchObject({ consomme: 26_000, ecart: -4_000 });
     expect((await appel("PUT", "/api/stock/ingredients/comptage", { ...champ(match1), quantiteMilli: 1_000, motif: "Correction tardive" })).statut).toBe(409);
@@ -138,7 +138,7 @@ describe("match 1 : la bière pression", () => {
   });
 });
 
-describe("match suivant et inventaire", () => {
+describe("événement suivant et inventaire", () => {
   it("reste 0 L reporté ; suggestion = consommation moyenne (26 L) − reste", async () => {
     expect(ligneFut(await stock(match2))).toMatchObject({ reste: 0, premierMatch: false, suggestion: 26_000 });
     const s = (await appel<StockIngredientsMatch>("POST", "/api/stock/ingredients/mise-en-place/suggestions", { evenementId: match2.id })).corps;

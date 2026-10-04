@@ -1,5 +1,5 @@
 /**
- * Clôture du match — contrôle des espèces (dossier §15.102, module 7), contre la vraie base.
+ * Clôture de l'événement — contrôle des espèces (dossier §15.102, module 7), contre la vraie base.
  * Les tests [F] provoquent la fraude ou l'erreur qu'ils doivent empêcher.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -44,7 +44,7 @@ beforeAll(async () => {
   stand = (await appel<Stand[]>("POST", `/api/stands/${stand.id}/caisses`, {})).corps[0]!;
   [especes, carte] = stand.caisses.map((k) => k.id) as [string, string];
   biere = (await appel<Produit[]>("POST", "/api/produits", { nom: "Bière", prixTtc: 700, tauxTva: 2000, standIds: [stand.id] })).corps[0]!;
-  match = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Match à clôturer", debut: new Date().toISOString() })).corps[0]!;
+  match = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Événement à clôturer", debut: new Date().toISOString() })).corps[0]!;
   await appel("POST", `/api/evenements/${match.id}/ouverture`);
   tEsp = tablette(especes, (await appel<RepriseCaisse>("POST", `/api/caisses/${especes}/ouverture`, { fond: 15000 })).corps);
   tCarte = tablette(carte, (await appel<RepriseCaisse>("POST", `/api/caisses/${carte}/ouverture`, {})).corps);
@@ -85,7 +85,7 @@ describe("étape 1 — ventes : toutes les caisses clôturées", () => {
 });
 
 describe("étape 3 — espèces : comptage par coupure, Z définitif (module 7)", () => {
-  it("le match ne se clôt pas tant que le tiroir n'a pas son Z", async () => {
+  it("l'événement ne se clôt pas tant que le tiroir n'a pas son Z", async () => {
     const r = await appel<{ erreur: string }>("POST", `/api/evenements/${match.id}/cloture`);
     expect(r.statut).toBe(409);
     expect(r.corps.erreur).toContain("tiroir");
@@ -133,7 +133,7 @@ describe("étape 3 — espèces : comptage par coupure, Z définitif (module 7)"
     expect((await jet()).some((x) => x.type === "z_caisse_rectifie")).toBe(true);
   });
 
-  it("étape 4 : le match se clôt ; ensuite, plus de Z tardif, mais une rectification reste possible", async () => {
+  it("étape 4 : l'événement se clôt ; ensuite, plus de Z tardif, mais une rectification reste possible", async () => {
     expect((await appel("POST", `/api/evenements/${match.id}/cloture`)).statut).toBe(200);
     const c = await cloture();
     expect(c.evenement.etat).toBe("clos");

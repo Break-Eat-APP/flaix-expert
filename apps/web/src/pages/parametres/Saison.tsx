@@ -20,8 +20,8 @@ function versChampLocal(iso: string): string {
 }
 
 /**
- * Saison (ex-« Calendrier des matchs ») : on y prépare les matchs. Depuis le 2026-09-29
- * (dossier §15.96), l'ouverture du match se fait dans Caisses et sa clôture dans Clôtures.
+ * Saison (ex-« Calendrier des événements ») : on y prépare les événements. Depuis le 2026-09-29
+ * (dossier §15.96), l'ouverture de l'événement se fait dans Caisses et sa clôture dans Clôtures.
  */
 export function Saison() {
   const client = useQueryClient();
@@ -60,9 +60,9 @@ export function Saison() {
         fil="Paramètres"
         filLien="/parametres"
         titre="Saison"
-        description="Le calendrier des matchs du lieu : c'est à chaque match que se rattachent les ventes, le stock et le personnel de la soirée."
+        description="Le calendrier des événements du lieu : c'est à chaque événement que se rattachent les ventes, le stock et le personnel de la soirée."
       />
-      <Carte titre="Ajouter un match" description="Tu peux préparer les matchs de la saison à l'avance.">
+      <Carte titre="Ajouter un événement" description="Tu peux préparer les événements de la saison à l'avance.">
         <form onSubmit={soumettre}>
           <div className="grille-champs">
             <label className="champ">
@@ -75,21 +75,21 @@ export function Saison() {
             </label>
             <label className="champ">
               <span>Spectateurs</span>
-              <input type="text" inputMode="numeric" value={spectateurs} onChange={(e) => setSpectateurs(e.target.value)} placeholder="Facultatif, à compléter après le match" aria-invalid={!spectateursValide} />
+              <input type="text" inputMode="numeric" value={spectateurs} onChange={(e) => setSpectateurs(e.target.value)} placeholder="Facultatif, à compléter après l'événement" aria-invalid={!spectateursValide} />
             </label>
           </div>
           <MessageErreur erreur={creer.error} />
           <div className="ligne-actions">
             <button className="btn" disabled={creer.isPending || !libelle.trim() || !debut || !spectateursValide}>
-              <Plus size={16} /> Ajouter le match
+              <Plus size={16} /> Ajouter l'événement
             </button>
           </div>
         </form>
       </Carte>
 
-      <Carte titre="Matchs">
+      <Carte titre="Événements">
         {liste.length === 0 ? (
-          <EtatVide titre="Aucun match pour l'instant" />
+          <EtatVide titre="Aucun événement pour l'instant" />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {liste.map((e) => (
@@ -101,10 +101,10 @@ export function Saison() {
 
       <Regles>
         <ul>
-          <li><strong>Un match suit toujours le même chemin</strong> : à venir → ouvert (le jour du match, depuis <strong>Caisses</strong>) → clos (depuis <strong>Clôtures</strong>). Il ne revient jamais en arrière.</li>
-          <li><strong>Un seul match ouvert à la fois</strong> : chaque ticket sait ainsi, sans ambiguïté, à quel match il appartient.</li>
-          <li>Les caisses ne s'ouvrent que pendant un match ouvert. Un match ne se clôt qu'une fois toutes ses caisses clôturées ; sa clôture est définitive.</li>
-          <li>Le libellé et la date se modifient tant que le match est à venir. Le <strong>nombre de spectateurs</strong> peut être complété à tout moment (il sert au CA par spectateur, il n'est pas une donnée fiscale).</li>
+          <li><strong>Un événement suit toujours le même chemin</strong> : à venir → ouvert (le jour de l'événement, depuis <strong>Caisses</strong>) → clos (depuis <strong>Clôtures</strong>). Il ne revient jamais en arrière.</li>
+          <li><strong>Un seul événement ouvert à la fois</strong> : chaque ticket sait ainsi, sans ambiguïté, à quel événement il appartient.</li>
+          <li>Les caisses ne s'ouvrent que pendant un événement ouvert. Un événement ne se clôt qu'une fois toutes ses caisses clôturées ; sa clôture est définitive.</li>
+          <li>Le libellé et la date se modifient tant que l'événement est à venir. Le <strong>nombre de spectateurs</strong> peut être complété à tout moment (il sert au CA par spectateur, il n'est pas une donnée fiscale).</li>
           <li>Chaque création, ouverture, clôture et modification est inscrite au journal technique, avec son auteur et l'heure.</li>
         </ul>
       </Regles>
@@ -173,7 +173,7 @@ function LigneMatch({ evenement: e, maj }: { evenement: Evenement; maj: (l: Even
               Modifier
             </button>
             {e.etat === "a_venir" && (
-              <Link className="btn btn-fantome" to="/caisses" title="Le match s'ouvre le jour J depuis Caisses">
+              <Link className="btn btn-fantome" to="/caisses" title="L'événement s'ouvre le jour J depuis Caisses">
                 S'ouvre depuis Caisses
               </Link>
             )}

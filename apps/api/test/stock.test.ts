@@ -32,7 +32,7 @@ const reserve = async () => (await appel<EtatReserve>("GET", "/api/stock/reserve
 const soldeHotDog = async () => (await reserve()).produits.find((p) => p.produitId === hotDog.id)!;
 const caisse = () => sud.caisses[0]!.id;
 
-/** Ouvre le match et la caisse, vend `n` hot-dogs, clôture la caisse. */
+/** Ouvre l'événement et la caisse, vend `n` hot-dogs, clôture la caisse. */
 async function jouer(e: Evenement, n: number) {
   await appel("POST", `/api/evenements/${e.id}/ouverture`);
   const t = tablette(caisse(), (await appel<RepriseCaisse>("POST", `/api/caisses/${caisse()}/ouverture`, {})).corps);
@@ -52,8 +52,8 @@ beforeAll(async () => {
   hotDog = (await appel<Produit[]>("POST", "/api/produits", { nom: "Hot-dog", prixTtc: 700, tauxTva: 1000, coutMatiere: 190, standIds: [sud.id] })).corps[0]!;
   const evt = async (libelle: string, jours: number) =>
     (await appel<Evenement[]>("POST", "/api/evenements", { libelle, debut: new Date(Date.now() + jours * 86_400_000).toISOString() })).corps.find((e) => e.libelle === libelle)!;
-  match1 = await evt("Match 1", 1);
-  match2 = await evt("Match 2", 8);
+  match1 = await evt("Événement 1", 1);
+  match2 = await evt("Événement 2", 8);
 });
 
 afterAll(async () => {
@@ -108,7 +108,7 @@ describe("match 1 : mise en place, réassort, comptage", () => {
     expect(l).toMatchObject({ depart: 160, reassort: 30, vendu: 160, restant: 30, alerte: null });
   });
 
-  it("la clôture du match exige le comptage des restes", async () => {
+  it("la clôture de l'événement exige le comptage des restes", async () => {
     const c = (await appel<ClotureMatch>("GET", `/api/clotures?evenementId=${match1.id}`)).corps;
     expect(c.etapes.restes).toEqual({ requis: true, manquants: 1 });
     expect(c.etapes.cloturable).toBe(false);
@@ -130,7 +130,7 @@ describe("match 1 : mise en place, réassort, comptage", () => {
     expect((await appel("POST", `/api/evenements/${match1.id}/cloture`)).statut).toBe(200);
   });
 
-  it("[F] match clos : le comptage est figé par la base ; un mouvement ne se modifie ni ne se supprime", async () => {
+  it("[F] événement clos : le comptage est figé par la base ; un mouvement ne se modifie ni ne se supprime", async () => {
     expect((await appel("PUT", "/api/stock/comptage", { evenementId: match1.id, standId: sud.id, produitId: hotDog.id, quantite: 30 })).statut).toBe(409);
     const ctx = { lieuId: lieu.lieuId, utilisateurId: lieu.utilisateurId };
     expect(await codeErreur(app.transaction(ctx, (c) => c.query("UPDATE stock_comptage SET quantite = 30 WHERE evenement_id = $1", [match1.id])))).toBe("23514");
@@ -140,10 +140,10 @@ describe("match 1 : mise en place, réassort, comptage", () => {
   });
 });
 
-describe("match suivant : reste reporté, suggestion, inventaire réserve", () => {
-  it("le reste compté au match 1 devient le départ du match 2 ; suggestion = ventes moyennes − reste", async () => {
+describe("événement suivant : reste reporté, suggestion, inventaire réserve", () => {
+  it("le reste compté à l'événement 1 devient le départ de l'événement 2 ; suggestion = ventes moyennes − reste", async () => {
     const l = ligneHotDog(await stock(match2));
-    // Vendu 160 au match 1, reste 28 → suggestion 132.
+    // Vendu 160 à l'événement 1, reste 28 → suggestion 132.
     expect(l).toMatchObject({ reste: 28, premierMatch: false, suggestion: 132, miseEnPlace: 0 });
     const s = (await appel<StockMatch>("POST", "/api/stock/mise-en-place/suggestions", { evenementId: match2.id })).corps;
     expect(ligneHotDog(s)).toMatchObject({ miseEnPlace: 132, depart: 160 });

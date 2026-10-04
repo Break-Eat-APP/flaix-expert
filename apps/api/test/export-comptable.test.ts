@@ -1,6 +1,6 @@
 /**
  * Export pour l'expert-comptable (dossier §15.110), contre la vraie base : journal des ventes et
- * récapitulatif bâtis sur les Z de match scellés, écart de tiroir compris.
+ * récapitulatif bâtis sur les Z d'événement scellés, écart de tiroir compris.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
@@ -63,7 +63,7 @@ afterAll(async () => {
 });
 
 describe("aperçu du mois", () => {
-  it("le mois du match est proposé ; le Z porte les ventes, la TVA par taux et l'écart du tiroir", async () => {
+  it("le mois de l'événement est proposé ; le Z porte les ventes, la TVA par taux et l'écart du tiroir", async () => {
     const a = (await appel<ApercuExport>("GET", "/api/export-comptable")).corps;
     expect(a.moisDisponibles).toEqual([{ cle: "2025-03", libelle: "Mars 2025", zs: 1, clos: false }]);
     expect(a.cle).toBe("2025-03");
@@ -92,17 +92,17 @@ describe("fichiers", () => {
     expect(jet.details).toMatchObject({ mois: "2025-03", fichier: "ecritures", definitif: false, zs: 1, total_ttc: 1600 });
   });
 
-  it("récapitulatif : une ligne par match et le total ; définitif une fois le mois clôturé", async () => {
+  it("récapitulatif : une ligne par événement et le total ; définitif une fois le mois clôturé", async () => {
     expect((await appel("POST", "/api/clotures/mois", { mois: "2025-03" })).statut).toBe(200);
     const f = await fichier("2025-03", "recapitulatif");
     expect(f.nom).toContain("flaix-recapitulatif-ventes-2025-03.csv");
     const lignes = f.texte.slice(1).trimEnd().split("\r\n");
-    expect(lignes[0]).toBe("Date;Match;Z;Tickets;Annulations;CA TTC;HT 5,5 %;TVA 5,5 %;HT 20 %;TVA 20 %;Espèces;Carte;Écart tiroirs;Écart coffre;Empreinte du Z");
+    expect(lignes[0]).toBe("Date;Événement;Z;Tickets;Annulations;CA TTC;HT 5,5 %;TVA 5,5 %;HT 20 %;TVA 20 %;Espèces;Carte;Écart tiroirs;Écart coffre;Empreinte du Z");
     expect(lignes[1]!.startsWith("15/03/2025;Spartiates – Rouen;Z000001;2;0;16,00;1,90;0,10;11,67;2,33;14,00;2,00;-2,00;0,00;")).toBe(true);
     expect((await appel<ApercuExport>("GET", "/api/export-comptable?mois=2025-03")).corps.clos).toBe(true);
   });
 
-  it("un mois sans match clos n'a rien à exporter", async () => {
+  it("un mois sans événement clos n'a rien à exporter", async () => {
     const r = await fichier("2025-04", "ecritures");
     expect(r.statut).toBe(409);
     expect(JSON.parse(r.texte).erreur).toContain("Avril 2025");

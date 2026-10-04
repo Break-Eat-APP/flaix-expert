@@ -28,7 +28,7 @@ function appel<T = unknown>(method: "GET" | "POST" | "PUT" | "PATCH", url: strin
 }
 const resultats = async (q = "") => (await appel<Resultats>("GET", `/api/resultats${q}`)).corps;
 
-/** Joue un match : ouverture, ventes scellées par la tablette, clôture de caisse et du match. */
+/** Joue un événement : ouverture, ventes scellées par la tablette, clôture de caisse et de l'événement. */
 async function jouer(match: Evenement, ventes: (t: ReturnType<typeof tablette>) => void) {
   await appel("POST", `/api/evenements/${match.id}/ouverture`);
   const t = tablette(caisse, (await appel<RepriseCaisse>("POST", `/api/caisses/${caisse}/ouverture`, {})).corps);
@@ -53,8 +53,8 @@ beforeAll(async () => {
   hotDog = produits.find((p) => p.nom === "Hot-dog")!;
   const evts = async (libelle: string, jours: number, spectateurs: number | null) =>
     (await appel<Evenement[]>("POST", "/api/evenements", { libelle, debut: new Date(Date.now() - jours * 86_400_000).toISOString(), spectateurs })).corps.find((e) => e.libelle === libelle)!;
-  match1 = await evts("Match 1", 7, 1000);
-  match2 = await evts("Match 2", 0, null);
+  match1 = await evts("Événement 1", 7, 1000);
+  match2 = await evts("Événement 2", 0, null);
   // Match 1 : 2 bières → 14,00 €.
   await jouer(match1, (t) => {
     vendreHorsLigne(t, [ligne(biere, 2)]);
@@ -74,12 +74,12 @@ afterAll(async () => {
   await app.fermer();
 });
 
-describe("Résultats — le dernier match, comparé au précédent", () => {
-  it("par défaut : le match le plus récent, comparé au précédent qui a des ventes", async () => {
+describe("Résultats — le dernier événement, comparé au précédent", () => {
+  it("par défaut : l'événement le plus récent, comparé au précédent qui a des ventes", async () => {
     const r = await resultats();
     expect(r.evenement!.id).toBe(match2.id);
     expect(r.comparaison!.id).toBe(match1.id);
-    expect(r.matchs.map((m) => m.libelle)).toEqual(["Match 2", "Match 1"]);
+    expect(r.matchs.map((m) => m.libelle)).toEqual(["Événement 2", "Événement 1"]);
   });
 
   it("chiffres clés : les annulations sont déduites, jamais comptées comme des ventes", async () => {
@@ -115,7 +115,7 @@ describe("Résultats — le dernier match, comparé au précédent", () => {
     expect(a.margeBrute).toBe(2841 - 660);
   });
 
-  it("le match précédent se choisit ; ses chiffres et son CA par spectateur", async () => {
+  it("l'événement précédent se choisit ; ses chiffres et son CA par spectateur", async () => {
     const r = await resultats(`?evenementId=${match1.id}&comparaison=${match2.id}`);
     expect(r.evenement!.id).toBe(match1.id);
     expect(r.comparaison!.id).toBe(match2.id);

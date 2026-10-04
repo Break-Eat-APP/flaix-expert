@@ -4,7 +4,7 @@
  *   durée          = fin − début, en heures d'horloge ; une fin avant le début = après minuit
  *   coût prévu     = durée prévue × taux horaire de l'affectation
  *   coût réel      = durée réelle × taux horaire   ← c'est lui qui compte
- *   masse salariale(match) = Σ coûts réels des affectations du match
+ *   masse salariale(match) = Σ coûts réels des affectations de l'événement
  */
 
 export const ROLES_EQUIPE = ["Caissier", "Préparation / cuisine", "Responsable de stand", "Renfort ponctuel"] as const;

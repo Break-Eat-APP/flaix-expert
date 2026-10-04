@@ -74,7 +74,7 @@ async function compteursReels() {
   return rows[0]!;
 }
 
-/** Un match d'entraînement ouvert, une caisse ouverte, deux bières vendues, la caisse clôturée, le match clos. */
+/** Un événement d'entraînement ouvert, une caisse ouverte, deux bières vendues, la caisse clôturée, l'événement clos. */
 async function jouerUnMatch(appel: Appel, caisseId: string, produit: Produit, libelle: string) {
   const e = (await appel<Evenement[]>("POST", "/api/evenements", { libelle, debut: new Date().toISOString() })).corps.find((x) => x.libelle === libelle)!;
   expect((await appel("POST", `/api/evenements/${e.id}/ouverture`)).statut).toBe(200);
@@ -138,7 +138,7 @@ describe("le directeur entre en formation", () => {
     }
   });
 
-  it("B4 [F] — ventes, clôture de caisse et Z du match en formation : aucun effet sur le vrai lieu", async () => {
+  it("B4 [F] — ventes, clôture de caisse et Z de l'événement en formation : aucun effet sur le vrai lieu", async () => {
     const avant = await compteursReels();
     const caisseF = (await parDirecteur<Stand[]>("GET", "/api/stands")).corps[0]!.caisses[0]!.id;
     const produitF = (await parDirecteur<Produit[]>("GET", "/api/produits")).corps[0]!;
@@ -204,7 +204,7 @@ describe("tablette en formation", () => {
     const caisseF = c.corps.appareil!.caisseId;
     expect(caisseF).not.toBe(caisse1);
     const julieF = `${sessionDe(c.cookies)}; ${tablette1}`;
-    // Le match d'entraînement est ouvert par le directeur, en formation.
+    // L'événement d'entraînement est ouvert par le directeur, en formation.
     await basculer("entree");
     const e = (await parDirecteur<Evenement[]>("POST", "/api/evenements", { libelle: "Entraînement 2", debut: new Date().toISOString() })).corps.find(
       (x) => x.libelle === "Entraînement 2",

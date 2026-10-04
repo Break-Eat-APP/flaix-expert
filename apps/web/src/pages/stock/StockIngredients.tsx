@@ -40,17 +40,17 @@ export function StockIngredients({ evenements, evenementId, choisir }: { eveneme
     <>
       {!s ? (
         <Carte>
-          <EtatVide titre="Aucun match dans la saison">
-            Crée d'abord les matchs dans <Link to="/parametres/saison">Paramètres → Saison</Link>.
+          <EtatVide titre="Aucun événement dans la saison">
+            Crée d'abord les événements dans <Link to="/parametres/saison">Paramètres → Saison</Link>.
           </EtatVide>
         </Carte>
       ) : (
         <>
           <Carte
             titre={`${s.evenement.libelle} — ${dateCourte.format(new Date(s.evenement.debut))}`}
-            description={`Match ${ETAT[s.evenement.etat]} · ingrédients suivis en stock, déduits par les recettes des produits vendus`}
+            description={`Événement ${ETAT[s.evenement.etat]} · ingrédients suivis en stock, déduits par les recettes des produits vendus`}
             actions={
-              <select value={s.evenement.id} onChange={(ev) => choisir(ev.target.value)} aria-label="Match">
+              <select value={s.evenement.id} onChange={(ev) => choisir(ev.target.value)} aria-label="Événement">
                 {[...evenements]
                   .sort((a, b) => Date.parse(b.debut) - Date.parse(a.debut))
                   .map((x) => (
@@ -163,7 +163,7 @@ function MatchIngredients({ s }: { s: StockIngredientsMatch }) {
           </button>
         </div>
       )}
-      {e.etat === "clos" && <div className="message message-info">Match clos : consommation figée avec les recettes du jour de la clôture, comptage définitif.</div>}
+      {e.etat === "clos" && <div className="message message-info">Événement clos : consommation figée avec les recettes du jour de la clôture, comptage définitif.</div>}
       <MessageErreur erreur={mep.error ?? ajouter.error ?? compter.error ?? suggestions.error} />
       {s.stands
         .filter((st) => st.lignes.length > 0)

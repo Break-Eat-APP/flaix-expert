@@ -20,7 +20,7 @@ const valeur = (lignes: LigneStock[], q: (l: LigneStock) => number) => {
 
 /**
  * Stock (organisation en 6 entrées, dossier §15.95 ; module 4, §15.105) : réserve centrale,
- * mise en place par match et par stand, réassort pendant le match, comptage de fin de match.
+ * mise en place par événement et par stand, réassort pendant l'événement, comptage de fin d'événement.
  * Les totaux sont en euros : des unités de produits différents ne s'additionnent pas.
  */
 export function Stock() {
@@ -45,7 +45,7 @@ export function Stock() {
       <EntetePage titre="Stock" description="Qu'est-ce que j'envoie aux stands, qu'est-ce qu'il reste ?" />
       <div className="onglets">
         {bouton("mep", "Mise en place")}
-        {bouton("match", "Pendant le match")}
+        {bouton("match", "Pendant l'événement")}
         {bouton("comptage", "Comptage")}
         {bouton("reserve", "Réserve & livraisons")}
         {bouton("ingredients", "Ingrédients")}
@@ -60,8 +60,8 @@ export function Stock() {
         <MessageErreur erreur={stock.error ?? evenements.error} />
       ) : !stock.data ? (
         <Carte>
-          <EtatVide titre="Aucun match dans la saison">
-            Crée d'abord les matchs dans <Link to="/parametres/saison">Paramètres → Saison</Link>.
+          <EtatVide titre="Aucun événement dans la saison">
+            Crée d'abord les événements dans <Link to="/parametres/saison">Paramètres → Saison</Link>.
           </EtatVide>
         </Carte>
       ) : (
@@ -71,11 +71,11 @@ export function Stock() {
         <ul>
           <li><strong>Réserve centrale</strong> : le dépôt du lieu. Son stock de départ se déclare par un <strong>inventaire réserve</strong> ; ensuite son solde est <strong>calculé</strong> (dernier inventaire + livraisons − mises en place − réassorts), jamais présenté comme certain. Un nouvel inventaire devient le point de départ ; son écart est la perte au dépôt depuis le précédent.</li>
           <li><strong>Livraison</strong> : entre en réserve et recalcule le <strong>coût matière</strong> du produit en coût moyen pondéré (CUMP) = (solde réserve × coût actuel + quantité livrée × prix) ÷ (solde + quantité livrée). Ce coût sert partout : valorisation du stock, écarts, marges de Résultats.</li>
-          <li><strong>Mise en place</strong> : ce que la réserve envoie à chaque stand <strong>avant</strong> le match, préparable plusieurs jours avant ; figée à l'ouverture du match. <strong>Reste du match précédent</strong> = ce qui a été compté au même stand au match précédent. <strong>Suggestion</strong> = moyenne des ventes des matchs précédents à ce stand − reste, sans marge de sécurité ; « pas d'historique » avant le premier match.</li>
-          <li><strong>Pendant le match</strong> : <strong>réassort</strong> à quantité libre (« − » = retour en réserve d'un réassort saisi par erreur). <strong>Restant</strong> = reste précédent + mise en place + réassort − vendu (ventes lues en direct dans les caisses). Alerte « faible » à 15 % du départ, « rupture » à zéro.</li>
-          <li><strong>Comptage</strong> : ce qu'on trouve au stand en fin de match. <strong>Écart</strong> = compté − restant attendu, valorisé au coût matière (jamais au prix de vente) : négatif = manquant (casse, coulage, vente non enregistrée), positif = surplus (souvent une erreur de comptage). Motif obligatoire au-delà de 3 % du départ. Le comptage se corrige jusqu'à la clôture du match, puis il est figé ; une correction est inscrite au journal technique.</li>
-          <li><strong>Clôture du match</strong> : un match qui a une mise en place ou un réassort ne se clôt qu'une fois chaque produit concerné compté (Clôtures → étape Restes).</li>
-          <li><strong>Ingrédients</strong> (onglet du même nom) : un ingrédient coché « suivre » dans Produits & prix se suit comme un produit, en kg, litres ou pièces. Le <strong>consommé</strong> vient des recettes des produits vendus (une pinte de 50 cl déduit 0,5 L du fût), figé à la clôture du match. Un ingrédient non coché sert seulement au coût des recettes.</li>
+          <li><strong>Mise en place</strong> : ce que la réserve envoie à chaque stand <strong>avant</strong> l'événement, préparable plusieurs jours avant ; figée à l'ouverture de l'événement. <strong>Reste de l'événement précédent</strong> = ce qui a été compté au même stand à l'événement précédent. <strong>Suggestion</strong> = moyenne des ventes des événements précédents à ce stand − reste, sans marge de sécurité ; « pas d'historique » avant le premier événement.</li>
+          <li><strong>Pendant l'événement</strong> : <strong>réassort</strong> à quantité libre (« − » = retour en réserve d'un réassort saisi par erreur). <strong>Restant</strong> = reste précédent + mise en place + réassort − vendu (ventes lues en direct dans les caisses). Alerte « faible » à 15 % du départ, « rupture » à zéro.</li>
+          <li><strong>Comptage</strong> : ce qu'on trouve au stand en fin d'événement. <strong>Écart</strong> = compté − restant attendu, valorisé au coût matière (jamais au prix de vente) : négatif = manquant (casse, coulage, vente non enregistrée), positif = surplus (souvent une erreur de comptage). Motif obligatoire au-delà de 3 % du départ. Le comptage se corrige jusqu'à la clôture de l'événement, puis il est figé ; une correction est inscrite au journal technique.</li>
+          <li><strong>Clôture de l'événement</strong> : un événement qui a une mise en place ou un réassort ne se clôt qu'une fois chaque produit concerné compté (Clôtures → étape Restes).</li>
+          <li><strong>Ingrédients</strong> (onglet du même nom) : un ingrédient coché « suivre » dans Produits & prix se suit comme un produit, en kg, litres ou pièces. Le <strong>consommé</strong> vient des recettes des produits vendus (une pinte de 50 cl déduit 0,5 L du fût), figé à la clôture de l'événement. Un ingrédient non coché sert seulement au coût des recettes.</li>
         </ul>
       </Regles>
     </>
@@ -116,10 +116,10 @@ function VueMatch({
     <>
       <Carte
         titre={`${e.libelle} — ${dateCourte.format(new Date(e.debut))}`}
-        description={`Match ${ETAT[e.etat]}`}
+        description={`Événement ${ETAT[e.etat]}`}
         actions={
           <div className="en-ligne" style={{ gap: 8 }}>
-            <select value={e.id} onChange={(ev) => choisir(ev.target.value)} aria-label="Match">
+            <select value={e.id} onChange={(ev) => choisir(ev.target.value)} aria-label="Événement">
               {evts.map((x) => (
                 <option key={x.id} value={x.id}>
                   {dateCourte.format(new Date(x.debut))} — {x.libelle} ({ETAT[x.etat]})
@@ -146,7 +146,7 @@ function VueMatch({
             {k.manquants > 0 && <span className="cout-manquant">coût manquant sur {k.manquants} ligne{k.manquants > 1 ? "s" : ""}</span>}
           </div>
           <div className="kpi">
-            <div className="kpi-libelle">{onglet === "comptage" ? (s.restes.requis ? "Produits restant à compter" : "Stock non suivi sur ce match") : "Produits en alerte"}</div>
+            <div className="kpi-libelle">{onglet === "comptage" ? (s.restes.requis ? "Produits restant à compter" : "Stock non suivi sur cet événement") : "Produits en alerte"}</div>
             <div className="kpi-valeur" style={(onglet === "comptage" ? s.restes.requis && aCompter : alertes) ? { color: "var(--amber)" } : undefined}>
               {onglet === "comptage" ? (s.restes.requis ? aCompter : "—") : alertes}
             </div>
@@ -156,12 +156,12 @@ function VueMatch({
             <div className="kpi-valeur">{stands.length}</div>
           </div>
         </div>
-        {onglet === "mep" && e.etat !== "a_venir" && <div className="message message-info">La mise en place de ce match est figée depuis son ouverture. Pendant le match, on ajoute du réassort.</div>}
+        {onglet === "mep" && e.etat !== "a_venir" && <div className="message message-info">La mise en place de cet événement est figée depuis son ouverture. Pendant l'événement, on ajoute du réassort.</div>}
         {onglet === "match" && e.etat !== "ouvert" && (
-          <div className="message message-info">{e.etat === "a_venir" ? "Ce match n'a pas commencé : le réassort s'ouvre avec le match (Caisses → Ouvrir le match)." : "Ce match est clos : les chiffres ci-dessous sont définitifs."}</div>
+          <div className="message message-info">{e.etat === "a_venir" ? "Cet événement n'a pas commencé : le réassort s'ouvre avec l'événement (Caisses → Ouvrir l'événement)." : "Cet événement est clos : les chiffres ci-dessous sont définitifs."}</div>
         )}
         {onglet === "comptage" && e.etat !== "ouvert" && (
-          <div className="message message-info">{e.etat === "a_venir" ? "On ne compte pas un match qui n'a pas eu lieu." : "Ce match est clos : son comptage est figé."}</div>
+          <div className="message message-info">{e.etat === "a_venir" ? "On ne compte pas un événement qui n'a pas eu lieu." : "Cet événement est clos : son comptage est figé."}</div>
         )}
       </Carte>
 
@@ -250,7 +250,7 @@ function MiseEnPlace({ s, stands, cle }: { s: StockMatch; stands: StockMatch["st
                 <thead>
                   <tr>
                     <th>Produit</th>
-                    <th className="d">Reste du match précédent</th>
+                    <th className="d">Reste de l'événement précédent</th>
                     <th className="d">Suggestion</th>
                     <th className="d">Mise en place</th>
                     <th className="d">Départ</th>
@@ -268,7 +268,7 @@ function MiseEnPlace({ s, stands, cle }: { s: StockMatch; stands: StockMatch["st
                           </div>
                         )}
                       </td>
-                      <td className="d chiffre">{l.premierMatch ? <span className="discret">premier match</span> : l.reste}</td>
+                      <td className="d chiffre">{l.premierMatch ? <span className="discret">premier événement</span> : l.reste}</td>
                       <td className="d">
                         {l.suggestion === null ? (
                           <span className="discret" style={{ fontSize: 12 }}>pas d'historique</span>
@@ -335,7 +335,7 @@ function PendantLeMatch({ s, stands, cle }: { s: StockMatch; stands: StockMatch[
                   <tr>
                     <th>Produit</th>
                     <th className="d">Départ</th>
-                    <th className="d">Réassort pendant le match</th>
+                    <th className="d">Réassort pendant l'événement</th>
                     <th className="d">Vendu</th>
                     <th className="d">Restant</th>
                     <th />

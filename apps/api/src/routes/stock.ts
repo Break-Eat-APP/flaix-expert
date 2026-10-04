@@ -26,7 +26,7 @@ import { stockIngredientsDuMatch } from "./stock-ingredients.ts";
 
 /*
  * Stock suivi à l'unité (dossier §15.105, module 4) : réserve centrale, mise en place et
- * réassort par match et par stand, comptage de fin de match, livraisons (CUMP), inventaires
+ * réassort par événement et par stand, comptage de fin d'événement, livraisons (CUMP), inventaires
  * de la réserve. Chaque mouvement est inscrit, attribué et horodaté, jamais modifié.
  */
 
@@ -48,7 +48,7 @@ const Inventaire = z.object({
 });
 const ParEvenement = z.object({ evenementId: Uuid.optional() });
 
-/** Ordre dans lequel les matchs ont été joués : heure d'ouverture, sinon date prévue. */
+/** Ordre dans lequel les événements ont été joués : heure d'ouverture, sinon date prévue. */
 const jouerLe = (e: Evenement) => Date.parse(e.ouvertLe ?? e.debut);
 
 /** Solde calculé de la réserve centrale, par produit : dernier inventaire + livraisons − sorties depuis. */
@@ -78,7 +78,7 @@ async function reserveParProduit(c: Client, lieuId: string): Promise<ProduitRese
   }));
 }
 
-/** L'état du stock de chaque stand pour un match. */
+/** L'état du stock de chaque stand pour un événement. */
 export async function stockDuMatch(c: Client, lieuId: string, e: Evenement): Promise<StockMatch> {
   const evenements = await listerEvenements(c, lieuId);
   const avant = evenements.filter((x) => x.id !== e.id && jouerLe(x) < jouerLe(e)).map((x) => x.id);
@@ -111,7 +111,7 @@ export async function stockDuMatch(c: Client, lieuId: string, e: Evenement): Pro
       WHERE c.lieu_id = $1 AND c.evenement_id = $2`,
     p,
   );
-  // Reste du match précédent : le dernier comptage du même stand, sur un match joué avant.
+  // Reste de l'événement précédent : le dernier comptage du même stand, sur un événement joué avant.
   const { rows: restes } = avant.length
     ? await c.query<{ stand_id: string; produit_id: string; quantite: number }>(
         `SELECT DISTINCT ON (c.stand_id, c.produit_id) c.stand_id, c.produit_id, c.quantite
@@ -154,7 +154,7 @@ export async function stockDuMatch(c: Client, lieuId: string, e: Evenement): Pro
   const requis = mouvements.length > 0;
   let manquants = 0;
   const resultat = stands.map((s) => {
-    // Produits de ce stand : ceux qui y sont vendus, plus tout ce qui y a bougé pendant ce match.
+    // Produits de ce stand : ceux qui y sont vendus, plus tout ce qui y a bougé pendant cet événement.
     const ids = new Set(auStand.filter((x) => x.stand_id === s.id).map((x) => x.produit_id));
     for (const m of [...vendus, ...mouvements, ...comptes, ...restes]) if (m.stand_id === s.id) ids.add(m.produit_id);
     const lignes: LigneStock[] = [...ids]
@@ -204,7 +204,7 @@ export async function stockDuMatch(c: Client, lieuId: string, e: Evenement): Pro
   return { evenement: e, stands: resultat, reserve, restes: { requis, manquants } };
 }
 
-/** Pour Clôtures : l'étape « Restes » d'un match (§15.105 point 6), produits et ingrédients suivis (§15.124). */
+/** Pour Clôtures : l'étape « Restes » d'un événement (§15.105 point 6), produits et ingrédients suivis (§15.124). */
 export async function restesDuMatch(c: Client, lieuId: string, e: Evenement) {
   const produits = (await stockDuMatch(c, lieuId, e)).restes;
   const ingredients = (await stockIngredientsDuMatch(c, lieuId, e)).restes;
@@ -214,7 +214,7 @@ export async function restesDuMatch(c: Client, lieuId: string, e: Evenement) {
 async function evenementPour(c: Client, lieuId: string, id: string): Promise<Evenement> {
   await c.query("SELECT 1 FROM evenement WHERE lieu_id = $1 AND id = $2 FOR UPDATE", [lieuId, id]);
   const e = (await listerEvenements(c, lieuId)).find((x) => x.id === id);
-  if (!e) throw introuvable("Match");
+  if (!e) throw introuvable("Événement");
   return e;
 }
 
@@ -307,7 +307,7 @@ export async function routesStock(app: FastifyInstance, { base }: { base: Base }
     const d = corps(MiseEnPlace, req);
     return base.transaction(contexte(auth), async (c) => {
       const e = await evenementPour(c, auth.lieuId, d.evenementId);
-      if (e.etat !== "a_venir") throw new ErreurMetier(409, "La mise en place est figée à l'ouverture du match : utilise le réassort.");
+      if (e.etat !== "a_venir") throw new ErreurMetier(409, "La mise en place est figée à l'ouverture de l'événement : utilise le réassort.");
       await verifierLigne(c, auth.lieuId, d.standId, d.produitId);
       await verrouiller(c, `stock:${d.evenementId}:${d.standId}:${d.produitId}`);
       const { rows } = await c.query<{ q: number }>(
@@ -330,7 +330,7 @@ export async function routesStock(app: FastifyInstance, { base }: { base: Base }
     const { evenementId } = corps(z.object({ evenementId: Uuid }), req);
     return base.transaction(contexte(auth), async (c) => {
       const e = await evenementPour(c, auth.lieuId, evenementId);
-      if (e.etat !== "a_venir") throw new ErreurMetier(409, "La mise en place est figée à l'ouverture du match.");
+      if (e.etat !== "a_venir") throw new ErreurMetier(409, "La mise en place est figée à l'ouverture de l'événement.");
       const s = await stockDuMatch(c, auth.lieuId, e);
       for (const st of s.stands) {
         for (const l of st.lignes) {
@@ -345,13 +345,13 @@ export async function routesStock(app: FastifyInstance, { base }: { base: Base }
     });
   });
 
-  // ---------- Réassort pendant le match (« − » = retour en réserve d'un réassort saisi par erreur) ----------
+  // ---------- Réassort pendant l'événement (« − » = retour en réserve d'un réassort saisi par erreur) ----------
   app.post("/api/stock/reassort", async (req): Promise<StockMatch> => {
     const auth = await exigerDirecteur(req, base);
     const d = corps(Reassort, req);
     return base.transaction(contexte(auth), async (c) => {
       const e = await evenementPour(c, auth.lieuId, d.evenementId);
-      if (e.etat !== "ouvert") throw new ErreurMetier(409, "Le réassort n'existe que pendant le match.");
+      if (e.etat !== "ouvert") throw new ErreurMetier(409, "Le réassort n'existe que pendant l'événement.");
       await verifierLigne(c, auth.lieuId, d.standId, d.produitId);
       await verrouiller(c, `stock:${d.evenementId}:${d.standId}:${d.produitId}`);
       if (d.quantite < 0) {
@@ -359,7 +359,7 @@ export async function routesStock(app: FastifyInstance, { base }: { base: Base }
           "SELECT coalesce(sum(quantite), 0)::int AS q FROM stock_mouvement WHERE lieu_id = $1 AND evenement_id = $2 AND stand_id = $3 AND produit_id = $4 AND type = 'reassort'",
           [auth.lieuId, d.evenementId, d.standId, d.produitId],
         );
-        if (rows[0]!.q + d.quantite < 0) throw new ErreurMetier(400, `Le retour dépasse le réassort de ce match (${rows[0]!.q}).`);
+        if (rows[0]!.q + d.quantite < 0) throw new ErreurMetier(400, `Le retour dépasse le réassort de cet événement (${rows[0]!.q}).`);
       }
       await c.query(
         "INSERT INTO stock_mouvement (lieu_id, type, produit_id, evenement_id, stand_id, quantite, par) VALUES ($1, 'reassort', $2, $3, $4, $5, $6)",
@@ -369,13 +369,13 @@ export async function routesStock(app: FastifyInstance, { base }: { base: Base }
     });
   });
 
-  // ---------- Comptage de fin de match ----------
+  // ---------- Comptage de fin d'événement ----------
   app.put("/api/stock/comptage", async (req): Promise<StockMatch> => {
     const auth = await exigerDirecteur(req, base);
     const d = corps(Comptage, req);
     return base.transaction(contexte(auth), async (c) => {
       const e = await evenementPour(c, auth.lieuId, d.evenementId);
-      if (e.etat !== "ouvert") throw new ErreurMetier(409, e.etat === "clos" ? "Ce match est clos : son comptage est figé." : "Le comptage se fait pendant le match, une fois ouvert.");
+      if (e.etat !== "ouvert") throw new ErreurMetier(409, e.etat === "clos" ? "Cet événement est clos : son comptage est figé." : "Le comptage se fait pendant l'événement, une fois ouvert.");
       await verifierLigne(c, auth.lieuId, d.standId, d.produitId);
       const avant = (await stockDuMatch(c, auth.lieuId, e)).stands.find((s) => s.standId === d.standId)?.lignes.find((l) => l.produitId === d.produitId);
       if (!avant) throw introuvable("Produit de ce stand");

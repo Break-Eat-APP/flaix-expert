@@ -5,7 +5,7 @@ import type { ProduitVendu } from "./modele.ts";
  * une donnée manquante donne null, et l'écran l'écrit (« coût manquant », « affluence manquante »).
  */
 
-/** Évolution en % par rapport au match de comparaison ; null si la base de comparaison est nulle ou absente. */
+/** Évolution en % par rapport à l'événement de comparaison ; null si la base de comparaison est nulle ou absente. */
 export function variation(actuel: number | null, avant: number | null | undefined): number | null {
   if (actuel === null || avant === null || avant === undefined || avant === 0) return null;
   return ((actuel - avant) / Math.abs(avant)) * 100;
@@ -75,7 +75,7 @@ export function pistesMarges(produits: readonly ProduitVendu[], formater: (centi
       return {
         produit: p.nom,
         constat: `${p.quantite} vendus, ${formater(Math.round(margeParVente(p)!))} de marge par vente.`,
-        calcul: `+${formater(hausseTtc)} sur le prix = +${formater(Math.round(gainHtUnitaire * p.quantite))} de marge sur un match comme celui-ci, à volume égal.`,
+        calcul: `+${formater(hausseTtc)} sur le prix = +${formater(Math.round(gainHtUnitaire * p.quantite))} de marge sur un événement comme celui-ci, à volume égal.`,
       };
     });
 }

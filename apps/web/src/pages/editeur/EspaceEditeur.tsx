@@ -160,7 +160,7 @@ function Parc({ nom }: { nom: string }) {
                             {l.standsActifs} stand{l.standsActifs > 1 ? "s" : ""} · {l.caissesActives} caisse{l.caissesActives > 1 ? "s" : ""} · {l.tablettes} tablette{l.tablettes > 1 ? "s" : ""}
                           </span>
                           <span>
-                            {l.matchsJoues} match{l.matchsJoues > 1 ? "s" : ""} joué{l.matchsJoues > 1 ? "s" : ""}
+                            {l.matchsJoues} événement{l.matchsJoues > 1 ? "s" : ""} passé{l.matchsJoues > 1 ? "s" : ""}
                             {l.matchsOuverts ? ` · ${l.matchsOuverts} ouvert depuis le ${formaterDateHeure(l.plusAncienOuvert!)}` : ""}
                           </span>
                           <span>dernier Z : {l.dernierZ ? formaterDateHeure(l.dernierZ) : "—"}</span>

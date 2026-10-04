@@ -3,7 +3,7 @@ import { calculerEmpreinte, jsonCanonique, type ChampScelle } from "./chaine.ts"
 /**
  * Journal de caisse : une chaîne par caisse (§15.12), écriture seule.
  * Champs scellés : ceux du §15.16 (numéro de justificatif, horodatage, type, lieu, stand,
- * caisse, opérateur, mode de règlement, montant TTC), plus le rang dans la chaîne, le match,
+ * caisse, opérateur, mode de règlement, montant TTC), plus le rang dans la chaîne, l'événement,
  * l'événement visé par une annulation et le détail complet (lignes, remise, offert, motif,
  * ventilation de TVA) — voir docs/decisions-architecture-production.md § 12.
  * Ne jamais changer cet ordre sans version majeure (§15.5).

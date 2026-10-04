@@ -36,7 +36,7 @@ beforeAll(async () => {
   const s = (await appel<Stand[]>("POST", "/api/stands", { nom: "Buvette" })).corps[0]!;
   caisse = (await appel<Stand[]>("POST", `/api/stands/${s.id}/caisses`, { especesAutorisees: true })).corps[0]!.caisses[0]!.id;
   const biere = (await appel<Produit[]>("POST", "/api/produits", { nom: "Bière", prixTtc: 700, tauxTva: 2000, standIds: [s.id] })).corps[0]!;
-  match = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Match du coffre", debut: new Date().toISOString() })).corps[0]!;
+  match = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Événement du coffre", debut: new Date().toISOString() })).corps[0]!;
   await appel("POST", `/api/evenements/${match.id}/ouverture`);
   t = tablette(caisse, (await appel<RepriseCaisse>("POST", `/api/caisses/${caisse}/ouverture`, { fond: 10000 })).corps);
   // 3 bières en espèces : 21,00 €.
@@ -50,7 +50,7 @@ afterAll(async () => {
   await app.fermer();
 });
 
-describe("remontées au coffre pendant le match", () => {
+describe("remontées au coffre pendant l'événement", () => {
   it("une remontée se déduit de l'attendu du tiroir ; une erreur s'annule avec motif, sans être effacée", async () => {
     const s0 = await session();
     await appel("POST", `/api/sessions-caisse/${s0.sessionId}/remontees`, { montant: 1500 });
@@ -84,7 +84,7 @@ describe("remontées au coffre pendant le match", () => {
     expect(r.corps.erreur).toContain("déjà compté");
   });
 
-  it("le match ne se clôt pas tant que le coffre n'est pas compté", async () => {
+  it("l'événement ne se clôt pas tant que le coffre n'est pas compté", async () => {
     const r = await appel<{ erreur: string }>("POST", `/api/evenements/${match.id}/cloture`);
     expect(r.statut).toBe(409);
     expect(r.corps.erreur).toContain("coffre");

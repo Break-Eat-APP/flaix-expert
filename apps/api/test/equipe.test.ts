@@ -42,7 +42,7 @@ beforeAll(async () => {
   const stands = (await appel<Stand[]>("POST", "/api/stands", { nom: "Buvette Sud" })).corps;
   nord = stands.find((s) => s.nom === "Buvette Nord")!;
   sud = (await appel<Stand[]>("POST", `/api/stands/${stands.find((s) => s.nom === "Buvette Sud")!.id}/caisses`, {})).corps.find((s) => s.nom === "Buvette Sud")!;
-  match = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Match du planning", debut: new Date(Date.now() + 86_400_000).toISOString() })).corps[0]!;
+  match = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Événement du planning", debut: new Date(Date.now() + 86_400_000).toISOString() })).corps[0]!;
 });
 
 afterAll(async () => {
@@ -84,7 +84,7 @@ describe("fiches employés", () => {
   });
 });
 
-describe("planning d'un match à venir, prévu puis réel", () => {
+describe("planning d'un événement à venir, prévu puis réel", () => {
   it("exemple validé du module 14 : Julie 104,40 € prévus ; Karim 159,60 € ; Sophie 130,00 €", async () => {
     await affecter(julie.id, "18:00", "00:00");
     await affecter(karim.id, "17:30", "00:30");
@@ -138,14 +138,14 @@ describe("planning d'un match à venir, prévu puis réel", () => {
 });
 
 describe("masse salariale et Résultats → Finances", () => {
-  it("masse salariale : par match, par statut, par rôle — la somme du planning, jamais un autre calcul", async () => {
+  it("masse salariale : par événement, par statut, par rôle — la somme du planning, jamais un autre calcul", async () => {
     const m = (await appel<MasseSalariale>("GET", "/api/equipe/masse-salariale")).corps;
     expect(m).toMatchObject({ total: 39835, salaries: 10875 + 15960, interimaires: 13000 });
     expect(m.parMatch).toHaveLength(1);
     expect(m.parRole.find((r) => r.role === "Responsable de stand")!.total).toBe(15960);
   });
 
-  it("le personnel du planning est déduit dans Résultats → Finances une fois le match joué", async () => {
+  it("le personnel du planning est déduit dans Résultats → Finances une fois l'événement joué", async () => {
     const biere = (await appel<Produit[]>("POST", "/api/produits", { nom: "Bière", prixTtc: 700, tauxTva: 2000, coutMatiere: 120, standIds: [sud.id] })).corps[0]!;
     await appel("POST", `/api/evenements/${match.id}/ouverture`);
     const t = tablette(sud.caisses[0]!.id, (await appel<RepriseCaisse>("POST", `/api/caisses/${sud.caisses[0]!.id}/ouverture`, {})).corps);

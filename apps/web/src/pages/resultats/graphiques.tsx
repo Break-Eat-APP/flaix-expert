@@ -98,7 +98,7 @@ export function MiniCourbe({ serie, clair }: { serie: number[]; clair: boolean }
   );
 }
 
-/** CA par heure : aire en dégradé pour ce match, pointillé pour la comparaison, viseur au survol. */
+/** CA par heure : aire en dégradé pour cet événement, pointillé pour la comparaison, viseur au survol. */
 export function CourbeHeures({
   heures,
   actuel,
@@ -337,7 +337,7 @@ export function Nuage({ produits, repere }: { produits: ProduitVendu[]; repere: 
         <text x={g.x1 - 8} y={g.y1 + 14} fontSize={11.5} fontWeight={700} textAnchor="end" fill="var(--text)">Locomotives</text>
         <text x={g.x0 + 8} y={g.y0 - 8} fontSize={11.5} fontWeight={700} fill="var(--text)">Secondaires</text>
         <text x={g.x1 - 8} y={g.y0 - 8} fontSize={11.5} fontWeight={700} textAnchor="end" fill="var(--amber)">À revoir</text>
-        <text x={(g.x0 + g.x1) / 2} y={H - 8} fontSize={11.5} textAnchor="middle" fill="var(--muted)">Ventes du match (unités)</text>
+        <text x={(g.x0 + g.x1) / 2} y={H - 8} fontSize={11.5} textAnchor="middle" fill="var(--muted)">Ventes de l'événement (unités)</text>
         <text x={8} y={16} fontSize={11.5} fill="var(--muted)">Marge par vente</text>
         {points.map((p, i) => {
           const revoir = aRevoir(p, repere);
@@ -368,7 +368,7 @@ export function Nuage({ produits, repere }: { produits: ProduitVendu[]; repere: 
   );
 }
 
-/** Chaque stand d'un match à l'autre : point gris = avant, point violet = ce match. */
+/** Chaque stand d'un événement à l'autre : point gris = avant, point violet = cet événement. */
 export function Duo({ lignes, libelleA, libelleB }: { lignes: { nom: string; a: number; b: number }[]; libelleA: string; libelleB: string }) {
   const { max, ticks } = axe(Math.max(...lignes.flatMap((l) => [l.a, l.b]), 1), 3);
   const pos = (v: number) => (v / max) * 100;

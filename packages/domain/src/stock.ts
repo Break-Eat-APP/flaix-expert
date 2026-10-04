@@ -1,7 +1,7 @@
 /**
  * Stock suivi à l'unité (module 4, dossier §14 et §15.105).
  *
- *   départ    = reste du match précédent + mise en place
+ *   départ    = reste de l'événement précédent + mise en place
  *   restant   = départ + réassort − vendu              (vendu : journal de caisse, jamais saisi)
  *   seuil     = arrondi(départ × 15 %) ; alerte « rupture » si restant ≤ 0, « faible » si restant ≤ seuil
  *   écart     = compté − restant (l'attendu), valorisé au coût matière, jamais au prix de vente
@@ -34,7 +34,7 @@ export function cump(soldeReserve: number, coutActuel: number | null, quantiteLi
   return Math.round((soldeReserve * coutActuel + quantiteLivree * prixUnitaire) / (soldeReserve + quantiteLivree));
 }
 
-/** Suggestion de mise en place : moyenne des ventes des matchs précédents − reste, plancher 0 ; null sans historique. */
+/** Suggestion de mise en place : moyenne des ventes des événements précédents − reste, plancher 0 ; null sans historique. */
 export function suggestionMiseEnPlace(ventesPrecedentes: readonly number[], reste: number): number | null {
   if (ventesPrecedentes.length === 0) return null;
   const moyenne = ventesPrecedentes.reduce((s, v) => s + v, 0) / ventesPrecedentes.length;

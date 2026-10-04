@@ -58,7 +58,7 @@ export function CoutsBuvette() {
             Eat et les charges du lieu non saisies ici (assurance, salaires permanents, électricité…) n'y sont pas.
           </li>
           <li>
-            <strong>Mois</strong> : les matchs ouverts ou clos du mois (heure de Paris). Un mois avec un match en cours change encore.
+            <strong>Mois</strong> : les événements ouverts ou clos du mois (heure de Paris). Un mois avec un événement en cours change encore.
           </li>
         </ul>
       </Regles>
@@ -70,7 +70,7 @@ function Consolidation({ e, changerMois }: { e: Etat; changerMois: (m: string) =
   if (!e.cle) {
     return (
       <Carte titre="Coûts du mois">
-        <EtatVide titre="Aucun match joué pour l'instant">Les coûts du mois apparaissent avec le premier match ouvert.</EtatVide>
+        <EtatVide titre="Aucun événement joué pour l'instant">Les coûts du mois apparaissent avec le premier événement ouvert.</EtatVide>
       </Carte>
     );
   }
@@ -93,7 +93,7 @@ function Consolidation({ e, changerMois }: { e: Etat; changerMois: (m: string) =
     <>
       <Carte
         titre={`Coûts du mois — ${e.libelle}`}
-        description={`${e.matchs} match${e.matchs > 1 ? "s" : ""} ce mois-ci.`}
+        description={`${e.matchs} événement${e.matchs > 1 ? "s" : ""} ce mois-ci.`}
         actions={
           <select value={e.cle} onChange={(ev) => changerMois(ev.target.value)} aria-label="Mois">
             {e.moisDisponibles.map((m) => (

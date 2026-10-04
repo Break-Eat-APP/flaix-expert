@@ -33,7 +33,7 @@ const pourcent = (v: number, d = 1) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toL
 
 /** Évolution écrite en toutes lettres : jamais un pourcentage inventé quand la comparaison manque. */
 function Evolution({ actuel, avant, comparaison }: { actuel: number | null; avant: number | null | undefined; comparaison: Evenement | null }) {
-  if (!comparaison) return <span className="variation neutre">aucun match de comparaison</span>;
+  if (!comparaison) return <span className="variation neutre">aucun événement de comparaison</span>;
   const v = variation(actuel, avant);
   if (v === null) return <span className="variation neutre">pas de comparaison possible</span>;
   return <span className={`variation ${v >= 0 ? "hausse" : "baisse"}`}>{pourcent(v)} vs {dateCourte.format(new Date(comparaison.debut))}</span>;
@@ -57,9 +57,9 @@ export function Tableaux() {
   const d = r.data!;
   if (!d.evenement || !d.actuel) {
     return (
-      <Carte titre="Résultats des matchs">
+      <Carte titre="Résultats des événements">
         <EtatVide titre="Aucune vente pour l'instant">
-          Les résultats apparaissent dès le premier ticket du premier match. Le match du jour s'ouvre dans <Link to="/caisses">Caisses</Link>.
+          Les résultats apparaissent dès le premier ticket du premier événement. L'événement du jour s'ouvre dans <Link to="/caisses">Caisses</Link>.
         </EtatVide>
       </Carte>
     );
@@ -78,7 +78,7 @@ export function Tableaux() {
           ))}
         </div>
         <label className="choix-match">
-          Match
+          Événement
           <select
             value={e.id}
             onChange={(ev) => {
@@ -107,7 +107,7 @@ export function Tableaux() {
         <aside className="resultats-panneau">
           <Carte titre="À surveiller">
             {d.alertes.length === 0 ? (
-              <div className="discret" style={{ fontSize: 12.5 }}>Rien à signaler sur ce match.</div>
+              <div className="discret" style={{ fontSize: 12.5 }}>Rien à signaler sur cet événement.</div>
             ) : (
               <div className="alertes-liste">
                 {d.alertes.map((a) => (
@@ -119,10 +119,10 @@ export function Tableaux() {
               </div>
             )}
           </Carte>
-          <Carte titre="Prochains matchs">
+          <Carte titre="Prochains événements">
             {d.prochains.length === 0 ? (
               <div className="discret" style={{ fontSize: 12.5 }}>
-                Aucun match à venir. <Link to="/parametres/saison">Préparer la saison</Link>
+                Aucun événement à venir. <Link to="/parametres/saison">Préparer la saison</Link>
               </div>
             ) : (
               <div className="alertes-liste">
@@ -140,21 +140,21 @@ export function Tableaux() {
 
       <Regles>
         <ul>
-          <li><strong>Source</strong> : le journal de caisse du match (ventes moins annulations). Rien n'est saisi ni estimé sur cet écran.</li>
+          <li><strong>Source</strong> : le journal de caisse de l'événement (ventes moins annulations). Rien n'est saisi ni estimé sur cet écran.</li>
           <li><strong>Tickets</strong> = ventes − annulations. <strong>Panier moyen</strong> = CA TTC ÷ tickets. <strong>CA par spectateur</strong> = CA TTC ÷ affluence saisie dans Paramètres → Saison ; sans affluence, il n'est pas calculé.</li>
-          <li><strong>Évolution</strong> : par rapport au match de comparaison (par défaut le match précédent qui a des ventes ; il se choisit dans l'onglet Ventes). Aucune évolution n'est affichée si la comparaison manque.</li>
+          <li><strong>Évolution</strong> : par rapport à l'événement de comparaison (par défaut l'événement précédent qui a des ventes ; il se choisit dans l'onglet Ventes). Aucune évolution n'est affichée si la comparaison manque.</li>
           <li><strong>Heures</strong> : heure de Paris ; une soirée qui passe minuit reste dans l'ordre.</li>
           <li><strong>CA HT et TVA</strong> : somme des lignes de ticket, TVA calculée à chaque vente selon le taux du produit.</li>
-          <li><strong>Coût matière</strong> = quantité vendue × coût saisi aujourd'hui sur la fiche produit (Paramètres → Produits & prix). FlaiX ne garde pas encore l'historique des coûts : si un coût change, la marge des matchs passés change aussi. <strong>Si un produit vendu n'a pas de coût, la marge brute n'est pas calculée</strong> (« coût manquant »), jamais affichée à 100 %.</li>
+          <li><strong>Coût matière</strong> = quantité vendue × coût saisi aujourd'hui sur la fiche produit (Paramètres → Produits & prix). FlaiX ne garde pas encore l'historique des coûts : si un coût change, la marge des événements passés change aussi. <strong>Si un produit vendu n'a pas de coût, la marge brute n'est pas calculée</strong> (« coût manquant »), jamais affichée à 100 %.</li>
           <li><strong>Marge brute</strong> = CA HT − coût matière. Le personnel, la commission, les frais et les autres dépenses ne sont pas encore saisis dans FlaiX : la marge nette de la soirée viendra avec eux.</li>
-          <li><strong>Marges</strong> : les repères du nuage sont les médianes du match (ventes et marge par vente des produits dont le coût est connu). « À revoir » = vendu plus que la médiane pour une marge par vente sous la médiane. Les pistes sont des calculs « à volume égal », pas des conseils.</li>
+          <li><strong>Marges</strong> : les repères du nuage sont les médianes de l'événement (ventes et marge par vente des produits dont le coût est connu). « À revoir » = vendu plus que la médiane pour une marge par vente sous la médiane. Les pistes sont des calculs « à volume égal », pas des conseils.</li>
         </ul>
       </Regles>
     </>
   );
 }
 
-/** Heures de la soirée (union des deux matchs, dans l'ordre de la soirée) et CA de chaque match par heure. */
+/** Heures de la soirée (union des deux événements, dans l'ordre de la soirée) et CA de chaque événement par heure. */
 function seriesHeures(a: StatsMatch, b: StatsMatch | null) {
   const toutes = [...new Set([...a.parHeure, ...(b?.parHeure ?? [])].map((h) => h.heure))].sort((x, y) => rangHeure(x) - rangHeure(y));
   if (toutes.length === 0) return { heures: [], actuel: [], avant: null };
@@ -230,9 +230,9 @@ function VueEnsemble({ d }: { d: Resultats }) {
 
       <div className="deux">
         <Carte titre="Ventes par catégorie" description="Part du CA TTC">
-          {parts.length ? <Anneau parts={parts} centre={{ valeur: euros(a.caTtc), libelle: "CA TTC du match" }} /> : <EtatVide titre="Aucune vente" />}
+          {parts.length ? <Anneau parts={parts} centre={{ valeur: euros(a.caTtc), libelle: "CA TTC de l'événement" }} /> : <EtatVide titre="Aucune vente" />}
         </Carte>
-        <Carte titre="Meilleurs produits du match">
+        <Carte titre="Meilleurs produits de l'événement">
           <div className="scroll-x">
             <table className="tableau">
               <thead>
@@ -299,7 +299,7 @@ function VueVentes({ d, autres, choisir }: { d: Resultats; autres: Resultats["ma
         }
       >
         {!c ? (
-          <EtatVide titre="Aucun autre match avec des ventes">La comparaison sera possible dès le deuxième match.</EtatVide>
+          <EtatVide titre="Aucun autre événement avec des ventes">La comparaison sera possible dès le deuxième événement.</EtatVide>
         ) : (
           <div className="comparaison">
             {cmp.map((k) => {
@@ -321,7 +321,7 @@ function VueVentes({ d, autres, choisir }: { d: Resultats; autres: Resultats["ma
 
       {c && (
         <Carte
-          titre="Par stand, d'un match à l'autre"
+          titre="Par stand, d'un événement à l'autre"
           actions={
             <div className="leg-inline">
               <span>
@@ -421,7 +421,7 @@ function VueFinances({ s }: { s: StatsMatch }) {
         )}
         <p className="note">
           Coût matière = coût saisi aujourd'hui sur chaque fiche produit.{" "}
-          {s.personnel.affectations === 0 ? "Aucun planning saisi pour ce match : le personnel n'est pas déduit (Équipe → Planning). " : "Personnel = heures réelles du planning × taux de chaque affectation. "}
+          {s.personnel.affectations === 0 ? "Aucun planning saisi pour cet événement : le personnel n'est pas déduit (Équipe → Planning). " : "Personnel = heures réelles du planning × taux de chaque affectation. "}
           Commission, frais et autres dépenses ne sont pas encore saisis dans FlaiX : ce n'est pas la marge nette de la soirée.
         </p>
       </Carte>
@@ -455,7 +455,7 @@ function VueFinances({ s }: { s: StatsMatch }) {
               </tbody>
             </table>
           </div>
-          <p className="note">Contribution du match à la déclaration de TVA, à remettre à l'expert-comptable : il y manque la TVA déductible sur les achats.</p>
+          <p className="note">Contribution de l'événement à la déclaration de TVA, à remettre à l'expert-comptable : il y manque la TVA déductible sur les achats.</p>
         </Carte>
         <Carte titre="Comment les clients ont payé" description={`${euros(s.caTtc)} TTC`}>
           <Empile
@@ -479,7 +479,7 @@ function VueMarges({ s }: { s: StatsMatch }) {
     <>
       <Carte
         titre="Ce qui se vend, ce qui rapporte"
-        description={repere ? `Repères : médianes du match, ${Math.round(repere.quantite)} ventes et ${euros(Math.round(repere.margeParVente))} de marge par vente` : undefined}
+        description={repere ? `Repères : médianes de l'événement, ${Math.round(repere.quantite)} ventes et ${euros(Math.round(repere.margeParVente))} de marge par vente` : undefined}
       >
         {repere ? (
           <div className="graphe-defile">
@@ -495,7 +495,7 @@ function VueMarges({ s }: { s: StatsMatch }) {
         )}
       </Carte>
       {pistes.length > 0 && (
-        <Carte titre="Pistes pour le prochain match" description="Calculées sur tes ventes et tes coûts, à toi de décider.">
+        <Carte titre="Pistes pour le prochain événement" description="Calculées sur tes ventes et tes coûts, à toi de décider.">
           <div className="pistes">
             {pistes.map((p) => (
               <div key={p.produit} className="piste-item">
@@ -555,7 +555,7 @@ function VueRapports({ d, choisir }: { d: Resultats; choisir: (id: string) => vo
   const max = Math.max(...chrono.map((m) => m.caTtc), 1);
   return (
     <>
-      <Carte titre="La saison, match par match" description={`${euros(total)} sur ${chrono.length} match${chrono.length > 1 ? "s" : ""} · moyenne ${euros(Math.round(total / Math.max(chrono.length, 1)))}`}>
+      <Carte titre="La saison, événement par événement" description={`${euros(total)} sur ${chrono.length} événement${chrono.length > 1 ? "s" : ""} · moyenne ${euros(Math.round(total / Math.max(chrono.length, 1)))}`}>
         <div className="saison" role="img" aria-label={chrono.map((m) => `${m.libelle} ${euros(m.caTtc)}`).join(", ")}>
           {chrono.map((m) => (
             <button key={m.id} className={`col${m.id === d.evenement!.id ? " actif" : ""}`} onClick={() => choisir(m.id)} title={`${m.libelle} : ${euros(m.caTtc)}`}>
@@ -566,12 +566,12 @@ function VueRapports({ d, choisir }: { d: Resultats; choisir: (id: string) => vo
           ))}
         </div>
       </Carte>
-      <Carte titre="Matchs" description="Chiffres clés de chaque match ; le rapport de soirée imprimable viendra ensuite.">
+      <Carte titre="Événements" description="Chiffres clés de chaque événement ; le rapport de soirée imprimable viendra ensuite.">
         <div className="scroll-x">
           <table className="tableau">
             <thead>
               <tr>
-                <th>Match</th>
+                <th>Événement</th>
                 <th>État</th>
                 <th className="d">CA TTC</th>
                 <th className="d">Tickets</th>

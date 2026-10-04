@@ -119,7 +119,7 @@ export async function statsMatch(c: Client, lieuId: string, e: Evenement): Promi
   };
 }
 
-/** « À surveiller » : ce qui mérite un regard du directeur sur ce match, sans rien interpréter. */
+/** « À surveiller » : ce qui mérite un regard du directeur sur cet événement, sans rien interpréter. */
 async function alertes(c: Client, lieuId: string, e: Evenement, s: StatsMatch): Promise<AlerteResultat[]> {
   const liste: AlerteResultat[] = [];
   const { rows: signal } = await c.query<{ prix: number; heure: number; hors_ligne: number }>(
@@ -130,7 +130,7 @@ async function alertes(c: Client, lieuId: string, e: Evenement, s: StatsMatch): 
     [lieuId, e.id],
   );
   const g = signal[0]!;
-  if (g.prix) liste.push({ niveau: "forte", titre: `${g.prix} ticket${g.prix > 1 ? "s" : ""} avec un écart de prix`, detail: "Vendu à un autre prix que le tarif en vigueur : Caisses → Tickets du match" });
+  if (g.prix) liste.push({ niveau: "forte", titre: `${g.prix} ticket${g.prix > 1 ? "s" : ""} avec un écart de prix`, detail: "Vendu à un autre prix que le tarif en vigueur : Caisses → Tickets de l'événement" });
   if (g.heure) liste.push({ niveau: "forte", titre: `${g.heure} ticket${g.heure > 1 ? "s" : ""} à l'heure incohérente`, detail: "Horloge d'une tablette à vérifier" });
   const { rows: ecarts } = await c.query<{ numero: number; ecart: number; seuil: number }>(
     `SELECT DISTINCT ON (ce.session_id) k.numero, ce.ecart_centimes AS ecart, ce.seuil_centimes AS seuil
@@ -143,13 +143,13 @@ async function alertes(c: Client, lieuId: string, e: Evenement, s: StatsMatch): 
     liste.push({ niveau: "forte", titre: `Caisse ${x.numero} : écart d'espèces de ${formaterMontant(x.ecart)}`, detail: `Au-delà de la tolérance de ${formaterMontant(x.seuil)} : Clôtures` });
   }
   if (e.etat === "ouvert" && e.caissesOuvertes > 0) liste.push({ niveau: "normale", titre: `${e.caissesOuvertes} caisse${e.caissesOuvertes > 1 ? "s" : ""} encore ouverte${e.caissesOuvertes > 1 ? "s" : ""}`, detail: "Les chiffres bougent encore" });
-  if (s.annulations.nombre) liste.push({ niveau: "normale", titre: `${s.annulations.nombre} annulation${s.annulations.nombre > 1 ? "s" : ""}`, detail: `${formaterMontant(s.annulations.montant)} annulés : Caisses → Tickets du match` });
+  if (s.annulations.nombre) liste.push({ niveau: "normale", titre: `${s.annulations.nombre} annulation${s.annulations.nombre > 1 ? "s" : ""}`, detail: `${formaterMontant(s.annulations.montant)} annulés : Caisses → Tickets de l'événement` });
   if (s.produitsSansCout.length) {
     const part = s.caHt > 0 ? Math.round((s.caHtSansCout / s.caHt) * 100) : 0;
     liste.push({ niveau: "normale", titre: `Coût manquant sur ${s.produitsSansCout.length} produit${s.produitsSansCout.length > 1 ? "s" : ""}`, detail: `${part} % du CA HT sans marge calculable : Paramètres → Produits & prix` });
   }
   if (e.spectateurs === null) liste.push({ niveau: "normale", titre: "Affluence non saisie", detail: "Pour le CA par spectateur : Paramètres → Saison" });
-  if (g.hors_ligne) liste.push({ niveau: "normale", titre: `${g.hors_ligne} ticket${g.hors_ligne > 1 ? "s" : ""} enregistré${g.hors_ligne > 1 ? "s" : ""} hors ligne`, detail: "Réseau coupé pendant le match : tickets reçus ensuite" });
+  if (g.hors_ligne) liste.push({ niveau: "normale", titre: `${g.hors_ligne} ticket${g.hors_ligne > 1 ? "s" : ""} enregistré${g.hors_ligne > 1 ? "s" : ""} hors ligne`, detail: "Réseau coupé pendant l'événement : tickets reçus ensuite" });
   return liste;
 }
 
@@ -168,12 +168,12 @@ export async function routesResultats(app: FastifyInstance, { base }: { base: Ba
         .slice(0, 3)
         .map((e) => ({ id: e.id, libelle: e.libelle, debut: e.debut }));
 
-      // Match affiché : celui demandé ; sinon le match ouvert s'il a des ventes ; sinon le plus récent qui en a.
+      // Événement affiché : celui demandé ; sinon l'événement ouvert s'il a des ventes ; sinon le plus récent qui en a.
       const ouvert = evenements.find((e) => e.etat === "ouvert" && avecVentes.has(e.id));
       const evenement = evenements.find((e) => e.id === choix.evenementId) ?? ouvert ?? evenements.find((e) => e.id === matchs[0]?.id) ?? null;
       if (!evenement) return { matchs, evenement: null, comparaison: null, actuel: null, precedent: null, alertes: [], prochains };
 
-      // Comparaison : celle demandée ; sinon le match joué juste avant qui a des ventes (liste déjà dans l'ordre où ils ont été joués).
+      // Comparaison : celle demandée ; sinon l'événement joué juste avant qui a des ventes (liste déjà dans l'ordre où ils ont été joués).
       const rang = matchs.findIndex((m) => m.id === evenement.id);
       const anterieur = rang >= 0 ? matchs[rang + 1] : matchs.find((m) => m.id !== evenement.id);
       const comparaison = evenements.find((e) => e.id === choix.comparaison && e.id !== evenement.id) ?? evenements.find((e) => e.id === anterieur?.id) ?? null;

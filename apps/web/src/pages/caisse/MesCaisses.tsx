@@ -9,7 +9,7 @@ import { BoutonTicketClient } from "./TicketClient.tsx";
 
 const ETAT = { a_venir: "à venir", ouvert: "ouvert", clos: "clos" } as const;
 
-/** Match affiché par défaut : celui qui est ouvert, sinon le plus récent déjà clos, sinon le prochain à venir. */
+/** Événement affiché par défaut : celui qui est ouvert, sinon le plus récent déjà clos, sinon le prochain à venir. */
 function matchParDefaut(evts: Evenement[]): string | null {
   const date = (e: Evenement) => new Date(e.debut).getTime();
   const clos = evts.filter((e) => e.etat === "clos").sort((a, b) => date(b) - date(a))[0];
@@ -32,11 +32,11 @@ export function MesCaisses() {
     <>
       <EntetePage
         titre="Caisses"
-        description="Le match du jour, toutes les caisses du lieu en direct, et les tickets du match choisi."
+        description="L'événement du jour, toutes les caisses du lieu en direct, et les tickets de l'événement choisi."
         actions={
           evts.length > 0 && (
             <label className="champ" style={{ minWidth: 260 }}>
-              <span>Match</span>
+              <span>Événement</span>
               <select value={evenementId ?? ""} onChange={(e) => setParams({ match: e.target.value, vue: onglet })}>
                 {evts.map((e) => (
                   <option key={e.id} value={e.id}>
@@ -50,8 +50,8 @@ export function MesCaisses() {
       />
       {evts.length === 0 ? (
         <Carte>
-          <EtatVide titre="Aucun match dans la saison">
-            Crée un match dans <Link to="/parametres/saison">Paramètres → Saison</Link>, puis ouvre-le ici le jour du match.
+          <EtatVide titre="Aucun événement dans la saison">
+            Crée un événement dans <Link to="/parametres/saison">Paramètres → Saison</Link>, puis ouvre-le ici le jour de l'événement.
           </EtatVide>
         </Carte>
       ) : (
@@ -59,7 +59,7 @@ export function MesCaisses() {
           <MatchDuJour evts={evts} />
           {evt && evt.etat !== "ouvert" && (
             <div className="message message-info">
-              Ce match est {ETAT[evt.etat]}. {evt.etat === "a_venir" ? "Ses caisses s'ouvriront quand tu l'auras ouvert ci-dessus." : "Ses chiffres sont définitifs."}
+              Cet événement est {ETAT[evt.etat]}. {evt.etat === "a_venir" ? "Ses caisses s'ouvriront quand tu l'auras ouvert ci-dessus." : "Ses chiffres sont définitifs."}
             </div>
           )}
           <div className="onglets">
@@ -67,7 +67,7 @@ export function MesCaisses() {
               En direct
             </button>
             <button className={`onglet${onglet === "tickets" ? " actif" : ""}`} onClick={() => { setOnglet("tickets"); setParams({ match: evenementId ?? "", vue: "tickets" }); }}>
-              Tickets du match
+              Tickets de l'événement
             </button>
           </div>
           {evenementId && (onglet === "caisses" ? <TableauCaisses evenementId={evenementId} /> : <JournalTickets evenementId={evenementId} matchOuvert={evt?.etat === "ouvert"} />)}
@@ -75,9 +75,9 @@ export function MesCaisses() {
       )}
       <Regles>
         <ul>
-          <li><strong>Match du jour</strong> : un seul match peut être ouvert à la fois, et les caisses ne s'ouvrent que pendant un match ouvert. L'ouverture est définitive (un match ne revient jamais à « à venir ») ; il se clôt ensuite dans <strong>Clôtures</strong>, une fois toutes ses caisses clôturées.</li>
-          <li><strong>En direct</strong> : pour chaque caisse, sur le match choisi, le nombre de tickets, le chiffre d'affaires net (ventes moins annulations), le panier moyen (CA net ÷ tickets non annulés), la part espèces et carte, et l'heure du dernier ticket. L'état « ouverte » est en direct, quel que soit le match affiché.</li>
-          <li><strong>Tickets du match</strong> : tous les tickets du match, toutes caisses confondues, en lecture seule. Filtres par stand, caisse, opérateur, mode de règlement, n° de justificatif ou produit.</li>
+          <li><strong>Événement du jour</strong> : un seul événement peut être ouvert à la fois, et les caisses ne s'ouvrent que pendant un événement ouvert. L'ouverture est définitive (un événement ne revient jamais à « à venir ») ; il se clôt ensuite dans <strong>Clôtures</strong>, une fois toutes ses caisses clôturées.</li>
+          <li><strong>En direct</strong> : pour chaque caisse, sur l'événement choisi, le nombre de tickets, le chiffre d'affaires net (ventes moins annulations), le panier moyen (CA net ÷ tickets non annulés), la part espèces et carte, et l'heure du dernier ticket. L'état « ouverte » est en direct, quel que soit l'événement affiché.</li>
+          <li><strong>Tickets de l'événement</strong> : tous les tickets de l'événement, toutes caisses confondues, en lecture seule. Filtres par stand, caisse, opérateur, mode de règlement, n° de justificatif ou produit.</li>
           <li><strong>Annuler un ticket</strong> : sur l'écran de sa caisse (« Tickets de la session »), tant qu'elle est ouverte — la caisse est seule à écrire sa chaîne pendant la session, condition de la vente sans réseau. Le ticket d'origine n'est jamais modifié ni supprimé ; un ticket d'annulation, de montant opposé, le référence, avec son motif et son auteur. Après la clôture, une correction passe par une rectification tracée.</li>
           <li><strong>Signalements</strong> : le serveur contrôle chaque ticket reçu d'une caisse. Sans le refuser (la vente a eu lieu), il signale un ticket <strong>enregistré hors ligne</strong> (reçu plus d'une minute après la vente), un <strong>écart de prix</strong> avec le tarif en vigueur à l'heure de la vente, un produit <strong>hors stand</strong>, un <strong>taux abonné</strong> différent de celui du lieu, ou une <strong>heure incohérente</strong>.</li>
           <li><strong>Vérifier l'intégrité</strong> : relit la chaîne de chaque caisse dans son ordre réel d'enregistrement (jamais dans l'ordre d'affichage) et contrôle chaque empreinte. Toute modification, suppression ou insertion frauduleuse est localisée à l'événement près.</li>
@@ -88,7 +88,7 @@ export function MesCaisses() {
 }
 
 /**
- * Match du jour : l'ouverture du match se fait ici depuis le 2026-09-29 (déplacée du
+ * Événement du jour : l'ouverture de l'événement se fait ici depuis le 2026-09-29 (déplacée du
  * calendrier, dossier §15.96). Elle est définitive, d'où l'étape de confirmation.
  */
 function MatchDuJour({ evts }: { evts: Evenement[] }) {
@@ -108,10 +108,10 @@ function MatchDuJour({ evts }: { evts: Evenement[] }) {
     return (
       <div className="message message-ok en-ligne" style={{ justifyContent: "space-between" }}>
         <span>
-          Match ouvert : <strong>{ouvert.libelle}</strong> · {formaterDateHeure(ouvert.debut)} · {ouvert.caissesOuvertes} caisse{ouvert.caissesOuvertes > 1 ? "s" : ""} ouverte{ouvert.caissesOuvertes > 1 ? "s" : ""}
+          Événement ouvert : <strong>{ouvert.libelle}</strong> · {formaterDateHeure(ouvert.debut)} · {ouvert.caissesOuvertes} caisse{ouvert.caissesOuvertes > 1 ? "s" : ""} ouverte{ouvert.caissesOuvertes > 1 ? "s" : ""}
         </span>
         <Link className="btn btn-fantome" to="/clotures">
-          Clôturer le match
+          Clôturer l'événement
         </Link>
       </div>
     );
@@ -121,13 +121,13 @@ function MatchDuJour({ evts }: { evts: Evenement[] }) {
   if (aVenir.length === 0) {
     return (
       <div className="message message-info">
-        Aucun match à venir. Ajoute le prochain dans <Link to="/parametres/saison">Paramètres → Saison</Link>.
+        Aucun événement à venir. Ajoute le prochain dans <Link to="/parametres/saison">Paramètres → Saison</Link>.
       </div>
     );
   }
   return (
-    <Carte titre="Match du jour"
-        actions={ouvert ? <Link to="/direct" className="btn btn-fantome">Vue téléphone</Link> : undefined} description="Ouvre le match avant d'ouvrir les caisses. Un seul match peut être ouvert à la fois, et l'ouverture est définitive.">
+    <Carte titre="Événement du jour"
+        actions={ouvert ? <Link to="/direct" className="btn btn-fantome">Vue téléphone</Link> : undefined} description="Ouvre l'événement avant d'ouvrir les caisses. Un seul événement peut être ouvert à la fois, et l'ouverture est définitive.">
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {aVenir.slice(0, 3).map((e) => (
           <div key={e.id} className="caisse">
@@ -149,7 +149,7 @@ function MatchDuJour({ evts }: { evts: Evenement[] }) {
                 </>
               ) : (
                 <button className="btn" onClick={() => setAConfirmer(e.id)}>
-                  Ouvrir le match
+                  Ouvrir l'événement
                 </button>
               )}
             </div>
@@ -195,11 +195,11 @@ function TableauCaisses({ evenementId }: { evenementId: string }) {
         </div>
         <div className="kpi">
           <div className="kpi-valeur">{tickets}</div>
-          <div className="kpi-libelle">tickets sur ce match</div>
+          <div className="kpi-libelle">tickets sur cet événement</div>
         </div>
         <div className="kpi">
           <div className="kpi-valeur">{formaterMontant(caNet)}</div>
-          <div className="kpi-libelle">CA net TTC sur ce match</div>
+          <div className="kpi-libelle">CA net TTC sur cet événement</div>
         </div>
         <div className="kpi">
           <div className="kpi-valeur" style={{ fontSize: 15 }}>
@@ -334,7 +334,7 @@ function JournalTickets({ evenementId, matchOuvert }: { evenementId: string; mat
   return (
     <Carte titre={`Tickets (${filtres2.length})`} description="Clique un ticket pour voir ses lignes, sa remise ou son offert, sa TVA et son empreinte.">
       {liste.length === 0 ? (
-        <EtatVide titre="Aucun ticket sur ce match" />
+        <EtatVide titre="Aucun ticket sur cet événement" />
       ) : (
         <>
           <div className="en-ligne" style={{ marginBottom: 12, alignItems: "flex-end" }}>

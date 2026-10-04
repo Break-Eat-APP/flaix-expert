@@ -30,7 +30,7 @@ async function lireFrais(c: Client, lieuId: string): Promise<FraisDate[]> {
 }
 
 async function couts(c: Client, lieuId: string, demande: string | undefined): Promise<CoutsBuvette> {
-  // Mois joués (match ouvert ou clos), heure de Paris.
+  // Mois joués (événement ouvert ou clos), heure de Paris.
   const { rows: mois } = await c.query<{ cle: string; matchs: number }>(
     `SELECT to_char(debut AT TIME ZONE 'Europe/Paris', 'YYYY-MM') AS cle, count(*)::int AS matchs
        FROM evenement WHERE lieu_id = $1 AND etat IN ('ouvert', 'clos') GROUP BY 1 ORDER BY 1 DESC`,
@@ -41,7 +41,7 @@ async function couts(c: Client, lieuId: string, demande: string | undefined): Pr
   const cle = demande ?? mois[0]?.cle ?? null;
   const moisDisponibles = mois.map((m) => ({ cle: m.cle, libelle: libelleMois(m.cle), matchs: m.matchs }));
   if (!cle) {
-    // Aucun match joué : les stands sont listés quand même, pour la saisie des frais.
+    // Aucun événement joué : les stands sont listés quand même, pour la saisie des frais.
     const vides = stands
       .filter((st) => st.actif)
       .map((st) =>

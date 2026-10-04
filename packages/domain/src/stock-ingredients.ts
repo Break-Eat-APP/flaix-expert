@@ -2,7 +2,7 @@
  * Stock des ingrédients, au choix ingrédient par ingrédient (décision de Rémi, dossier §15.124).
  *
  * Mêmes règles que le stock des produits (stock.ts), en millièmes de l'unité d'achat :
- *   départ    = reste du match précédent + mise en place
+ *   départ    = reste de l'événement précédent + mise en place
  *   restant   = départ + réassort − consommé      (consommé = Σ produits vendus × leur recette)
  *   écart     = compté − restant, valorisé au prix de l'ingrédient
  *   prix      = coût moyen pondéré après chaque livraison (prix total ÷ quantité livrée)
@@ -54,7 +54,7 @@ export interface LigneStockIngredient {
   miseEnPlace: number;
   miseEnPlaceDerniere: { par: string; le: string } | null;
   reassort: number;
-  /** Consommation théorique : produits vendus × recette (figée à la clôture du match). */
+  /** Consommation théorique : produits vendus × recette (figée à la clôture de l'événement). */
   consomme: number;
   depart: number;
   restant: number;

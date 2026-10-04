@@ -60,8 +60,8 @@ export function Resultats({ session }: { session: SessionInfo }) {
       fait: nbMatchs > 0,
       titre: "Préparer la saison",
       texte: nbMatchs
-        ? `${nbMatchs} match(s) dans la saison. Le jour du match, ouvre-le depuis « Caisses », puis ouvre les caisses.`
-        : "Chaque match auquel se rattacheront les ventes de la soirée.",
+        ? `${nbMatchs} événement(s) dans la saison. Le jour de l'événement, ouvre-le depuis « Caisses », puis ouvre les caisses.`
+        : "Chaque événement auquel se rattacheront les ventes de la soirée.",
       lien: "/parametres/saison",
     },
   ];
@@ -83,7 +83,7 @@ export function Resultats({ session }: { session: SessionInfo }) {
         <Link to="/direct" className="carte direct-accroche">
           <Radio size={18} />
           <span style={{ minWidth: 0 }}>
-            <strong>{enCours.libelle} : match en cours</strong>
+            <strong>{enCours.libelle} : événement en cours</strong>
             <span className="discret"> — CA, caisses et ruptures en direct</span>
           </span>
         </Link>

@@ -18,7 +18,7 @@ const surFrise = (h: string) => {
 };
 
 /**
- * Équipe → Planning (module 14, §15.72, §15.80, §15.87, §15.104) : les affectations d'un match,
+ * Équipe → Planning (module 14, §15.72, §15.80, §15.87, §15.104) : les affectations d'un événement,
  * prévues puis réelles, avec la frise horaire par stand « d'un coup d'œil ».
  */
 export function PlanningVue() {
@@ -46,8 +46,8 @@ export function PlanningVue() {
   if (!p) {
     return (
       <Carte>
-        <EtatVide titre="Aucun match dans la saison">
-          Crée d'abord les matchs dans <Link to="/parametres/saison">Paramètres → Saison</Link>, puis prépare leur planning ici.
+        <EtatVide titre="Aucun événement dans la saison">
+          Crée d'abord les événements dans <Link to="/parametres/saison">Paramètres → Saison</Link>, puis prépare leur planning ici.
         </EtatVide>
       </Carte>
     );
@@ -61,9 +61,9 @@ export function PlanningVue() {
     <>
       <Carte
         titre={`Planning — ${e.libelle}`}
-        description={`${formaterDateHeure(e.debut)} · match ${ETAT[e.etat]}`}
+        description={`${formaterDateHeure(e.debut)} · événement ${ETAT[e.etat]}`}
         actions={
-          <select value={e.id} onChange={(ev) => setEvenementId(ev.target.value)} aria-label="Match">
+          <select value={e.id} onChange={(ev) => setEvenementId(ev.target.value)} aria-label="Événement">
             {evts.map((x) => (
               <option key={x.id} value={x.id}>
                 {dateCourte.format(new Date(x.debut))} — {x.libelle} ({ETAT[x.etat]})
@@ -74,12 +74,12 @@ export function PlanningVue() {
       >
         {e.etat === "a_venir" && (
           <div className="message message-info" style={{ marginTop: 0 }}>
-            Match à venir : seules les heures prévues ont un sens ici. Les heures réelles restent égales aux prévues jusqu'à ce qu'elles soient corrigées après le match.
+            Événement à venir : seules les heures prévues ont un sens ici. Les heures réelles restent égales aux prévues jusqu'à ce qu'elles soient corrigées après l'événement.
           </div>
         )}
         <div className="kpis" style={{ marginBottom: 0 }}>
           <div className="kpi">
-            <div className="kpi-libelle">Coût réel du match</div>
+            <div className="kpi-libelle">Coût réel de l'événement</div>
             <div className="kpi-valeur">{p.masseReelle === null ? "—" : formaterMontant(p.masseReelle)}</div>
           </div>
           <div className="kpi">
@@ -97,7 +97,7 @@ export function PlanningVue() {
         </div>
         {p.tauxManquants > 0 && (
           <div className="message message-alerte">
-            <strong>Taux manquant</strong> sur {p.tauxManquants} affectation{p.tauxManquants > 1 ? "s" : ""} : le coût du match n'est pas calculé. Complète le taux sur la fiche, puis retire et remets l'affectation (le taux est figé à sa création).
+            <strong>Taux manquant</strong> sur {p.tauxManquants} affectation{p.tauxManquants > 1 ? "s" : ""} : le coût de l'événement n'est pas calculé. Complète le taux sur la fiche, puis retire et remets l'affectation (le taux est figé à sa création).
           </div>
         )}
       </Carte>
@@ -106,7 +106,7 @@ export function PlanningVue() {
 
       <Carte titre={`Affectations (${p.affectations.length})`} description="Les heures se corrigent directement dans le tableau ; la correction du réel garde son auteur et son heure.">
         {p.affectations.length === 0 ? (
-          <EtatVide titre="Personne n'est encore affecté à ce match" />
+          <EtatVide titre="Personne n'est encore affecté à cet événement" />
         ) : (
           <div className="scroll-x">
             <table className="tableau planning">
@@ -129,7 +129,7 @@ export function PlanningVue() {
               <tfoot>
                 <tr>
                   <td colSpan={5}>
-                    <strong>Coût réel du match</strong>
+                    <strong>Coût réel de l'événement</strong>
                   </td>
                   <td className="d chiffre">
                     <strong>{p.masseReelle === null ? "—" : formaterMontant(p.masseReelle)}</strong>
@@ -458,7 +458,7 @@ export function MasseSalarialeVue() {
         <div className="kpi">
           <div className="kpi-libelle">Masse salariale de la saison</div>
           <div className="kpi-valeur">{formaterMontant(m.total)}</div>
-          <div className="aide">sur {m.parMatch.length} match{m.parMatch.length > 1 ? "s" : ""} planifié{m.parMatch.length > 1 ? "s" : ""}</div>
+          <div className="aide">sur {m.parMatch.length} événement{m.parMatch.length > 1 ? "s" : ""} planifié{m.parMatch.length > 1 ? "s" : ""}</div>
         </div>
         <div className="kpi">
           <div className="kpi-libelle">Salariés</div>
@@ -471,12 +471,12 @@ export function MasseSalarialeVue() {
           <div className="aide">{part(m.interimaires)}</div>
         </div>
       </div>
-      <Carte titre="Par match" description="Somme des coûts réels du planning ; une affectation sans taux n'est pas comptée.">
+      <Carte titre="Par événement" description="Somme des coûts réels du planning ; une affectation sans taux n'est pas comptée.">
         <div className="scroll-x">
           <table className="tableau">
             <thead>
               <tr>
-                <th>Match</th>
+                <th>Événement</th>
                 <th className="d">Affectations</th>
                 <th className="d">Salariés</th>
                 <th className="d">Intérimaires</th>

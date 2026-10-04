@@ -6,7 +6,7 @@ import { formaterMontant, libelleTauxTva, type ClotureVue, type EtatClotures, ty
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EtatVide, MessageErreur } from "../../composants/communs.tsx";
 
-const NIVEAU = { match: "Z du match", mois: "Mois", exercice: "Exercice" } as const;
+const NIVEAU = { match: "Z de l'événement", mois: "Mois", exercice: "Exercice" } as const;
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 
 /**
@@ -41,7 +41,7 @@ export function Periodes() {
         <div style={{ minWidth: 150 }}>
           <strong>{p.libelle}</strong>
           <div className="discret" style={{ fontSize: 12 }}>
-            {p.matchs.length ? `${clos} / ${p.matchs.length} match${p.matchs.length > 1 ? "s" : ""} clos` : "aucun match"}
+            {p.matchs.length ? `${clos} / ${p.matchs.length} événement${p.matchs.length > 1 ? "s" : ""} clos` : "aucun événement"}
           </div>
         </div>
         <span className="chiffre" style={{ fontSize: 13 }}>
@@ -106,9 +106,9 @@ export function Periodes() {
       </div>
       <MessageErreur erreur={cloturer.error} />
 
-      <Carte titre="Mois" description="Un mois se clôture une fois terminé, tous ses matchs clos, et après le mois précédent.">
+      <Carte titre="Mois" description="Un mois se clôture une fois terminé, tous ses événements clos, et après le mois précédent.">
         {e.mois.every((m) => m.matchs.length === 0) ? (
-          <EtatVide titre="Aucun match pour l'instant" />
+          <EtatVide titre="Aucun événement pour l'instant" />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{e.mois.filter((m) => m.matchs.length > 0 || !m.cloture).map((m) => ligne(m, "mois"))}</div>
         )}
@@ -119,12 +119,12 @@ export function Periodes() {
           <div className="message message-alerte" style={{ margin: 0 }}>
             Premier mois de l'exercice comptable pas encore réglé : il se règle dans <Link to="/parametres/lieu">Paramètres → Le lieu</Link>, avec l'expert-comptable du lieu. Les mois se clôturent en attendant.
           </div>
-        ) : e.exercices.length === 0 ? <EtatVide titre="Aucun exercice avec des matchs" /> : <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{e.exercices.map((x) => ligne(x, "exercice"))}</div>}
+        ) : e.exercices.length === 0 ? <EtatVide titre="Aucun exercice avec des événements" /> : <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{e.exercices.map((x) => ligne(x, "exercice"))}</div>}
       </Carte>
 
       <Carte
         titre="Clôtures scellées"
-        description="Chaque Z de match, mois et exercice, chaîné au précédent. Aucune ne se modifie ni ne se supprime."
+        description="Chaque Z d'événement, mois et exercice, chaîné au précédent. Aucune ne se modifie ni ne se supprime."
         actions={
           <button className="btn btn-fantome" disabled={verifier.isPending} onClick={() => verifier.mutate()}>
             <ShieldCheck size={15} /> Vérifier l'intégrité
@@ -143,7 +143,7 @@ export function Periodes() {
           ))}
         <MessageErreur erreur={verifier.error} />
         {e.historique.length === 0 ? (
-          <EtatVide titre="Aucune clôture pour l'instant">Le premier Z est créé à la clôture du premier match.</EtatVide>
+          <EtatVide titre="Aucune clôture pour l'instant">Le premier Z est créé à la clôture du premier événement.</EtatVide>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {e.historique.map((h) => (

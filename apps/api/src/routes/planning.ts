@@ -115,7 +115,7 @@ export function totauxAffectations(liste: Affectation[]) {
   };
 }
 
-/** Personnel d'un match pour Résultats → Finances (§15.104 point 5). */
+/** Personnel d'un événement pour Résultats → Finances (§15.104 point 5). */
 export async function personnelDuMatch(c: Client, lieuId: string, evenementId: string) {
   const liste = await affectationsDuMatch(c, lieuId, evenementId);
   const t = totauxAffectations(liste);
@@ -153,7 +153,7 @@ export async function routesPlanning(app: FastifyInstance, { base }: { base: Bas
     const { evenementId } = ParEvenement.parse(req.query);
     return base.transaction(contexte(auth), async (c) => {
       const evts = await listerEvenements(c, auth.lieuId);
-      // Par défaut : le match ouvert, sinon le prochain à venir, sinon le plus récent.
+      // Par défaut : l'événement ouvert, sinon le prochain à venir, sinon le plus récent.
       const prochains = evts.filter((e) => e.etat === "a_venir").sort((a, b) => Date.parse(a.debut) - Date.parse(b.debut));
       const joues = [...evts].sort((a, b) => Date.parse(b.ouvertLe ?? b.debut) - Date.parse(a.ouvertLe ?? a.debut));
       const e = evts.find((x) => x.id === evenementId) ?? evts.find((x) => x.etat === "ouvert") ?? prochains[0] ?? joues[0];
@@ -166,7 +166,7 @@ export async function routesPlanning(app: FastifyInstance, { base }: { base: Bas
     const a = corps(NouvelleAffectation, req);
     const resultat = await base.transaction(contexte(auth), async (c) => {
       const evenement = (await listerEvenements(c, auth.lieuId)).find((e) => e.id === a.evenementId);
-      if (!evenement) throw introuvable("Match");
+      if (!evenement) throw introuvable("Événement");
       const { rows } = await c.query<{ nom: string; role: RoleEquipe; taux: number | null; actif: boolean }>(
         "SELECT nom, role, taux_horaire_centimes AS taux, actif FROM employe WHERE lieu_id = $1 AND id = $2",
         [auth.lieuId, a.employeId],

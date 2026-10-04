@@ -112,7 +112,7 @@ export interface EntreeJournalTechnique {
 }
 
 // ---------------------------------------------------------------------------
-// Matchs, caisses, tickets (étape 1, dossier §15.94)
+// Événements, caisses, tickets (étape 1, dossier §15.94)
 // ---------------------------------------------------------------------------
 
 export type EtatEvenement = "a_venir" | "ouvert" | "clos";
@@ -244,7 +244,7 @@ export interface StatsCaisse {
   standNom: string;
   actif: boolean;
   especesAutorisees: boolean;
-  /** Session ouverte en ce moment, quel que soit le match affiché. */
+  /** Session ouverte en ce moment, quel que soit l'événement affiché. */
   ouverteMaintenant: { par: string; depuis: string; evenementLibelle: string } | null;
   nbVentes: number;
   nbAnnulations: number;
@@ -256,7 +256,7 @@ export interface StatsCaisse {
 }
 
 // ---------------------------------------------------------------------------
-// Clôture du match (dossier §15.102) : ventes, restes, espèces, clôture
+// Clôture de l'événement (dossier §15.102) : ventes, restes, espèces, clôture
 // ---------------------------------------------------------------------------
 
 /** Comptage du tiroir d'une session de caisse (le « Z »), ou rectification qui s'y ajoute. */
@@ -278,7 +278,7 @@ export interface ComptageEspeces {
   le: string;
 }
 
-/** Une session de caisse du match, vue depuis la clôture. */
+/** Une session de caisse de l'événement, vue depuis la clôture. */
 export interface SessionACloturer {
   sessionId: string;
   caisseId: string;
@@ -296,7 +296,7 @@ export interface SessionACloturer {
   /** null : caisse « carte uniquement », pas de tiroir à compter. */
   fond: Centimes | null;
   attendu: Centimes | null;
-  /** Espèces retirées du tiroir et portées au coffre pendant le match (§15.106). */
+  /** Espèces retirées du tiroir et portées au coffre pendant l'événement (§15.106). */
   remontees: RemonteeCoffre[];
   /** Total net des remontées (annulations déduites). */
   totalRemonte: Centimes;
@@ -313,7 +313,7 @@ export interface RemonteeCoffre {
   annulee: { motif: string; par: string; le: string } | null;
 }
 
-/** Z du coffre de la soirée (§15.106) : attendu = total des remontées du match. */
+/** Z du coffre de la soirée (§15.106) : attendu = total des remontées de l'événement. */
 export interface ComptageCoffre {
   id: string;
   type: "comptage" | "rectification";
@@ -336,13 +336,13 @@ export interface ClotureMatch {
   /** Coffre de la soirée : à compter dès qu'il y a eu une remontée. */
   coffre: { requis: boolean; attendu: Centimes; comptage: ComptageCoffre | null; rectifications: ComptageCoffre[] };
   etapes: {
-    /** Toutes les caisses du match sont clôturées. */
+    /** Toutes les caisses de l'événement sont clôturées. */
     ventes: boolean;
-    /** Comptage des restes (§15.105) : obligatoire dès que le match a une mise en place ou un réassort. */
+    /** Comptage des restes (§15.105) : obligatoire dès que l'événement a une mise en place ou un réassort. */
     restes: { requis: boolean; manquants: number };
     /** Chaque tiroir (session avec espèces) a son Z. */
     especes: boolean;
-    /** Le match peut être clos définitivement. */
+    /** L'événement peut être clos définitivement. */
     cloturable: boolean;
   };
 }
@@ -449,7 +449,7 @@ export interface StatsMatch {
   margeBrute: Centimes | null;
   produitsSansCout: string[];
   caHtSansCout: Centimes;
-  /** Personnel du match lu dans le planning (§15.104) ; reel null si un taux manque. */
+  /** Personnel de l'événement lu dans le planning (§15.104) ; reel null si un taux manque. */
   personnel: { reel: Centimes | null; affectations: number; tauxManquants: number };
 }
 
@@ -470,7 +470,7 @@ export interface MatchResume {
 }
 
 export interface Resultats {
-  /** Tous les matchs qui ont des ventes, du plus récent au plus ancien. */
+  /** Tous les événements qui ont des ventes, du plus récent au plus ancien. */
   matchs: MatchResume[];
   evenement: Evenement | null;
   comparaison: Evenement | null;
@@ -556,7 +556,7 @@ export interface LigneStock {
   categorie: string | null;
   /** Coût matière de la fiche (CUMP après livraisons) ; null = coût manquant. */
   coutUnitaire: Centimes | null;
-  /** Reste compté au même stand au match précédent (0 s'il n'y en a pas). */
+  /** Reste compté au même stand à l'événement précédent (0 s'il n'y en a pas). */
   reste: number;
   premierMatch: boolean;
   miseEnPlace: number;

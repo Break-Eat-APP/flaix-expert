@@ -90,7 +90,7 @@ export function Identite() {
         <ul>
           <li><strong>Remise abonné</strong> : taux contractuel accordé aux abonnés du lieu. Tant qu'il n'est pas réglé, la pastille « Abonné » de la caisse reste inactive. Le caissier l'applique, il ne le négocie pas.</li>
           <li><strong>Exercice comptable</strong> : premier mois des 12 mois clôturés ensemble dans Clôtures → Mois & année. Vide tant que tu ne l'as pas réglé (il varie d'un lieu à l'autre : à demander à l'expert-comptable du lieu) ; la clôture d'un exercice est refusée d'ici là. Il ne se change plus une fois un exercice clôturé.</li>
-          <li><strong>Tolérance d'écart d'espèces</strong> : au comptage d'un tiroir (Clôtures → Clôture du match), un écart plus grand que ce montant demande un motif. 5,00 € par défaut. La clôture n'est jamais bloquée.</li>
+          <li><strong>Tolérance d'écart d'espèces</strong> : au comptage d'un tiroir (Clôtures → Clôture de l'événement), un écart plus grand que ce montant demande un motif. 5,00 € par défaut. La clôture n'est jamais bloquée.</li>
           <li>Le ticket de caisse doit porter l'identité de l'exploitant : raison sociale, adresse, SIRET, n° de TVA (BOFiP, données obligatoires d'une opération d'encaissement).</li>
           <li>Le SIRET compte 14 chiffres ; le n° de TVA intracommunautaire commence par le code du pays (FR…). Les espaces saisis sont retirés.</li>
           <li>Chaque modification est inscrite au journal technique du lieu, avec la valeur avant, la valeur après, son auteur et l'heure.</li>

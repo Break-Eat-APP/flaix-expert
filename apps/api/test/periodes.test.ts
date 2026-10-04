@@ -1,6 +1,6 @@
 /**
  * Clôtures de période (dossier §15.107) — plan de tests C1 à C6 du §15.19, contre la vraie base.
- * Les matchs sont datés dans des mois passés (2025) pour que les périodes soient terminées.
+ * Les événements sont datés dans des mois passés (2025) pour que les périodes soient terminées.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
@@ -30,7 +30,7 @@ const mois = async (cle: string) => (await etat()).mois.find((m) => m.cle === cl
 async function creer(libelle: string, debut: string) {
   return (await appel<Evenement[]>("POST", "/api/evenements", { libelle, debut })).corps.find((e) => e.libelle === libelle)!;
 }
-/** Ouvre le match, vend `n` bières (7,00 € à 20 %), clôture la caisse ; clôt le match si demandé. */
+/** Ouvre l'événement, vend `n` bières (7,00 € à 20 %), clôture la caisse ; clôt l'événement si demandé. */
 async function jouer(e: Evenement, n: number, clore = true) {
   await appel("POST", `/api/evenements/${e.id}/ouverture`);
   const t = tablette(caisse, (await appel<RepriseCaisse>("POST", `/api/caisses/${caisse}/ouverture`, {})).corps);
@@ -68,8 +68,8 @@ afterAll(async () => {
   await app.fermer();
 });
 
-describe("C1 — Z du match (clôture journalière)", () => {
-  it("à la clôture du match : totaux figés, TVA par taux exacte, perpétuel avancé, empreinte produite", async () => {
+describe("C1 — Z de l'événement (clôture journalière)", () => {
+  it("à la clôture de l'événement : totaux figés, TVA par taux exacte, perpétuel avancé, empreinte produite", async () => {
     await jouer(await creer("Mars 1", "2025-03-10T19:00:00+01:00"), 2);
     const z = (await etat()).historique.find((h) => h.niveau === "match")!;
     // 2 × 7,00 € = 14,00 € TTC ; HT 11,67 € ; TVA 2,33 €.
@@ -81,23 +81,23 @@ describe("C1 — Z du match (clôture journalière)", () => {
 });
 
 describe("clôture mensuelle", () => {
-  it("bloquée tant qu'un match du mois n'est pas clos", async () => {
+  it("bloquée tant qu'un événement du mois n'est pas clos", async () => {
     const m2 = await creer("Mars 2", "2025-03-24T19:00:00+01:00");
     await jouer(m2, 3, false);
-    expect(await mois("2025-03")).toMatchObject({ etat: "bloque", raison: "1 match pas encore clos." });
+    expect(await mois("2025-03")).toMatchObject({ etat: "bloque", raison: "1 événement pas encore clos." });
     expect((await appel("POST", "/api/clotures/mois", { mois: "2025-03" })).statut).toBe(409);
     await appel("POST", `/api/evenements/${m2.id}/cloture`);
     expect((await mois("2025-03")).etat).toBe("cloturable");
   });
 
-  it("un mois ne se clôt pas avant le précédent qui a des matchs ; le mois en cours n'est jamais clôturable", async () => {
+  it("un mois ne se clôt pas avant le précédent qui a des événements ; le mois en cours n'est jamais clôturable", async () => {
     await jouer(await creer("Mai 1", "2025-05-12T19:00:00+02:00"), 1);
     expect(await mois("2025-05")).toMatchObject({ etat: "bloque", raison: "Clôture d'abord Mars 2025." });
     const courant = (await etat()).mois.find((m) => m.raison === "Le mois n'est pas terminé.");
     expect(courant).toBeDefined();
   });
 
-  it("C3 / C4 — grand total du mois = somme de ses matchs ; perpétuel après = avant + grand total", async () => {
+  it("C3 / C4 — grand total du mois = somme de ses événements ; perpétuel après = avant + grand total", async () => {
     const r = await appel<EtatClotures>("POST", "/api/clotures/mois", { mois: "2025-03" });
     expect(r.statut).toBe(200);
     const mars = r.corps.mois.find((m) => m.cle === "2025-03")!.cloture!;
@@ -109,7 +109,7 @@ describe("clôture mensuelle", () => {
     expect(mai).toMatchObject({ totalTtc: 700, perpetuelAvant: 3500, perpetuelApres: 4200 });
   });
 
-  it("un mois clôturé ne reçoit plus de match, ni créé, ni déplacé, ni ouvert", async () => {
+  it("un mois clôturé ne reçoit plus d'événement, ni créé, ni déplacé, ni ouvert", async () => {
     const r = await appel<{ erreur: string }>("POST", "/api/evenements", { libelle: "Mars 3", debut: "2025-03-28T19:00:00+01:00" });
     expect(r.statut).toBe(409);
     expect(r.corps.erreur).toContain("Mars 2025 est clôturé");
@@ -120,7 +120,7 @@ describe("clôture mensuelle", () => {
 
 describe("clôture de l'exercice", () => {
   it("C2 / C6 — exercice 2025 : somme de ses mois, perpétuel chaîné ; l'exercice en cours n'est pas terminé", async () => {
-    // Juin 1 n'a pas été joué : son mois a un match « à venir » qui bloque l'exercice.
+    // Juin 1 n'a pas été joué : son mois a un événement « à venir » qui bloque l'exercice.
     const ex = (await etat()).exercices.find((x) => x.cle === "2025-01")!;
     expect(ex).toMatchObject({ libelle: "Exercice 2025", etat: "bloque" });
     const juin = (await etat()).mois.find((m) => m.cle === "2025-06")!;
@@ -131,7 +131,7 @@ describe("clôture de l'exercice", () => {
     const c = r.corps.exercices.find((x) => x.cle === "2025-01")!.cloture!;
     // 35,00 + 7,00 + 28,00 = 70,00 €.
     expect(c).toMatchObject({ niveau: "exercice", debut: "2025-01-01", fin: "2025-12-31", totalTtc: 7000, perpetuelAvant: 0, perpetuelApres: 7000, tickets: 4 });
-    // Le perpétuel des Z de match suit la même somme.
+    // Le perpétuel des Z d'événement suit la même somme.
     expect(r.corps.perpetuel).toBe(7000);
     await jouer(await creer("Août 2026", "2026-08-15T19:00:00+02:00"), 1);
     expect(r.corps.exercices.length).toBe(1);
@@ -145,7 +145,7 @@ describe("clôture de l'exercice", () => {
 
   it("la chaîne des clôtures est intègre", async () => {
     const v = await appel<{ ok: boolean; maillons: number }>("POST", "/api/clotures/verification");
-    // 5 Z de match + 3 mois + 1 exercice.
+    // 5 Z d'événement + 3 mois + 1 exercice.
     expect(v.corps).toEqual({ ok: true, maillons: 9, rupture: null });
   });
 

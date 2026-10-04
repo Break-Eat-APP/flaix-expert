@@ -189,7 +189,7 @@ export function Produits() {
         <ul>
           <li><strong>Une fiche par produit</strong>, un prix et un historique : un hot-dog vendu dans trois stands est un seul produit, avec trois stands cochés. Il ne peut donc jamais avoir trois prix différents par erreur.</li>
           <li><strong>Le prix ne se modifie pas, il se remplace</strong> : chaque changement crée un nouveau tarif daté (prix TTC + taux de TVA + date d'effet), l'ancien reste consultable. Un ticket garde toujours le prix en vigueur au moment de la vente.</li>
-          <li>Un tarif peut prendre effet tout de suite ou à une date future (ex. nouveau prix à partir du prochain match), <strong>jamais dans le passé</strong>.</li>
+          <li>Un tarif peut prendre effet tout de suite ou à une date future (ex. nouveau prix à partir du prochain événement), <strong>jamais dans le passé</strong>.</li>
           <li><strong>Le taux de TVA est choisi par toi</strong>, produit par produit ; le logiciel ne présélectionne rien. En cas de doute (boissons consommées sur place : 5,5 % ou 10 % ?), demande à ton expert-comptable.</li>
           <li><strong>Marge comptoir</strong> = prix HT − coût matière HT, par vente. Prix HT = prix TTC ÷ (1 + taux de TVA). Taux de marge = marge ÷ prix HT. C'est une marge brute : ce qui reste avant salaires, loyer et charges — pas « ce que tu gagnes ».</li>
           <li>Exemple : 7,00 € TTC à 10 % de TVA = 6,36 € HT ; avec 1,90 € de coût matière, la marge est de 4,46 € par vente, soit 70,1 %.</li>

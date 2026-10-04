@@ -23,10 +23,10 @@ import { restesDuMatch } from "./stock.ts";
 import { ParamId, Uuid, contexte, corps } from "./outils.ts";
 
 /*
- * Clôtures → Clôture du match (dossier §15.102) : l'assistant en 4 étapes des modules 7 et 10.
+ * Clôtures → Clôture de l'événement (dossier §15.102) : l'assistant en 4 étapes des modules 7 et 10.
  * Ventes (lues dans le journal), restes (Stock, §15.105), espèces (remontées au coffre, Z de
  * chaque tiroir et du coffre par coupure, rectification signée, §15.106), clôture définitive
- * du match (routes/evenements.ts).
+ * de l'événement (routes/evenements.ts).
  */
 
 const Comptage = z.object({
@@ -73,7 +73,7 @@ const versCoffre = (r: LigneCoffre): ComptageCoffre => ({
   le: r.le.toISOString(),
 });
 
-/** Remontées au coffre d'un match, avec leur annulation éventuelle ; total net par session. */
+/** Remontées au coffre d'un événement, avec leur annulation éventuelle ; total net par session. */
 async function remonteesDuMatch(c: Client, lieuId: string, evenementId: string) {
   const { rows } = await c.query<{ id: string; session_id: string; type: "remontee" | "annulation"; ref_sortie: string | null; montant_centimes: number; motif: string | null; par: string; le: Date }>(
     `SELECT se.id, se.session_id, se.type, se.ref_sortie, se.montant_centimes, se.motif, u.nom AS par, se.le
@@ -93,11 +93,11 @@ async function remonteesDuMatch(c: Client, lieuId: string, evenementId: string) 
   return { parSession, nets, total: rows.reduce((s, r) => s + r.montant_centimes, 0) };
 }
 
-/** Le match est-il encore modifiable côté espèces (ni clos, ni coffre déjà compté) ? Verrou pris sur le match. */
+/** L'événement est-il encore modifiable côté espèces (ni clos, ni coffre déjà compté) ? Verrou pris sur l'événement. */
 async function verrouillerMatch(c: Client, lieuId: string, evenementId: string): Promise<{ etat: string; libelle: string }> {
   await c.query("SELECT 1 FROM evenement WHERE lieu_id = $1 AND id = $2 FOR UPDATE", [lieuId, evenementId]);
   const { rows } = await c.query<{ etat: string; libelle: string }>("SELECT etat, libelle FROM evenement WHERE lieu_id = $1 AND id = $2", [lieuId, evenementId]);
-  if (!rows[0]) throw introuvable("Match");
+  if (!rows[0]) throw introuvable("Événement");
   return rows[0];
 }
 
@@ -143,10 +143,10 @@ async function seuilDuLieu(c: Client, lieuId: string): Promise<number> {
   return rows[0]?.seuil ?? 500;
 }
 
-/** Tout ce que montre l'assistant de clôture pour un match. */
+/** Tout ce que montre l'assistant de clôture pour un événement. */
 export async function lireClotureMatch(c: Client, lieuId: string, evenementId: string): Promise<ClotureMatch> {
   const evenement = (await listerEvenements(c, lieuId)).find((e) => e.id === evenementId);
-  if (!evenement) throw introuvable("Match");
+  if (!evenement) throw introuvable("Événement");
   const { rows: sessions } = await c.query<{
     id: string;
     caisse_id: string;
@@ -211,7 +211,7 @@ export async function lireClotureMatch(c: Client, lieuId: string, evenementId: s
       rectifications: siens.filter((x) => x.type === "rectification").map(versComptage),
     };
   });
-  // Sans aucune caisse ouverte sur le match (match annulé, essai), il n'y a rien à attendre.
+  // Sans aucune caisse ouverte sur l'événement (match annulé, essai), il n'y a rien à attendre.
   const ventes = vues.every((s) => s.fermeeLe !== null);
   const { rows: coffre } = await c.query<LigneCoffre>(
     `SELECT cc.id, cc.type, cc.ref_comptage, cc.coupures, cc.attendu_centimes, cc.compte_centimes, cc.ecart_centimes, cc.seuil_centimes, cc.motif, cc.signature, u.nom AS par, cc.le
@@ -219,7 +219,7 @@ export async function lireClotureMatch(c: Client, lieuId: string, evenementId: s
     [lieuId, evenementId],
   );
   const zCoffre = coffre.find((x) => x.type === "comptage");
-  // Le coffre se compte dès qu'une remontée a eu lieu pendant le match (§15.106).
+  // Le coffre se compte dès qu'une remontée a eu lieu pendant l'événement (§15.106).
   const coffreRequis = remontees.total !== 0 || !!zCoffre;
   const especes = vues.every((s) => s.fond === null || s.comptage !== null) && (!coffreRequis || !!zCoffre);
   const restes = await restesDuMatch(c, lieuId, evenement);
@@ -263,13 +263,13 @@ export async function routesClotures(app: FastifyInstance, { base }: { base: Bas
       );
       const s = rows[0];
       if (!s) throw introuvable("Session de caisse");
-      // Même verrou que la clôture du match : un Z et la clôture du match ne se croisent jamais.
+      // Même verrou que la clôture de l'événement : un Z et la clôture de l'événement ne se croisent jamais.
       await c.query("SELECT 1 FROM evenement WHERE lieu_id = $1 AND id = $2 FOR UPDATE", [auth.lieuId, s.evenement_id]);
       const { rows: etat } = await c.query<{ etat: string }>("SELECT etat FROM evenement WHERE lieu_id = $1 AND id = $2", [auth.lieuId, s.evenement_id]);
       s.etat = etat[0]!.etat;
       if (!s.fermee_le) throw new ErreurMetier(409, `La caisse ${s.numero} est encore ouverte : clôture-la depuis sa tablette avant de compter le tiroir.`);
       if (s.fond_centimes === null) throw new ErreurMetier(409, `La caisse ${s.numero} n'accepte pas les espèces : pas de tiroir à compter.`);
-      if (s.etat === "clos") throw new ErreurMetier(409, "Ce match est clos : un Z oublié ne se saisit plus, il se corrige par une rectification tracée.");
+      if (s.etat === "clos") throw new ErreurMetier(409, "Cet événement est clos : un Z oublié ne se saisit plus, il se corrige par une rectification tracée.");
       const { rows: deja } = await c.query("SELECT 1 FROM comptage_especes WHERE session_id = $1 AND type = 'comptage'", [id]);
       if (deja[0]) throw new ErreurMetier(409, "Ce tiroir a déjà son Z : pour le corriger, enregistre une rectification.");
 
@@ -305,7 +305,7 @@ export async function routesClotures(app: FastifyInstance, { base }: { base: Bas
     });
   });
 
-  // ---------- Remontée d'espèces au coffre pendant le match (§15.106) ----------
+  // ---------- Remontée d'espèces au coffre pendant l'événement (§15.106) ----------
   app.post("/api/sessions-caisse/:id/remontees", async (req): Promise<ClotureMatch> => {
     const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);
@@ -318,12 +318,12 @@ export async function routesClotures(app: FastifyInstance, { base }: { base: Bas
       const s = rows[0];
       if (!s) throw introuvable("Session de caisse");
       const e = await verrouillerMatch(c, auth.lieuId, s.evenement_id);
-      if (e.etat === "clos") throw new ErreurMetier(409, "Ce match est clos.");
+      if (e.etat === "clos") throw new ErreurMetier(409, "Cet événement est clos.");
       if (s.fond_centimes === null) throw new ErreurMetier(409, `La caisse ${s.numero} n'accepte pas les espèces.`);
       const { rows: z } = await c.query("SELECT 1 FROM comptage_especes WHERE session_id = $1 AND type = 'comptage'", [id]);
       if (z[0]) throw new ErreurMetier(409, `Le tiroir de la caisse ${s.numero} est déjà compté : une remontée ne s'y ajoute plus.`);
       const { rows: zc } = await c.query("SELECT 1 FROM comptage_coffre WHERE lieu_id = $1 AND evenement_id = $2 AND type = 'comptage'", [auth.lieuId, s.evenement_id]);
-      if (zc[0]) throw new ErreurMetier(409, "Le coffre de ce match est déjà compté.");
+      if (zc[0]) throw new ErreurMetier(409, "Le coffre de cet événement est déjà compté.");
       await c.query(
         "INSERT INTO sortie_especes (lieu_id, session_id, caisse_id, evenement_id, type, montant_centimes, par) VALUES ($1, $2, $3, $4, 'remontee', $5, $6)",
         [auth.lieuId, id, s.caisse_id, s.evenement_id, montant, auth.utilisateurId],
@@ -346,7 +346,7 @@ export async function routesClotures(app: FastifyInstance, { base }: { base: Bas
       const r = rows[0];
       if (!r) throw introuvable("Remontée");
       const e = await verrouillerMatch(c, auth.lieuId, r.evenement_id);
-      if (e.etat === "clos") throw new ErreurMetier(409, "Ce match est clos.");
+      if (e.etat === "clos") throw new ErreurMetier(409, "Cet événement est clos.");
       const { rows: deja } = await c.query("SELECT 1 FROM sortie_especes WHERE ref_sortie = $1 AND type = 'annulation'", [id]);
       if (deja[0]) throw new ErreurMetier(409, "Cette remontée est déjà annulée.");
       // La base refuse aussi l'annulation si le tiroir ou le coffre est déjà compté ; le message est donné ici.
@@ -375,14 +375,14 @@ export async function routesClotures(app: FastifyInstance, { base }: { base: Bas
     if (erreur) throw new ErreurMetier(400, erreur);
     return base.transaction(contexte(auth), async (c) => {
       const e = await verrouillerMatch(c, auth.lieuId, evenementId);
-      if (e.etat !== "ouvert") throw new ErreurMetier(409, e.etat === "clos" ? "Ce match est clos : le coffre se corrige par une rectification." : "Ce match n'est pas ouvert.");
+      if (e.etat !== "ouvert") throw new ErreurMetier(409, e.etat === "clos" ? "Cet événement est clos : le coffre se corrige par une rectification." : "Cet événement n'est pas ouvert.");
       const { rows: ouvertes } = await c.query<{ n: number }>("SELECT count(*)::int AS n FROM session_caisse WHERE lieu_id = $1 AND evenement_id = $2 AND fermee_le IS NULL", [auth.lieuId, evenementId]);
       if (ouvertes[0]!.n > 0) throw new ErreurMetier(409, "Des caisses sont encore ouvertes : le coffre se compte en fin de soirée, une fois toutes les caisses clôturées.");
       const { rows: deja } = await c.query("SELECT 1 FROM comptage_coffre WHERE lieu_id = $1 AND evenement_id = $2 AND type = 'comptage'", [auth.lieuId, evenementId]);
       if (deja[0]) throw new ErreurMetier(409, "Le coffre a déjà son Z : pour le corriger, enregistre une rectification.");
       const { rows: tot } = await c.query<{ s: number }>("SELECT coalesce(sum(montant_centimes), 0)::int AS s FROM sortie_especes WHERE lieu_id = $1 AND evenement_id = $2", [auth.lieuId, evenementId]);
       const attendu = tot[0]!.s;
-      if (attendu === 0) throw new ErreurMetier(409, "Aucune remontée au coffre sur ce match : il n'y a pas de coffre à compter.");
+      if (attendu === 0) throw new ErreurMetier(409, "Aucune remontée au coffre sur cet événement : il n'y a pas de coffre à compter.");
       const seuil = await seuilDuLieu(c, auth.lieuId);
       const propres = normaliserCoupures(coupures);
       const compte = totalCoupures(propres);

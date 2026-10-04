@@ -1,12 +1,12 @@
 import { calculerEmpreinte, jsonCanonique, type ChampScelle } from "./chaine.ts";
 
 /**
- * Clôtures de période (dossier §15.4, §15.27, §15.107) : Z du match, mois, exercice.
+ * Clôtures de période (dossier §15.4, §15.27, §15.107) : Z de l'événement, mois, exercice.
  *
  *   grand total de la période = Σ des totaux TTC nets de ce qu'elle contient
  *   total perpétuel après     = total perpétuel avant + grand total de la période   (jamais remis à zéro)
  *
- * Les périodes se comptent à l'heure de Paris, selon la date du match.
+ * Les périodes se comptent à l'heure de Paris, selon la date de l'événement.
  */
 
 export type NiveauCloture = "match" | "mois" | "exercice";

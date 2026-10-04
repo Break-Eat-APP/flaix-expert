@@ -17,7 +17,7 @@ function ilYa(iso: string, maintenant: number): string {
 }
 
 /**
- * En direct (dossier §15.95 ajout 1, §15.112) : la soirée de match sur le téléphone du directeur —
+ * En direct (dossier §15.95 ajout 1, §15.112) : la soirée d'événement sur le téléphone du directeur —
  * CA en direct, caisses ouvertes, ruptures et stock faible, réassort en deux gestes. Lit les mêmes
  * calculs que Caisses et Stock (aucun chiffre recalculé ici) ; mis à jour toutes les 20 secondes.
  */
@@ -48,9 +48,9 @@ export function EnDirect() {
       <div className="direct">
         <h1 className="direct-titre">En direct</h1>
         <Carte>
-          <EtatVide titre="Aucun match ouvert">
-            {prochain ? `Prochain match : ${prochain.libelle}, le ${formaterDateHeure(prochain.debut)}. ` : ""}
-            Le match s'ouvre dans <Link to="/caisses">Caisses</Link>.
+          <EtatVide titre="Aucun événement ouvert">
+            {prochain ? `Prochain événement : ${prochain.libelle}, le ${formaterDateHeure(prochain.debut)}. ` : ""}
+            L'événement s'ouvre dans <Link to="/caisses">Caisses</Link>.
           </EtatVide>
         </Carte>
       </div>
@@ -100,7 +100,7 @@ export function EnDirect() {
 
       <div className="direct-kpis">
         <div className="kpi direct-kpi-principal">
-          <div className="kpi-libelle">CA TTC du match</div>
+          <div className="kpi-libelle">CA TTC de l'événement</div>
           <div className="kpi-valeur">{formaterMontant(ca)}</div>
           <div className="aide">
             espèces {formaterMontant(especes)} · carte {formaterMontant(carte)}
@@ -128,7 +128,7 @@ export function EnDirect() {
           <Chargement />
         ) : !stock.data || stock.data.stands.every((s) => s.lignes.every((l) => l.depart === 0)) ? (
           <p className="discret" style={{ margin: 0 }}>
-            Pas de stock suivi sur ce match : les ruptures s'affichent quand la mise en place est saisie (<Link to="/stock">Stock</Link>).
+            Pas de stock suivi sur cet événement : les ruptures s'affichent quand la mise en place est saisie (<Link to="/stock">Stock</Link>).
           </p>
         ) : alertes.length === 0 ? (
           <p style={{ margin: 0 }}>Aucune rupture, aucun stock faible.</p>

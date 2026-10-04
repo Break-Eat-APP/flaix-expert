@@ -66,7 +66,7 @@ beforeAll(async () => {
   stand = (await parDirecteur<Stand[]>("POST", `/api/stands/${stand.id}/caisses`, {})).corps[0]!;
   [caisse1, caisse2] = stand.caisses.map((k) => k.id) as [string, string];
   biere = (await parDirecteur<Produit[]>("POST", "/api/produits", { nom: "Bière 25cl", prixTtc: 400, tauxTva: 2000, coutMatiere: 90, standIds: [stand.id] })).corps[0]!;
-  match = (await parDirecteur<Evenement[]>("POST", "/api/evenements", { libelle: "Match des caissières", debut: new Date().toISOString() })).corps[0]!;
+  match = (await parDirecteur<Evenement[]>("POST", "/api/evenements", { libelle: "Événement des caissières", debut: new Date().toISOString() })).corps[0]!;
   await parDirecteur("POST", `/api/evenements/${match.id}/ouverture`);
 });
 

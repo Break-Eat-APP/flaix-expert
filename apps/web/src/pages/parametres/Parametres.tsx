@@ -60,7 +60,7 @@ export function Parametres() {
     },
     {
       titre: "Saison",
-      texte: "Calendrier des matchs, spectateurs",
+      texte: "Calendrier des événements, spectateurs",
       icone: CalendarDays,
       route: "/parametres/saison",
       etat: nbAVenir !== undefined ? `${pluriel(nbAVenir, "match")} à venir` : undefined,

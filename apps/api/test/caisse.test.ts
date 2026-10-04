@@ -1,5 +1,5 @@
 /**
- * Étape 1 de la version test (dossier §15.94) et vente sans réseau (§15.97) : matchs, Ma caisse,
+ * Étape 1 de la version test (dossier §15.94) et vente sans réseau (§15.97) : événements, Ma caisse,
  * journal des tickets. Contre la vraie base PostgreSQL ; les tests [F] provoquent la fraude
  * qu'ils doivent détecter. Les ventes passent par une tablette simulée qui scelle elle-même.
  */
@@ -58,7 +58,7 @@ beforeAll(async () => {
   hotDog = produits.find((p) => p.nom === "Hot dog")!;
   biere = produits.find((p) => p.nom === "Bière 50cl")!;
 
-  const evts = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Match 1 — test", debut: new Date().toISOString(), spectateurs: 3000 })).corps;
+  const evts = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Événement 1 — test", debut: new Date().toISOString(), spectateurs: 3000 })).corps;
   match1 = evts[0]!;
 });
 
@@ -81,22 +81,22 @@ function plusTard(minutes: number) {
   vi.setSystemTime(Date.now() + minutes * 60_000);
 }
 
-describe("cycle d'un match", () => {
-  it("une caisse ne s'ouvre pas sans match ouvert", async () => {
+describe("cycle d'un événement", () => {
+  it("une caisse ne s'ouvre pas sans événement ouvert", async () => {
     const r = await appel<{ erreur: string }>("POST", `/api/caisses/${caisseBar()}/ouverture`, {});
     expect(r.statut).toBe(409);
-    expect(r.corps.erreur).toContain("Aucun match");
+    expect(r.corps.erreur).toContain("Aucun événement");
   });
 
-  it("ouvre le match ; un second match ne peut pas être ouvert en même temps", async () => {
+  it("ouvre l'événement ; un second match ne peut pas être ouvert en même temps", async () => {
     expect((await appel("POST", `/api/evenements/${match1.id}/ouverture`)).statut).toBe(200);
-    const autre = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Match 2", debut: new Date(Date.now() + 7 * 86_400_000).toISOString() })).corps.find(
-      (e) => e.libelle === "Match 2",
+    const autre = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Événement 2", debut: new Date(Date.now() + 7 * 86_400_000).toISOString() })).corps.find(
+      (e) => e.libelle === "Événement 2",
     )!;
     expect((await appel("POST", `/api/evenements/${autre.id}/ouverture`)).statut).toBe(409);
   });
 
-  it("le libellé d'un match ouvert ne se modifie plus, mais les spectateurs oui", async () => {
+  it("le libellé d'un événement ouvert ne se modifie plus, mais les spectateurs oui", async () => {
     expect((await appel("PATCH", `/api/evenements/${match1.id}`, { libelle: "Renommé" })).statut).toBe(409);
     expect((await appel("PATCH", `/api/evenements/${match1.id}`, { spectateurs: 3200 })).statut).toBe(200);
   });
@@ -272,7 +272,7 @@ describe("Ma caisse — la tablette scelle, le serveur vérifie (§15.97)", () =
     expect((await envoyer(appel, tBar)).statut).toBe(200);
   });
 
-  it("Mes caisses : état ouvert en direct et chiffres du match par caisse", async () => {
+  it("Mes caisses : état ouvert en direct et chiffres de l'événement par caisse", async () => {
     const stats = (await appel<StatsCaisse[]>("GET", `/api/caisses/tableau?evenementId=${match1.id}`)).corps;
     const s1 = stats.find((s) => s.numero === 1)!;
     expect(s1.ouverteMaintenant).not.toBeNull();
@@ -295,10 +295,10 @@ describe("Ma caisse — la tablette scelle, le serveur vérifie (§15.97)", () =
     expect(rows[0].n).toBe(1);
   });
 
-  it("un match ne se clôt pas tant qu'une caisse est ouverte ni tant qu'un tiroir n'a pas son Z, puis se clôt définitivement", async () => {
+  it("un événement ne se clôt pas tant qu'une caisse est ouverte ni tant qu'un tiroir n'a pas son Z, puis se clôt définitivement", async () => {
     expect((await appel("POST", `/api/evenements/${match1.id}/cloture`)).statut).toBe(409);
     expect((await cloturer(tBar)).statut).toBe(200);
-    // Le tiroir de la caisse du Snack (espèces) doit être compté avant la clôture du match (§15.102).
+    // Le tiroir de la caisse du Snack (espèces) doit être compté avant la clôture de l'événement (§15.102).
     const sansZ = await appel<{ erreur: string }>("POST", `/api/evenements/${match1.id}/cloture`);
     expect(sansZ.statut).toBe(409);
     expect(sansZ.corps.erreur).toContain("tiroir");

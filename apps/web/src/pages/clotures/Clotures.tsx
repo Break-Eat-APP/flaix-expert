@@ -24,7 +24,7 @@ import { useOptions } from "../../session.tsx";
 type Onglet = "match" | "periode" | "export" | "archives";
 
 /**
- * Clôtures (organisation en 6 entrées, dossier §15.96). L'onglet « Clôture du match » est
+ * Clôtures (organisation en 6 entrées, dossier §15.96). L'onglet « Clôture de l'événement » est
  * l'assistant en 4 étapes des modules 7 et 10 (§15.102) : ventes, restes, espèces, clôture.
  * Les clôtures de période et les archives arriveront ensuite.
  */
@@ -54,7 +54,7 @@ export function Clotures() {
     <>
       <EntetePage titre="Clôtures" description="Boucler la soirée, puis le mois et l'année." />
       <div className="onglets">
-        {bouton("match", "Clôture du match")}
+        {bouton("match", "Clôture de l'événement")}
         {bouton("periode", "Mois & année")}
         {bouton("export", "Export comptable")}
         {bouton("archives", "Archives & contrôle", true)}
@@ -65,21 +65,21 @@ export function Clotures() {
           {affiche ? (
             <Assistant
               evenementId={affiche}
-              // Après la clôture, l'écran reste sur le match qui vient d'être clos.
+              // Après la clôture, l'écran reste sur l'événement qui vient d'être clos.
               apresCloture={() => setChoisi(affiche)}
               retour={ouvert && choisi !== null && choisi !== ouvert.id ? () => setChoisi(null) : null}
             />
           ) : (
-            <Carte titre="Match en cours">
-              <EtatVide titre="Aucun match ouvert">
-                Le match du jour s'ouvre dans <Link to="/caisses">Caisses</Link>.
+            <Carte titre="Événement en cours">
+              <EtatVide titre="Aucun événement ouvert">
+                L'événement du jour s'ouvre dans <Link to="/caisses">Caisses</Link>.
               </EtatVide>
             </Carte>
           )}
 
-          <Carte titre="Matchs clos">
+          <Carte titre="Événements clos">
             {clos.length === 0 ? (
-              <EtatVide titre="Aucun match clos pour l'instant" />
+              <EtatVide titre="Aucun événement clos pour l'instant" />
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {clos.map((e) => (
@@ -118,16 +118,16 @@ export function Clotures() {
 
       <Regles>
         <ul>
-          <li><strong>Quatre étapes, dans l'ordre</strong> : ventes (toutes les caisses clôturées, chacune depuis sa tablette), restes (chaque produit mis en place ou réassorti, compté dans Stock → Comptage ; sans stock suivi sur le match, l'étape ne bloque pas), espèces (le Z de chaque tiroir), puis la clôture définitive du match.</li>
-          <li><strong>Remontée au coffre</strong> : pendant le match, l'argent retiré d'un tiroir et porté au coffre s'enregistre sur sa caisse (montant, heure, auteur). Une erreur s'annule avec un motif ; elle n'est jamais effacée. Plus de remontée une fois le tiroir ou le coffre compté.</li>
-          <li><strong>Espèces attendues dans un tiroir</strong> = fond de caisse + ventes encaissées en espèces (lues dans le journal de caisse, annulations déduites) − remontées au coffre. <strong>Coffre</strong> : attendu = total des remontées du match, compté par coupure en fin de soirée, une fois toutes les caisses clôturées. <strong>Espèces de la soirée</strong> : fonds + ventes espèces, à retrouver dans les tiroirs et le coffre. <strong>Compté</strong> = somme des coupures saisies. <strong>Écart</strong> = compté − attendu : négatif, il manque de l'argent ; positif, il y en a trop — tout aussi anormal, souvent une vente non enregistrée.</li>
+          <li><strong>Quatre étapes, dans l'ordre</strong> : ventes (toutes les caisses clôturées, chacune depuis sa tablette), restes (chaque produit mis en place ou réassorti, compté dans Stock → Comptage ; sans stock suivi sur l'événement, l'étape ne bloque pas), espèces (le Z de chaque tiroir), puis la clôture définitive de l'événement.</li>
+          <li><strong>Remontée au coffre</strong> : pendant l'événement, l'argent retiré d'un tiroir et porté au coffre s'enregistre sur sa caisse (montant, heure, auteur). Une erreur s'annule avec un motif ; elle n'est jamais effacée. Plus de remontée une fois le tiroir ou le coffre compté.</li>
+          <li><strong>Espèces attendues dans un tiroir</strong> = fond de caisse + ventes encaissées en espèces (lues dans le journal de caisse, annulations déduites) − remontées au coffre. <strong>Coffre</strong> : attendu = total des remontées de l'événement, compté par coupure en fin de soirée, une fois toutes les caisses clôturées. <strong>Espèces de la soirée</strong> : fonds + ventes espèces, à retrouver dans les tiroirs et le coffre. <strong>Compté</strong> = somme des coupures saisies. <strong>Écart</strong> = compté − attendu : négatif, il manque de l'argent ; positif, il y en a trop — tout aussi anormal, souvent une vente non enregistrée.</li>
           <li><strong>Compter par coupure</strong>, pas en montant global : c'est ainsi qu'on compte réellement un tiroir, et une erreur de saisie se voit tout de suite.</li>
           <li><strong>Tolérance</strong> (réglage du lieu, Paramètres → Le lieu ; 5,00 € par défaut) : en dessous, aucun motif. Au-delà, <strong>motif obligatoire</strong> (5 caractères au moins) — mais la clôture n'est jamais bloquée.</li>
           <li><strong>Un Z clôturé est définitif</strong> : attribué, horodaté, inscrit au journal technique qui le scelle ; la base refuse toute modification. <strong>Corriger = rectifier</strong> : montant compté rectifié, motif, signature en toutes lettres. La rectification s'ajoute ; le Z d'origine reste affiché inchangé. La notification par e-mail d'une rectification n'est pas encore en service.</li>
           <li><strong>Carte</strong> : une caisse « carte uniquement » n'a pas de tiroir. Son total carte s'affiche pour la comparaison avec le ticket de fin de journée du TPE.</li>
-          <li><strong>Clore le match est définitif</strong> : il faut toutes les caisses clôturées et chaque tiroir compté. Le serveur le vérifie lui-même. Chaque étape est inscrite au journal technique. La clôture du match produit son <strong>Z</strong> (clôture journalière) : tickets, espèces, carte, TVA par taux, total de chaque caisse, grand total et total perpétuel, scellés.</li>
-          <li><strong>Mois & année</strong> : un mois se clôture une fois terminé (heure de Paris, selon la date des matchs), tous ses matchs clos, et après le mois précédent qui a des matchs. Grand total du mois = somme des Z de ses matchs ; total perpétuel = celui de la clôture précédente + grand total, jamais remis à zéro. Un mois clôturé ne reçoit plus de match. L'exercice (12 mois, premier mois réglé dans Paramètres → Le lieu) se clôture une fois terminé et tous ses mois clôturés. Chaque clôture est scellée et chaînée à la précédente ; « Vérifier l'intégrité » relit toute la chaîne.</li>
-          <li><strong>Export comptable</strong> : pour chaque mois, deux fichiers bâtis sur les Z scellés (jamais sur des chiffres provisoires). <strong>Écritures comptables</strong> : une pièce par match (Z), équilibrée — espèces et cartes au débit, ventes hors taxe et TVA collectée par taux au crédit, écart de caisse (tiroirs et coffre) en charge s'il manque de l'argent, en produit s'il y en a trop. <strong>Récapitulatif</strong> : une ligne par match (tickets, CA, HT et TVA par taux, espèces, carte, écarts, empreinte du Z). Fichiers CSV (point-virgule, virgule décimale) lisibles dans Excel et importables dans les logiciels comptables. Tant que le mois n'est pas clôturé, l'export est « provisoire ». Les numéros de comptes sont une proposition : l'expert-comptable du lieu les valide ou donne les siens. Chaque téléchargement est inscrit au journal technique.</li>
+          <li><strong>Clore l'événement est définitif</strong> : il faut toutes les caisses clôturées et chaque tiroir compté. Le serveur le vérifie lui-même. Chaque étape est inscrite au journal technique. La clôture de l'événement produit son <strong>Z</strong> (clôture journalière) : tickets, espèces, carte, TVA par taux, total de chaque caisse, grand total et total perpétuel, scellés.</li>
+          <li><strong>Mois & année</strong> : un mois se clôture une fois terminé (heure de Paris, selon la date des événements), tous ses événements clos, et après le mois précédent qui a des événements. Grand total du mois = somme des Z de ses événements ; total perpétuel = celui de la clôture précédente + grand total, jamais remis à zéro. Un mois clôturé ne reçoit plus d'événement. L'exercice (12 mois, premier mois réglé dans Paramètres → Le lieu) se clôture une fois terminé et tous ses mois clôturés. Chaque clôture est scellée et chaînée à la précédente ; « Vérifier l'intégrité » relit toute la chaîne.</li>
+          <li><strong>Export comptable</strong> : pour chaque mois, deux fichiers bâtis sur les Z scellés (jamais sur des chiffres provisoires). <strong>Écritures comptables</strong> : une pièce par événement (Z), équilibrée — espèces et cartes au débit, ventes hors taxe et TVA collectée par taux au crédit, écart de caisse (tiroirs et coffre) en charge s'il manque de l'argent, en produit s'il y en a trop. <strong>Récapitulatif</strong> : une ligne par événement (tickets, CA, HT et TVA par taux, espèces, carte, écarts, empreinte du Z). Fichiers CSV (point-virgule, virgule décimale) lisibles dans Excel et importables dans les logiciels comptables. Tant que le mois n'est pas clôturé, l'export est « provisoire ». Les numéros de comptes sont une proposition : l'expert-comptable du lieu les valide ou donne les siens. Chaque téléchargement est inscrit au journal technique.</li>
         </ul>
       </Regles>
     </>
@@ -174,7 +174,7 @@ function Assistant({ evenementId, apresCloture, retour }: { evenementId: string;
     {
       titre: "Restes",
       etat: !c.etapes.restes.requis ? "fait" : c.etapes.restes.manquants === 0 ? "fait" : "a_faire",
-      detail: !c.etapes.restes.requis ? "pas de stock suivi sur ce match" : c.etapes.restes.manquants === 0 ? "tout est compté" : `${c.etapes.restes.manquants} produit${c.etapes.restes.manquants > 1 ? "s" : ""} à compter`,
+      detail: !c.etapes.restes.requis ? "pas de stock suivi sur cet événement" : c.etapes.restes.manquants === 0 ? "tout est compté" : `${c.etapes.restes.manquants} produit${c.etapes.restes.manquants > 1 ? "s" : ""} à compter`,
     },
     {
       titre: "Espèces",
@@ -188,11 +188,11 @@ function Assistant({ evenementId, apresCloture, retour }: { evenementId: string;
     <>
       <Carte
         titre={e.libelle}
-        description={`${formaterDateHeure(e.debut)} · ${estClos ? "match clos" : "match ouvert"}`}
+        description={`${formaterDateHeure(e.debut)} · ${estClos ? "événement clos" : "événement ouvert"}`}
         actions={
           retour ? (
             <button className="btn btn-fantome" onClick={retour}>
-              Revenir au match en cours
+              Revenir à l'événement en cours
             </button>
           ) : undefined
         }
@@ -208,7 +208,7 @@ function Assistant({ evenementId, apresCloture, retour }: { evenementId: string;
             </li>
           ))}
         </ol>
-        {c.sessions.length === 0 && <EtatVide titre="Aucune caisse ouverte sur ce match">Il n'y a rien à clôturer côté caisses.</EtatVide>}
+        {c.sessions.length === 0 && <EtatVide titre="Aucune caisse ouverte sur cet événement">Il n'y a rien à clôturer côté caisses.</EtatVide>}
       </Carte>
 
       {c.sessions.length > 0 && (
@@ -281,11 +281,11 @@ function Assistant({ evenementId, apresCloture, retour }: { evenementId: string;
         <Carte titre="2. Restes">
           {!c.etapes.restes.requis ? (
             <div className="message message-info" style={{ margin: 0 }}>
-              Aucune mise en place ni aucun réassort sur ce match : le stock n'y est pas suivi, cette étape ne bloque pas la clôture.
+              Aucune mise en place ni aucun réassort sur cet événement : le stock n'y est pas suivi, cette étape ne bloque pas la clôture.
             </div>
           ) : c.etapes.restes.manquants > 0 ? (
             <div className="message message-alerte" style={{ margin: 0 }}>
-              {c.etapes.restes.manquants} produit{c.etapes.restes.manquants > 1 ? "s" : ""} à compter dans les stands avant de clore le match. <Link to="/stock">Stock → Comptage</Link>
+              {c.etapes.restes.manquants} produit{c.etapes.restes.manquants > 1 ? "s" : ""} à compter dans les stands avant de clore l'événement. <Link to="/stock">Stock → Comptage</Link>
             </div>
           ) : (
             <div className="message message-ok" style={{ margin: 0 }}>
@@ -296,9 +296,9 @@ function Assistant({ evenementId, apresCloture, retour }: { evenementId: string;
       )}
 
       {c.sessions.length > 0 && (
-        <Carte titre="3. Espèces" description={`Remontées au coffre pendant le match, puis le Z de chaque tiroir et du coffre, par coupure. Tolérance : ${formaterMontant(c.seuilEcartEspeces)} (au-delà, motif obligatoire).`}>
+        <Carte titre="3. Espèces" description={`Remontées au coffre pendant l'événement, puis le Z de chaque tiroir et du coffre, par coupure. Tolérance : ${formaterMontant(c.seuilEcartEspeces)} (au-delà, motif obligatoire).`}>
           {tiroirs.length === 0 ? (
-            <EtatVide titre="Aucune caisse n'accepte les espèces sur ce match" />
+            <EtatVide titre="Aucune caisse n'accepte les espèces sur cet événement" />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {tiroirs.map((s) => (
@@ -336,7 +336,7 @@ function Assistant({ evenementId, apresCloture, retour }: { evenementId: string;
                   <div className="message message-info">Le coffre se compte en fin de soirée, une fois toutes les caisses clôturées.</div>
                 </div>
               ) : (
-                <SaisieZ bilan={[["Remontées au coffre du match", c.coffre.attendu]]} attendu={c.coffre.attendu} seuil={c.seuilEcartEspeces} url="/clotures/coffre" corpsEnPlus={{ evenementId }} evenementId={evenementId} />
+                <SaisieZ bilan={[["Remontées au coffre de l'événement", c.coffre.attendu]]} attendu={c.coffre.attendu} seuil={c.seuilEcartEspeces} url="/clotures/coffre" corpsEnPlus={{ evenementId }} evenementId={evenementId} />
               )}
             </div>
           )}
@@ -366,10 +366,10 @@ function Assistant({ evenementId, apresCloture, retour }: { evenementId: string;
         </Carte>
       )}
 
-      <Carte titre="4. Clôture du match">
+      <Carte titre="4. Clôture de l'événement">
         {estClos ? (
           <div className="message message-ok" style={{ margin: 0 }}>
-            Match clos le {formaterDateHeure(e.closLe!)}. Ses chiffres sont définitifs ; un Z se corrige encore par une rectification tracée.
+            Événement clos le {formaterDateHeure(e.closLe!)}. Ses chiffres sont définitifs ; un Z se corrige encore par une rectification tracée.
           </div>
         ) : (
           <>
@@ -382,13 +382,13 @@ function Assistant({ evenementId, apresCloture, retour }: { evenementId: string;
                     : comptes.length < tiroirs.length
                       ? "Il reste des tiroirs à compter (étape 3)."
                       : "Il reste le coffre à compter (étape 3)."}{" "}
-                La clôture du match sera possible ensuite.
+                La clôture de l'événement sera possible ensuite.
               </div>
             )}
             <div className="ligne-actions">
               {confirmer ? (
                 <>
-                  <span className="discret" style={{ fontSize: 12.5 }}>Définitif : un match clos ne se rouvre jamais.</span>
+                  <span className="discret" style={{ fontSize: 12.5 }}>Définitif : un événement clos ne se rouvre jamais.</span>
                   <button className="btn btn-danger" disabled={clore.isPending} onClick={() => clore.mutate()}>
                     Confirmer la clôture définitive
                   </button>
@@ -398,7 +398,7 @@ function Assistant({ evenementId, apresCloture, retour }: { evenementId: string;
                 </>
               ) : (
                 <button className="btn btn-danger" disabled={!c.etapes.cloturable} onClick={() => setConfirmer(true)}>
-                  <Lock size={15} /> Clore le match
+                  <Lock size={15} /> Clore l'événement
                 </button>
               )}
             </div>
@@ -450,7 +450,7 @@ function Tiroir({ session: s, seuil, evenementId, matchClos, coffreCompte }: { s
         ) : !s.fermeeLe ? (
           <div className="message message-alerte">Clôture d'abord cette caisse depuis sa tablette : on compte le tiroir une fois la caisse fermée.</div>
         ) : matchClos ? (
-          <div className="message message-alerte">Ce match est clos sans Z pour ce tiroir (clôture antérieure à l'assistant).</div>
+          <div className="message message-alerte">Cet événement est clos sans Z pour ce tiroir (clôture antérieure à l'assistant).</div>
         ) : (
           <SaisieZ
             bilan={[
@@ -689,7 +689,7 @@ function ZDefinitif({
   );
 }
 
-/** Remontées au coffre d'une caisse : liste, ajout pendant le match, annulation avec motif (§15.106). */
+/** Remontées au coffre d'une caisse : liste, ajout pendant l'événement, annulation avec motif (§15.106). */
 function Remontees({ session: s, evenementId, modifiable }: { session: SessionACloturer; evenementId: string; modifiable: boolean }) {
   const client = useQueryClient();
   const [montant, setMontant] = useState("");

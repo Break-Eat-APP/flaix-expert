@@ -30,7 +30,7 @@ import { recalculerCoutsRecettes } from "./recettes.ts";
 /*
  * Stock des ingrédients suivis (décision de Rémi, dossier §15.124) : le même cycle que les produits
  * (stock.ts), en millièmes de l'unité d'achat. Le « consommé » d'un stand vient des recettes des
- * produits vendus ; il est figé à la clôture du match (ingredient_consommation).
+ * produits vendus ; il est figé à la clôture de l'événement (ingredient_consommation).
  */
 
 const MAX = 1_000_000_000;
@@ -57,7 +57,7 @@ const cle = (s: string, i: string) => `${s}|${i}`;
 type Somme = { stand_id: string; ingredient_id: string; q: number };
 const somme = (liste: Somme[]) => new Map(liste.map((x) => [cle(x.stand_id, x.ingredient_id), x.q]));
 
-/** Consommation théorique d'un match, en direct : Σ quantités vendues × recette, par stand et ingrédient. */
+/** Consommation théorique d'un événement, en direct : Σ quantités vendues × recette, par stand et ingrédient. */
 const CONSOMMATION_EN_DIRECT = `
   SELECT j.stand_id, r.ingredient_id, sum(l.quantite::bigint * r.quantite_milli)::float8 AS q
     FROM ligne_ticket l
@@ -66,7 +66,7 @@ const CONSOMMATION_EN_DIRECT = `
    WHERE l.lieu_id = $1 AND j.evenement_id = $2
    GROUP BY 1, 2`;
 
-/** À la clôture du match : la consommation est figée, une recette changée ensuite ne réécrit pas le passé. */
+/** À la clôture de l'événement : la consommation est figée, une recette changée ensuite ne réécrit pas le passé. */
 export async function figerConsommationIngredients(c: Client, lieuId: string, evenementId: string): Promise<void> {
   await c.query(
     `INSERT INTO ingredient_consommation (lieu_id, evenement_id, stand_id, ingredient_id, quantite_milli)
@@ -113,7 +113,7 @@ async function reserveParIngredient(c: Client, lieuId: string): Promise<Ingredie
   }));
 }
 
-/** L'état des ingrédients suivis de chaque stand pour un match. */
+/** L'état des ingrédients suivis de chaque stand pour un événement. */
 export async function stockIngredientsDuMatch(c: Client, lieuId: string, e: Evenement): Promise<StockIngredientsMatch> {
   const evenements = await listerEvenements(c, lieuId);
   const avant = evenements.filter((x) => x.id !== e.id && jouerLe(x) < jouerLe(e)).map((x) => x.id);
@@ -151,7 +151,7 @@ export async function stockIngredientsDuMatch(c: Client, lieuId: string, e: Even
         [lieuId, avant],
       )
     : { rows: [] };
-  // Consommation des matchs précédents (figée), pour la suggestion de mise en place.
+  // Consommation des événements précédents (figée), pour la suggestion de mise en place.
   const { rows: historique } = avant.length
     ? await c.query<Somme & { evenement_id: string }>(
         "SELECT evenement_id, stand_id, ingredient_id, quantite_milli::float8 AS q FROM ingredient_consommation WHERE lieu_id = $1 AND evenement_id = ANY($2::uuid[])",
@@ -239,7 +239,7 @@ export async function stockIngredientsDuMatch(c: Client, lieuId: string, e: Even
 async function evenementPour(c: Client, lieuId: string, id: string): Promise<Evenement> {
   await c.query("SELECT 1 FROM evenement WHERE lieu_id = $1 AND id = $2 FOR UPDATE", [lieuId, id]);
   const e = (await listerEvenements(c, lieuId)).find((x) => x.id === id);
-  if (!e) throw introuvable("Match");
+  if (!e) throw introuvable("Événement");
   return e;
 }
 
@@ -334,7 +334,7 @@ export async function routesStockIngredients(app: FastifyInstance, { base }: { b
     const d = corps(MiseEnPlace, req);
     return base.transaction(contexte(auth), async (c) => {
       const e = await evenementPour(c, auth.lieuId, d.evenementId);
-      if (e.etat !== "a_venir") throw new ErreurMetier(409, "La mise en place est figée à l'ouverture du match : utilise le réassort.");
+      if (e.etat !== "a_venir") throw new ErreurMetier(409, "La mise en place est figée à l'ouverture de l'événement : utilise le réassort.");
       await ingredientSuivi(c, auth.lieuId, d.ingredientId, d.standId);
       await verrouiller(c, `stock-ingredient:${d.evenementId}:${d.standId}:${d.ingredientId}`);
       const { rows } = await c.query<{ q: number }>(
@@ -357,7 +357,7 @@ export async function routesStockIngredients(app: FastifyInstance, { base }: { b
     const { evenementId } = corps(z.object({ evenementId: Uuid }), req);
     return base.transaction(contexte(auth), async (c) => {
       const e = await evenementPour(c, auth.lieuId, evenementId);
-      if (e.etat !== "a_venir") throw new ErreurMetier(409, "La mise en place est figée à l'ouverture du match.");
+      if (e.etat !== "a_venir") throw new ErreurMetier(409, "La mise en place est figée à l'ouverture de l'événement.");
       const s = await stockIngredientsDuMatch(c, auth.lieuId, e);
       for (const st of s.stands) {
         for (const l of st.lignes) {
@@ -377,7 +377,7 @@ export async function routesStockIngredients(app: FastifyInstance, { base }: { b
     const d = corps(Reassort, req);
     return base.transaction(contexte(auth), async (c) => {
       const e = await evenementPour(c, auth.lieuId, d.evenementId);
-      if (e.etat !== "ouvert") throw new ErreurMetier(409, "Le réassort n'existe que pendant le match.");
+      if (e.etat !== "ouvert") throw new ErreurMetier(409, "Le réassort n'existe que pendant l'événement.");
       const g = await ingredientSuivi(c, auth.lieuId, d.ingredientId, d.standId);
       await verrouiller(c, `stock-ingredient:${d.evenementId}:${d.standId}:${d.ingredientId}`);
       if (d.quantiteMilli < 0) {
@@ -385,7 +385,7 @@ export async function routesStockIngredients(app: FastifyInstance, { base }: { b
           "SELECT coalesce(sum(quantite_milli), 0)::float8 AS q FROM ingredient_mouvement WHERE lieu_id = $1 AND evenement_id = $2 AND stand_id = $3 AND ingredient_id = $4 AND type = 'reassort'",
           [auth.lieuId, d.evenementId, d.standId, d.ingredientId],
         );
-        if (rows[0]!.q + d.quantiteMilli < 0) throw new ErreurMetier(400, `Le retour dépasse le réassort de ce match (${formaterQuantiteStock(rows[0]!.q, g.unite)}).`);
+        if (rows[0]!.q + d.quantiteMilli < 0) throw new ErreurMetier(400, `Le retour dépasse le réassort de cet événement (${formaterQuantiteStock(rows[0]!.q, g.unite)}).`);
       }
       await c.query(
         "INSERT INTO ingredient_mouvement (lieu_id, type, ingredient_id, evenement_id, stand_id, quantite_milli, par) VALUES ($1, 'reassort', $2, $3, $4, $5, $6)",
@@ -400,7 +400,7 @@ export async function routesStockIngredients(app: FastifyInstance, { base }: { b
     const d = corps(Comptage, req);
     return base.transaction(contexte(auth), async (c) => {
       const e = await evenementPour(c, auth.lieuId, d.evenementId);
-      if (e.etat !== "ouvert") throw new ErreurMetier(409, e.etat === "clos" ? "Ce match est clos : son comptage est figé." : "Le comptage se fait pendant le match, une fois ouvert.");
+      if (e.etat !== "ouvert") throw new ErreurMetier(409, e.etat === "clos" ? "Cet événement est clos : son comptage est figé." : "Le comptage se fait pendant l'événement, une fois ouvert.");
       const avant = (await stockIngredientsDuMatch(c, auth.lieuId, e)).stands.find((s) => s.standId === d.standId)?.lignes.find((l) => l.ingredientId === d.ingredientId);
       if (!avant) throw introuvable("Ingrédient de ce stand");
       const ecart = d.quantiteMilli - avant.restant;

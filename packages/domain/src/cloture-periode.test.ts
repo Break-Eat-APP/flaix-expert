@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { bornesMois, exerciceDe, libelleMois, moisDeLExercice, moisParis, moisTermine } from "./cloture-periode.ts";
 
 describe("clôtures de période (§15.107)", () => {
-  it("le mois d'un match se lit à l'heure de Paris", () => {
+  it("le mois d'un événement se lit à l'heure de Paris", () => {
     // 31 août 2026, 23 h 30 à Paris = 21 h 30 UTC : c'est encore août.
     expect(moisParis("2026-08-31T21:30:00Z")).toBe("2026-08");
     // 31 août 2026, 22 h 30 UTC = 1er septembre 0 h 30 à Paris.

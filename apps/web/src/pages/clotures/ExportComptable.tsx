@@ -9,7 +9,7 @@ const dateCourte = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${is
 
 /**
  * Clôtures → Export comptable (dossier §15.110) : le journal des ventes du mois et le récapitulatif
- * par match, à envoyer à l'expert-comptable. Bâti sur les Z de match scellés.
+ * par événement, à envoyer à l'expert-comptable. Bâti sur les Z d'événement scellés.
  */
 export function ExportComptable() {
   const [mois, setMois] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export function ExportComptable() {
     <>
       <Carte
         titre="Export pour l'expert-comptable"
-        description="Les ventes du mois, match par match, à partir des Z scellés : un fichier d'écritures à importer et un récapitulatif lisible."
+        description="Les ventes du mois, événement par événement, à partir des Z scellés : un fichier d'écritures à importer et un récapitulatif lisible."
         actions={
           a.moisDisponibles.length > 0 && (
             <select
@@ -47,7 +47,7 @@ export function ExportComptable() {
             >
               {a.moisDisponibles.map((m) => (
                 <option key={m.cle} value={m.cle}>
-                  {m.libelle} — {m.zs} match{m.zs > 1 ? "s" : ""}
+                  {m.libelle} — {m.zs} événement{m.zs > 1 ? "s" : ""}
                   {m.clos ? " · clôturé" : ""}
                 </option>
               ))}
@@ -56,7 +56,7 @@ export function ExportComptable() {
         }
       >
         {a.cle === null ? (
-          <EtatVide titre="Rien à exporter pour l'instant">L'export se remplit à la clôture du premier match (son Z).</EtatVide>
+          <EtatVide titre="Rien à exporter pour l'instant">L'export se remplit à la clôture du premier événement (son Z).</EtatVide>
         ) : (
           <>
             {a.clos ? (
@@ -80,7 +80,7 @@ export function ExportComptable() {
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>Match</th>
+                    <th>Événement</th>
                     <th>Z</th>
                     <th className="d">CA TTC</th>
                     {a.taux.map((pb) => (
@@ -140,7 +140,7 @@ export function ExportComptable() {
                 <Download size={15} /> Écritures comptables (CSV)
               </button>
               <button className="btn btn-fantome" disabled={telecharger.isPending} onClick={() => telecharger.mutate("recapitulatif")}>
-                <Download size={15} /> Récapitulatif par match (CSV)
+                <Download size={15} /> Récapitulatif par événement (CSV)
               </button>
             </div>
             {telecharge && <div className="message message-ok">Téléchargé : {telecharge}. À joindre à un e-mail pour ton expert-comptable.</div>}

@@ -43,7 +43,7 @@ export function Formation() {
         ) : (
           <>
             <p style={{ marginTop: 0 }}>
-              Tu passes dans le lieu d'entraînement, avec ta configuration du moment. Tu y retrouves tous les écrans : crée un match d'entraînement (Paramètres → Saison),
+              Tu passes dans le lieu d'entraînement, avec ta configuration du moment. Tu y retrouves tous les écrans : crée un événement d'entraînement (Paramètres → Saison),
               ouvre-le, vends, clôture.
             </p>
             <button
@@ -61,7 +61,7 @@ export function Formation() {
       <Carte titre="Tablettes des caissières">
         <p style={{ marginTop: 0 }}>
           {n === 0 ? "Aucune tablette en formation." : `${n} tablette${n > 1 ? "s" : ""} en formation.`} Une tablette se met en formation dans{" "}
-          <Link to="/equipe">Équipe → Tablettes</Link> : toute caissière qui s'y connecte vend alors en factice, sur la même caisse d'entraînement. Il faut un match
+          <Link to="/equipe">Équipe → Tablettes</Link> : toute caissière qui s'y connecte vend alors en factice, sur la même caisse d'entraînement. Il faut un événement
           d'entraînement ouvert, que tu ouvres toi-même en formation.
         </p>
         <p className="discret" style={{ marginBottom: 0 }}>
@@ -74,7 +74,7 @@ export function Formation() {
           <>
             <p style={{ marginTop: 0 }}>
               Lieu d'entraînement créé le {formaterDateHeure(e.lieuFormation.creeLe)}. Recommencer le met de côté (rien n'est effacé) : la prochaine entrée repart
-              d'un lieu vierge, sans match ni vente d'entraînement.
+              d'un lieu vierge, sans événement ni vente d'entraînement.
             </p>
             {session.formation ? (
               <p className="discret" style={{ marginBottom: 0 }}>
@@ -108,7 +108,7 @@ export function Formation() {
             remise à jour à chaque entrée.
           </li>
           <li>
-            Tout y fonctionne comme en vrai : matchs, ventes, annulations, tickets, clôtures, stock, planning. <strong>Rien n'en sort</strong> : aucune vente, aucun Z,
+            Tout y fonctionne comme en vrai : événements, ventes, annulations, tickets, clôtures, stock, planning. <strong>Rien n'en sort</strong> : aucune vente, aucun Z,
             aucun compteur du vrai lieu n'est touché. C'est la base de données elle-même qui sépare les deux lieux.
           </li>
           <li>

@@ -431,7 +431,7 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
       if (!k.actif || !k.stand_actif) throw new ErreurMetier(409, "Cette caisse ou son stand est désactivé.");
       if (await sessionOuverte(c, id)) throw new ErreurMetier(409, "Cette caisse est déjà ouverte.");
       const evt = await evenementOuvert(c, auth.lieuId);
-      if (!evt) throw new ErreurMetier(409, "Aucun match n'est ouvert : ouvre d'abord le match du jour dans Caisses.");
+      if (!evt) throw new ErreurMetier(409, "Aucun événement n'est ouvert : ouvre d'abord l'événement du jour dans Caisses.");
       // Le fond de caisse n'est demandé que si la caisse accepte les espèces (§15.26 point 2).
       if (k.especes_autorisees && fond === null) throw new ErreurMetier(400, "Saisis le fond de caisse (0 s'il n'y en a pas).");
       const fondRetenu = k.especes_autorisees ? fond : null;

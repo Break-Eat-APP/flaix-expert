@@ -64,7 +64,7 @@ describe("écritures d'un Z", () => {
 });
 
 describe("journal du mois et fichiers", () => {
-  it("les pièces sont dans l'ordre des matchs ; débit total = crédit total", () => {
+  it("les pièces sont dans l'ordre des événements ; débit total = crédit total", () => {
     const j = journalDuMois([z({ date: "2026-09-26", sequence: 5 }), z()], PLAN_COMPTES_DEFAUT);
     expect(j.ecritures[0]!.piece).toBe("Z000003");
     expect(j.totalDebit).toBe(11000);
@@ -85,14 +85,14 @@ describe("journal du mois et fichiers", () => {
   });
 
   it("un libellé qui contient un point-virgule ou un guillemet est protégé", () => {
-    const f = ecrituresCsv(journalDuMois([z({ libelle: 'Match "amical"; gala' })], PLAN_COMPTES_DEFAUT));
-    expect(f).toContain('"Ventes en espèces — Match ""amical""; gala"');
+    const f = ecrituresCsv(journalDuMois([z({ libelle: 'Événement "amical"; gala' })], PLAN_COMPTES_DEFAUT));
+    expect(f).toContain('"Ventes en espèces — Événement ""amical""; gala"');
   });
 
-  it("récapitulatif : une colonne HT et TVA par taux présent, une ligne par match, une ligne de total", () => {
+  it("récapitulatif : une colonne HT et TVA par taux présent, une ligne par événement, une ligne de total", () => {
     const f = recapitulatifCsv([z(), z({ date: "2026-09-26", sequence: 5, ecartTiroirs: -300 })]);
     const lignes = f.slice(1).trimEnd().split("\r\n");
-    expect(lignes[0]).toBe("Date;Match;Z;Tickets;Annulations;CA TTC;HT 10 %;TVA 10 %;HT 20 %;TVA 20 %;Espèces;Carte;Écart tiroirs;Écart coffre;Empreinte du Z");
+    expect(lignes[0]).toBe("Date;Événement;Z;Tickets;Annulations;CA TTC;HT 10 %;TVA 10 %;HT 20 %;TVA 20 %;Espèces;Carte;Écart tiroirs;Écart coffre;Empreinte du Z");
     expect(lignes).toHaveLength(4);
     expect(lignes[3]).toBe(";TOTAL;;18;2;110,00;20,00;2,00;73,34;14,66;50,00;60,00;-3,00;0,00;");
   });

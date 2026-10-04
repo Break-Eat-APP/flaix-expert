@@ -22,7 +22,7 @@ import { contexte, corps } from "./outils.ts";
 
 /**
  * Export pour l'expert-comptable (dossier §15.110) : journal des ventes du mois et récapitulatif
- * par match, bâtis sur les Z de match scellés. Chaque téléchargement est inscrit au journal technique.
+ * par événement, bâtis sur les Z d'événement scellés. Chaque téléchargement est inscrit au journal technique.
  */
 const Mois = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Mois attendu au format AAAA-MM.");
 const Compte = z.string().trim().toUpperCase().regex(FORMAT_COMPTE, "Un numéro de compte a 3 à 20 chiffres ou lettres, sans espace.");
@@ -52,7 +52,7 @@ async function lirePlan(c: Client, lieuId: string): Promise<{ plan: PlanComptes;
   return { plan: planComplet(enregistre), personnalise: enregistre !== null };
 }
 
-/** Z de match du lieu, avec les écarts constatés (dernière rectification comprise) par match. */
+/** Z d'événement du lieu, avec les écarts constatés (dernière rectification comprise) par événement. */
 async function lireZ(c: Client, lieuId: string, mois?: string): Promise<ZPourExport[]> {
   const { rows } = await c.query<LigneZ>(
     `SELECT cp.sequence, to_char(cp.debut, 'YYYY-MM-DD') AS debut, cp.evenement_id, cp.total_ttc_centimes, cp.details, cp.empreinte
@@ -145,7 +145,7 @@ export async function routesExportComptable(app: FastifyInstance, { base }: { ba
     const { contenu, nom } = await base.transaction(contexte(auth), async (c) => {
       // Mode formation (§15.109) : la mention FACTICE figure dans le fichier lui-même, pas seulement dans son nom.
       const zs = (await lireZ(c, auth.lieuId, mois)).map((z) => (auth.formation ? { ...z, libelle: `FACTICE — ${z.libelle}` } : z));
-      if (zs.length === 0) throw new ErreurMetier(409, `Aucun match clos en ${libelleMois(mois)} : rien à exporter.`);
+      if (zs.length === 0) throw new ErreurMetier(409, `Aucun événement clos en ${libelleMois(mois)} : rien à exporter.`);
       const { plan } = await lirePlan(c, auth.lieuId);
       const journal = journalDuMois(zs, plan);
       if (journal.desequilibres.length) {

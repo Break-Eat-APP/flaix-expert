@@ -22,12 +22,12 @@ export interface LieuParc {
   exerciceRegle: boolean;
   matchsJoues: number;
   matchsOuverts: number;
-  /** Ouverture du plus ancien match encore ouvert : un match oublié se voit ici. */
+  /** Ouverture du plus ancien événement encore ouvert : un événement oublié se voit ici. */
   plusAncienOuvert: string | null;
   dernierZ: string | null;
   /** Dernier jour du dernier mois clôturé. */
   dernierMoisCloture: string | null;
-  /** Mois terminés, avec des matchs, pas encore clôturés. */
+  /** Mois terminés, avec des événements, pas encore clôturés. */
   moisACloturer: number;
   derniereActivite: string | null;
   derniereVerification: { le: string; ok: boolean } | null;
@@ -61,13 +61,13 @@ export interface VerificationEditeur {
   clotures: { ok: boolean; maillons: number };
 }
 
-/** Un match ouvert depuis plus de 24 h a probablement été oublié. */
+/** Un événement ouvert depuis plus de 24 h a probablement été oublié. */
 export const MATCH_OUBLIE_HEURES = 24;
 
 /** Ce qui mérite l'attention de l'éditeur pour un lieu, en phrases. */
 export function alertesLieuParc(l: LieuParc, maintenant: number): string[] {
   const a: string[] = [];
-  if (l.plusAncienOuvert && maintenant - Date.parse(l.plusAncienOuvert) > MATCH_OUBLIE_HEURES * 3_600_000) a.push("match ouvert depuis plus de 24 h");
+  if (l.plusAncienOuvert && maintenant - Date.parse(l.plusAncienOuvert) > MATCH_OUBLIE_HEURES * 3_600_000) a.push("événement ouvert depuis plus de 24 h");
   if (l.moisACloturer > 0) a.push(`${l.moisACloturer} mois à clôturer`);
   if (l.derniereVerification && !l.derniereVerification.ok) a.push("rupture d'intégrité à la dernière vérification");
   if (!l.exerciceRegle && l.matchsJoues > 0) a.push("exercice comptable non réglé");
@@ -84,7 +84,7 @@ export type OptionsLieu = Record<OptionLieu, boolean>;
 
 export const OPTIONS_LIEU: { cle: OptionLieu; libelle: string; aide: string }[] = [
   { cle: "stock", libelle: "Stock", aide: "Mise en place, comptages, réserve, livraisons, ruptures" },
-  { cle: "equipe", libelle: "Planning & masse salariale", aide: "Affectations par match, coût du personnel (les fiches et l'accès caisse restent dans la base)" },
+  { cle: "equipe", libelle: "Planning & masse salariale", aide: "Affectations par événement, coût du personnel (les fiches et l'accès caisse restent dans la base)" },
   { cle: "fidelite", libelle: "Fidélité", aide: "Abonnés, points, codes promo" },
   { cle: "click_collect", libelle: "Click & Collect", aide: "Prix sur l'application de commande" },
   { cle: "factures", libelle: "Factures fournisseurs", aide: "Saisie, rapprochement avec les livraisons" },

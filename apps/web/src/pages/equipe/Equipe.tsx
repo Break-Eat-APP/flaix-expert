@@ -14,7 +14,7 @@ const libelleStatut = (e: Pick<Employe, "statut" | "agence">) => (e.statut === "
 
 /**
  * Équipe (organisation en 6 entrées, dossier §15.95) : fiches employés et leur accès caisse
- * (§15.100, §15.104), planning par match, masse salariale, tablettes enregistrées comme caisse.
+ * (§15.100, §15.104), planning par événement, masse salariale, tablettes enregistrées comme caisse.
  */
 export function Equipe() {
   const [onglet, setOnglet] = useState<Onglet>("fiches");
@@ -36,11 +36,11 @@ export function Equipe() {
       {onglet === "fiches" ? <Fiches /> : onglet === "planning" ? <PlanningVue /> : onglet === "masse" ? <MasseSalarialeVue /> : <Tablettes />}
       <Regles>
         <ul>
-          <li><strong>Fiche employé</strong> : nom, statut (salarié ou intérimaire et son agence), rôle habituel, <strong>taux horaire</strong> — coût horaire chargé pour un salarié, taux facturé par l'agence pour un intérimaire. Un employé ne se supprime pas : il devient inactif, son nom et son taux restent sur les matchs passés.</li>
+          <li><strong>Fiche employé</strong> : nom, statut (salarié ou intérimaire et son agence), rôle habituel, <strong>taux horaire</strong> — coût horaire chargé pour un salarié, taux facturé par l'agence pour un intérimaire. Un employé ne se supprime pas : il devient inactif, son nom et son taux restent sur les événements passés.</li>
           <li><strong>Accès caisse</strong> (facultatif) : un code personnel à 4 chiffres, affiché une seule fois, qui ne fonctionne que sur une tablette enregistrée comme caisse. La personne ne voit que l'écran de vente de cette caisse, jamais les coûts ni les salaires. 5 codes faux bloquent l'accès 15 minutes ; un nouveau code le débloque. Désactiver la fiche coupe l'accès.</li>
-          <li><strong>Planning</strong> : chaque affectation place un employé sur un match, à un stand et une caisse (ou un autre poste), avec des heures <strong>prévues</strong>. Les heures <strong>réelles</strong> valent les prévues tant qu'elles ne sont pas corrigées ; une correction garde son auteur et son heure. Une fin avant le début = après minuit.</li>
-          <li><strong>Coût</strong> = durée réelle × taux horaire. Le taux est <strong>figé sur l'affectation</strong> à sa création : changer le taux d'une fiche ne réécrit pas les matchs déjà planifiés. Sans taux : « taux manquant », jamais zéro.</li>
-          <li><strong>Masse salariale</strong> = somme des coûts réels du planning, par match, par statut, par rôle. Elle est déduite dans Résultats → Finances.</li>
+          <li><strong>Planning</strong> : chaque affectation place un employé sur un événement, à un stand et une caisse (ou un autre poste), avec des heures <strong>prévues</strong>. Les heures <strong>réelles</strong> valent les prévues tant qu'elles ne sont pas corrigées ; une correction garde son auteur et son heure. Une fin avant le début = après minuit.</li>
+          <li><strong>Coût</strong> = durée réelle × taux horaire. Le taux est <strong>figé sur l'affectation</strong> à sa création : changer le taux d'une fiche ne réécrit pas les événements déjà planifiés. Sans taux : « taux manquant », jamais zéro.</li>
+          <li><strong>Masse salariale</strong> = somme des coûts réels du planning, par événement, par statut, par rôle. Elle est déduite dans Résultats → Finances.</li>
           <li><strong>Tablettes</strong> : sur la tablette du stand, connecte-toi avec ton e-mail, ouvre Caisses → la caisse, puis « Enregistrer cet appareil ». Retirer une tablette déconnecte les caissières qui y sont.</li>
           <li><strong>Mettre en formation</strong> : toute caissière qui se connecte sur la tablette vend alors en factice, dans le lieu d'entraînement (Paramètres → Mode formation) ; la caissière connectée est déconnectée. Pas possible pendant que la vraie caisse est ouverte.</li>
           <li>Chaque création, modification, accès donné ou retiré, affectation, correction d'heures et retrait est inscrit au journal technique.</li>
@@ -179,7 +179,7 @@ function Fiches() {
   return (
     <>
       {remis && <CodeRemis remis={remis} fermer={() => setRemis(null)} />}
-      <Carte titre="Nouvelle fiche" description="Une fiche par personne qui travaille les soirs de match.">
+      <Carte titre="Nouvelle fiche" description="Une fiche par personne qui travaille les soirs d'événement.">
         <form onSubmit={ajouter}>
           <ChampsFiche b={nouveau} changer={setNouveau} avecAcces />
           <div className="ligne-actions">

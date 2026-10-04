@@ -73,7 +73,7 @@ export function repartitionCouts(stands: Pick<CoutsStand, "coutMatiere" | "masse
 
 /** Paramètres → Coûts par buvette. */
 export interface CoutsBuvette {
-  /** Mois qui ont au moins un match, du plus récent au plus ancien. */
+  /** Mois qui ont au moins un événement, du plus récent au plus ancien. */
   moisDisponibles: { cle: string; libelle: string; matchs: number }[];
   cle: string | null;
   libelle: string;

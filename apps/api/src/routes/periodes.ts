@@ -25,7 +25,7 @@ import { listerEvenements } from "./evenements.ts";
 import { contexte, corps } from "./outils.ts";
 
 /*
- * Clôtures de période (dossier §15.4, §15.27, §15.107) : Z du match (créé à la clôture du match),
+ * Clôtures de période (dossier §15.4, §15.27, §15.107) : Z de l'événement (créé à la clôture de l'événement),
  * clôture mensuelle, clôture de l'exercice. Chaque clôture est scellée et chaînée ; le total
  * perpétuel n'est jamais remis à zéro.
  */
@@ -94,7 +94,7 @@ async function lireClotures(c: Client, lieuId: string): Promise<LigneCloture[]> 
   return rows;
 }
 
-/** Totaux d'un match lus dans le journal de caisse (ventes moins annulations) et ses lignes. */
+/** Totaux d'un événement lus dans le journal de caisse (ventes moins annulations) et ses lignes. */
 async function totauxDuMatch(c: Client, lieuId: string, evenementId: string): Promise<Totaux> {
   const { rows: t } = await c.query<{ tickets: number; annulations: number; total: number; especes: number; carte: number }>(
     `SELECT count(*) FILTER (WHERE type = 'vente')::int AS tickets, count(*) FILTER (WHERE type = 'annulation')::int AS annulations,
@@ -128,7 +128,7 @@ async function totauxDuMatch(c: Client, lieuId: string, evenementId: string): Pr
   };
 }
 
-/** Somme de plusieurs clôtures (les Z des matchs d'un mois, les mois d'un exercice). */
+/** Somme de plusieurs clôtures (les Z des événements d'un mois, les mois d'un exercice). */
 function additionner(liste: LigneCloture[]): Totaux {
   const taux = new Map<number, { tauxTva: TauxTvaPb; ht: number; tva: number; ttc: number }>();
   const caisses = new Map<string, { caisseId: string; numero: number; total: number }>();
@@ -202,7 +202,7 @@ async function inscrireCloture(
   });
 }
 
-/** Z du match (clôture journalière), à la clôture définitive du match. Sans effet s'il existe déjà. */
+/** Z de l'événement (clôture journalière), à la clôture définitive de l'événement. Sans effet s'il existe déjà. */
 export async function zDuMatch(c: Client, lieuId: string, utilisateurId: string, e: Evenement): Promise<void> {
   const { rows } = await c.query("SELECT 1 FROM cloture_periode WHERE lieu_id = $1 AND evenement_id = $2 AND niveau = 'match'", [lieuId, e.id]);
   if (rows[0]) return;
@@ -210,11 +210,11 @@ export async function zDuMatch(c: Client, lieuId: string, utilisateurId: string,
   await inscrireCloture(c, lieuId, utilisateurId, { niveau: "match", evenementId: e.id, debut: jour, fin: jour, libelle: e.libelle, totaux: await totauxDuMatch(c, lieuId, e.id) });
 }
 
-/** Refuse un match daté dans un mois déjà clôturé (création, déplacement, ouverture). */
+/** Refuse un événement daté dans un mois déjà clôturé (création, déplacement, ouverture). */
 export async function exigerMoisOuvert(c: Client, lieuId: string, debutIso: string): Promise<void> {
   const mois = moisParis(debutIso);
   const { rows } = await c.query("SELECT 1 FROM cloture_periode WHERE lieu_id = $1 AND niveau = 'mois' AND debut = $2", [lieuId, bornesMois(mois).debut]);
-  if (rows[0]) throw new ErreurMetier(409, `${libelleMois(mois)} est clôturé : aucun match ne peut plus y être ajouté ni ouvert.`);
+  if (rows[0]) throw new ErreurMetier(409, `${libelleMois(mois)} est clôturé : aucun événement ne peut plus y être ajouté ni ouvert.`);
 }
 
 async function moisDebutExercice(c: Client, lieuId: string): Promise<number | null> {
@@ -222,7 +222,7 @@ async function moisDebutExercice(c: Client, lieuId: string): Promise<number | nu
   return rows[0]!.m;
 }
 
-/** L'état de toutes les périodes : mois et exercices qui ont des matchs, avec ce qui bloque leur clôture. */
+/** L'état de toutes les périodes : mois et exercices qui ont des événements, avec ce qui bloque leur clôture. */
 async function etatClotures(c: Client, lieuId: string): Promise<EtatClotures> {
   const evts = await listerEvenements(c, lieuId);
   const clotures = await lireClotures(c, lieuId);
@@ -249,11 +249,11 @@ async function etatClotures(c: Client, lieuId: string): Promise<EtatClotures> {
       : !moisTermine(cle)
         ? "Le mois n'est pas terminé."
         : nonClos
-          ? `${nonClos} match${nonClos > 1 ? "s" : ""} pas encore clos.`
+          ? `${nonClos} événement${nonClos > 1 ? "s" : ""} pas encore clos.`
           : precedentOuvert
             ? `Clôture d'abord ${libelleMois(precedentOuvert)}.`
             : matchs.length === 0
-              ? "Aucun match ce mois-ci."
+              ? "Aucun événement ce mois-ci."
               : null;
     return {
       cle,
@@ -309,7 +309,7 @@ async function etatClotures(c: Client, lieuId: string): Promise<EtatClotures> {
   };
 }
 
-/** Relecture de la chaîne des clôtures (Z de match, mois, exercices) : continuité, maillons, contenu. */
+/** Relecture de la chaîne des clôtures (Z d'événement, mois, exercices) : continuité, maillons, contenu. */
 export async function verifierClotures(c: Client, lieuId: string): Promise<{ ok: boolean; maillons: number; rupture: { sequence: number; raison: string } | null }> {
   const lignes = await lireClotures(c, lieuId);
   const { rows: lieu } = await c.query<{ id: string }>("SELECT id FROM lieu WHERE id = $1", [lieuId]);
@@ -352,10 +352,10 @@ export async function routesPeriodes(app: FastifyInstance, { base }: { base: Bas
     return base.transaction(contexte(auth), async (c) => {
       await verrouiller(c, `clotures:${auth.lieuId}`);
       const periode = (await etatClotures(c, auth.lieuId)).mois.find((m) => m.cle === mois);
-      if (!periode) throw new ErreurMetier(404, "Aucun match ce mois-ci.");
+      if (!periode) throw new ErreurMetier(404, "Aucun événement ce mois-ci.");
       if (periode.etat === "clos") throw new ErreurMetier(409, `${periode.libelle} est déjà clôturé.`);
       if (periode.raison) throw new ErreurMetier(409, `${periode.libelle} ne peut pas encore être clôturé : ${periode.raison}`);
-      // Chaque match du mois a son Z (ceux clos avant cette version le reçoivent maintenant, dans l'ordre).
+      // Chaque événement du mois a son Z (ceux clos avant cette version le reçoivent maintenant, dans l'ordre).
       const evts = await listerEvenements(c, auth.lieuId);
       for (const m of periode.matchs) await zDuMatch(c, auth.lieuId, auth.utilisateurId, evts.find((e) => e.id === m.id)!);
       const ids = new Set(periode.matchs.map((m) => m.id));
@@ -373,7 +373,7 @@ export async function routesPeriodes(app: FastifyInstance, { base }: { base: Bas
       const etat = await etatClotures(c, auth.lieuId);
       if (etat.moisDebutExercice === null) throw new ErreurMetier(409, "Règle d'abord le premier mois de l'exercice comptable du lieu (Paramètres → Le lieu).");
       const periode = etat.exercices.find((x) => x.cle === premierMois);
-      if (!periode) throw new ErreurMetier(404, "Aucun match sur cet exercice.");
+      if (!periode) throw new ErreurMetier(404, "Aucun événement sur cet exercice.");
       if (periode.etat === "clos") throw new ErreurMetier(409, `${periode.libelle} est déjà clôturé.`);
       if (periode.raison) throw new ErreurMetier(409, `${periode.libelle} ne peut pas encore être clôturé : ${periode.raison}`);
       const lesMois = new Set(moisDeLExercice(premierMois).map((k) => bornesMois(k).debut));

@@ -1,6 +1,6 @@
 /**
  * Export pour l'expert-comptable (dossier §15.110) : le journal des ventes du mois, bâti sur les
- * Z de match scellés — jamais sur des chiffres provisoires recalculés.
+ * Z d'événement scellés — jamais sur des chiffres provisoires recalculés.
  *
  * Chaque Z donne une pièce équilibrée :
  *   débit  caisse espèces (ventes en espèces)      + débit  cartes à encaisser (ventes carte)
@@ -42,9 +42,9 @@ export const FORMAT_COMPTE = /^[0-9A-Z]{3,20}$/;
 /** Un code journal : 1 à 6 caractères. */
 export const FORMAT_JOURNAL = /^[0-9A-Z]{1,6}$/;
 
-/** Ce que l'export lit d'un Z de match scellé, plus les écarts constatés au comptage. */
+/** Ce que l'export lit d'un Z d'événement scellé, plus les écarts constatés au comptage. */
 export interface ZPourExport {
-  /** Jour du match, AAAA-MM-JJ (heure de Paris). */
+  /** Jour de l'événement, AAAA-MM-JJ (heure de Paris). */
   date: string;
   libelle: string;
   /** Numéro du Z dans la chaîne des clôtures du lieu. */
@@ -171,7 +171,7 @@ export function recapitulatifCsv(zs: ZPourExport[]): string {
   return csv([
     [
       "Date",
-      "Match",
+      "Événement",
       "Z",
       "Tickets",
       "Annulations",
@@ -227,14 +227,14 @@ export function planComplet(enregistre: Partial<PlanComptes> | null | undefined)
 
 /** Clôtures → Export comptable : aperçu du mois choisi (dossier §15.110). */
 export interface ApercuExport {
-  /** Mois qui ont au moins un Z de match, du plus récent au plus ancien. */
+  /** Mois qui ont au moins un Z d'événement, du plus récent au plus ancien. */
   moisDisponibles: { cle: string; libelle: string; zs: number; clos: boolean }[];
   cle: string | null;
   libelle: string;
-  /** Mois clôturé : l'export est définitif. Sinon il est provisoire (un match peut encore s'ajouter). */
+  /** Mois clôturé : l'export est définitif. Sinon il est provisoire (un événement peut encore s'ajouter). */
   clos: boolean;
   zs: ZPourExport[];
-  /** Matchs du mois sans Z (pas encore clos) : absents de l'export. */
+  /** Événements du mois sans Z (pas encore clos) : absents de l'export. */
   horsExport: { libelle: string; debut: string; etat: "a_venir" | "ouvert" }[];
   taux: TauxTvaPb[];
   journal: { lignes: number; totalDebit: Centimes; totalCredit: Centimes; desequilibres: string[] };

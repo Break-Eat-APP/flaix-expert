@@ -144,9 +144,9 @@ export function EcranCaisse({ caisseId: caisseImposee, poste = false }: { caisse
 
       <Regles>
         <ul>
-          <li><strong>Ouverture de caisse</strong> : obligatoire avant le premier ticket, et seulement pendant un match ouvert. Le fond de caisse n'est demandé que si la caisse accepte les espèces. Elle demande le réseau.</li>
-          <li><strong>Vente sans réseau</strong> : chaque ticket est numéroté, scellé et gardé dans la mémoire de cette tablette avant d'afficher « encaissé », puis envoyé au serveur — tout de suite, ou au retour du réseau, dans l'ordre. L'indicateur en haut de l'écran dit combien de tickets attendent. Ne pas utiliser de navigation privée ni vider le navigateur pendant un match.</li>
-          <li><strong>Prix</strong> : ceux du catalogue chargé sur la caisse, remis à jour dès que le réseau est là. Le serveur contrôle chaque ticket reçu : un prix différent du tarif en vigueur à l'heure de la vente est inscrit (la vente a eu lieu) et signalé dans Caisses → Tickets du match.</li>
+          <li><strong>Ouverture de caisse</strong> : obligatoire avant le premier ticket, et seulement pendant un événement ouvert. Le fond de caisse n'est demandé que si la caisse accepte les espèces. Elle demande le réseau.</li>
+          <li><strong>Vente sans réseau</strong> : chaque ticket est numéroté, scellé et gardé dans la mémoire de cette tablette avant d'afficher « encaissé », puis envoyé au serveur — tout de suite, ou au retour du réseau, dans l'ordre. L'indicateur en haut de l'écran dit combien de tickets attendent. Ne pas utiliser de navigation privée ni vider le navigateur pendant un événement.</li>
+          <li><strong>Prix</strong> : ceux du catalogue chargé sur la caisse, remis à jour dès que le réseau est là. Le serveur contrôle chaque ticket reçu : un prix différent du tarif en vigueur à l'heure de la vente est inscrit (la vente a eu lieu) et signalé dans Caisses → Tickets de l'événement.</li>
           <li><strong>Total du ticket</strong> = montant brut − remise − offert, jamais négatif. La remise (en %) s'applique à chaque ligne ; l'offert (en €) est réparti sur les lignes au prorata. La TVA est calculée sur le montant réellement payé.</li>
           <li><strong>Motif obligatoire</strong> dès qu'il y a une remise ou un offert : le bouton Encaisser reste grisé tant qu'il manque.</li>
           <li><strong>Tarif abonné</strong> : remise contractuelle au taux fixé par le lieu (Paramètres → Le lieu → Réglages de caisse), jamais négociée à la caisse. Le n° d'abonné ou de carte est obligatoire et enregistré avec la vente.</li>
@@ -248,7 +248,7 @@ function Ouverture({ ecran, poste }: { ecran: Ecran; poste: boolean }) {
     }
   }
   const ouvrir = { isPending: enCours, error: erreur, mutate: (c: unknown) => void ouvrirCaisse(c) };
-  const bloquant = !ecran.caisse.actif || !ecran.standActif ? "Cette caisse ou son stand est désactivé." : !ecran.evenementOuvert ? "Aucun match n'est ouvert." : null;
+  const bloquant = !ecran.caisse.actif || !ecran.standActif ? "Cette caisse ou son stand est désactivé." : !ecran.evenementOuvert ? "Aucun événement n'est ouvert." : null;
   const pret = !bloquant && (!ecran.caisse.especesAutorisees || fondCentimes !== null);
 
   return (
@@ -262,13 +262,13 @@ function Ouverture({ ecran, poste }: { ecran: Ecran; poste: boolean }) {
       <h3>Ouverture de caisse</h3>
       <p>
         Caisse {ecran.caisse.numero} · {ecran.caisse.standNom}
-        {ecran.evenementOuvert ? <> — match : <strong>{ecran.evenementOuvert.libelle}</strong></> : null}
+        {ecran.evenementOuvert ? <> — événement : <strong>{ecran.evenementOuvert.libelle}</strong></> : null}
       </p>
       {bloquant ? (
         <div className="message message-alerte" style={{ textAlign: "left" }}>
           {bloquant}{" "}
           {!ecran.evenementOuvert &&
-            (poste ? "Le directeur ouvre le match du jour ; réessaie ensuite." : <Link to="/caisses">Ouvrir le match du jour dans Caisses</Link>)}
+            (poste ? "Le directeur ouvre l'événement du jour ; réessaie ensuite." : <Link to="/caisses">Ouvrir l'événement du jour dans Caisses</Link>)}
         </div>
       ) : (
         ecran.caisse.especesAutorisees && (
