@@ -3,6 +3,22 @@
 > Généré par `node infra/outils/journal-developpement.cjs` à partir de Git. Ne pas modifier à la main.
 > Chaque entrée : date, commit (lien GitHub), message, fichiers créés ou modifiés. Le plus récent en premier. Phases : [docs/developpement/JOURNAL_DES_PHASES.md](docs/developpement/JOURNAL_DES_PHASES.md).
 
+## 2026-10-04
+
+### [`0b59036`](https://github.com/Break-Eat-APP/flaix-expert/commit/0b590362a71a8549b053dcfb0e1a6ff474fd3d5e) — Dossier de développement pour l'audit Codex : AGENTS.md, journal des phases, carte du code, CHANGELOG, prompt d'audit *(phase 31)*
+
+- créé : `AGENTS.md`
+- créé : `CHANGELOG.md`
+- modifié : `CLAUDE.md`
+- modifié : `README.md`
+- créé : `docs/audits/README.md`
+- créé : `docs/developpement/CARTE_DU_CODE.md`
+- créé : `docs/developpement/CODEX_AUDIT_PROMPT.md`
+- créé : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- créé : `infra/outils/carte-du-code-intro.md`
+- créé : `infra/outils/journal-developpement.cjs`
+
 ## 2026-10-03
 
 ### [`87c46b8`](https://github.com/Break-Eat-APP/flaix-expert/commit/87c46b8234d355b7db4e2dbdf6c328fa5574c301) — Fidélité à la caisse : code promo et points dans le ticket scellé, réservations du serveur (écran à vérifier) *(phase 30)*

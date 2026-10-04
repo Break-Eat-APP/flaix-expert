@@ -36,6 +36,7 @@
 | 28 | [Logo officiel v2](#phase-28) | — | [`1259fb6`](https://github.com/Break-Eat-APP/flaix-expert/commit/1259fb69e57fa0e3ed5843fd8a5b32a6dd56b256) | livrée |
 | 29 | [Dossier de conformité v0.1](#phase-29) | §15.126 | [`f75e8a7`](https://github.com/Break-Eat-APP/flaix-expert/commit/f75e8a722681b183641c02e16efd38a6ac4b38ff) [`d26e10e`](https://github.com/Break-Eat-APP/flaix-expert/commit/d26e10ef12863773b521852e0d84a9ffd2415a1d) | livrée |
 | 30 | [Fidélité à la caisse : code promo et points dans le ticket scellé](#phase-30) | §15.127 | [`87c46b8`](https://github.com/Break-Eat-APP/flaix-expert/commit/87c46b8234d355b7db4e2dbdf6c328fa5574c301) | en cours |
+| 31 | [Suivi du développement et préparation de l'audit Codex](#phase-31) | §15.128 | [`0b59036`](https://github.com/Break-Eat-APP/flaix-expert/commit/0b590362a71a8549b053dcfb0e1a6ff474fd3d5e) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -1096,3 +1097,25 @@
   - [`packages/domain/src/fidelite-caisse.test.ts`](../../packages/domain/src/fidelite-caisse.test.ts) — créé
 - **Documentation** :
   - [`docs/avancement.md`](../../docs/avancement.md) — modifié
+
+<a id="phase-31"></a>
+## Phase 31 — Suivi du développement et préparation de l'audit Codex
+
+- **Dates** : 2026-10-04
+- **Décision et raisonnement** : dossier projet §15.128
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`0b59036`](https://github.com/Break-Eat-APP/flaix-expert/commit/0b590362a71a8549b053dcfb0e1a6ff474fd3d5e) 2026-10-04 — Dossier de développement pour l'audit Codex : AGENTS.md, journal des phases, carte du code, CHANGELOG, prompt d'audit
+- **Serveur et outils (infra)** :
+  - [`infra/outils/carte-du-code-intro.md`](../../infra/outils/carte-du-code-intro.md) — créé
+  - [`infra/outils/journal-developpement.cjs`](../../infra/outils/journal-developpement.cjs) — créé
+- **Documentation** :
+  - [`AGENTS.md`](../../AGENTS.md) — créé
+  - [`CHANGELOG.md`](../../CHANGELOG.md) — créé
+  - [`CLAUDE.md`](../../CLAUDE.md) — modifié
+  - [`docs/audits/README.md`](../../docs/audits/README.md) — créé
+  - [`docs/developpement/CARTE_DU_CODE.md`](../../docs/developpement/CARTE_DU_CODE.md) — créé
+  - [`docs/developpement/CODEX_AUDIT_PROMPT.md`](../../docs/developpement/CODEX_AUDIT_PROMPT.md) — créé
+  - [`docs/developpement/JOURNAL_DES_PHASES.md`](../../docs/developpement/JOURNAL_DES_PHASES.md) — créé
+  - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
+  - [`README.md`](../../README.md) — modifié
