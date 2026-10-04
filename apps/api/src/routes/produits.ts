@@ -12,7 +12,9 @@ const Montant = z.number().int("Montant en centimes attendu.").min(0, "Un montan
 const TauxTva = z.number().refine(estTauxTva, "Taux de TVA non reconnu.") as unknown as z.ZodType<TauxTvaPb>;
 
 const NouvelleCategorie = z.object({ nom: texte(60, "Le nom de la catégorie") });
-const ModifCategorie = z.object({ nom: texte(60, "Le nom de la catégorie").optional(), actif: z.boolean().optional() });
+/** Cible de marge en points de base (0 à 100 %), ou null pour l'effacer (§15.132). */
+const CibleMarge = z.number().int().min(0, "Cible de marge entre 0 et 100 %.").max(10_000, "Cible de marge entre 0 et 100 %.").nullable();
+const ModifCategorie = z.object({ nom: texte(60, "Le nom de la catégorie").optional(), actif: z.boolean().optional(), cibleMarge: CibleMarge.optional() });
 
 const NouveauProduit = z.object({
   nom: texte(80, "Le nom du produit"),
@@ -26,6 +28,7 @@ const ModifProduit = z.object({
   nom: texte(80, "Le nom du produit").optional(),
   categorieId: Uuid.nullable().optional(),
   coutMatiere: Montant.nullable().optional(),
+  cibleMarge: CibleMarge.optional(),
   actif: z.boolean().optional(),
 });
 const StandsProduit = z.object({ standIds: z.array(Uuid).max(200) });
@@ -67,8 +70,9 @@ export async function listerProduits(c: Client, lieuId: string): Promise<Produit
     actif: boolean;
     stand_ids: string[];
     a_recette: boolean;
+    cible_marge_pb: number | null;
   }>(
-    `SELECT p.id, p.nom, p.categorie_id, p.cout_matiere_centimes, p.actif,
+    `SELECT p.id, p.nom, p.categorie_id, p.cout_matiere_centimes, p.actif, p.cible_marge_pb,
             EXISTS (SELECT 1 FROM recette_ligne r WHERE r.lieu_id = p.lieu_id AND r.produit_id = p.id) AS a_recette,
             coalesce(array_agg(ps.stand_id) FILTER (WHERE ps.stand_id IS NOT NULL), '{}') AS stand_ids
        FROM produit p
@@ -98,6 +102,7 @@ export async function listerProduits(c: Client, lieuId: string): Promise<Produit
     categorieId: p.categorie_id,
     coutMatiere: p.cout_matiere_centimes,
     aRecette: p.a_recette,
+    cibleMarge: p.cible_marge_pb,
     actif: p.actif,
     standIds: p.stand_ids,
     tarifEnVigueur: vigueur.get(p.id) ?? null,
@@ -107,15 +112,15 @@ export async function listerProduits(c: Client, lieuId: string): Promise<Produit
 
 async function listerCategories(c: Client, lieuId: string): Promise<Categorie[]> {
   const { rows } = await c.query<Categorie>(
-    "SELECT id, nom, actif FROM categorie WHERE lieu_id = $1 ORDER BY actif DESC, lower(nom)",
+    "SELECT id, nom, actif, cible_marge_pb AS \"cibleMarge\" FROM categorie WHERE lieu_id = $1 ORDER BY actif DESC, lower(nom)",
     [lieuId],
   );
   return rows;
 }
 
 async function lireProduit(c: Client, lieuId: string, id: string) {
-  const { rows } = await c.query<{ id: string; nom: string; categorie_id: string | null; cout_matiere_centimes: number | null; actif: boolean }>(
-    "SELECT id, nom, categorie_id, cout_matiere_centimes, actif FROM produit WHERE lieu_id = $1 AND id = $2 FOR UPDATE",
+  const { rows } = await c.query<{ id: string; nom: string; categorie_id: string | null; cout_matiere_centimes: number | null; actif: boolean; cible_marge_pb: number | null }>(
+    "SELECT id, nom, categorie_id, cout_matiere_centimes, actif, cible_marge_pb FROM produit WHERE lieu_id = $1 AND id = $2 FOR UPDATE",
     [lieuId, id],
   );
   if (!rows[0]) throw introuvable("Produit");
@@ -196,23 +201,24 @@ export async function routesProduits(app: FastifyInstance, { base }: { base: Bas
     const { id } = ParamId.parse(req.params);
     const demande = corps(ModifCategorie, req);
     return base.transaction(contexte(auth), async (c) => {
-      const { rows } = await c.query<{ nom: string; actif: boolean }>(
-        "SELECT nom, actif FROM categorie WHERE lieu_id = $1 AND id = $2 FOR UPDATE",
+      const { rows } = await c.query<{ nom: string; actif: boolean; cibleMarge: number | null }>(
+        "SELECT nom, actif, cible_marge_pb AS \"cibleMarge\" FROM categorie WHERE lieu_id = $1 AND id = $2 FOR UPDATE",
         [auth.lieuId, id],
       );
       const cat = rows[0];
       if (!cat) throw introuvable("Catégorie");
       const modifications = differences(cat, demande);
       if (Object.keys(modifications).length > 0) {
-        await c.query("UPDATE categorie SET nom = $3, actif = $4 WHERE lieu_id = $1 AND id = $2", [
+        await c.query("UPDATE categorie SET nom = $3, actif = $4, cible_marge_pb = $5 WHERE lieu_id = $1 AND id = $2", [
           auth.lieuId,
           id,
           demande.nom ?? cat.nom,
           demande.actif ?? cat.actif,
+          demande.cibleMarge !== undefined ? demande.cibleMarge : cat.cibleMarge,
         ]);
         await inscrireJet(c, {
           lieuId: auth.lieuId,
-          type: "categorie_modifiee",
+          type: modifications.cibleMarge && Object.keys(modifications).length === 1 ? "cible_marge_modifiee" : "categorie_modifiee",
           utilisateurId: auth.utilisateurId,
           details: { categorie: cat.nom, modifications },
         });
@@ -260,7 +266,7 @@ export async function routesProduits(app: FastifyInstance, { base }: { base: Bas
     const demande = corps(ModifProduit, req);
     return base.transaction(contexte(auth), async (c) => {
       const p = await lireProduit(c, auth.lieuId, id);
-      const avant = { nom: p.nom, categorieId: p.categorie_id, coutMatiere: p.cout_matiere_centimes, actif: p.actif };
+      const avant = { nom: p.nom, categorieId: p.categorie_id, coutMatiere: p.cout_matiere_centimes, actif: p.actif, cibleMarge: p.cible_marge_pb };
       const modifications = differences(avant, demande);
       if (modifications.coutMatiere && (await aUneRecette(c, auth.lieuId, id))) {
         throw new ErreurMetier(409, "Ce produit a une recette : son coût matière se calcule à partir de ses ingrédients.");
@@ -269,12 +275,12 @@ export async function routesProduits(app: FastifyInstance, { base }: { base: Bas
         if (demande.categorieId !== undefined) await controlerCategorie(c, auth.lieuId, demande.categorieId);
         const apres = { ...avant, ...Object.fromEntries(Object.entries(demande).filter(([, v]) => v !== undefined)) };
         await c.query(
-          "UPDATE produit SET nom = $3, categorie_id = $4, cout_matiere_centimes = $5, actif = $6 WHERE lieu_id = $1 AND id = $2",
-          [auth.lieuId, id, apres.nom, apres.categorieId, apres.coutMatiere, apres.actif],
+          "UPDATE produit SET nom = $3, categorie_id = $4, cout_matiere_centimes = $5, actif = $6, cible_marge_pb = $7 WHERE lieu_id = $1 AND id = $2",
+          [auth.lieuId, id, apres.nom, apres.categorieId, apres.coutMatiere, apres.actif, apres.cibleMarge],
         );
         await inscrireJet(c, {
           lieuId: auth.lieuId,
-          type: "produit_modifie",
+          type: modifications.cibleMarge && Object.keys(modifications).length === 1 ? "cible_marge_modifiee" : "produit_modifie",
           utilisateurId: auth.utilisateurId,
           details: { produitId: id, produit: p.nom, modifications },
         });

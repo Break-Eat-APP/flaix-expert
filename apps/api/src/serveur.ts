@@ -18,6 +18,7 @@ import { routesEquipe } from "./routes/equipe.ts";
 import { routesClotures } from "./routes/clotures.ts";
 import { routesResultats } from "./routes/resultats.ts";
 import { routesRapportSoiree } from "./routes/rapport-soiree.ts";
+import { routesFinances } from "./routes/finances.ts";
 import { routesPlanning } from "./routes/planning.ts";
 import { routesStock } from "./routes/stock.ts";
 import { routesStockIngredients } from "./routes/stock-ingredients.ts";
@@ -137,6 +138,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesClotures, { base });
   await app.register(routesResultats, { base });
   await app.register(routesRapportSoiree, { base });
+  await app.register(routesFinances, { base });
   await app.register(routesPlanning, { base });
   await app.register(routesStock, { base });
   await app.register(routesStockIngredients, { base });

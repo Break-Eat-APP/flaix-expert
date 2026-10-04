@@ -5,7 +5,11 @@ import {
   TAUX_TVA,
   formaterMontant,
   libelleTauxTva,
+  cibleEffective,
+  formaterPourcentage,
   lireMontant,
+  lirePourcentage,
+  margeConfiguree,
   margeUnitaireComptoir,
   montantPourSaisie,
   type Categorie,
@@ -17,17 +21,45 @@ import {
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 import { GestionIngredients, RecetteProduit } from "./Recettes.tsx";
+import { EtatCibleMarge } from "../../composants/cibles.tsx";
 
 const COLONNES = "minmax(150px, 2fr) minmax(80px, 1fr) minmax(130px, 2fr) minmax(70px, 0.8fr) minmax(50px, 0.6fr) minmax(80px, 0.9fr) minmax(100px, 1.2fr) 24px";
 
-function Marge({ produit }: { produit: Produit }) {
+function Marge({ produit, cibleCategorie }: { produit: Produit; cibleCategorie: number | null }) {
   const t = produit.tarifEnVigueur;
   if (!t || produit.coutMatiere === null) return <span className="discret">—</span>;
   const { marge, tauxMarge } = margeUnitaireComptoir(t.prixTtc, t.tauxTva, produit.coutMatiere);
+  const m = margeConfiguree(t.prixTtc, t.tauxTva, produit.coutMatiere, cibleEffective(produit.cibleMarge, cibleCategorie));
   return (
     <span className="chiffre">
       {formaterMontant(marge)} {tauxMarge !== null && <span className="discret">· {tauxMarge.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %</span>}
+      {m && m.etat.statut === "sous" && (
+        <>
+          {" "}
+          <EtatCibleMarge etat={m.etat} />
+        </>
+      )}
     </span>
+  );
+}
+
+/**
+ * Marge au prix et au coût du moment, comparée à la cible (module 5 ; dossier §15.132) : l'alerte se voit
+ * dès qu'un nouveau prix ou un nouveau coût est tapé, avant même d'être enregistré.
+ */
+function MargeAuPrix({ prixTtc, tauxTva, cout, cible, nouveau }: { prixTtc: number | null; tauxTva: TauxTvaPb | null; cout: number | null; cible: number | null; nouveau: boolean }) {
+  if (prixTtc === null || tauxTva === null) return null;
+  if (cout === null) return <p className="note">Coût matière manquant : la marge {nouveau ? "à ce prix" : "au prix actuel"} n'est pas calculable.</p>;
+  const m = margeConfiguree(prixTtc, tauxTva, cout, cible)!;
+  return (
+    <div className={`message ${m.etat.statut === "sous" ? "message-alerte" : "message-info"}`}>
+      {nouveau ? "À ce prix" : "Au prix actuel"} : marge {formaterMontant(Math.round(m.marge))} par vente ({formaterPourcentage(m.etat.tauxPb!)} du HT).{" "}
+      {m.etat.statut === "sans_cible"
+        ? "Aucune cible de marge pour ce produit ni sa catégorie."
+        : m.etat.statut === "tenue"
+          ? `Cible de ${formaterPourcentage(m.etat.ciblePb!)} tenue (+${formaterMontant(Math.round(m.ecartParVente!))} par vente).`
+          : `Sous la cible de ${formaterPourcentage(m.etat.ciblePb!)} : il manque ${formaterMontant(Math.round(-m.ecartParVente!))} par vente.`}
+    </div>
   );
 }
 
@@ -173,7 +205,7 @@ export function Produits() {
                     </span>
                     <span>
                       <span className="cellule-libelle">Marge comptoir</span>
-                      <Marge produit={p} />
+                      <Marge produit={p} cibleCategorie={categories.data!.find((c) => c.id === p.categorieId)?.cibleMarge ?? null} />
                     </span>
                     <span className="discret">{ouvert === p.id ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
                   </div>
@@ -333,6 +365,7 @@ function DetailProduit({ produit, stands, categories, majProduits }: { produit: 
   const [nom, setNom] = useState(produit.nom);
   const [categorieId, setCategorieId] = useState(produit.categorieId ?? "");
   const [cout, setCout] = useState(produit.coutMatiere !== null ? montantPourSaisie(produit.coutMatiere) : "");
+  const [cible, setCible] = useState(produit.cibleMarge !== null ? String(produit.cibleMarge / 100).replace(".", ",") : "");
   const [standIds, setStandIds] = useState(produit.standIds);
   const [prix, setPrix] = useState("");
   const [tva, setTva] = useState<TauxTvaPb | "">(produit.tarifEnVigueur?.tauxTva ?? "");
@@ -357,7 +390,11 @@ function DetailProduit({ produit, stands, categories, majProduits }: { produit: 
   });
 
   const coutCentimes = cout.trim() ? lireMontant(cout) : null;
-  const ficheModifiee = nom.trim() !== produit.nom || (categorieId || null) !== produit.categorieId || (!produit.aRecette && coutCentimes !== produit.coutMatiere);
+  const ciblePb = cible.trim() ? lirePourcentage(cible) : null;
+  const cibleInvalide = cible.trim() !== "" && ciblePb === null;
+  const cibleCategorie = categories.find((c) => c.id === (categorieId || produit.categorieId))?.cibleMarge ?? null;
+  const ficheModifiee =
+    nom.trim() !== produit.nom || (categorieId || null) !== produit.categorieId || (!produit.aRecette && coutCentimes !== produit.coutMatiere) || ciblePb !== produit.cibleMarge;
   const standsModifies = [...standIds].sort().join() !== [...produit.standIds].sort().join();
   const prixCentimes = lireMontant(prix);
   const tarifValide = prixCentimes !== null && tva !== "" && (!programme || dateEffet !== "");
@@ -379,13 +416,25 @@ function DetailProduit({ produit, stands, categories, majProduits }: { produit: 
         ) : (
           <ChampMontant libelle="Coût matière HT par portion" valeur={cout} onChange={setCout} aide="Facultatif — ou calculé par une recette." />
         )}
+        <label className="champ">
+          <span>Cible de marge du produit (%)</span>
+          <input type="text" inputMode="decimal" value={cible} onChange={(e) => setCible(e.target.value)} placeholder={cibleCategorie !== null ? `catégorie : ${formaterPourcentage(cibleCategorie)}` : "aucune"} style={{ borderColor: cibleInvalide ? "var(--red)" : undefined }} />
+          <small className="discret">Facultatif — prime sur la cible de la catégorie.</small>
+        </label>
       </div>
+      <MargeAuPrix
+        prixTtc={produit.tarifEnVigueur?.prixTtc ?? null}
+        tauxTva={produit.tarifEnVigueur?.tauxTva ?? null}
+        cout={produit.aRecette ? produit.coutMatiere : cout.trim() ? coutCentimes : null}
+        cible={cibleEffective(cible.trim() ? ciblePb : null, cibleCategorie)}
+        nouveau={false}
+      />
       <MessageErreur erreur={fiche.error} />
       <div className="ligne-actions">
         <button
           className="btn"
-          disabled={!ficheModifiee || fiche.isPending || (cout.trim() !== "" && coutCentimes === null)}
-          onClick={() => fiche.mutate({ nom, categorieId: categorieId || null, ...(produit.aRecette ? {} : { coutMatiere: coutCentimes }) })}
+          disabled={!ficheModifiee || fiche.isPending || (cout.trim() !== "" && coutCentimes === null) || cibleInvalide}
+          onClick={() => fiche.mutate({ nom, categorieId: categorieId || null, cibleMarge: ciblePb, ...(produit.aRecette ? {} : { coutMatiere: coutCentimes }) })}
         >
           Enregistrer la fiche
         </button>
@@ -447,6 +496,9 @@ function DetailProduit({ produit, stands, categories, majProduits }: { produit: 
             {programme && <input type="datetime-local" value={dateEffet} onChange={(e) => setDateEffet(e.target.value)} required />}
           </div>
         </div>
+        {prixCentimes !== null && tva !== "" && (
+          <MargeAuPrix prixTtc={prixCentimes} tauxTva={tva} cout={produit.coutMatiere} cible={cibleEffective(produit.cibleMarge, cibleCategorie)} nouveau />
+        )}
         <MessageErreur erreur={tarif.error} />
         <div className="ligne-actions">
           <button className="btn" disabled={!tarifValide || tarif.isPending}>

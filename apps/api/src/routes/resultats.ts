@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { formaterMontant, rangHeure, type AlerteResultat, type Evenement, type MatchResume, type ProduitVendu, type Resultats, type StatsMatch, type TauxTvaPb } from "@flaix/domain";
+import { etatCible, formaterMontant, rangHeure, tauxMargePb, type AlerteResultat, type Evenement, type MatchResume, type ProduitVendu, type Resultats, type StatsMatch, type TauxTvaPb } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { listerEvenements } from "./evenements.ts";
@@ -55,15 +55,15 @@ export async function statsMatch(c: Client, lieuId: string, e: Evenement): Promi
     p,
   );
   // Les lignes des annulations portent des quantités et montants négatifs : les sommes sont nettes.
-  const { rows: lignes } = await c.query<{ produit_id: string; nom: string; categorie: string | null; cout: number | null; quantite: number; ttc: number; ht: number }>(
-    `SELECT l.produit_id, p.nom, cat.nom AS categorie, p.cout_matiere_centimes AS cout,
+  const { rows: lignes } = await c.query<{ produit_id: string; nom: string; categorie: string | null; cout: number | null; cible: number | null; quantite: number; ttc: number; ht: number }>(
+    `SELECT l.produit_id, p.nom, cat.nom AS categorie, p.cout_matiere_centimes AS cout, coalesce(p.cible_marge_pb, cat.cible_marge_pb) AS cible,
             sum(l.quantite)::int AS quantite, sum(l.net_ttc_centimes)::int AS ttc, sum(l.ht_centimes)::int AS ht
        FROM ligne_ticket l
        JOIN journal_caisse j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
        JOIN produit p ON p.lieu_id = l.lieu_id AND p.id = l.produit_id
        LEFT JOIN categorie cat ON cat.lieu_id = p.lieu_id AND cat.id = p.categorie_id
       WHERE l.lieu_id = $1 AND j.evenement_id = $2
-      GROUP BY l.produit_id, p.nom, cat.nom, p.cout_matiere_centimes
+      GROUP BY l.produit_id, p.nom, cat.nom, p.cout_matiere_centimes, p.cible_marge_pb, cat.cible_marge_pb
       ORDER BY 6 DESC`,
     p,
   );
@@ -88,6 +88,7 @@ export async function statsMatch(c: Client, lieuId: string, e: Evenement): Promi
       caHt: l.ht,
       coutUnitaire: l.cout,
       marge: l.cout === null ? null : l.ht - l.quantite * l.cout,
+      cibleMarge: l.cible,
     }));
   const sansCout = produits.filter((x) => x.coutUnitaire === null && x.quantite > 0);
   const coutMatiere = sansCout.length ? null : produits.reduce((s, x) => s + x.quantite * (x.coutUnitaire ?? 0), 0);
@@ -147,6 +148,15 @@ export async function alertes(c: Client, lieuId: string, e: Evenement, s: StatsM
   if (s.produitsSansCout.length) {
     const part = s.caHt > 0 ? Math.round((s.caHtSansCout / s.caHt) * 100) : 0;
     liste.push({ niveau: "normale", titre: `Coût manquant sur ${s.produitsSansCout.length} produit${s.produitsSansCout.length > 1 ? "s" : ""}`, detail: `${part} % du CA HT sans marge calculable : Paramètres → Produits & prix` });
+  }
+  // Marge réalisée sous la cible saisie (module 5) : jamais jugée sans cible ni sans coût.
+  const sousCible = s.produits.filter((p) => etatCible(tauxMargePb(p.marge, p.caHt), p.cibleMarge ?? null).statut === "sous");
+  if (sousCible.length) {
+    liste.push({
+      niveau: "normale",
+      titre: `${sousCible.length} produit${sousCible.length > 1 ? "s" : ""} sous ${sousCible.length > 1 ? "leur" : "sa"} cible de marge`,
+      detail: `${sousCible.slice(0, 3).map((p) => p.nom).join(", ")}${sousCible.length > 3 ? "…" : ""} : Résultats → Marges`,
+    });
   }
   if (e.spectateurs === null) liste.push({ niveau: "normale", titre: "Affluence non saisie", detail: "Pour le CA par spectateur : Paramètres → Saison" });
   if (g.hors_ligne) liste.push({ niveau: "normale", titre: `${g.hors_ligne} ticket${g.hors_ligne > 1 ? "s" : ""} enregistré${g.hors_ligne > 1 ? "s" : ""} hors ligne`, detail: "Réseau coupé pendant l'événement : tickets reçus ensuite" });

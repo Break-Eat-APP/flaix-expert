@@ -85,7 +85,7 @@ export function Parametres() {
     },
     { titre: "Click & Collect", texte: "Prix sur l'application, points de retrait", icone: ShoppingBag, route: "/parametres/click-collect", etat: "Prix app conseillés" },
     { titre: "Coûts par buvette", texte: "Frais de chaque stand, coûts du mois par stand", icone: Wallet, route: "/parametres/couts" },
-    { titre: "Objectifs de marge", texte: "Cibles de marge par catégorie et par produit", icone: Target },
+    { titre: "Objectifs de marge", texte: "Cible de marge nette de la soirée, cibles par catégorie, postes de dépense", icone: Target, route: "/parametres/objectifs", etat: "Cibles et dépenses" },
     { titre: "Accès", texte: "Comptes du directeur et des caissières", icone: UserCog },
   ];
 

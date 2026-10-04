@@ -13,7 +13,7 @@ import { RapportSoiree } from "./RapportSoiree.tsx";
 const reponse = (statut: number, corps: unknown) => new Response(JSON.stringify(corps), { status: statut, headers: { "content-type": "application/json" } });
 
 function rapport(modif: Partial<Rapport> = {}): Rapport {
-  const c = cascadeSoiree({ encaisseTtc: 2_700, tva: 405, coutMatiere: 510, personnel: 0 });
+  const c = cascadeSoiree({ encaisseTtc: 2_700, tva: 405, coutMatiere: 510, personnel: 0, depenses: 0 });
   return {
     evenement: { id: "rouen", libelle: "Spartiates – Rouen", debut: "2026-11-14T19:00:00Z", closLe: "2026-11-14T23:30:00Z", spectateurs: 3_000 },
     lieu: { nom: "Palais des sports", raisonSociale: null, formation: false },
@@ -35,6 +35,8 @@ function rapport(modif: Partial<Rapport> = {}): Rapport {
     margeBrute: c.margeBrute,
     margeNette: c.margeNette,
     personnel: { montant: 0, affectations: 0, tauxManquants: 0 },
+    depenses: [],
+    cibleMargeNette: null,
     produitsSansCout: [],
     especes: { tiroirs: [{ caisse: 1, stand: "Buvette", attendu: 12_100, compte: 12_000, ecart: -100, motif: null, rectifie: false }], coffre: null, ecartTotal: -100, seuil: 500 },
     stock: { produits: [], ingredients: [], valeurTotale: 0, suivi: false },
@@ -91,7 +93,7 @@ describe("rapport de soirée à l'écran", () => {
   });
 
   it("[F] coût manquant : jamais un chiffre, la raison à la place ; premier événement : pas de comparaison", async () => {
-    const c = cascadeSoiree({ encaisseTtc: 2_700, tva: 405, coutMatiere: null, personnel: 0 });
+    const c = cascadeSoiree({ encaisseTtc: 2_700, tva: 405, coutMatiere: null, personnel: 0, depenses: 0 });
     const sansPrecedent = { evenement: null, encaisseTtc: ecartEvenement(2_700, null), tickets: ecartEvenement(2, null), panierMoyen: ecartEvenement(1_350, null), spectateurs: ecartEvenement(3_000, null), margeBrute: ecartEvenement(null, null), margeNette: ecartEvenement(null, null) };
     lu.rapport = rapport({ cascade: c.lignes, margeBrute: null, margeNette: null, produitsSansCout: ["Hot-dog"], comparaison: sansPrecedent });
     monter();

@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
+  etatCible,
   libelleTauxTva,
+  tauxMargePb,
   margeParVente,
   pistesMarges,
   rangHeure,
@@ -16,7 +18,9 @@ import {
 } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
-import { Anneau, Cascade, CourbeHeures, Duo, Empile, MiniCourbe, Nuage, euros, eurosAxe, type EtapeCascade } from "./graphiques.tsx";
+import { Anneau, CourbeHeures, Duo, MiniCourbe, Nuage, euros, eurosAxe } from "./graphiques.tsx";
+import { VueFinances } from "./Finances.tsx";
+import { EtatCibleMarge } from "../../composants/cibles.tsx";
 
 type Vue = "ensemble" | "ventes" | "finances" | "marges" | "rapports";
 const VUES: [Vue, string][] = [
@@ -100,7 +104,7 @@ export function Tableaux() {
         <div className="resultats-colonne">
           {vue === "ensemble" && <VueEnsemble d={d} />}
           {vue === "ventes" && <VueVentes d={d} autres={autres} choisir={setComparaisonId} />}
-          {vue === "finances" && <VueFinances s={d.actuel} />}
+          {vue === "finances" && <VueFinances evenementId={d.evenement.id} s={d.actuel} />}
           {vue === "marges" && <VueMarges s={d.actuel} />}
           {vue === "rapports" && <VueRapports d={d} choisir={(id) => { setEvenementId(id); setComparaisonId(null); }} />}
         </div>
@@ -372,105 +376,6 @@ function VueVentes({ d, autres, choisir }: { d: Resultats; autres: Resultats["ma
   );
 }
 
-function VueFinances({ s }: { s: StatsMatch }) {
-  const etapes: EtapeCascade[] = [
-    { l1: "Encaissé", l2: "TTC", v: s.caTtc, total: true, aide: "Carte et espèces, annulations déduites" },
-    { l1: "TVA", l2: "collectée", v: -s.tva, total: false, aide: "Collectée pour l'État" },
-    { l1: "CA HT", v: s.caHt, total: true, aide: "Ce qui revient au lieu" },
-  ];
-  if (s.coutMatiere !== null && s.margeBrute !== null) {
-    etapes.push({ l1: "Coût", l2: "matière", v: -s.coutMatiere, total: false, aide: "Quantités vendues × coût de la fiche produit" });
-    etapes.push({ l1: "Marge", l2: "brute", v: s.margeBrute, total: true, aide: s.caHt > 0 ? `${((s.margeBrute / s.caHt) * 100).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} % du CA HT` : "" });
-    // Personnel lu dans le planning d'Équipe (§15.104) : seulement s'il est saisi et complet.
-    if (s.personnel.affectations > 0 && s.personnel.reel !== null) {
-      const apres = s.margeBrute - s.personnel.reel;
-      etapes.push({ l1: "Personnel", l2: "planning", v: -s.personnel.reel, total: false, aide: `${s.personnel.affectations} affectation${s.personnel.affectations > 1 ? "s" : ""}, heures réelles × taux` });
-      etapes.push({ l1: "Après", l2: "personnel", v: apres, total: true, aide: s.caHt > 0 ? `${((apres / s.caHt) * 100).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} % du CA HT` : "" });
-    }
-  }
-  return (
-    <>
-      <Carte
-        titre={s.margeBrute === null ? "De l'encaissé au chiffre d'affaires HT" : s.personnel.affectations > 0 && s.personnel.reel !== null ? "De l'encaissé à la marge après personnel" : "De l'encaissé à la marge brute"}
-        actions={
-          <div className="leg-inline">
-            <span>
-              <i className="pastille" style={{ background: "var(--violet)" }} />
-              Totaux
-            </span>
-            <span>
-              <i className="pastille" style={{ background: "var(--gris-graph)" }} />
-              Ce qui est retiré
-            </span>
-          </div>
-        }
-      >
-        <div className="graphe-defile">
-          <Cascade etapes={etapes} />
-        </div>
-        {s.margeBrute === null && (
-          <div className="message message-alerte">
-            <strong>Coût manquant</strong> sur {s.produitsSansCout.join(", ")} ({s.caHt > 0 ? Math.round((s.caHtSansCout / s.caHt) * 100) : 0} % du CA HT) : la marge brute n'est pas calculée.{" "}
-            <Link to="/parametres/produits">Saisir les coûts</Link>
-          </div>
-        )}
-        {s.personnel.affectations > 0 && s.personnel.reel === null && (
-          <div className="message message-alerte">
-            <strong>Taux manquant</strong> sur {s.personnel.tauxManquants} affectation{s.personnel.tauxManquants > 1 ? "s" : ""} du planning : le personnel n'est pas déduit. <Link to="/equipe">Compléter les fiches</Link>
-          </div>
-        )}
-        <p className="note">
-          Coût matière = coût saisi aujourd'hui sur chaque fiche produit.{" "}
-          {s.personnel.affectations === 0 ? "Aucun planning saisi pour cet événement : le personnel n'est pas déduit (Équipe → Planning). " : "Personnel = heures réelles du planning × taux de chaque affectation. "}
-          Commission, frais et autres dépenses ne sont pas encore saisis dans FlaiX : ce n'est pas la marge nette de la soirée.
-        </p>
-      </Carte>
-      <div className="deux egal">
-        <Carte titre="TVA collectée par taux">
-          <div className="scroll-x">
-            <table className="tableau">
-              <thead>
-                <tr>
-                  <th>Taux</th>
-                  <th className="d">HT</th>
-                  <th className="d">TVA</th>
-                  <th className="d">TTC</th>
-                </tr>
-              </thead>
-              <tbody>
-                {s.parTaux.map((t) => (
-                  <tr key={t.tauxTva}>
-                    <td>{libelleTauxTva(t.tauxTva)}</td>
-                    <td className="d chiffre">{euros(t.ht)}</td>
-                    <td className="d chiffre">{euros(t.tva)}</td>
-                    <td className="d chiffre">{euros(t.ttc)}</td>
-                  </tr>
-                ))}
-                <tr>
-                  <td><strong>Total</strong></td>
-                  <td className="d chiffre"><strong>{euros(s.caHt)}</strong></td>
-                  <td className="d chiffre"><strong>{euros(s.tva)}</strong></td>
-                  <td className="d chiffre"><strong>{euros(s.caTtc)}</strong></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p className="note">Contribution de l'événement à la déclaration de TVA, à remettre à l'expert-comptable : il y manque la TVA déductible sur les achats.</p>
-        </Carte>
-        <Carte titre="Comment les clients ont payé" description={`${euros(s.caTtc)} TTC`}>
-          <Empile
-            parts={[
-              { nom: "Carte (TPE du lieu)", v: s.parMode.carte, couleur: "var(--c1)" },
-              { nom: "Espèces", v: s.parMode.especes, couleur: "var(--c3)" },
-            ]}
-          />
-          <p className="note">La carte passe par le TPE du lieu, non relié à FlaiX : la caisse enregistre « carte », sans encaisser.</p>
-        </Carte>
-      </div>
-    </>
-  );
-}
-
 function VueMarges({ s }: { s: StatsMatch }) {
   const repere = reperesMarges(s.produits);
   const pistes = pistesMarges(s.produits, euros);
@@ -519,6 +424,7 @@ function VueMarges({ s }: { s: StatsMatch }) {
                 <th className="d">Marge / vente</th>
                 <th className="d">Marge %</th>
                 <th className="d">Marge totale</th>
+                <th>Cible</th>
               </tr>
             </thead>
             <tbody>
@@ -539,6 +445,9 @@ function VueMarges({ s }: { s: StatsMatch }) {
                       <td className="d chiffre">{euros(p.marge!)}</td>
                     </>
                   )}
+                  <td>
+                    <EtatCibleMarge etat={etatCible(tauxMargePb(p.marge, p.caHt), p.cibleMarge ?? null)} />
+                  </td>
                 </tr>
               ))}
             </tbody>

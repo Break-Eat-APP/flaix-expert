@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Printer, ShieldCheck, ShieldAlert } from "lucide-react";
-import { formaterMontant, libelleTauxTva, type Ecart, type LigneCascade, type RapportSoireeFige } from "@flaix/domain";
+import { formaterMontant, formaterPourcentage, libelleTauxTva, type Ecart, type LigneCascade, type RapportSoireeFige } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Chargement, MessageErreur } from "../../composants/communs.tsx";
 
@@ -67,14 +67,35 @@ function Document({ lu }: { lu: Lu }) {
         <Chiffre
           libelle="Marge nette de la soirée"
           valeur={r.margeNette !== null ? formaterMontant(r.margeNette) : "non calculable"}
-          sous={r.margeNette !== null ? `${partHt(r.margeNette, v.caHt) ?? ""} du CA HT` : r.margeBrute === null ? "coût manquant" : "taux horaire manquant"}
+          sous={
+            r.margeNette === null
+              ? r.margeBrute === null
+                ? "coût manquant"
+                : "taux horaire manquant"
+              : r.cibleMargeNette && r.cibleMargeNette.ecart !== null
+                ? `${r.cibleMargeNette.tenue ? "cible tenue" : "sous la cible"} (${formaterPourcentage(r.cibleMargeNette.ciblePb)}) : ${signe(r.cibleMargeNette.ecart, formaterMontant)}`
+                : `${partHt(r.margeNette, v.caHt) ?? ""} du CA HT`
+          }
         />
       </section>
 
-      <Section titre="Résultat de la soirée" description="Du montant encaissé à ce qui reste une fois payés la TVA, la marchandise vendue et le personnel de la soirée.">
+      <Section titre="Résultat de la soirée" description="Du montant encaissé à ce qui reste une fois payés la TVA, la marchandise vendue, le personnel et les dépenses de la soirée.">
         <Cascade lignes={r.cascade} caHt={v.caHt} />
+        {r.depenses && r.depenses.length > 0 && (
+          <p className="rapport-note">
+            Dépenses de la soirée, telles que saisies à la clôture :{" "}
+            {r.depenses.map((d) => `${d.nom} ${formaterMontant(d.montant)}${d.pourcentPb !== null ? ` (${formaterPourcentage(d.pourcentPb)} du CA HT)` : ""}`).join(" · ")}.
+          </p>
+        )}
+        {r.cibleMargeNette && (
+          <p className="rapport-note">
+            Cible de marge nette : {formaterPourcentage(r.cibleMargeNette.ciblePb)} du CA HT, soit {formaterMontant(r.cibleMargeNette.cible)}
+            {r.cibleMargeNette.ecart !== null ? ` — ${r.cibleMargeNette.tenue ? "tenue" : "manquée"} de ${formaterMontant(Math.abs(r.cibleMargeNette.ecart))}.` : "."}
+          </p>
+        )}
         <p className="rapport-avertissement">
           La marge nette de la soirée <strong>n'est pas le bénéfice du lieu</strong> : le loyer, les salaires permanents, l'assurance, les amortissements et l'impôt n'y sont pas déduits.
+          {r.depenses === undefined && " Rapport établi avant la saisie des dépenses de la soirée : elles n'y figurent pas."}
           {r.personnel.affectations === 0 && " Aucune personne n'était affectée à cet événement dans Équipe : le personnel compte pour 0 €."}
           {r.personnel.tauxManquants > 0 && ` ${r.personnel.tauxManquants} affectation${r.personnel.tauxManquants > 1 ? "s" : ""} sans taux horaire dans Équipe.`}
           {r.produitsSansCout.length > 0 && ` Coût d'achat manquant : ${r.produitsSansCout.join(", ")}.`}

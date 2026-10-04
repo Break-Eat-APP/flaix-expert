@@ -5,16 +5,18 @@ import type { StockIngredientsMatch } from "./stock-ingredients.ts";
 
 describe("rapport de soirée : cascade du résultat", () => {
   it("exemple du dossier (12/09) : 18 640 € encaissés − 2 034 € de TVA = 16 606 € HT ; − 3 062 € de matière = 13 544 € ; − 4 013 € de personnel = 9 531 €", () => {
-    const c = cascadeSoiree({ encaisseTtc: 1_864_000, tva: 203_400, coutMatiere: 306_200, personnel: 401_300 });
+    const c = cascadeSoiree({ encaisseTtc: 1_864_000, tva: 203_400, coutMatiere: 306_200, personnel: 401_300, depenses: 0 });
     expect(c).toMatchObject({ caHt: 1_660_600, margeBrute: 1_354_400, margeNette: 953_100 });
-    expect(c.lignes.map((l) => l.sorte)).toEqual(["depart", "retire", "total", "retire", "total", "retire", "total"]);
+    expect(c.lignes.map((l) => l.sorte)).toEqual(["depart", "retire", "total", "retire", "total", "retire", "retire", "total"]);
+    // Avec les dépenses de la soirée du dossier (commission 318 €, frais 89 €, autres 348 €) : 8 776 €.
+    expect(cascadeSoiree({ encaisseTtc: 1_864_000, tva: 203_400, coutMatiere: 306_200, personnel: 401_300, depenses: 75_500 }).margeNette).toBe(877_600);
   });
 
   it("une donnée manquante ne s'estime pas : la suite de la cascade reste vide, avec la raison", () => {
-    const sansCout = cascadeSoiree({ encaisseTtc: 10_000, tva: 1_000, coutMatiere: null, personnel: 2_000 });
+    const sansCout = cascadeSoiree({ encaisseTtc: 10_000, tva: 1_000, coutMatiere: null, personnel: 2_000, depenses: 0 });
     expect(sansCout).toMatchObject({ caHt: 9_000, margeBrute: null, margeNette: null });
     expect(sansCout.lignes[3]!.note).toContain("coût manquant");
-    const sansPersonnel = cascadeSoiree({ encaisseTtc: 10_000, tva: 1_000, coutMatiere: 3_000, personnel: null });
+    const sansPersonnel = cascadeSoiree({ encaisseTtc: 10_000, tva: 1_000, coutMatiere: 3_000, personnel: null, depenses: 0 });
     expect(sansPersonnel).toMatchObject({ margeBrute: 6_000, margeNette: null });
   });
 });

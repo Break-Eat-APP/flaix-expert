@@ -32,6 +32,7 @@ const EnDirect = lazy(() => import("./pages/direct/EnDirect.tsx").then((m) => ({
 const CoutsBuvette = lazy(() => import("./pages/parametres/CoutsBuvette.tsx").then((m) => ({ default: m.CoutsBuvette })));
 const Fidelite = lazy(() => import("./pages/fidelite/Fidelite.tsx").then((m) => ({ default: m.Fidelite })));
 const Factures = lazy(() => import("./pages/factures/Factures.tsx").then((m) => ({ default: m.Factures })));
+const Objectifs = lazy(() => import("./pages/parametres/Objectifs.tsx").then((m) => ({ default: m.Objectifs })));
 const RapportSoiree = lazy(() => import("./pages/resultats/RapportSoiree.tsx").then((m) => ({ default: m.RapportSoiree })));
 const EspaceEditeur = lazy(() => import("./pages/editeur/EspaceEditeur.tsx").then((m) => ({ default: m.EspaceEditeur })));
 
@@ -91,6 +92,7 @@ function AppLieu() {
           <Route path="parametres/formation" element={<Formation />} />
           <Route path="parametres/click-collect" element={<ClickCollect />} />
           <Route path="parametres/couts" element={<CoutsBuvette />} />
+          <Route path="parametres/objectifs" element={<Objectifs />} />
           <Route path="compte" element={<Compte />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

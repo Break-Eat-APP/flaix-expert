@@ -4,7 +4,7 @@
  * Il ne recalcule rien : chaque chiffre vient d'un module existant (ventes, clôtures, stock, équipe),
  * lu une fois l'événement clos, puis figé. Deux calculs seulement lui sont propres :
  *   - la cascade du résultat de la soirée, ligne à ligne :
- *       encaissé TTC − TVA collectée = CA HT ; − coût matière = marge brute ; − personnel = marge nette
+ *       encaissé TTC − TVA collectée = CA HT ; − coût matière = marge brute ; − personnel − dépenses de la soirée = marge nette
  *     (null dès qu'une donnée manque : jamais un chiffre estimé) ;
  *   - la comparaison avec l'événement joué juste avant (jamais une moyenne) :
  *       écart = actuel − précédent ; écart % = écart ÷ précédent × 100 (null sans événement précédent ou à 0).
@@ -18,6 +18,7 @@ import type { Centimes } from "./argent.ts";
 import { EMPREINTE_INITIALE, calculerEmpreinte, jsonCanonique } from "./chaine.ts";
 import type { AlerteResultat, ClotureMatch, ComptageCoffre, ComptageEspeces, ProduitVendu, StockMatch } from "./modele.ts";
 import { formaterQuantiteStock, type StockIngredientsMatch } from "./stock-ingredients.ts";
+import type { EtatCibleSoiree } from "./finances.ts";
 import type { TauxTvaPb } from "./tva.ts";
 
 export interface LigneCascade {
@@ -34,12 +35,14 @@ export interface EntreeCascade {
   tva: Centimes;
   coutMatiere: Centimes | null;
   personnel: Centimes | null;
+  /** Dépenses de la soirée saisies dans Gestion financière (0 s'il n'y en a pas). */
+  depenses: Centimes;
 }
 
 export function cascadeSoiree(e: EntreeCascade): { lignes: LigneCascade[]; caHt: Centimes; margeBrute: Centimes | null; margeNette: Centimes | null } {
   const caHt = e.encaisseTtc - e.tva;
   const margeBrute = e.coutMatiere === null ? null : caHt - e.coutMatiere;
-  const margeNette = margeBrute === null || e.personnel === null ? null : margeBrute - e.personnel;
+  const margeNette = margeBrute === null || e.personnel === null ? null : margeBrute - e.personnel - e.depenses;
   return {
     caHt,
     margeBrute,
@@ -51,6 +54,7 @@ export function cascadeSoiree(e: EntreeCascade): { lignes: LigneCascade[]; caHt:
       { libelle: "Coût matière (prix d'achat de ce qui a été vendu)", montant: e.coutMatiere, sorte: "retire", note: e.coutMatiere === null ? "coût manquant sur au moins un produit" : undefined },
       { libelle: "Marge brute", montant: margeBrute, sorte: "total" },
       { libelle: "Personnel de la soirée", montant: e.personnel, sorte: "retire", note: e.personnel === null ? "taux horaire manquant dans Équipe" : undefined },
+      { libelle: "Dépenses de la soirée", montant: e.depenses, sorte: "retire" },
       { libelle: "Marge nette de la soirée", montant: margeNette, sorte: "total" },
     ],
   };
@@ -165,6 +169,10 @@ export interface RapportSoiree {
   margeBrute: Centimes | null;
   margeNette: Centimes | null;
   personnel: { montant: Centimes | null; affectations: number; tauxManquants: number };
+  /** Dépenses de la soirée saisies au moment de la clôture (absent des rapports établis avant le 2026-10-04). */
+  depenses?: { nom: string; montant: Centimes; pourcentPb: number | null }[];
+  /** Marge nette comparée à sa cible ; null sans cible (absent des rapports établis avant le 2026-10-04). */
+  cibleMargeNette?: EtatCibleSoiree | null;
   produitsSansCout: string[];
   especes: EspecesRapport;
   stock: StockRapport;

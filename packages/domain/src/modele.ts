@@ -76,6 +76,8 @@ export interface Categorie {
   id: string;
   nom: string;
   actif: boolean;
+  /** Cible de marge brute de la catégorie, en points de base du CA HT (7 000 = 70 %) ; null : aucune (§15.132). */
+  cibleMarge: number | null;
 }
 
 export interface Tarif {
@@ -94,6 +96,8 @@ export interface Produit {
   coutMatiere: Centimes | null;
   /** Produit fabriqué : son coût matière est calculé par sa recette (§15.119). */
   aRecette: boolean;
+  /** Cible de marge propre au produit (prime sur celle de sa catégorie), en points de base ; null : celle de la catégorie. */
+  cibleMarge: number | null;
   actif: boolean;
   standIds: string[];
   /** Tarif en vigueur maintenant ; null seulement si le seul tarif saisi prend effet plus tard. */
@@ -435,6 +439,8 @@ export interface ProduitVendu {
   coutUnitaire: Centimes | null;
   /** caHt − quantité × coût ; null si le coût manque. */
   marge: Centimes | null;
+  /** Cible de marge effective (produit, sinon catégorie), en points de base ; null : aucune. */
+  cibleMarge?: number | null;
 }
 
 export interface StatsMatch {

@@ -107,8 +107,9 @@ describe("rapport de soirée : établi et figé à la clôture de l'événement"
     const v = r.ventes;
     expect(v).toMatchObject({ encaisseTtc: 2_700, tickets: 2, panierMoyen: 1_350, caParSpectateur: 1, parMode: { especes: 2_100, carte: 600 } });
     expect(v.caHt + v.tva).toBe(2_700);
-    // Cascade : encaissé − TVA = CA HT ; − coût matière (3 × 1,20 + 1,50) = marge brute ; personnel 0 (aucune affectation).
-    expect(r.cascade.map((l) => l.montant)).toEqual([2_700, v.tva, v.caHt, 510, v.caHt - 510, 0, v.caHt - 510]);
+    // Cascade : encaissé − TVA = CA HT ; − coût matière (3 × 1,20 + 1,50) = marge brute ; personnel 0 (aucune affectation) ; aucune dépense saisie.
+    expect(r.cascade.map((l) => l.montant)).toEqual([2_700, v.tva, v.caHt, 510, v.caHt - 510, 0, 0, v.caHt - 510]);
+    expect(r).toMatchObject({ depenses: [], cibleMargeNette: null });
     expect(r).toMatchObject({ margeBrute: v.caHt - 510, margeNette: v.caHt - 510, produitsSansCout: [] });
     expect(r.comparaison.evenement?.libelle).toBe("Gap");
     expect(r.comparaison.encaisseTtc).toEqual({ actuel: 2_700, precedent: 1_400, ecart: 1_300, ecartPct: 92.9 });

@@ -1,6 +1,5 @@
 import type { FastifyInstance } from "fastify";
 import {
-  cascadeSoiree,
   ecartEvenement,
   ecartsDeStock,
   empreinteRapport,
@@ -17,6 +16,7 @@ import { inscrireJet } from "../journal-technique.ts";
 import { lireClotureMatch } from "./clotures.ts";
 import { listerEvenements } from "./evenements.ts";
 import { alertes, resumeMatchs, statsMatch } from "./resultats.ts";
+import { financesSoiree } from "./finances.ts";
 import { stockDuMatch } from "./stock.ts";
 import { stockIngredientsDuMatch } from "./stock-ingredients.ts";
 import { ParamId, contexte } from "./outils.ts";
@@ -31,7 +31,9 @@ import { ParamId, contexte } from "./outils.ts";
 /** Rassemble le rapport d'un événement clos, à partir des modules existants. */
 async function etablirRapport(c: Client, lieuId: string, e: Evenement): Promise<RapportSoiree> {
   const stats = await statsMatch(c, lieuId, e);
-  const cascade = cascadeSoiree({ encaisseTtc: stats.caTtc, tva: stats.tva, coutMatiere: stats.coutMatiere, personnel: stats.personnel.reel });
+  // Résultat de la soirée tel que le montre Gestion financière à cet instant (dépenses et cible comprises).
+  const finances = await financesSoiree(c, lieuId, e);
+  const cascade = { caHt: finances.caHt, margeBrute: finances.margeBrute, margeNette: finances.margeNette, lignes: finances.cascade };
 
   // Comparaison : l'événement joué juste avant qui a des ventes (jamais une moyenne).
   const joues = await resumeMatchs(c, lieuId);
@@ -39,9 +41,7 @@ async function etablirRapport(c: Client, lieuId: string, e: Evenement): Promise<
   const anterieur = rang >= 0 ? joues[rang + 1] : undefined;
   const evenementPrecedent = anterieur ? (await listerEvenements(c, lieuId)).find((x) => x.id === anterieur.id) : undefined;
   const precedent = evenementPrecedent ? await statsMatch(c, lieuId, evenementPrecedent) : null;
-  const cascadePrecedente = precedent
-    ? cascadeSoiree({ encaisseTtc: precedent.caTtc, tva: precedent.tva, coutMatiere: precedent.coutMatiere, personnel: precedent.personnel.reel })
-    : null;
+  const cascadePrecedente = evenementPrecedent ? await financesSoiree(c, lieuId, evenementPrecedent) : null;
 
   const { rows: reductions } = await c.query<{ remises: number; offerts: number; fidelite: number }>(
     `SELECT coalesce(sum(l.remise_centimes), 0)::int AS remises, coalesce(sum(l.offert_centimes), 0)::int AS offerts, coalesce(sum(l.fidelite_centimes), 0)::int AS fidelite
@@ -79,6 +79,8 @@ async function etablirRapport(c: Client, lieuId: string, e: Evenement): Promise<
     margeBrute: cascade.margeBrute,
     margeNette: cascade.margeNette,
     personnel: { montant: stats.personnel.reel, affectations: stats.personnel.affectations, tauxManquants: stats.personnel.tauxManquants },
+    depenses: finances.depenses.filter((d) => d.mode !== null).map((d) => ({ nom: d.nom, montant: d.montant, pourcentPb: d.mode === "pourcent" ? d.valeur : null })),
+    cibleMargeNette: finances.etatCible,
     produitsSansCout: stats.produitsSansCout,
     especes: especesDuRapport(await lireClotureMatch(c, lieuId, e.id)),
     stock: ecartsDeStock(await stockDuMatch(c, lieuId, e), await stockIngredientsDuMatch(c, lieuId, e)),
