@@ -39,6 +39,7 @@
 | 31 | [Suivi du développement et préparation de l'audit Codex](#phase-31) | §15.128 | [`0b59036`](https://github.com/Break-Eat-APP/flaix-expert/commit/0b590362a71a8549b053dcfb0e1a6ff474fd3d5e) [`2859233`](https://github.com/Break-Eat-APP/flaix-expert/commit/2859233de0a1cd9bc6dd27b388e7f97fd32f575a) [`0c29f8f`](https://github.com/Break-Eat-APP/flaix-expert/commit/0c29f8f88e666c02e4f7e3a5a95cda100937c5bc) [`a23a7fb`](https://github.com/Break-Eat-APP/flaix-expert/commit/a23a7fb359ee3958deeb4b2d09c87f633f8f0006) | livrée |
 | 32 | [Premier audit Codex et corrections](#phase-32) | §15.129 | [`4e289bd`](https://github.com/Break-Eat-APP/flaix-expert/commit/4e289bdbfab09ac9ed5a682ac58ec08c393ee586) | livrée |
 | 33 | [Caisse automatique selon la date, clôture par le directeur, « événement » partout](#phase-33) | §15.130 | [`d9720eb`](https://github.com/Break-Eat-APP/flaix-expert/commit/d9720eba1f8ebaab55b147a4a3cb210b225f4b5f) [`b6bb919`](https://github.com/Break-Eat-APP/flaix-expert/commit/b6bb919a85b17c60f159741648473bf5a37f1ad2) | livrée |
+| 34 | [Rapport de soirée figé à la clôture, imprimable et en PDF](#phase-34) | §15.131 | [`8cc5951`](https://github.com/Break-Eat-APP/flaix-expert/commit/8cc595142e87b87cec009b42aa1f43b1a60b4a71) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -1355,7 +1356,41 @@
   - [`docs/avancement.md`](../../docs/avancement.md) — modifié
   - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
 
+<a id="phase-34"></a>
+## Phase 34 — Rapport de soirée figé à la clôture, imprimable et en PDF
+
+- **Dates** : 2026-10-04
+- **Décision et raisonnement** : dossier projet §15.131
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`8cc5951`](https://github.com/Break-Eat-APP/flaix-expert/commit/8cc595142e87b87cec009b42aa1f43b1a60b4a71) 2026-10-04 — Rapport de soirée figé à la clôture de l'événement, imprimable et en PDF (module 9, dossier §15.131)
+- **Migrations (base)** :
+  - [`db/migrations/0026_rapport_soiree.sql`](../../db/migrations/0026_rapport_soiree.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/index.ts`](../../packages/domain/src/index.ts) — modifié
+  - [`packages/domain/src/journal-technique.ts`](../../packages/domain/src/journal-technique.ts) — modifié
+  - [`packages/domain/src/rapport-soiree.ts`](../../packages/domain/src/rapport-soiree.ts) — créé
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/evenements.ts`](../../apps/api/src/routes/evenements.ts) — modifié
+  - [`apps/api/src/routes/rapport-soiree.ts`](../../apps/api/src/routes/rapport-soiree.ts) — créé
+  - [`apps/api/src/routes/resultats.ts`](../../apps/api/src/routes/resultats.ts) — modifié
+  - [`apps/api/src/serveur.ts`](../../apps/api/src/serveur.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/App.tsx`](../../apps/web/src/App.tsx) — modifié
+  - [`apps/web/src/pages/clotures/Clotures.tsx`](../../apps/web/src/pages/clotures/Clotures.tsx) — modifié
+  - [`apps/web/src/pages/resultats/RapportSoiree.test.tsx`](../../apps/web/src/pages/resultats/RapportSoiree.test.tsx) — créé
+  - [`apps/web/src/pages/resultats/RapportSoiree.tsx`](../../apps/web/src/pages/resultats/RapportSoiree.tsx) — créé
+  - [`apps/web/src/pages/resultats/Tableaux.tsx`](../../apps/web/src/pages/resultats/Tableaux.tsx) — modifié
+  - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
+- **Tests** :
+  - [`apps/api/test/rapport-soiree.test.ts`](../../apps/api/test/rapport-soiree.test.ts) — créé
+  - [`packages/domain/src/rapport-soiree.test.ts`](../../packages/domain/src/rapport-soiree.test.ts) — créé
+- **Documentation** :
+  - [`docs/avancement.md`](../../docs/avancement.md) — modifié
+  - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
 - [`1423401`](https://github.com/Break-Eat-APP/flaix-expert/commit/14234013f2ca514de339db098259adcb48f11285) 2026-10-04 — Journal : phase 32 (audit Codex et corrections)
+- [`a787a2a`](https://github.com/Break-Eat-APP/flaix-expert/commit/a787a2ae3b2fa762b9c1b2e36221af9d8ff21796) 2026-10-04 — Journal : phase 33 (caisse automatique selon la date)

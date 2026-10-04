@@ -38,3 +38,4 @@
 | 31 | [Suivi du développement et préparation de l'audit Codex](PHASE_31_SUIVI_DU_DEVELOPPEMENT_ET_PREPARATION_DE_LAUDIT_CODEX.md) · [Word](word/PHASE_31_SUIVI_DU_DEVELOPPEMENT_ET_PREPARATION_DE_LAUDIT_CODEX.docx) | §15.128 | livrée |
 | 32 | [Premier audit Codex et corrections](PHASE_32_PREMIER_AUDIT_CODEX_ET_CORRECTIONS.md) · [Word](word/PHASE_32_PREMIER_AUDIT_CODEX_ET_CORRECTIONS.docx) | §15.129 | livrée |
 | 33 | [Caisse automatique selon la date, clôture par le directeur, « événement » partout](PHASE_33_CAISSE_AUTOMATIQUE_SELON_LA_DATE_CLOTURE_PAR_LE_DIRECTEUR_EVENEMENT_PA.md) · [Word](word/PHASE_33_CAISSE_AUTOMATIQUE_SELON_LA_DATE_CLOTURE_PAR_LE_DIRECTEUR_EVENEMENT_PA.docx) | §15.130 | livrée |
+| 34 | [Rapport de soirée figé à la clôture, imprimable et en PDF](PHASE_34_RAPPORT_DE_SOIREE_FIGE_A_LA_CLOTURE_IMPRIMABLE_ET_EN_PDF.md) · [Word](word/PHASE_34_RAPPORT_DE_SOIREE_FIGE_A_LA_CLOTURE_IMPRIMABLE_ET_EN_PDF.docx) | §15.131 | livrée |

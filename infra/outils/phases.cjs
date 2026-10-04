@@ -37,6 +37,7 @@ const PHASES = [
   { n: 31, titre: "Suivi du développement et préparation de l'audit Codex", dossier: "§15.128", commits: ["0b59036", "2859233", "0c29f8f", "a23a7fb"] },
   { n: 32, titre: "Premier audit Codex et corrections", dossier: "§15.129", commits: ["4e289bd"] },
   { n: 33, titre: "Caisse automatique selon la date, clôture par le directeur, « événement » partout", dossier: "§15.130", commits: ["d9720eb", "b6bb919"] },
+  { n: 34, titre: "Rapport de soirée figé à la clôture, imprimable et en PDF", dossier: "§15.131", commits: ["8cc5951"] },
 ];
 
 module.exports = { PHASES };
