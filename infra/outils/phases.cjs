@@ -38,6 +38,7 @@ const PHASES = [
   { n: 32, titre: "Premier audit Codex et corrections", dossier: "§15.129", commits: ["4e289bd"] },
   { n: 33, titre: "Caisse automatique selon la date, clôture par le directeur, « événement » partout", dossier: "§15.130", commits: ["d9720eb", "b6bb919"] },
   { n: 34, titre: "Rapport de soirée figé à la clôture, imprimable et en PDF", dossier: "§15.131", commits: ["8cc5951"] },
+  { n: 35, titre: "Cibles de marge et gestion financière de la soirée", dossier: "§15.132", commits: ["074647f"] },
 ];
 
 module.exports = { PHASES };

@@ -40,6 +40,7 @@
 | 32 | [Premier audit Codex et corrections](#phase-32) | §15.129 | [`4e289bd`](https://github.com/Break-Eat-APP/flaix-expert/commit/4e289bdbfab09ac9ed5a682ac58ec08c393ee586) | livrée |
 | 33 | [Caisse automatique selon la date, clôture par le directeur, « événement » partout](#phase-33) | §15.130 | [`d9720eb`](https://github.com/Break-Eat-APP/flaix-expert/commit/d9720eba1f8ebaab55b147a4a3cb210b225f4b5f) [`b6bb919`](https://github.com/Break-Eat-APP/flaix-expert/commit/b6bb919a85b17c60f159741648473bf5a37f1ad2) | livrée |
 | 34 | [Rapport de soirée figé à la clôture, imprimable et en PDF](#phase-34) | §15.131 | [`8cc5951`](https://github.com/Break-Eat-APP/flaix-expert/commit/8cc595142e87b87cec009b42aa1f43b1a60b4a71) | livrée |
+| 35 | [Cibles de marge et gestion financière de la soirée](#phase-35) | §15.132 | [`074647f`](https://github.com/Break-Eat-APP/flaix-expert/commit/074647f3a6d171ab1f4b33201e211395759a1efa) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -1389,8 +1390,52 @@
   - [`docs/avancement.md`](../../docs/avancement.md) — modifié
   - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
 
+<a id="phase-35"></a>
+## Phase 35 — Cibles de marge et gestion financière de la soirée
+
+- **Dates** : 2026-10-04
+- **Décision et raisonnement** : dossier projet §15.132
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`074647f`](https://github.com/Break-Eat-APP/flaix-expert/commit/074647f3a6d171ab1f4b33201e211395759a1efa) 2026-10-04 — Cibles de marge et gestion financière de la soirée (modules 5 et 11, dossier §15.132)
+- **Migrations (base)** :
+  - [`db/migrations/0027_cibles_finances.sql`](../../db/migrations/0027_cibles_finances.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/finances.ts`](../../packages/domain/src/finances.ts) — créé
+  - [`packages/domain/src/index.ts`](../../packages/domain/src/index.ts) — modifié
+  - [`packages/domain/src/journal-technique.ts`](../../packages/domain/src/journal-technique.ts) — modifié
+  - [`packages/domain/src/modele.ts`](../../packages/domain/src/modele.ts) — modifié
+  - [`packages/domain/src/rapport-soiree.ts`](../../packages/domain/src/rapport-soiree.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/finances.ts`](../../apps/api/src/routes/finances.ts) — créé
+  - [`apps/api/src/routes/produits.ts`](../../apps/api/src/routes/produits.ts) — modifié
+  - [`apps/api/src/routes/rapport-soiree.ts`](../../apps/api/src/routes/rapport-soiree.ts) — modifié
+  - [`apps/api/src/routes/resultats.ts`](../../apps/api/src/routes/resultats.ts) — modifié
+  - [`apps/api/src/serveur.ts`](../../apps/api/src/serveur.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/App.tsx`](../../apps/web/src/App.tsx) — modifié
+  - [`apps/web/src/composants/cibles.tsx`](../../apps/web/src/composants/cibles.tsx) — créé
+  - [`apps/web/src/pages/parametres/Objectifs.tsx`](../../apps/web/src/pages/parametres/Objectifs.tsx) — créé
+  - [`apps/web/src/pages/parametres/Parametres.tsx`](../../apps/web/src/pages/parametres/Parametres.tsx) — modifié
+  - [`apps/web/src/pages/parametres/Produits.tsx`](../../apps/web/src/pages/parametres/Produits.tsx) — modifié
+  - [`apps/web/src/pages/resultats/Finances.test.tsx`](../../apps/web/src/pages/resultats/Finances.test.tsx) — créé
+  - [`apps/web/src/pages/resultats/Finances.tsx`](../../apps/web/src/pages/resultats/Finances.tsx) — créé
+  - [`apps/web/src/pages/resultats/RapportSoiree.test.tsx`](../../apps/web/src/pages/resultats/RapportSoiree.test.tsx) — modifié
+  - [`apps/web/src/pages/resultats/RapportSoiree.tsx`](../../apps/web/src/pages/resultats/RapportSoiree.tsx) — modifié
+  - [`apps/web/src/pages/resultats/Tableaux.tsx`](../../apps/web/src/pages/resultats/Tableaux.tsx) — modifié
+  - [`apps/web/src/resultats.css`](../../apps/web/src/resultats.css) — modifié
+- **Tests** :
+  - [`apps/api/test/finances.test.ts`](../../apps/api/test/finances.test.ts) — créé
+  - [`apps/api/test/rapport-soiree.test.ts`](../../apps/api/test/rapport-soiree.test.ts) — modifié
+  - [`packages/domain/src/finances.test.ts`](../../packages/domain/src/finances.test.ts) — créé
+  - [`packages/domain/src/rapport-soiree.test.ts`](../../packages/domain/src/rapport-soiree.test.ts) — modifié
+- **Documentation** :
+  - [`docs/avancement.md`](../../docs/avancement.md) — modifié
+  - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
 - [`1423401`](https://github.com/Break-Eat-APP/flaix-expert/commit/14234013f2ca514de339db098259adcb48f11285) 2026-10-04 — Journal : phase 32 (audit Codex et corrections)
 - [`a787a2a`](https://github.com/Break-Eat-APP/flaix-expert/commit/a787a2ae3b2fa762b9c1b2e36221af9d8ff21796) 2026-10-04 — Journal : phase 33 (caisse automatique selon la date)
+- [`dd181a0`](https://github.com/Break-Eat-APP/flaix-expert/commit/dd181a0ad88f55d567f681ba03eb489194720d49) 2026-10-04 — Journal : phase 34 (rapport de soirée)
