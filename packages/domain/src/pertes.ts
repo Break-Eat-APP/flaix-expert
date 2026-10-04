@@ -12,7 +12,7 @@
  *   - signes sans chiffrage : caisse à plein régime, rupture trop tôt pour être chiffrée.
  */
 import { formaterMontant, type Centimes } from "./argent.ts";
-import type { ProduitVendu } from "./modele.ts";
+import type { Evenement, ProduitVendu } from "./modele.ts";
 import { etatCible, tauxMargePb } from "./finances.ts";
 import { formaterQuantiteStock } from "./stock-ingredients.ts";
 import type { UniteIngredient } from "./recettes.ts";
@@ -201,6 +201,14 @@ export interface EntreePertes {
   ticketsParStand: Record<string, number>;
   reductions: { remises: Centimes; offerts: Centimes; fidelite: Centimes };
   caisses: CaisseHoraire[];
+}
+
+/** Réponse de GET /api/pertes : les événements analysés, ce qui était suivi, l'analyse. */
+export interface ReponsePertes {
+  evenements: { id: string; libelle: string; debut: string; etat: Evenement["etat"] }[];
+  /** Sans stock suivi, ni rupture ni écart de stock ne peut être vu ; sans comptage, ni manque d'espèces. */
+  suivi: { stock: boolean; especes: boolean };
+  analyse: AnalysePertes;
 }
 
 export interface AnalysePertes {

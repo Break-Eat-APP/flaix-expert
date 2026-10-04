@@ -34,6 +34,7 @@ import { routesFidelite } from "./routes/fidelite.ts";
 import { routesFactures } from "./routes/factures.ts";
 import { routesEditeur } from "./routes/editeur.ts";
 import { routesRecettes } from "./routes/recettes.ts";
+import { routesPertes } from "./routes/pertes.ts";
 import { lireOptions, optionInactive } from "./options.ts";
 import { optionDeLaRoute } from "@flaix/domain";
 
@@ -156,6 +157,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesFactures, { base });
   await app.register(routesEditeur, { base });
   await app.register(routesRecettes, { base });
+  await app.register(routesPertes, { base });
 
   return app;
 }
