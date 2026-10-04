@@ -40,3 +40,4 @@
 | 33 | [Caisse automatique selon la date, clôture par le directeur, « événement » partout](PHASE_33_CAISSE_AUTOMATIQUE_SELON_LA_DATE_CLOTURE_PAR_LE_DIRECTEUR_EVENEMENT_PA.md) · [Word](word/PHASE_33_CAISSE_AUTOMATIQUE_SELON_LA_DATE_CLOTURE_PAR_LE_DIRECTEUR_EVENEMENT_PA.docx) | §15.130 | livrée |
 | 34 | [Rapport de soirée figé à la clôture, imprimable et en PDF](PHASE_34_RAPPORT_DE_SOIREE_FIGE_A_LA_CLOTURE_IMPRIMABLE_ET_EN_PDF.md) · [Word](word/PHASE_34_RAPPORT_DE_SOIREE_FIGE_A_LA_CLOTURE_IMPRIMABLE_ET_EN_PDF.docx) | §15.131 | livrée |
 | 35 | [Cibles de marge et gestion financière de la soirée](PHASE_35_CIBLES_DE_MARGE_ET_GESTION_FINANCIERE_DE_LA_SOIREE.md) · [Word](word/PHASE_35_CIBLES_DE_MARGE_ET_GESTION_FINANCIERE_DE_LA_SOIREE.docx) | §15.132 | livrée |
+| 36 | [Bilan sur une période du … au …](PHASE_36_BILAN_SUR_UNE_PERIODE_DU_AU.md) · [Word](word/PHASE_36_BILAN_SUR_UNE_PERIODE_DU_AU.docx) | §15.133 | livrée |

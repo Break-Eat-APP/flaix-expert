@@ -23,7 +23,7 @@
 - **Cible de marge nette de la soirée** (§15.79) : gabarit du lieu (Paramètres → Objectifs de marge), ajustable pour une soirée (Résultats → Finances), « Revenir à la cible du lieu ». Affichée en % et en euros ; « cible tenue » ou « sous la cible » avec l'écart en euros.
 - **Rapport de soirée** : la cascade comprend désormais les dépenses de la soirée ; le rapport fige les dépenses et la cible **telles qu'au moment de la clôture**. Une facture saisie après la clôture modifie Finances, pas le rapport. Les rapports établis avant le 2026-10-04 le disent.
 - **Mode formation** : cibles et postes recopiés dans le jumeau à chaque entrée.
-- **Pas encore** : commission et frais de paiement du Click & Collect dans la cascade (attendent l'import des ventes C&C) ; vue « saison » de Finances ; charges de structure (hors périmètre, décision de Rémi du 11/09).
+- **Pas encore** : commission et frais de paiement du Click & Collect dans la cascade (attendent l'import des ventes C&C) ; vue « saison » de Finances (faite ensuite, §15.133) ; charges de structure (hors périmètre, décision de Rémi du 11/09).
 - **Tests** : moteur 11 (dont l'exemple des frites du dossier : 68,3 % pour une cible de 70 %, −0,07 € par vente), serveur 12, écran 3. Vérifié dans le navigateur.
 
 ## 2. Ce qui a été construit — commits

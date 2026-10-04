@@ -41,6 +41,7 @@
 | 33 | [Caisse automatique selon la date, clôture par le directeur, « événement » partout](#phase-33) | §15.130 | [`d9720eb`](https://github.com/Break-Eat-APP/flaix-expert/commit/d9720eba1f8ebaab55b147a4a3cb210b225f4b5f) [`b6bb919`](https://github.com/Break-Eat-APP/flaix-expert/commit/b6bb919a85b17c60f159741648473bf5a37f1ad2) | livrée |
 | 34 | [Rapport de soirée figé à la clôture, imprimable et en PDF](#phase-34) | §15.131 | [`8cc5951`](https://github.com/Break-Eat-APP/flaix-expert/commit/8cc595142e87b87cec009b42aa1f43b1a60b4a71) | livrée |
 | 35 | [Cibles de marge et gestion financière de la soirée](#phase-35) | §15.132 | [`074647f`](https://github.com/Break-Eat-APP/flaix-expert/commit/074647f3a6d171ab1f4b33201e211395759a1efa) | livrée |
+| 36 | [Bilan sur une période du … au …](#phase-36) | §15.133 | [`10e0186`](https://github.com/Break-Eat-APP/flaix-expert/commit/10e018659b30bb2cf3a005ec4ef65994e92ce077) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -1433,9 +1434,39 @@
   - [`docs/avancement.md`](../../docs/avancement.md) — modifié
   - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
 
+<a id="phase-36"></a>
+## Phase 36 — Bilan sur une période du … au …
+
+- **Dates** : 2026-10-04
+- **Décision et raisonnement** : dossier projet §15.133
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`10e0186`](https://github.com/Break-Eat-APP/flaix-expert/commit/10e018659b30bb2cf3a005ec4ef65994e92ce077) 2026-10-04 — Bilan sur une période « du … au … » dans Résultats et Finances (dossier §15.133)
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/finances.ts`](../../packages/domain/src/finances.ts) — modifié
+  - [`packages/domain/src/index.ts`](../../packages/domain/src/index.ts) — modifié
+  - [`packages/domain/src/modele.ts`](../../packages/domain/src/modele.ts) — modifié
+  - [`packages/domain/src/periode-bilan.ts`](../../packages/domain/src/periode-bilan.ts) — créé
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/finances.ts`](../../apps/api/src/routes/finances.ts) — modifié
+  - [`apps/api/src/routes/resultats.ts`](../../apps/api/src/routes/resultats.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/resultats/Finances.test.tsx`](../../apps/web/src/pages/resultats/Finances.test.tsx) — modifié
+  - [`apps/web/src/pages/resultats/Finances.tsx`](../../apps/web/src/pages/resultats/Finances.tsx) — modifié
+  - [`apps/web/src/pages/resultats/Tableaux.test.tsx`](../../apps/web/src/pages/resultats/Tableaux.test.tsx) — créé
+  - [`apps/web/src/pages/resultats/Tableaux.tsx`](../../apps/web/src/pages/resultats/Tableaux.tsx) — modifié
+  - [`apps/web/src/resultats.css`](../../apps/web/src/resultats.css) — modifié
+- **Tests** :
+  - [`apps/api/test/periode.test.ts`](../../apps/api/test/periode.test.ts) — créé
+  - [`packages/domain/src/periode-bilan.test.ts`](../../packages/domain/src/periode-bilan.test.ts) — créé
+- **Documentation** :
+  - [`docs/avancement.md`](../../docs/avancement.md) — modifié
+  - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
 - [`1423401`](https://github.com/Break-Eat-APP/flaix-expert/commit/14234013f2ca514de339db098259adcb48f11285) 2026-10-04 — Journal : phase 32 (audit Codex et corrections)
 - [`a787a2a`](https://github.com/Break-Eat-APP/flaix-expert/commit/a787a2ae3b2fa762b9c1b2e36221af9d8ff21796) 2026-10-04 — Journal : phase 33 (caisse automatique selon la date)
 - [`dd181a0`](https://github.com/Break-Eat-APP/flaix-expert/commit/dd181a0ad88f55d567f681ba03eb489194720d49) 2026-10-04 — Journal : phase 34 (rapport de soirée)
+- [`11ce1ec`](https://github.com/Break-Eat-APP/flaix-expert/commit/11ce1ecd57c4babe97af5e5d6d157f8225073384) 2026-10-04 — Journal : phase 35 (cibles de marge et gestion financière)
