@@ -40,6 +40,7 @@ const PHASES = [
   { n: 34, titre: "Rapport de soirée figé à la clôture, imprimable et en PDF", dossier: "§15.131", commits: ["8cc5951"] },
   { n: 35, titre: "Cibles de marge et gestion financière de la soirée", dossier: "§15.132", commits: ["074647f"] },
   { n: 36, titre: "Bilan sur une période du … au …", dossier: "§15.133", commits: ["10e0186"] },
+  { n: 37, titre: "Brief de fin de soirée en notification sur le téléphone", dossier: "§15.134, §15.135", commits: ["bcb9455"] },
 ];
 
 module.exports = { PHASES };
