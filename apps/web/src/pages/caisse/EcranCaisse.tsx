@@ -412,6 +412,8 @@ function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresClo
 
   const [cat, setCat] = useState<string | null>(null);
   const [panier, setPanier] = useState<{ produitId: string; quantite: number }[]>([]);
+  // Heure du premier produit tapé (§15.139) : mesure du temps de prise de commande, hors du ticket scellé.
+  const debutSaisie = useRef<string | null>(null);
   const [remisePb, setRemisePb] = useState(0);
   const [offertSaisi, setOffertSaisi] = useState("");
   const [motif, setMotif] = useState<MotifAjustement | null>(null);
@@ -470,12 +472,13 @@ function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresClo
       fidelite: fid.vente,
     });
     try {
-      memoriserTicket(courant, evenement, tete);
+      memoriserTicket(courant, debutSaisie.current ? { ...evenement, debutSaisie: debutSaisie.current } : evenement, tete);
     } catch {
       setErreurMemoire("La mémoire de la tablette refuse l'enregistrement : cette vente n'est PAS enregistrée. Vérifie que la navigation privée n'est pas activée.");
       return;
     }
     setErreurMemoire(null);
+    debutSaisie.current = null;
     const rendu = paiement === "especes" ? donne - evenement.totalTtc : 0;
     setToast(`✓ ${formaterMontant(evenement.totalTtc)} encaissé · ${evenement.numeroJustificatif}${rendu ? ` · rendu ${formaterMontant(rendu)}` : ""}`);
     setPanier([]);
@@ -527,11 +530,18 @@ function Vente({ etat, apresCloture, poste }: { etat: EtatCaisseLocale; apresClo
   const cloturer = { lancer: () => void lancerCloture(), enCours: clotureEnCours, erreur: erreurCloture };
 
   function ajouter(id: string) {
+    // Premier produit d'une commande : la mesure commence, à l'heure de la caisse (celle du ticket).
+    if (panier.length === 0 || debutSaisie.current === null) {
+      const courant = lireEtat(caisseId);
+      debutSaisie.current = courant ? heureCaisse(courant).toISOString() : null;
+    }
     setPanier((p) => (p.some((l) => l.produitId === id) ? p.map((l) => (l.produitId === id ? { ...l, quantite: l.quantite + 1 } : l)) : [...p, { produitId: id, quantite: 1 }]));
     setFlash(id);
     setTimeout(() => setFlash((f) => (f === id ? null : f)), 420);
   }
   function retirer(id: string) {
+    // Panier vidé à la main (le client renonce) : la mesure repart au prochain produit tapé.
+    if (nbArticles <= 1) debutSaisie.current = null;
     setPanier((p) => p.flatMap((l) => (l.produitId !== id ? [l] : l.quantite > 1 ? [{ ...l, quantite: l.quantite - 1 }] : [])));
   }
   function choisirRemise(pb: number) {

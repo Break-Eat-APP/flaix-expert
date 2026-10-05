@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import type { Periode, PostePerte, ReponsePertes } from "@flaix/domain";
+import { formaterSecondes, type Periode, type PostePerte, type ReponsePertes, type StatService, type TempsService } from "@flaix/domain";
 import { api } from "../../api.ts";
 import { Carte, Chargement, EtatVide, MessageErreur } from "../../composants/communs.tsx";
 import { euros } from "./graphiques.tsx";
@@ -51,6 +51,51 @@ function Chiffre({ etiquette, valeur, detail, misEnAvant }: { etiquette: string;
   );
 }
 
+/** Temps de prise de commande, par stand puis par caisse (§15.139) : jamais par personne. */
+function TempsDeService({ t }: { t: TempsService }) {
+  const mesures = t.parCaisse.some((c) => c.commandes > 0);
+  const ligne = (s: StatService, stand: boolean) => (
+    <tr key={s.libelle} style={stand ? { fontWeight: 700 } : undefined}>
+      <td>{stand ? s.libelle : <span className="discret">{s.libelle}</span>}</td>
+      <td className="d chiffre">{s.commandes}</td>
+      <td className="d chiffre">{s.dureeMediane === null ? "—" : formaterSecondes(s.dureeMediane)}</td>
+      <td className="d chiffre">{s.mesurables ? `${Math.round((s.enFile / s.mesurables) * 100)} %` : "—"}</td>
+      <td className="d chiffre">{s.cadenceEnFile === null ? "—" : `${s.cadenceEnFile} / h`}</td>
+    </tr>
+  );
+  return (
+    <Carte
+      titre="Temps de prise de commande"
+      description="Du premier produit tapé à l'encaissement, par stand et par caisse. Une commande « avec file » : le client suivant a commencé moins de 20 s après l'encaissement. Personne n'est nommé."
+    >
+      {!mesures ? (
+        <div className="discret" style={{ fontSize: 12.5 }}>
+          Pas encore de mesure : elle commence quand les tablettes ont reçu la mise à jour qui note l'heure du premier produit tapé.
+        </div>
+      ) : (
+        <div className="scroll-x">
+          <table className="tableau">
+            <thead>
+              <tr>
+                <th>Stand / caisse</th>
+                <th className="d">Commandes mesurées</th>
+                <th className="d">Durée médiane</th>
+                <th className="d">Avec file</th>
+                <th className="d">Cadence en file</th>
+              </tr>
+            </thead>
+            <tbody>
+              {t.parStand.flatMap((s) => [ligne(s, true), ...t.parCaisse.filter((c) => c.libelle.endsWith(`(${s.libelle})`)).map((c) => ligne(c, false))])}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {mesures && t.sansMesure > 0 && <p className="note">{t.sansMesure} vente{t.sansMesure > 1 ? "s" : ""} sans mesure (tablette pas encore à jour) : hors de ces chiffres.</p>}
+      <p className="note">Durée médiane : la moitié des commandes vont plus vite. Cadence en file : commandes encaissées par heure quand des clients attendent, ce qu'une caisse peut tenir au plus fort.</p>
+    </Carte>
+  );
+}
+
 /**
  * Revenue Engine — « Où je perds de l'argent » (dossier §15.138). Tout est calculé par des règles fixes sur
  * les ventes, le stock et les Z ; constaté, estimé et ordres de grandeur ne sont jamais additionnés.
@@ -60,7 +105,7 @@ export function VuePertes({ evenementId, periode }: { evenementId?: string; peri
   const q = useQuery({ queryKey: ["pertes", chemin], queryFn: () => api.get<ReponsePertes>(chemin) });
   if (q.isPending) return <Chargement />;
   if (q.error) return <MessageErreur erreur={q.error} />;
-  const { analyse: a, suivi, evenements } = q.data!;
+  const { analyse: a, suivi, evenements, service } = q.data!;
   const accorde = a.accorde.offerts + a.accorde.remises + a.accorde.fidelite;
   const rien = a.perdu.length === 0 && a.pistes.length === 0 && a.signes.length === 0;
   const enCours = evenements.some((e) => e.etat === "ouvert");
@@ -117,6 +162,7 @@ export function VuePertes({ evenementId, periode }: { evenementId?: string; peri
           )}
         </>
       )}
+      {service && <TempsDeService t={service} />}
       {accorde > 0 && (
         <Carte titre="Accordé : des choix, pas des pertes">
           <div className="scroll-x">

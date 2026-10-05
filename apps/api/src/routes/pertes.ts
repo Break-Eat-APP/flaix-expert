@@ -6,6 +6,7 @@ import {
   especesDuRapport,
   estJour,
   idPeriode,
+  tempsDeService,
   type ControleTicket,
   type EntreePertes,
   type Evenement,
@@ -129,8 +130,18 @@ export async function analysePertes(c: Client, lieuId: string, evs: readonly Eve
   for (const e of ordre) await lireEvenement(c, lieuId, e, entree, cumul);
   entree.produitsParStand = [...cumul.parStand.values()];
 
+  let service = tempsDeService([]);
   if (evs.length) {
     const ids = evs.map((e) => e.id);
+    // Temps de prise de commande (§15.139) : toutes les ventes, même annulées ensuite (elles ont occupé la caisse).
+    const { rows: mesures } = await c.query<{ numero: number; stand: string; debut: Date | null; fin: Date }>(
+      `SELECT k.numero, s.nom AS stand, m.debut_saisie AS debut, j.horodatage AS fin
+         FROM journal_caisse j JOIN caisse k ON k.lieu_id = j.lieu_id AND k.id = j.caisse_id JOIN stand s ON s.lieu_id = j.lieu_id AND s.id = j.stand_id
+         LEFT JOIN mesure_ticket m ON m.lieu_id = j.lieu_id AND m.journal_id = j.id
+        WHERE j.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[]) AND j.type = 'vente'`,
+      [lieuId, ids],
+    );
+    service = tempsDeService(mesures.map((m) => ({ caisse: m.numero, stand: m.stand, debut: m.debut?.getTime() ?? null, fin: m.fin.getTime() })));
     entree.produits = (await statsEvenements(c, lieuId, evs, id)).produits;
     // Ventes sous le tarif : quantité vendue du produit signalé, sur les tickets non annulés.
     const { rows: ecarts } = await c.query<{ id: string; controle: ControleTicket }>(
@@ -164,6 +175,7 @@ export async function analysePertes(c: Client, lieuId: string, evs: readonly Eve
     evenements: ordre.map((e) => ({ id: e.id, libelle: e.libelle, debut: e.debut, etat: e.etat })),
     suivi: cumul.suivi,
     analyse: analyserPertes(entree),
+    service,
   };
 }
 

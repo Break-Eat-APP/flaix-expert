@@ -4,7 +4,7 @@
  * événement, et n'offre jamais la clôture. Le serveur est simulé.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import type { EcranCaisse as Ecran, OuvertureCaisse, RepriseCaisse } from "@flaix/domain";
@@ -118,5 +118,28 @@ describe("directeur", () => {
     expect(fond.value).toBe("150,00");
     expect(screen.getByText(/il s'ouvrira avec cette caisse/)).toBeTruthy();
     expect(ouvertures()).toHaveLength(0);
+  });
+});
+
+describe("temps de prise de commande (§15.139)", () => {
+  it("l'heure du premier produit tapé part à côté du ticket, jamais dans ce qui est scellé ; un panier vidé remet la mesure à zéro", async () => {
+    ecran = ecranDuServeur(JOUR_J);
+    monter(true);
+    await screen.findByText(/La clôture de la caisse est faite par le directeur/);
+    // Un client renonce : produit tapé puis retiré.
+    fireEvent.click(await screen.findByText("Bière"));
+    await new Promise((r) => setTimeout(r, 40)); // sans remise à zéro, la mesure partirait 40 ms trop tôt
+    const avant = Date.now();
+    fireEvent.click(screen.getByLabelText("Retirer un Bière"));
+    // Le client suivant commande.
+    fireEvent.click(screen.getByText("Bière"));
+    fireEvent.click(screen.getByText("Carte"));
+    fireEvent.click(screen.getByText("Valider le paiement"));
+    const ticket = lireEtat(CAISSE)!.tickets[0]!;
+    expect(ticket.debutSaisie).toBeDefined();
+    // Heure de la caisse = heure du téléphone corrigée de son décalage avec le serveur (comme le ticket).
+    expect(Date.parse(ticket.debutSaisie!)).toBeGreaterThanOrEqual(avant + lireEtat(CAISSE)!.decalageMs - 5);
+    expect(Date.parse(ticket.debutSaisie!)).toBeLessThanOrEqual(Date.parse(ticket.horodatage));
+    expect(JSON.stringify(ticket.details)).not.toContain("debutSaisie");
   });
 });

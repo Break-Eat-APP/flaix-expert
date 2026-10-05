@@ -16,6 +16,7 @@ import type { Evenement, ProduitVendu } from "./modele.ts";
 import { etatCible, tauxMargePb } from "./finances.ts";
 import { formaterQuantiteStock } from "./stock-ingredients.ts";
 import type { UniteIngredient } from "./recettes.ts";
+import type { TempsService } from "./temps-service.ts";
 
 const MINUTE = 60_000;
 
@@ -209,6 +210,8 @@ export interface ReponsePertes {
   /** Sans stock suivi, ni rupture ni écart de stock ne peut être vu ; sans comptage, ni manque d'espèces. */
   suivi: { stock: boolean; especes: boolean };
   analyse: AnalysePertes;
+  /** Temps de prise de commande, par caisse et par stand (§15.139). */
+  service: TempsService;
 }
 
 export interface AnalysePertes {

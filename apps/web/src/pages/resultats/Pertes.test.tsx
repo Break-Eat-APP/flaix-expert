@@ -26,6 +26,11 @@ const rouen: ReponsePertes = {
     signes: [{ titre: "Buvette Nord, caisse 3 : à plein régime de 21 h 00 à 21 h 20", detail: "Non chiffré." }],
     totaux: { constate: 1_250, estimeBas: 1_680, estimeHaut: 2_240 },
   },
+  service: {
+    parCaisse: [{ libelle: "Caisse 3 (Buvette Nord)", commandes: 120, dureeMediane: 34, enFile: 60, mesurables: 119, cadenceEnFile: 95 }],
+    parStand: [{ libelle: "Buvette Nord", commandes: 120, dureeMediane: 34, enFile: 60, mesurables: 119, cadenceEnFile: 95 }],
+    sansMesure: 0,
+  },
 };
 
 let serveur: ReturnType<typeof vi.fn>;
@@ -33,7 +38,7 @@ beforeEach(() => {
   serveur = vi.fn(async (url: string) => {
     if (url === "/api/pertes?evenementId=rouen") return reponse(200, rouen);
     if (url === "/api/pertes?du=2026-09-01&au=2026-09-30")
-      return reponse(200, { evenements: [], suivi: { stock: false, especes: false }, analyse: { perdu: [], pistes: [], accorde: { remises: 0, offerts: 0, fidelite: 0 }, signes: [], totaux: { constate: 0, estimeBas: 0, estimeHaut: 0 } } });
+      return reponse(200, { evenements: [], suivi: { stock: false, especes: false }, analyse: { perdu: [], pistes: [], accorde: { remises: 0, offerts: 0, fidelite: 0 }, signes: [], totaux: { constate: 0, estimeBas: 0, estimeHaut: 0 } }, service: { parCaisse: [], parStand: [], sansMesure: 0 } });
     return reponse(404, { erreur: "Inconnu" });
   });
   vi.stubGlobal("fetch", serveur);
@@ -68,6 +73,11 @@ describe("où je perds de l'argent", () => {
     expect(screen.getByText("À regarder, sans montant")).toBeTruthy();
     expect(screen.getByText("Accordé : des choix, pas des pertes")).toBeTruthy();
     expect(screen.getByText(texte(formaterMontant(4_700)))).toBeTruthy(); // 35 € offerts + 12 € de remises
+    // Temps de prise de commande, par stand puis par caisse : jamais un nom de personne.
+    expect(screen.getByText("Temps de prise de commande")).toBeTruthy();
+    expect(screen.getAllByText("34 s")).toHaveLength(2);
+    expect(screen.getAllByText("95 / h")).toHaveLength(2);
+    expect(screen.getAllByText("50 %")).toHaveLength(2);
   });
 
   it("une période sans rien : « Rien à signaler », et le stock non suivi est dit (jamais un zéro qui rassure à tort)", async () => {
@@ -75,5 +85,6 @@ describe("où je perds de l'argent", () => {
     expect(await screen.findByText("Rien à signaler")).toBeTruthy();
     expect(screen.getByText(/Stock non suivi/)).toBeTruthy();
     expect(screen.getByText(/Aucun comptage d'espèces/)).toBeTruthy();
+    expect(screen.getByText(/Pas encore de mesure/)).toBeTruthy();
   });
 });

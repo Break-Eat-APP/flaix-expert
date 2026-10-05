@@ -68,6 +68,8 @@ const EvenementRecu = z.object({
   details: z.record(z.string(), z.unknown()),
   empreintePrecedente: Empreinte,
   empreinte: Empreinte,
+  /** Premier produit tapé (§15.139) : mesure non scellée, rangée à part. */
+  debutSaisie: z.string().max(40).optional(),
 });
 const Synchro = z.object({
   sessionId: Uuid,
@@ -698,6 +700,11 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
 
         await inscrireEvenementTablette(c, { ...ctx, utilisateurId: vendeur }, e, maintenant, Object.keys(controle).length ? controle : null);
         await insererLignes(c, auth.lieuId, e.id, e.details.lignes);
+        // Temps de prise de commande (§15.139) : hors du ticket scellé ; une heure illisible ou impossible est ignorée.
+        const debut = e.type === "vente" && e.debutSaisie ? Date.parse(e.debutSaisie) : NaN;
+        if (Number.isFinite(debut) && debut <= heureVente && heureVente - debut <= 4 * 3_600_000) {
+          await c.query("INSERT INTO mesure_ticket (lieu_id, journal_id, caisse_id, debut_saisie, encaisse_le) VALUES ($1, $2, $3, $4, $5)", [auth.lieuId, e.id, id, new Date(debut), new Date(heureVente)]);
+        }
         if (e.type === "annulation") {
           const d = e.details as DetailsAnnulation;
           await inscrireJet(c, {

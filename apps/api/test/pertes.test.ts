@@ -21,6 +21,7 @@ let caisse: string;
 let biere: Produit;
 let frites: Produit;
 let rouen: Evenement;
+let lieuId = "";
 
 const EN_TETES = { "content-type": "application/json", origin: "http://localhost:5173" };
 
@@ -38,7 +39,9 @@ async function connecter(email: string) {
 beforeAll(async () => {
   ({ proprietaire, app } = basesDeTest());
   serveur = await construireServeur(app, { journaliser: false });
-  cookie = await connecter((await creerLieuDeTest(proprietaire)).email);
+  const lieu = await creerLieuDeTest(proprietaire);
+  lieuId = lieu.lieuId;
+  cookie = await connecter(lieu.email);
   autreCookie = await connecter((await creerLieuDeTest(proprietaire)).email);
   stand = (await appel<Stand[]>("POST", "/api/stands", { nom: "Buvette Nord" })).corps[0]!;
   caisse = (await appel<Stand[]>("POST", `/api/stands/${stand.id}/caisses`, { especesAutorisees: true })).corps[0]!.caisses[0]!.id;
@@ -61,7 +64,13 @@ beforeAll(async () => {
   const debut = Date.now();
   const a = (i: number) => new Date(debut + i * 1_000);
   // 30 tickets de bière, dont un sur cinq avec 2 frites : les 12 frites partent au 30e ticket (rupture).
-  for (let i = 1; i <= 30; i++) vendreHorsLigne(t, i % 5 === 0 ? [ligne(biere), ligne(frites, 2)] : [ligne(biere)], { horodatage: a(i) });
+  // Temps de prise de commande (§15.139) : les 6 premiers tickets portent l'heure du premier produit tapé,
+  // 30 s avant l'encaissement ; le 7e porte une heure impossible (après l'encaissement), ignorée.
+  for (let i = 1; i <= 30; i++) {
+    const v = vendreHorsLigne(t, i % 5 === 0 ? [ligne(biere), ligne(frites, 2)] : [ligne(biere)], { horodatage: a(i) });
+    if (i <= 6) v.debutSaisie = new Date(Date.parse(v.horodatage) - 30_000).toISOString();
+    if (i === 7) v.debutSaisie = new Date(Date.parse(v.horodatage) + 60_000).toISOString();
+  }
   // 10 tickets de bière après la rupture, dont un annulé : il ne compte pas dans le rythme du stand.
   const tickets = [];
   for (let i = 31; i <= 40; i++) tickets.push(vendreHorsLigne(t, [ligne(biere)], { horodatage: a(i) }));
@@ -83,6 +92,23 @@ afterAll(async () => {
   await serveur.close();
   await proprietaire.fermer();
   await app.fermer();
+});
+
+describe("temps de prise de commande, par caisse (§15.139)", () => {
+  it("l'heure du premier produit part à côté du ticket : rangée à part, le ticket scellé est accepté tel quel", async () => {
+    const r = await appel<ReponsePertes>("GET", `/api/pertes?evenementId=${rouen.id}`);
+    expect(r.corps.service.parCaisse).toEqual([expect.objectContaining({ libelle: "Caisse 1 (Buvette Nord)", commandes: 6, dureeMediane: 30 })]);
+    expect(r.corps.service.parStand[0]).toMatchObject({ libelle: "Buvette Nord", commandes: 6 });
+    // Toutes les ventes sauf les 6 mesurées : l'heure impossible du 7e ticket a été ignorée.
+    expect(r.corps.service.sansMesure).toBe(41 - 6);
+    const { rows } = await app.transaction({ lieuId }, (c) => c.query<{ n: number }>("SELECT count(*)::int AS n FROM mesure_ticket"));
+    expect(rows[0]!.n).toBe(6);
+  });
+
+  it("[F] une mesure reçue ne se modifie ni ne se supprime", async () => {
+    await expect(app.transaction({ lieuId }, (c) => c.query("UPDATE mesure_ticket SET debut_saisie = encaisse_le"))).rejects.toThrow();
+    await expect(proprietaire.transaction({}, (c) => c.query("DELETE FROM mesure_ticket WHERE lieu_id = $1", [lieuId]))).rejects.toThrow();
+  });
 });
 
 describe("où je perds de l'argent : un événement", () => {
@@ -128,6 +154,7 @@ describe("où je perds de l'argent : un événement", () => {
       evenements: [],
       suivi: { stock: false, especes: false },
       analyse: { perdu: [], pistes: [], accorde: { remises: 0, offerts: 0, fidelite: 0 }, signes: [], totaux: { constate: 0, estimeBas: 0, estimeHaut: 0 } },
+      service: { parCaisse: [], parStand: [], sansMesure: 0 },
     });
   });
 });

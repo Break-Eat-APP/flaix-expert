@@ -100,6 +100,11 @@ export interface EvenementTablette {
   details: DetailsVente | DetailsAnnulation;
   empreintePrecedente: string;
   empreinte: string;
+  /**
+   * Heure du premier produit tapé (vente seulement, §15.139). NON SCELLÉE : mesure d'exploitation envoyée
+   * à côté du ticket, jamais dans le journal de caisse ; absente sur les tickets d'avant cette mesure.
+   */
+  debutSaisie?: string;
 }
 
 const formatAnnee = new Intl.DateTimeFormat("fr-FR", { year: "numeric", timeZone: "Europe/Paris" });
