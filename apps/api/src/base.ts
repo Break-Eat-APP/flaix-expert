@@ -8,6 +8,8 @@ export type Client = pg.PoolClient;
 export interface Contexte {
   lieuId?: string | null;
   utilisateurId?: string | null;
+  /** Session du support FlaiX Expert (§15.142) : transaction en lecture seule, imposée par PostgreSQL. */
+  lectureSeule?: boolean;
 }
 
 export interface Base {
@@ -28,7 +30,7 @@ export function ouvrirBase(connectionString: string, max = 10): Base {
     async transaction(contexte, travail) {
       const client = await pool.connect();
       try {
-        await client.query("BEGIN");
+        await client.query(contexte.lectureSeule ? "BEGIN READ ONLY" : "BEGIN");
         await client.query(
           "SELECT set_config('app.lieu_id', $1, true), set_config('app.utilisateur_id', $2, true)",
           [contexte.lieuId ?? "", contexte.utilisateurId ?? ""],

@@ -33,6 +33,49 @@ export interface LieuParc {
   derniereVerification: { le: string; ok: boolean } | null;
   options: OptionsLieu;
   directeurs: DirecteurParc[];
+  /** Support autorisé par le lieu en ce moment (niveau 2, §15.142) ; null : pas d'autorisation. */
+  support: { jusqua: string; motif: string | null } | null;
+}
+
+/** Durées d'autorisation du support proposées au lieu (heures). */
+export const DUREES_SUPPORT = [1, 4, 24] as const;
+
+/** Paramètres → Support FlaiX Expert (§15.142). */
+export interface AutorisationSupport {
+  id: string;
+  debut: string;
+  fin: string;
+  motif: string | null;
+  accordeePar: string;
+  retireeLe: string | null;
+  retireePar: string | null;
+  /** En cours : ni retirée ni échue. */
+  active: boolean;
+  /** Ce que le support a consulté pendant cette autorisation. */
+  consultations: { route: string; ecran: string; le: string; par: string }[];
+}
+
+export interface EtatSupport {
+  active: AutorisationSupport | null;
+  historique: AutorisationSupport[];
+}
+
+/** Écran lisible d'une adresse consultée (« /api/resultats » → « Résultats »). */
+export function ecranConsulte(route: string): string {
+  const ECRANS: [RegExp, string][] = [
+    [/^\/api\/(resultats|finances|pertes|rapports-soiree|periodes)/, "Résultats"],
+    [/^\/api\/alertes/, "Centre d'alertes"],
+    [/^\/api\/journal-technique/, "Journal technique"],
+    [/^\/api\/(caisses|journal|sessions-caisse)/, "Caisses et tickets"],
+    [/^\/api\/stock/, "Stock"],
+    [/^\/api\/(equipe|planning)/, "Équipe"],
+    [/^\/api\/(clotures|evenements|export-comptable)/, "Clôtures et événements"],
+    [/^\/api\/fidelite/, "Fidélité"],
+    [/^\/api\/factures/, "Factures"],
+    [/^\/api\/(lieu|stands|produits|categories|ingredients|recettes|click-collect|couts-buvette|notifications|support|options)/, "Paramètres"],
+    [/^\/api\/assistant/, "Assistant"],
+  ];
+  return ECRANS.find(([r]) => r.test(route))?.[1] ?? route;
 }
 
 export interface ParcEditeur {

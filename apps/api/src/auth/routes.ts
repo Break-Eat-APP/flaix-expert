@@ -41,7 +41,7 @@ const codeIncorrect = () => new ErreurMetier(401, "Code incorrect.");
 const heureParis = new Intl.DateTimeFormat("fr-FR", { timeStyle: "short", timeZone: "Europe/Paris" });
 
 export function infoSession(
-  a: Pick<Authentification, "utilisateurId" | "nom" | "email" | "lieuId" | "role" | "appareilId" | "appareilCaisseId" | "formation">,
+  a: Pick<Authentification, "utilisateurId" | "nom" | "email" | "lieuId" | "role" | "appareilId" | "appareilCaisseId" | "formation"> & Partial<Pick<Authentification, "supportJusqua">>,
   lieuNom: string,
 ): SessionInfo {
   return {
@@ -51,6 +51,7 @@ export function infoSession(
     appareil: a.appareilId && a.appareilCaisseId ? { id: a.appareilId, caisseId: a.appareilCaisseId } : null,
     environnement: config.environnement,
     formation: a.formation,
+    support: a.role === "support" && a.supportJusqua ? { jusqua: a.supportJusqua } : null,
   };
 }
 
@@ -295,7 +296,9 @@ export async function routesAuth(app: FastifyInstance, { base }: { base: Base })
     if (auth) {
       await base.transaction({ lieuId: auth.lieuId, utilisateurId: auth.utilisateurId }, async (c) => {
         await c.query("UPDATE session SET revoquee_le = now() WHERE jeton_hash = $1", [auth.jetonEmpreinte]);
-        await inscrireJet(c, { lieuId: auth.lieuId, type: "deconnexion", utilisateurId: auth.utilisateurId });
+        await inscrireJet(c, auth.role === "support"
+          ? { lieuId: auth.lieuId, type: "support_ferme", utilisateurId: auth.utilisateurId, details: { par: `FlaiX Expert — ${auth.nom}` } }
+          : { lieuId: auth.lieuId, type: "deconnexion", utilisateurId: auth.utilisateurId });
       });
     }
     rep.clearCookie(NOM_COOKIE, { path: "/" });

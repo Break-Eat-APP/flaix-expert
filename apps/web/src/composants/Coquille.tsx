@@ -43,7 +43,7 @@ export function Coquille({ session }: { session: SessionInfo }) {
   const deconnecter = useDeconnexion();
   const options = useOptions();
   const [mobileVisible, setMobileVisible] = useState(false);
-  const stands = useQuery({ queryKey: ["stands"], queryFn: () => api.get<Stand[]>("/stands"), enabled: session.role === "directeur" });
+  const stands = useQuery({ queryKey: ["stands"], queryFn: () => api.get<Stand[]>("/stands"), enabled: session.role === "directeur" || session.role === "support" });
 
   useEffect(() => setMobileVisible(false), [pathname]);
 
@@ -105,11 +105,13 @@ export function Coquille({ session }: { session: SessionInfo }) {
         <div className="laterale-pied">
           <div className="utilisateur">
             <strong>{session.utilisateur.nom}</strong>
-            <span className="discret">{session.role === "directeur" ? "Directeur" : session.role === "operateur" ? "Caissière" : "Vérificateur"}</span>
+            <span className="discret">{session.role === "directeur" ? "Directeur" : session.role === "operateur" ? "Caissière" : session.role === "support" ? "Support FlaiX Expert" : "Vérificateur"}</span>
           </div>
-          <NavLink to="/compte" className={({ isActive }) => `nav-module${isActive ? " active" : ""}`} style={{ marginLeft: 0 }}>
-            <KeyRound size={15} /> Mon mot de passe
-          </NavLink>
+          {session.role !== "support" && (
+            <NavLink to="/compte" className={({ isActive }) => `nav-module${isActive ? " active" : ""}`} style={{ marginLeft: 0 }}>
+              <KeyRound size={15} /> Mon mot de passe
+            </NavLink>
+          )}
           <button className="nav-module" onClick={deconnecter}>
             <LogOut size={15} /> Se déconnecter
           </button>
@@ -118,6 +120,17 @@ export function Coquille({ session }: { session: SessionInfo }) {
 
       <div>
         {session.formation && <BandeauFormation quitter={session.role === "directeur"} />}
+        {session.support && (
+          <div className="bandeau-formation" role="alert">
+            <span>
+              <strong>SUPPORT FLAIX EXPERT — LECTURE SEULE</strong>
+              <span className="bandeau-detail"> · autorisé par le lieu jusqu'à {new Date(session.support.jusqua).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })} ; chaque écran consulté est inscrit à son journal. Rien ne peut être modifié.</span>
+            </span>
+            <button className="btn btn-fantome" style={{ fontSize: 12.5, padding: "4px 10px" }} onClick={deconnecter}>
+              Quitter
+            </button>
+          </div>
+        )}
         {session.formation && pathname.startsWith("/parametres/") && !["/parametres/formation", "/parametres/saison"].includes(pathname) && (
           <div className="message message-alerte" style={{ margin: "12px 24px 0" }}>
             En formation, la configuration est celle du vrai lieu : consultation seulement. Elle se modifie après être sorti de la formation.

@@ -51,7 +51,7 @@ function versionEnService(): string {
   }
 }
 
-async function exigerEditeur(base: Base, req: FastifyRequest): Promise<Editeur> {
+export async function exigerEditeur(base: Base, req: FastifyRequest): Promise<Editeur> {
   const jeton = req.cookies[NOM_COOKIE_EDITEUR];
   if (!jeton || jeton.length > 200) throw nonAutorise();
   const empreinte = empreinteJeton(jeton);
@@ -193,6 +193,7 @@ export async function routesEditeur(app: FastifyInstance, { base }: { base: Base
           derniereVerification: r.derniere_verification ? { le: r.derniere_verification.toISOString(), ok: r.verification_ok === true } : null,
           options: { ...OPTIONS_PAR_DEFAUT },
           directeurs: [],
+          support: null,
         }),
       );
     });
@@ -207,6 +208,12 @@ export async function routesEditeur(app: FastifyInstance, { base }: { base: Base
     for (const d of directeurs) {
       const directeur: DirecteurParc = { utilisateurId: d.utilisateur_id, nom: d.nom, email: d.email, actif: d.actif };
       lieux.find((x) => x.lieuId === d.lieu_id)?.directeurs.push(directeur);
+    }
+    // Support autorisé par le lieu en ce moment (niveau 2, §15.142).
+    const supports = await base.transaction({ utilisateurId: e.utilisateurId }, async (c) => (await c.query<{ lieu_id: string; fin: Date; motif: string | null }>("SELECT * FROM supports_autorises()")).rows);
+    for (const s of supports) {
+      const l = lieux.find((x) => x.lieuId === s.lieu_id);
+      if (l) l.support = { jusqua: s.fin.toISOString(), motif: s.motif };
     }
     return { version: versionEnService(), environnement: config.environnement, lieux };
   });

@@ -103,6 +103,11 @@ export const TYPES_JET = {
   mercuriale_modifiee: "Prix de référence (mercuriale) modifié",
   alertes_reglages_modifies: "Alertes poussées sur le téléphone : réglages modifiés",
   conditionnement_modifie: "Conditionnement d'un fournisseur renseigné ou modifié",
+  support_autorise: "Support FlaiX Expert autorisé (lecture seule, durée limitée)",
+  support_retire: "Autorisation du support FlaiX Expert retirée",
+  support_ouvert: "Session du support FlaiX Expert ouverte (lecture seule)",
+  support_consultation: "Écran consulté par le support FlaiX Expert",
+  support_ferme: "Session du support FlaiX Expert fermée",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

@@ -37,12 +37,13 @@ import { routesRecettes } from "./routes/recettes.ts";
 import { routesPertes } from "./routes/pertes.ts";
 import { routesAlertes } from "./routes/alertes.ts";
 import { routesFournisseurs } from "./routes/fournisseurs.ts";
+import { controlerSupport, routesSupport } from "./routes/support.ts";
 import { lireOptions, optionInactive } from "./options.ts";
 import { optionDeLaRoute } from "@flaix/domain";
 
 const METHODES_MODIFIANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 /** Routes de configuration, en lecture seule en mode formation. */
-const CONFIGURATION = [/^\/api\/(stands|categories|produits|lieu|equipe|appareils|click-collect|couts-buvette|fidelite|ingredients|alertes)(\/|$)/, /^\/api\/caisses\/:id(\/appareil)?$/];
+const CONFIGURATION = [/^\/api\/(stands|categories|produits|lieu|equipe|appareils|click-collect|couts-buvette|fidelite|ingredients|alertes|support)(\/|$)/, /^\/api\/caisses\/:id(\/appareil)?$/];
 
 export async function construireServeur(base: Base, options: { journaliser?: boolean } = {}): Promise<FastifyInstance> {
   // Derrière le relais https du serveur (Caddy), l'adresse du visiteur est celle transmise par le
@@ -76,7 +77,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
       const { rows } = await c.query<{
         utilisateur_id: string;
         lieu_id: string;
-        role: "directeur" | "operateur" | "verificateur";
+        role: "directeur" | "operateur" | "verificateur" | "support";
         nom: string;
         email: string | null;
         appareil_id: string | null;
@@ -100,6 +101,8 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
         appareilCaisseId: session.appareil_caisse_id,
         formation: session.formation,
       };
+      // Support FlaiX Expert (§15.142) : lecture seule ; chaque écran consulté est inscrit au journal du lieu.
+      if (session.role === "support") await controlerSupport(req, base, req.auth);
     }
     // Mode formation (dossier §15.109) : la configuration est celle du vrai lieu, recopiée à chaque
     // entrée ; elle ne se modifie pas dans le lieu de formation.
@@ -162,6 +165,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesPertes, { base });
   await app.register(routesAlertes, { base });
   await app.register(routesFournisseurs, { base });
+  await app.register(routesSupport, { base });
 
   return app;
 }

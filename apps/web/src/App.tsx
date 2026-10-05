@@ -34,6 +34,7 @@ const CoutsBuvette = lazy(() => import("./pages/parametres/CoutsBuvette.tsx").th
 const Fidelite = lazy(() => import("./pages/fidelite/Fidelite.tsx").then((m) => ({ default: m.Fidelite })));
 const Factures = lazy(() => import("./pages/factures/Factures.tsx").then((m) => ({ default: m.Factures })));
 const Assistant = lazy(() => import("./pages/Assistant.tsx").then((m) => ({ default: m.Assistant })));
+const SupportFlaix = lazy(() => import("./pages/parametres/SupportFlaix.tsx").then((m) => ({ default: m.SupportFlaix })));
 const Notifications = lazy(() => import("./pages/parametres/Notifications.tsx").then((m) => ({ default: m.Notifications })));
 const Objectifs = lazy(() => import("./pages/parametres/Objectifs.tsx").then((m) => ({ default: m.Objectifs })));
 const RapportSoiree = lazy(() => import("./pages/resultats/RapportSoiree.tsx").then((m) => ({ default: m.RapportSoiree })));
@@ -59,7 +60,8 @@ function AppLieu() {
   // Caissière : l'écran de vente de la caisse de sa tablette, rien d'autre (dossier §15.100).
   if (session.data.role === "operateur") return <PosteCaissiere session={session.data} />;
 
-  if (session.data.role !== "directeur") {
+  // Support FlaiX Expert (§15.142) : les écrans du directeur, en lecture seule (bandeau permanent).
+  if (session.data.role !== "directeur" && session.data.role !== "support") {
     return (
       <div className="page-connexion">
         <div className="carte boite-connexion">
@@ -99,6 +101,7 @@ function AppLieu() {
           <Route path="parametres/couts" element={<CoutsBuvette />} />
           <Route path="parametres/objectifs" element={<Objectifs />} />
           <Route path="parametres/notifications" element={<Notifications />} />
+          <Route path="parametres/support" element={<SupportFlaix />} />
           <Route path="compte" element={<Compte />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

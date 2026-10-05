@@ -20,7 +20,7 @@ export const texteFacultatif = (max: number) =>
     .transform((v) => (v ? v : null));
 
 export function contexte(auth: Authentification): Contexte {
-  return { lieuId: auth.lieuId, utilisateurId: auth.utilisateurId };
+  return { lieuId: auth.lieuId, utilisateurId: auth.utilisateurId, lectureSeule: auth.role === "support" };
 }
 
 /** Liste des champs réellement modifiés, avec valeur avant/après — c'est ce qui part au journal technique. */

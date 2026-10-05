@@ -8,7 +8,7 @@ import type { TypeJet } from "./journal-technique.ts";
 import type { ContexteScellement, TeteChaine } from "./caisse-scellee.ts";
 import type { OuvertureCaisse } from "./caisse-auto.ts";
 
-export type Role = "directeur" | "operateur" | "verificateur";
+export type Role = "directeur" | "operateur" | "verificateur" | "support";
 
 export interface SessionInfo {
   /** E-mail absent pour une caissière, qui se connecte avec un code (dossier §15.100). */
@@ -24,6 +24,8 @@ export interface SessionInfo {
    * formation jumeau. Mention non masquable à l'écran et sur tout justificatif ; rien n'est réel.
    */
   formation: boolean;
+  /** Session du support FlaiX Expert (§15.142) : lecture seule, jusqu'à la fin de l'autorisation du lieu. */
+  support?: { jusqua: string } | null;
 }
 
 /** Paramètres → Mode formation (dossier §15.109). */

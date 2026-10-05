@@ -76,8 +76,10 @@ export function Resultats({ session }: { session: SessionInfo }) {
         fil={session.lieu.nom}
         titre="Résultats"
         description={
-          miseEnRouteTerminee || session.formation
-            ? `Bonjour ${session.utilisateur.nom}.`
+          session.support
+            ? `Support FlaiX Expert, en lecture seule : ${session.utilisateur.nom}.`
+            : miseEnRouteTerminee || session.formation
+              ? `Bonjour ${session.utilisateur.nom}.`
             : `Bonjour ${session.utilisateur.nom}. Ton espace démarre vide : tu construis toi-même ta configuration, étape par étape.`
         }
       />

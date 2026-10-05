@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { KeyRound, LogOut, Plus, ShieldCheck } from "lucide-react";
+import { Eye, KeyRound, LogOut, Plus, ShieldCheck } from "lucide-react";
 import {
   LONGUEUR_MIN_MOT_DE_PASSE,
   OPTIONS_LIEU,
@@ -84,6 +84,11 @@ function Parc({ nom }: { nom: string }) {
       setResultats((x) => ({ ...x, [lieuId]: r }));
       void client.invalidateQueries({ queryKey: ["editeur-parc"] });
     },
+  });
+  // Support niveau 2 (§15.142) : la session de lecture seule s'ouvre dans l'application du lieu.
+  const support = useMutation({
+    mutationFn: (lieuId: string) => api.post<{ jusqua: string }>(`/editeur/lieux/${lieuId}/support`),
+    onSuccess: () => window.location.assign("/"),
   });
   const option = useMutation({
     mutationFn: (x: { lieuId: string; option: OptionLieu; active: boolean }) => api.put(`/editeur/lieux/${x.lieuId}/options`, { option: x.option, active: x.active }),
@@ -197,15 +202,27 @@ function Parc({ nom }: { nom: string }) {
                             <ShieldCheck size={15} /> Vérifier l'intégrité
                           </button>
                         </div>
+                        <div className="editeur-ligne">
+                          <span className="discret" style={{ fontSize: 12.5 }}>
+                            {l.support
+                              ? `Support autorisé par le lieu jusqu'à ${formaterDateHeure(l.support.jusqua)}${l.support.motif ? ` — « ${l.support.motif} »` : ""}.`
+                              : "Support non autorisé : seul le lieu peut l'ouvrir, depuis Paramètres → Support FlaiX Expert."}
+                          </span>
+                          {l.support && (
+                            <button className="btn" disabled={support.isPending} onClick={() => support.mutate(l.lieuId)}>
+                              <Eye size={15} /> Ouvrir en lecture seule
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               )}
-              <MessageErreur erreur={verifier.error ?? option.error} />
+              <MessageErreur erreur={verifier.error ?? option.error ?? support.error} />
               <p className="aide" style={{ marginBottom: 0 }}>
-                Chaque vérification et chaque changement d'option sont inscrits au journal technique du lieu, qui les voit. Base toujours incluse : caisse, clôtures, résultats, export comptable, paramètres, formation. L'accès aux données d'un lieu (support) n'existe que sur son autorisation :
-                pas encore en service.
+                Chaque vérification et chaque changement d'option sont inscrits au journal technique du lieu, qui les voit. Base toujours incluse : caisse, clôtures, résultats, export comptable, paramètres, formation. L'accès aux données d'un lieu (support) n'existe que sur son autorisation, en lecture seule et
+                limité dans le temps : l'ouverture et chaque écran consulté sont inscrits à son journal.
               </p>
             </Carte>
             <MotDePasse />

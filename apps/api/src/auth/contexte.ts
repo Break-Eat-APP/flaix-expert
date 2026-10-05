@@ -17,6 +17,8 @@ export interface Authentification {
   appareilCaisseId: string | null;
   /** Session dans le lieu de formation jumeau (dossier §15.109). */
   formation: boolean;
+  /** Session du support FlaiX Expert (§15.142) : fin de l'autorisation du lieu. */
+  supportJusqua?: string | null;
 }
 
 declare module "fastify" {
@@ -53,6 +55,7 @@ async function refuser(req: FastifyRequest, base: Base, auth: Authentification):
 export async function exigerAccesCaisse(req: FastifyRequest, base: Base, caisseId: string): Promise<Authentification> {
   const auth = exigerSession(req);
   if (auth.role === "directeur") return auth;
+  if (auth.role === "support" && req.method === "GET") return auth;
   if (auth.role === "operateur" && auth.appareilCaisseId === caisseId) return auth;
   return refuser(req, base, auth);
 }
@@ -63,6 +66,13 @@ export async function exigerAccesCaisse(req: FastifyRequest, base: Base, caisseI
  */
 export async function exigerDirecteur(req: FastifyRequest, base: Base): Promise<Authentification> {
   const auth = exigerSession(req);
+  // Support FlaiX Expert (§15.142) : il lit les écrans du directeur, il n'écrit jamais.
+  if (auth.role === "support" && req.method === "GET") return auth;
   if (auth.role !== "directeur") return refuser(req, base, auth);
   return auth;
+}
+
+/** Une requête d'écriture d'une session support est refusée avant la route, et la tentative journalisée. */
+export async function refuserEcritureSupport(req: FastifyRequest, base: Base, auth: Authentification): Promise<never> {
+  return refuser(req, base, auth);
 }
