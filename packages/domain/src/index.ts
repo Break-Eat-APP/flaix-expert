@@ -33,3 +33,4 @@ export * from "./alertes.ts";
 export * from "./fournisseurs.ts";
 export * from "./prevision.ts";
 export * from "./emails.ts";
+export * from "./wallet.ts";

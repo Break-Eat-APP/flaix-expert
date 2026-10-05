@@ -4788,3 +4788,18 @@ Rémi a partagé une note produit rédigée avec ChatGPT (`FLAIX_EXPERT_PRODUCT_
 
 **Réalisé le 2026-10-05** (migration 0034, moteur `emails.ts`, route `routes/emails.ts`, Paramètres → Notifications → carte « E-mails », commande `flaix-admin cle-brevo`) : rapport de soirée envoyé après la clôture (une fois, contrôlé par la trace), rectification de Z (tiroir et coffre) notifiée après l'enregistrement, e-mail d'essai à la personne connectée, derniers envois affichés avec leur résultat (« envoyé », « échec », « non envoyé (Brevo non réglé) »). Contenu échappé (un motif ne devient jamais du HTML). **Tests** : moteur 3, serveur 7 (réglages par défaut et destinataires, adresses refusées, rapport une seule fois au directeur et à l'expert-comptable, rectification notifiée avec motif et signature, Brevo en panne sans rien bloquer, essai à la seule personne connectée, trace inaltérable), écran 2.
 
+
+### 15.147 Carte abonné dans Apple Wallet et Google Wallet (2026-10-05)
+
+**Demande de Rémi** : *« j'ai déjà les comptes Apple et Google, guide-moi dans ce développement »* — la carte wallet abonné reportée le 12/09 (§14 module 20) devient constructible. **Règles validées le 12/09, reprises** : la carte porte le **nom et la couleur du lieu** (pas la marque FlaiX Expert : elle doit ressembler au club) ; le **numéro d'abonné en QR code** (le même numéro identifie l'abonné à la caisse, §14 module 19 point 4) ; le **solde de points**, **mis à jour à distance** quand il change.
+
+**Construction** :
+- **Lien personnel** de chaque abonné (`/carte/<jeton>`, jeton aléatoire, renouvelable par le directeur, qui invalide l'ancien) : une page publique minimale avec les deux boutons « Ajouter à Apple Wallet » et « Ajouter à Google Wallet ». Elle ne montre que ce que montre la carte (lieu, nom de l'abonné, numéro, points). Le directeur la donne depuis Fidélité → l'abonné : lien à copier, QR code à faire scanner au comptoir, ou envoi par e-mail (Brevo) si l'abonné a une adresse.
+- **Apple Wallet** : fichier `.pkpass` signé par le certificat « Pass Type ID » de Break Eat App ; **la clé privée est fabriquée sur le serveur et n'en sort jamais** (`flaix-admin wallet-apple-demande` produit la demande de certificat à déposer chez Apple ; `flaix-admin wallet-apple-certificat` installe le certificat rendu par Apple). Mise à jour du solde : service web PassKit d'Apple + notification au téléphone.
+- **Google Wallet** : carte de fidélité (« loyalty ») émise par le compte émetteur de Break Eat App ; clé du compte de service installée par `flaix-admin wallet-google` (jamais vue ni manipulée par Claude). Mise à jour du solde : modification de la carte chez Google.
+- **Couleur de la carte** : réglage du lieu (Paramètres → Le lieu) ; par défaut, un violet neutre.
+- **Le solde** est celui que lit déjà la caisse (tickets non annulés, §15.127) : la carte ne calcule rien.
+
+**Pas dans cette étape** : la carte membre grand public (inscription par QR code, §14 module 20 point 9 : prototype en attente de validation par Rémi), le logo du lieu sur la carte (pas encore de dépôt de logo dans FlaiX Expert), les campagnes.
+
+**Comptes (Rémi)** : Apple — Team ID et identifiant de pass `pass.com.flaixlabs.abonne` ; Google — Issuer ID, compte de service autorisé dans la console Google Wallet, puis demande de publication une fois la carte vue en mode démo.
