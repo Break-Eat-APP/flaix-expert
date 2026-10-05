@@ -29,6 +29,7 @@ export const api = {
   post: <T>(chemin: string, corps?: unknown) => requete<T>("POST", chemin, corps),
   put: <T>(chemin: string, corps?: unknown) => requete<T>("PUT", chemin, corps),
   patch: <T>(chemin: string, corps?: unknown) => requete<T>("PATCH", chemin, corps),
+  supprimer: <T>(chemin: string) => requete<T>("DELETE", chemin),
 };
 
 /**

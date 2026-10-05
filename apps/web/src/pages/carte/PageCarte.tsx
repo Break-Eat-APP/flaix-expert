@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { couleurTexte, type CartePublique } from "@flaix/domain";
+import type { CartePublique } from "@flaix/domain";
 import { api } from "../../api.ts";
+import { ApercuCarte } from "../../composants/ApercuCarte.tsx";
 import { Chargement, MessageErreur } from "../../composants/communs.tsx";
 
 /** Le jeton du lien /carte/<jeton> (vide si l'adresse n'a pas la bonne forme). */
@@ -33,7 +34,6 @@ export function PageCarte({ jeton = jetonDeLAdresse(window.location.pathname) }:
 }
 
 function Contenu({ c, jeton, ios }: { c: CartePublique; jeton: string; ios: boolean }) {
-  const texte = couleurTexte(c.couleur);
   const apple = c.apple && (
     <a key="apple" className="btn bouton-wallet" href={`/api/carte/${jeton}/apple`} style={{ background: "#000", color: "#fff" }}>
       Ajouter à Apple Wallet
@@ -46,25 +46,25 @@ function Contenu({ c, jeton, ios }: { c: CartePublique; jeton: string; ios: bool
   );
   return (
     <div style={{ display: "grid", gap: 16 }}>
-      <section aria-label="Carte abonné" style={{ background: c.couleur, color: texte, borderRadius: 18, padding: 20, display: "grid", gap: 14, boxShadow: "0 10px 30px rgba(0,0,0,.18)" }}>
-        <div style={{ fontWeight: 800, fontSize: 18 }}>{c.lieu}</div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 12, opacity: 0.8 }}>Abonné</div>
-            <div style={{ fontWeight: 700, fontSize: 17 }}>{c.nom}</div>
-          </div>
-          {c.points !== null && (
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 12, opacity: 0.8 }}>Points</div>
-              <div style={{ fontWeight: 800, fontSize: 26 }}>{c.points.toLocaleString("fr-FR")}</div>
-            </div>
-          )}
-        </div>
-        <div>
-          <div style={{ fontSize: 12, opacity: 0.8 }}>N° d'abonné</div>
-          <div style={{ fontWeight: 800, fontSize: 22, letterSpacing: ".06em" }}>{c.numero}</div>
-        </div>
-      </section>
+      <ApercuCarte
+        modele="google"
+        qr={false}
+        c={{
+          lieu: c.lieu,
+          couleurs: { fond: c.couleur, texte: c.couleurTexte, libelles: c.couleurLibelles },
+          titre: c.titre,
+          afficherNomLieu: c.afficherNomLieu,
+          libellePoints: c.libellePoints,
+          nom: c.nom,
+          numero: c.numero,
+          points: c.points,
+          reduction: c.reduction,
+          remise: c.remise,
+          logo: c.logo,
+          banniere: c.banniere,
+        }}
+      />
+      {c.remise && <p style={{ margin: 0, fontWeight: 600 }}>Ta remise abonné : {c.remise} sur tes achats à la buvette.</p>}
 
       {c.apple || c.google ? (
         <div style={{ display: "grid", gap: 10 }}>{ios ? [apple, google] : [google, apple]}</div>

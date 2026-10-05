@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Mail, Share2 } from "lucide-react";
-import { COULEUR_CARTE_DEFAUT, couleurTexte, couleurValide, type CarteAbonne, type EtatWallet } from "@flaix/domain";
+import type { CarteAbonne } from "@flaix/domain";
 import { api } from "../../api.ts";
-import { Carte, Chargement, MessageErreur } from "../../composants/communs.tsx";
+import { Chargement, MessageErreur } from "../../composants/communs.tsx";
 
 /*
  * Carte abonné dans le téléphone, Apple Wallet et Google Wallet (dossier §15.147), côté directeur : le lien
- * personnel de chaque abonné (créer, copier, partager, envoyer par e-mail, renouveler) et la couleur des cartes.
+ * personnel de chaque abonné (créer, copier, partager, envoyer par e-mail, renouveler). Le design des cartes du lieu
+ * est dans DesignCarte.tsx (§15.148).
  */
 
-const services = (apple: boolean, google: boolean) =>
+export const services = (apple: boolean, google: boolean) =>
   apple && google ? "Apple Wallet et Google Wallet" : apple ? "Apple Wallet (Google Wallet pas encore activé)" : google ? "Google Wallet (Apple Wallet pas encore activé)" : null;
 
 /** Dans le détail d'un abonné. */
@@ -93,60 +94,5 @@ export function CarteAbonneBloc({ id, nom, actif }: { id: string; nom: string; a
       {message && <span className="discret" role="status">{message}</span>}
       <MessageErreur erreur={creer.error ?? email.error} />
     </div>
-  );
-}
-
-/** Onglet « Carte téléphone » : services en place et couleur des cartes du lieu. */
-export function ReglagesCarte() {
-  const client = useQueryClient();
-  const etat = useQuery({ queryKey: ["wallet"], queryFn: () => api.get<EtatWallet>("/wallet") });
-  const [couleur, setCouleur] = useState<string | null>(null);
-  const enregistrer = useMutation({
-    mutationFn: (c: string) => api.put<EtatWallet>("/wallet/couleur", { couleur: c }),
-    onSuccess: (r) => {
-      client.setQueryData(["wallet"], r);
-      setCouleur(null);
-    },
-  });
-  if (etat.isPending) return <Chargement />;
-  if (etat.error) return <MessageErreur erreur={etat.error} />;
-  const e = etat.data!;
-  const choisie = couleur ?? e.couleur;
-  const pret = services(e.apple, e.google);
-  return (
-    <Carte titre="Carte dans le téléphone" description="Chaque abonné peut avoir sa carte dans Apple Wallet ou Google Wallet : n° d'abonné, QR code et points, mis à jour tout seuls.">
-      <p style={{ marginTop: 0 }}>
-        {pret ? (
-          <>
-            En service : <strong>{pret}</strong>.
-          </>
-        ) : (
-          <>L'ajout dans Apple Wallet et Google Wallet n'est pas encore activé par FlaiX Expert : les liens montrent déjà la carte (n° et points).</>
-        )}
-      </p>
-      <div className="actions" style={{ justifyContent: "flex-start", flexWrap: "wrap", alignItems: "center" }}>
-        <label className="champ" style={{ margin: 0 }}>
-          <span>Couleur des cartes</span>
-          <input type="color" value={choisie} onChange={(ev) => setCouleur(ev.target.value.toLowerCase())} style={{ width: 64, height: 36, padding: 2 }} />
-        </label>
-        <div aria-label="Aperçu de la carte" style={{ background: choisie, color: couleurTexte(choisie), borderRadius: 12, padding: "10px 14px", minWidth: 180, fontWeight: 700 }}>
-          Carte abonné
-          <div style={{ fontWeight: 400, fontSize: 12, opacity: 0.85 }}>N° AB-123 · 240 points</div>
-        </div>
-        <button className="btn" disabled={couleur === null || couleur === e.couleur || !couleurValide(choisie) || enregistrer.isPending} onClick={() => enregistrer.mutate(choisie)}>
-          Enregistrer
-        </button>
-        {e.couleur !== COULEUR_CARTE_DEFAUT && (
-          <button className="btn btn-fantome" disabled={enregistrer.isPending} onClick={() => enregistrer.mutate(COULEUR_CARTE_DEFAUT)}>
-            Couleur d'origine
-          </button>
-        )}
-      </div>
-      <MessageErreur erreur={enregistrer.error} />
-      <p className="discret" style={{ marginBottom: 0 }}>
-        Pour donner sa carte à un abonné : onglet Abonnés, ouvre sa fiche, « Créer le lien de sa carte », puis envoie-le (e-mail, SMS, WhatsApp). Une nouvelle couleur s'applique
-        aussi aux cartes déjà ajoutées.
-      </p>
-    </Carte>
   );
 }

@@ -16,7 +16,24 @@ let publique: CartePublique;
 let carte: CarteAbonne;
 let serveur: ReturnType<typeof vi.fn>;
 beforeEach(() => {
-  publique = { lieu: "Les Spartiates", couleur: "#c8102e", nom: "Karim", numero: "AB-7", points: 58, apple: true, google: false };
+  publique = {
+    lieu: "Les Spartiates",
+    couleur: "#c8102e",
+    couleurTexte: "#ffffff",
+    couleurLibelles: "#ffffff",
+    titre: "Carte Supporter",
+    afficherNomLieu: true,
+    libellePoints: "Spartapoints",
+    nom: "Karim",
+    numero: "AB-7",
+    points: 58,
+    reduction: 0,
+    remise: "10 %",
+    logo: "/api/carte-logo/l.png?v=1",
+    banniere: null,
+    apple: true,
+    google: false,
+  };
   carte = { lien: null, email: "karim@exemple.fr", apple: true, google: true, appareilsApple: 0 };
   serveur = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === `/api/carte/${JETON}`) return reponse(200, publique);
@@ -47,11 +64,14 @@ describe("page de la carte (abonné)", () => {
     expect(jetonDeLAdresse("/carte/court")).toBe("");
   });
 
-  it("montre la carte (lieu, nom, n°, points) et seulement le bouton du service en service", async () => {
+  it("montre la carte aux couleurs et aux textes du lieu (programme, nom des points, remise) et seulement le bouton du service en service", async () => {
     monter(<PageCarte jeton={JETON} />);
     expect(await screen.findByText("AB-7")).toBeTruthy();
     expect(screen.getByText("Karim")).toBeTruthy();
     expect(screen.getByText("58")).toBeTruthy();
+    expect(screen.getByText("Carte Supporter")).toBeTruthy();
+    expect(screen.getByText("Spartapoints")).toBeTruthy();
+    expect(screen.getByText(/Ta remise abonné : 10 %/)).toBeTruthy();
     expect(screen.getByRole("link", { name: "Ajouter à Apple Wallet" }).getAttribute("href")).toBe(`/api/carte/${JETON}/apple`);
     expect(screen.queryByRole("link", { name: "Ajouter à Google Wallet" })).toBeNull();
   });

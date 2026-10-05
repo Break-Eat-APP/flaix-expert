@@ -14,7 +14,8 @@ import {
 } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
-import { CarteAbonneBloc, ReglagesCarte } from "./CarteWallet.tsx";
+import { CarteAbonneBloc } from "./CarteWallet.tsx";
+import { EditeurDesignCarte } from "./DesignCarte.tsx";
 
 type Onglet = "abonnes" | "codes" | "import" | "reglages" | "carte";
 const ETATS_CODE = { valide: ["Valide", "puce-vert"], a_venir: ["À venir", ""], expire: ["Expiré", ""], epuise: ["Épuisé", "puce-ambre"], desactive: ["Désactivé", ""] } as const;
@@ -45,7 +46,7 @@ export function Fidelite() {
         {bouton("reglages", "Règles des points")}
         {bouton("carte", "Carte téléphone")}
       </div>
-      {onglet === "abonnes" ? <Abonnes e={e} /> : onglet === "codes" ? <Codes e={e} /> : onglet === "import" ? <Import /> : onglet === "reglages" ? <ReglagesPoints e={e} /> : <ReglagesCarte />}
+      {onglet === "abonnes" ? <Abonnes e={e} /> : onglet === "codes" ? <Codes e={e} /> : onglet === "import" ? <Import /> : onglet === "reglages" ? <ReglagesPoints e={e} /> : <EditeurDesignCarte />}
       <Regles>
         <ul>
           <li>
