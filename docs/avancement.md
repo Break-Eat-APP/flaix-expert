@@ -51,7 +51,7 @@ Sauvegarde de la base prise juste avant ; migrations 0030 à 0033 appliquées ; 
 | 6 | Conformité : attestation, registre des versions, archive annuelle, accès vérificateur | **à voir avec Rémi** |
 | 7 | Facture FlaiX Expert au lieu | attend les prix de Rémi |
 | 8 | Import des ventes Click & Collect, commission et frais dans le résultat | **plus tard** (Rémi, 2026-10-05) — commandes passées dans l'application Break Eat, traitées par Flaix Ops : connexion directe Flaix Ops → FlaiX Expert recommandée ; il faudra le code de Flaix Ops |
-| 9 | E-mails par Brevo (rapport, rectifications, campagnes) | attend le compte Brevo de Rémi |
+| 9 | E-mails par Brevo (rapport, rectifications, campagnes) | **fait le 2026-10-05** (§15.146) — rapport de soirée et rectifications ; clé Brevo installée par Rémi, expéditeur de test `contact@breakeatapp.com` (**pour la production : une adresse flaixlabs.com**) ; campagnes vers les abonnés : plus tard (RGPD) |
 | 10 | Wallet | attend les comptes Apple et Google de Rémi |
 | 11 | Back-office niveau 2 | **fait le 2026-10-05** (§15.142, commit `0a675eb`) — Paramètres → Support FlaiX Expert ; back-office « Ouvrir en lecture seule » |
 | 12 | Passage en production | Rémi (serveur) |
