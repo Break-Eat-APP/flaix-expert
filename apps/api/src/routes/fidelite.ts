@@ -16,6 +16,7 @@ import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { ParamId, contexte, corps, differences, texteFacultatif } from "./outils.ts";
+import { abonnesAvecCarte, suivreCartes } from "./wallet.ts";
 
 /**
  * Fidélité, partie gestion (module 19 ; dossier §15.114) : registre des abonnés, points, codes promo.
@@ -178,7 +179,8 @@ export async function routesFidelite(app: FastifyInstance, { base }: { base: Bas
   app.put("/api/fidelite/reglages", async (req): Promise<EtatFidelite> => {
     const auth = await exigerDirecteur(req, base);
     const r = corps(Reglages, req);
-    return base.transaction(contexte(auth), async (c) => {
+    let cartes: string[] = [];
+    const e = await base.transaction(contexte(auth), async (c) => {
       const avant = (await lireReglages(c, auth.lieuId)) ?? { pointsParEuro: null, palierPoints: null, valeurPalier: null };
       await c.query("UPDATE lieu SET fid_points_par_euro = $2, fid_palier_points = $3, fid_valeur_palier_centimes = $4 WHERE id = $1", [
         auth.lieuId,
@@ -188,8 +190,11 @@ export async function routesFidelite(app: FastifyInstance, { base }: { base: Bas
       ]);
       const diff = differences(avant as Record<string, unknown>, r);
       if (Object.keys(diff).length) await inscrireJet(c, { lieuId: auth.lieuId, type: "fidelite_reglages_modifies", utilisateurId: auth.utilisateurId, details: diff });
+      if (avant.pointsParEuro !== r.pointsParEuro) cartes = await abonnesAvecCarte(c, auth.lieuId);
       return etat(c, auth.lieuId);
     });
+    await suivreCartes(base, req, contexte(auth), auth.lieuId, cartes);
+    return e;
   });
 
   app.post("/api/fidelite/abonnes", async (req): Promise<EtatFidelite> => {
@@ -211,7 +216,8 @@ export async function routesFidelite(app: FastifyInstance, { base }: { base: Bas
     const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);
     const m = corps(ModifAbonne, req);
-    return base.transaction(contexte(auth), async (c) => {
+    let carte = false;
+    const e = await base.transaction(contexte(auth), async (c) => {
       const { rows } = await c.query<{ numero: string; nom: string; email: string | null; telephone: string | null; actif: boolean }>(
         "SELECT numero, nom, email, telephone, actif FROM abonne_fidelite WHERE lieu_id = $1 AND id = $2",
         [auth.lieuId, id],
@@ -230,8 +236,12 @@ export async function routesFidelite(app: FastifyInstance, { base }: { base: Bas
       // Le journal note quels champs ont changé, sans recopier les données personnelles.
       const champs = Object.keys(differences({ nom: avant.nom, email: avant.email, telephone: avant.telephone, actif: avant.actif }, apres));
       if (champs.length) await inscrireJet(c, { lieuId: auth.lieuId, type: "abonne_modifie", utilisateurId: auth.utilisateurId, details: { abonne: id, numero: avant.numero, champs } });
+      carte = champs.includes("nom") || champs.includes("actif");
       return etat(c, auth.lieuId);
     });
+    // Nom sur la carte, carte retirée ou rendue (abonné désactivé ou réactivé).
+    if (carte) await suivreCartes(base, req, contexte(auth), auth.lieuId, [id]);
+    return e;
   });
 
   app.get("/api/fidelite/abonnes/:id", async (req): Promise<HistoriqueAbonne> => {
@@ -280,7 +290,7 @@ export async function routesFidelite(app: FastifyInstance, { base }: { base: Bas
       }),
       req,
     );
-    return base.transaction(contexte(auth), async (c) => {
+    const e = await base.transaction(contexte(auth), async (c) => {
       const { rows } = await c.query<{ numero: string }>("SELECT numero FROM abonne_fidelite WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id]);
       if (!rows[0]) throw introuvable("Abonné");
       await c.query("INSERT INTO mouvement_points (lieu_id, abonne_id, motif, points, commentaire, par) VALUES ($1, $2, 'ajustement', $3, $4, $5)", [
@@ -293,6 +303,8 @@ export async function routesFidelite(app: FastifyInstance, { base }: { base: Bas
       await inscrireJet(c, { lieuId: auth.lieuId, type: "points_ajustes", utilisateurId: auth.utilisateurId, details: { abonne: id, numero: rows[0].numero, points: a.points, motif: a.commentaire } });
       return etat(c, auth.lieuId);
     });
+    await suivreCartes(base, req, contexte(auth), auth.lieuId, [id]);
+    return e;
   });
 
   // Import de la base existante : le fichier est lu sur l'écran (aperçu, lignes fautives), le serveur revérifie tout.

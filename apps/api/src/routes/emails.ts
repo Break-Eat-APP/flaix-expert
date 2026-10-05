@@ -87,7 +87,7 @@ async function directeurs(c: Client, lieuId: string): Promise<{ nom: string; ema
 }
 
 /** Envoie un e-mail et le trace ; « sans_service » si Brevo n'est pas réglé. Jamais d'exception. */
-async function envoyerEtTracer(c: Client, lieuId: string, type: EmailEnvoye["type"], objetId: string | null, a: string[], email: Email): Promise<EmailEnvoye["statut"]> {
+export async function envoyerEtTracer(c: Client, lieuId: string, type: EmailEnvoye["type"], objetId: string | null, a: string[], email: Email): Promise<EmailEnvoye["statut"]> {
   const f = service();
   const r = f && a.length ? await f(a, email) : null;
   const statut: EmailEnvoye["statut"] = !f ? "sans_service" : r?.ok ? "envoye" : "echec";

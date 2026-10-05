@@ -45,6 +45,24 @@ export interface CartePublique {
   google: boolean;
 }
 
+/** Réponse de GET /api/wallet : services réglés sur le serveur, couleur des cartes du lieu. */
+export interface EtatWallet {
+  apple: boolean;
+  google: boolean;
+  couleur: string;
+}
+
+/** Carte d'un abonné, côté directeur (GET et POST /api/fidelite/abonnes/:id/carte). */
+export interface CarteAbonne {
+  /** Lien personnel à transmettre à l'abonné ; null tant qu'il n'a pas été créé. */
+  lien: string | null;
+  email: string | null;
+  apple: boolean;
+  google: boolean;
+  /** Téléphones Apple qui ont la carte et reçoivent ses mises à jour. */
+  appareilsApple: number;
+}
+
 /** pass.json d'une carte Apple Wallet (type « storeCard »). */
 export function passApple(d: DonneesCarte, r: { passTypeId: string; teamId: string; webServiceURL: string; authenticationToken: string }): Record<string, unknown> {
   const texte = couleurTexte(d.couleur);

@@ -109,6 +109,8 @@ export const TYPES_JET = {
   support_consultation: "Écran consulté par le support FlaiX Expert",
   support_ferme: "Session du support FlaiX Expert fermée",
   emails_reglages_modifies: "E-mails du lieu : réglages modifiés",
+  carte_wallet_couleur: "Carte abonné (Apple Wallet, Google Wallet) : couleur modifiée",
+  carte_wallet_lien: "Carte abonné : lien personnel créé ou renouvelé",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

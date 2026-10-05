@@ -17,7 +17,7 @@ export interface ReglagesEmails {
 }
 
 export interface EmailEnvoye {
-  type: "rapport_soiree" | "rectification" | "essai";
+  type: "rapport_soiree" | "rectification" | "essai" | "carte_wallet";
   sujet: string;
   destinataires: number;
   statut: "envoye" | "echec" | "sans_service";
@@ -110,3 +110,11 @@ export function emailEssai(lieu: string, adresseSite: string): Email {
   const lignes = [`Si tu lis ce message, les e-mails de FlaiX Expert arrivent bien pour ${lieu}.`];
   return { sujet: `FlaiX Expert — ${titre}`, texte: [titre, "", ...lignes, "", adresseSite].join("\n"), html: page(titre, lignes, { texte: "Ouvrir FlaiX Expert", url: adresseSite }, `${lieu} — envoyé depuis Paramètres → Notifications.`) };
 }
+
+/** Lien de la carte abonné (Apple Wallet, Google Wallet), envoyé à l'abonné par le directeur (§15.147). */
+export function emailLienCarte(lieu: string, nom: string, lien: string): Email {
+  const titre = `Ta carte abonné — ${lieu}`;
+  const lignes = [`Bonjour ${nom},`, `Voici ta carte abonné ${lieu}, à ajouter dans ton téléphone (Apple Wallet ou Google Wallet). À la buvette, présente son QR code à la caissière.`, "Ce lien est personnel : ne le transmets pas."];
+  return { sujet: titre, texte: [titre, "", ...lignes, "", lien].join("\n"), html: page(titre, lignes, { texte: "Ajouter ma carte", url: lien }, `${lieu} — e-mail envoyé par FlaiX Expert à la demande du lieu.`) };
+}
+

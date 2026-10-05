@@ -70,7 +70,7 @@ export function ecranConsulte(route: string): string {
     [/^\/api\/stock/, "Stock"],
     [/^\/api\/(equipe|planning)/, "Équipe"],
     [/^\/api\/(clotures|evenements|export-comptable)/, "Clôtures et événements"],
-    [/^\/api\/fidelite/, "Fidélité"],
+    [/^\/api\/(fidelite|wallet)/, "Fidélité"],
     [/^\/api\/factures/, "Factures"],
     [/^\/api\/(lieu|stands|produits|categories|ingredients|recettes|click-collect|couts-buvette|notifications|support|options)/, "Paramètres"],
     [/^\/api\/assistant/, "Assistant"],
@@ -144,7 +144,7 @@ export function optionDeLaRoute(url: string): OptionLieu | null {
   // « Planning & masse salariale » : le planning et la masse salariale. Les fiches employés, l'accès
   // caisse des caissières et les tablettes restent dans la base : la caisse en a besoin (audit P2-002).
   if (/^\/api\/planning(\/|$)/.test(url) || /^\/api\/equipe\/masse-salariale(\/|$)/.test(url)) return "equipe";
-  if (/^\/api\/fidelite(\/|$)/.test(url)) return "fidelite";
+  if (/^\/api\/(fidelite|wallet)(\/|$)/.test(url)) return "fidelite";
   if (/^\/api\/click-collect(\/|$)/.test(url)) return "click_collect";
   if (/^\/api\/factures(\/|$)/.test(url)) return "factures";
   if (/^\/api\/couts-buvette(\/|$)/.test(url)) return "couts_buvette";

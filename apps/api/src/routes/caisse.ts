@@ -31,6 +31,7 @@ import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { inscrireCaisse, inscrireEvenementTablette, teteChaine, verifierCaisses } from "../journal-caisse.ts";
 import { pousserAlertesStock } from "./alertes.ts";
+import { abonnesDesTickets, mettreAJourCartes } from "./wallet.ts";
 import { ParamId, Uuid, contexte, corps } from "./outils.ts";
 import { consommerFidelite } from "./fidelite-caisse.ts";
 import { exigerMoisOuvert } from "./periodes.ts";
@@ -584,6 +585,7 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
     const s = corps(Synchro, req);
     // Produits vendus dans ce lot, pour la rupture poussée sur le téléphone (§15.140), après l'enregistrement.
     let vendus: { evenementId: string; standId: string; produits: Set<string> } | null = null;
+    const ticketsRecus: string[] = [];
     const reponse = await base.transaction(contexte(auth), async (c) => {
       const k = await lireCaisse(c, auth.lieuId, id);
       await verrouiller(c, `caisse:${id}`);
@@ -720,6 +722,7 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
           });
         }
         if (controle.horsLigne) horsLigne.push(e);
+        ticketsRecus.push(e.id);
         if (e.type === "vente") {
           vendus ??= { evenementId: session.evenement_id, standId: session.stand_id, produits: new Set() };
           for (const l of e.details.lignes) vendus.produits.add(l.produitId);
@@ -754,6 +757,14 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
         await pousserAlertesStock(base, contexte(auth), auth.lieuId, v.evenementId, v.standId, [...v.produits]);
       } catch (erreur) {
         req.log.error({ err: erreur, caisseId: id }, "alerte de stock non envoyée");
+      }
+    }
+    // Carte abonné dans le téléphone (§15.147) : le solde de points suit les tickets, sans jamais les retarder.
+    if (ticketsRecus.length) {
+      try {
+        await mettreAJourCartes(base, contexte(auth), auth.lieuId, await abonnesDesTickets(base, contexte(auth), auth.lieuId, ticketsRecus));
+      } catch (erreur) {
+        req.log.error({ err: erreur, caisseId: id }, "cartes wallet non mises à jour");
       }
     }
     return reponse;

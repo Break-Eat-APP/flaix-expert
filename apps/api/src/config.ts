@@ -55,4 +55,12 @@ export const config = {
    */
   brevoCle: process.env.BREVO_API_KEY || null,
   brevoExpediteur: process.env.BREVO_EXPEDITEUR || null,
+  /**
+   * Carte abonné dans Apple Wallet et Google Wallet (§15.147) : identifiants (non secrets) posés par
+   * `flaix-admin wallet-apple-certificat` et `flaix-admin wallet-google` ; clés et certificats dans ce dossier.
+   */
+  walletDossier: process.env.WALLET_DOSSIER || "/etc/flaix/wallet",
+  walletAppleTeamId: process.env.WALLET_APPLE_TEAM_ID || null,
+  walletApplePassTypeId: process.env.WALLET_APPLE_PASS_TYPE_ID || null,
+  walletGoogleIssuerId: process.env.WALLET_GOOGLE_ISSUER_ID || null,
 } as const;

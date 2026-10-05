@@ -60,3 +60,7 @@ $$;
 
 REVOKE ALL ON FUNCTION carte_par_jeton(text), carte_par_serie(uuid, text), cartes_appareil(text, timestamptz) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION carte_par_jeton(text), carte_par_serie(uuid, text), cartes_appareil(text, timestamptz) TO flaix_app;
+
+-- Le lien de la carte peut être envoyé à l'abonné par e-mail (Brevo, §15.146) : envoi tracé comme les autres.
+ALTER TABLE email_envoye DROP CONSTRAINT email_envoye_type_check;
+ALTER TABLE email_envoye ADD CONSTRAINT email_envoye_type_check CHECK (type IN ('rapport_soiree', 'rectification', 'essai', 'carte_wallet'));

@@ -40,12 +40,13 @@ import { routesFournisseurs } from "./routes/fournisseurs.ts";
 import { controlerSupport, routesSupport } from "./routes/support.ts";
 import { routesPrevision } from "./routes/prevision.ts";
 import { routesEmails } from "./routes/emails.ts";
+import { routesWallet } from "./routes/wallet.ts";
 import { lireOptions, optionInactive } from "./options.ts";
 import { optionDeLaRoute } from "@flaix/domain";
 
 const METHODES_MODIFIANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 /** Routes de configuration, en lecture seule en mode formation. */
-const CONFIGURATION = [/^\/api\/(stands|categories|produits|lieu|equipe|appareils|click-collect|couts-buvette|fidelite|ingredients|alertes|support|emails)(\/|$)/, /^\/api\/caisses\/:id(\/appareil)?$/];
+const CONFIGURATION = [/^\/api\/(stands|categories|produits|lieu|equipe|appareils|click-collect|couts-buvette|fidelite|ingredients|alertes|support|emails|wallet)(\/|$)/, /^\/api\/caisses\/:id(\/appareil)?$/];
 
 export async function construireServeur(base: Base, options: { journaliser?: boolean } = {}): Promise<FastifyInstance> {
   // Derrière le relais https du serveur (Caddy), l'adresse du visiteur est celle transmise par le
@@ -61,6 +62,9 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   // JSON et, si le navigateur annonce son origine, depuis une origine autorisée.
   app.addHook("onRequest", async (req) => {
     if (!METHODES_MODIFIANTES.has(req.method)) return;
+    // Service web PassKit (§15.147) : appelé par les téléphones Apple, sans cookie ni origine ; la suppression
+    // d'une inscription n'a pas de corps. L'accès y est contrôlé par le jeton propre à chaque carte.
+    if (req.url.startsWith("/api/passkit/")) return;
     const type = req.headers["content-type"] ?? "";
     if (!type.startsWith("application/json")) {
       throw new ErreurMetier(415, "Requête refusée : format JSON attendu.");
@@ -170,6 +174,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesSupport, { base });
   await app.register(routesPrevision, { base });
   await app.register(routesEmails, { base });
+  await app.register(routesWallet, { base });
 
   return app;
 }
