@@ -1,6 +1,36 @@
 # Avancement — reprise après coupure
 
-Mis à jour le 2026-10-04 au soir (Revenue Engine fait ; temps de prise de commande en cours). Pour reprendre : lire ce fichier, puis le dossier §15.99 à §15.139.
+Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
+
+## Consigne de Rémi du 2026-10-04 vers 23 h 30 (il est parti se coucher)
+
+« Développer pour l'instant **sans commit** et enchaîner : centre d'alertes avec la rupture de stock en direct sur le téléphone, comparaison des prix entre fournisseurs, back-office niveau 2, prévision du prochain événement. On fera un commit sur GitHub quand je me connecterai. » → **Ne pas committer ni pousser** tant que Rémi ne l'a pas demandé : le travail reste dans l'arbre de travail du dépôt (`git status` le montre). Dernier commit fait avant la consigne : `4d416ac`.
+
+**Au moment du commit** (quand Rémi le demandera) : un commit par module (temps de commande §15.139, centre d'alertes §15.140, fournisseurs §15.141, puis les suivants), ajouter les phases 40, 41, 42… dans `infra/outils/phases.cjs` avec leurs hash, relancer `node infra/outils/journal-developpement.cjs`, commiter le journal, puis `git push` (fenêtre GitHub à valider par Rémi). Migrations nouvelles : 0030, 0031, 0032, 0033.
+
+**Mémoire du PC (nuit du 04 au 05/10)** : Windows était à 24,1 Go engagés sur 24,4 Go (applications ouvertes) ; les tests ne tournent qu'avec `--pool=threads --maxWorkers=1`, un fichier à la fois. Tout ce qui est marqué « fait » ci-dessus a ses tests au vert (moteur, serveur contre la base, écrans) et ses types vérifiés. Non-régression vérifiée vers 4 h 30 : caisse 24, stock 11, résultats 6, caisse automatique 9, notifications 6, formation 10, conformité de la base 15, connexion 20, caissières 22, back-office 9, lieux du back-office 9, options 6.
+
+## Réponses de Rémi au réveil (2026-10-05)
+
+- **Copie de configuration** : abandonnée, « les lieux ne se ressemblent pas » (§15.144).
+- **Commit et envoi** : faits le 2026-10-05 — un commit par module (`72f087a`, `b24b3c6`, `cb5cb03`, `0a675eb`, `534a3a6`), dossier `5516b41`, journal des phases 40 à 44 ; poussés sur GitHub (fenêtre d'identification validée par Rémi).
+- **Mémoire du PC** : Rémi a fermé des applications ; reste à voir à l'écran la prévision avec des données et la carte du temps de commande.
+
+## Consigne de Rémi du 2026-10-04 vers 23 h 30 (il est parti se coucher)
+
+« Développer pour l'instant **sans commit** et enchaîner : centre d'alertes avec la rupture de stock en direct sur le téléphone, comparaison des prix entre fournisseurs, back-office niveau 2, prévision du prochain événement. On fera un commit sur GitHub quand je me connecterai. » → **Ne pas committer ni pousser** tant que Rémi ne l'a pas demandé : le travail reste dans l'arbre de travail du dépôt (`git status` le montre). Dernier commit fait avant la consigne : `4d416ac`.
+
+**Au moment du commit** (quand Rémi le demandera) : un commit par module (temps de commande §15.139, centre d'alertes §15.140, fournisseurs §15.141, puis les suivants), ajouter les phases 40, 41, 42… dans `infra/outils/phases.cjs` avec leurs hash, relancer `node infra/outils/journal-developpement.cjs`, commiter le journal, puis `git push` (fenêtre GitHub à valider par Rémi). Migrations nouvelles : 0030, 0031, 0032, 0033.
+
+**Mémoire du PC (nuit du 04 au 05/10)** : Windows était à 24,1 Go engagés sur 24,4 Go (applications ouvertes) ; les tests ne tournent qu'avec `--pool=threads --maxWorkers=1`, un fichier à la fois. Tout ce qui est marqué « fait » ci-dessus a ses tests au vert (moteur, serveur contre la base, écrans) et ses types vérifiés. Non-régression vérifiée vers 4 h 30 : caisse 24, stock 11, résultats 6, caisse automatique 9, notifications 6, formation 10, conformité de la base 15, connexion 20, caissières 22, back-office 9, lieux du back-office 9, options 6.
+
+## Questions pour Rémi au réveil (2026-10-05)
+
+1. **Commit et envoi sur GitHub** : tout le travail de la nuit est prêt à être commité (un commit par module) puis poussé ; la fenêtre GitHub s'ouvrira sur ton écran.
+2. **« Copie de la configuration d'un lieu à l'autre »** : copier la configuration des Spartiates vers **un autre lieu** (un second site, par exemple), ou vers **le futur serveur de production** (le script de reprise prévu au « Passage en production ») ? Pas construit tant que ce n'est pas clair.
+3. **Vérification à l'écran faite vers 4 h 20** sur un lieu d'essai de la base locale (« Buvette de démonstration nocturne », comptes d'essai locaux créés avec l'outil du projet) : centre d'alertes avec données (hausse fournisseur, mercuriale, marge configurée), Stock → Prix fournisseurs, Paramètres → Support, puis le parcours complet du support (autorisation par le lieu, back-office, ouverture en lecture seule, bandeau). Corrigé au passage : champ « Motif » mal mis en page, accueil et lien « Mon mot de passe » inadaptés au support, page de prévision en erreur sur un lieu sans événement. **Pas vu à l'écran** : la prévision avec des données, la carte « Temps de prise de commande » avec des mesures (testées automatiquement).
+5. **Mémoire du PC** : 24,1 Go engagés sur 24,4 Go possibles cette nuit (applications ouvertes) ; un redémarrage ou une exclusion de quelques applications rendrait les tests et l'écran plus fiables.
+4. Seuils de départ à confirmer un jour avec le terrain (déjà ceux du prototype) : hausse fournisseur 5 %, mercuriale 10 %, sur-conditionnement 1,5 événement, file d'attente 20 s.
 
 ## Consigne de Rémi du 2026-10-04 au soir
 
@@ -9,17 +39,17 @@ Mis à jour le 2026-10-04 au soir (Revenue Engine fait ; temps de prise de comma
 | # | Module | État |
 |---|---|---|
 | 1 | Revenue Engine « Où je perds de l'argent » | **fait le 2026-10-04** (§15.138) — Résultats → onglet « Où je perds de l'argent » |
-| 1 bis | Temps de prise de commande, par caisse et par stand (demande de Rémi) | **en cours** (§15.139) — décision écrite, rien de codé |
-| 2 | Prévision du prochain événement | à faire |
-| 3 | Centre d'alertes, rupture de stock en direct sur le téléphone | à faire |
-| 4 | Comparaison des prix entre fournisseurs | à faire |
-| 5 | Copie de la configuration d'un lieu à l'autre | à faire |
+| 1 bis | Temps de prise de commande, par caisse et par stand (demande de Rémi) | **fait le 2026-10-05** (§15.139, commit `72f087a`) — carte dans « Où je perds de l'argent » |
+| 2 | Prévision du prochain événement | **fait le 2026-10-05** (§15.143, commit `534a3a6`) — page `/prevision` (Résultats → Prochains événements, Stock) |
+| 3 | Centre d'alertes, rupture de stock en direct sur le téléphone | **fait le 2026-10-05** (§15.140, commit `b24b3c6`) — `/alertes`, carte en tête de Résultats, Paramètres → Notifications |
+| 4 | Comparaison des prix entre fournisseurs | **fait le 2026-10-05** (§15.141, commit `cb5cb03`) — Stock → « Prix fournisseurs » |
+| 5 | Copie de la configuration d'un lieu à l'autre | **abandonnée** (§15.144) — Rémi : « les lieux ne se ressemblent pas » |
 | 6 | Conformité : attestation, registre des versions, archive annuelle, accès vérificateur | **à voir avec Rémi** |
 | 7 | Facture FlaiX Expert au lieu | attend les prix de Rémi |
 | 8 | Import des ventes Click & Collect, commission et frais dans le résultat | à faire |
 | 9 | E-mails par Brevo (rapport, rectifications, campagnes) | attend le compte Brevo de Rémi |
 | 10 | Wallet | attend les comptes Apple et Google de Rémi |
-| 11 | Back-office niveau 2 | avec la conformité |
+| 11 | Back-office niveau 2 | **fait le 2026-10-05** (§15.142, commit `0a675eb`) — Paramètres → Support FlaiX Expert ; back-office « Ouvrir en lecture seule » |
 | 12 | Passage en production | Rémi (serveur) |
 
 ## Ordre de construction (dossier §15.99)
@@ -57,7 +87,7 @@ Chaque module repris l'a été après relecture de son prototype validé, avec c
 | Prototype | Déjà dans le logiciel | Manque |
 |---|---|---|
 | 5 Marges & ratios | marge produit par produit ; **cibles par catégorie et par produit, alerte dès la saisie d'un prix** (§15.132) | comparaison fournisseurs au prix unitaire et alerte de sur-conditionnement |
-| 6 Optimisation | « Pistes pour le prochain événement » ; **Revenue Engine « Où je perds de l'argent »** (§15.138) : ruptures chiffrées, écarts de stock et d'espèces, ventes sous le tarif, volume × marge, écarts entre stands, caisse à plein régime, classés par montant | temps de prise de commande par caisse (§15.139, en cours) ; avant/après vérifié sur l'événement suivant |
+| 6 Optimisation | « Pistes pour le prochain événement » ; **Revenue Engine « Où je perds de l'argent »** (§15.138) : ruptures chiffrées, écarts de stock et d'espèces, ventes sous le tarif, volume × marge, écarts entre stands, caisse à plein régime, classés par montant | avant/après vérifié sur l'événement suivant |
 | 9 Reporting de soirée | **rapport figé à la clôture, imprimable/PDF** (§15.131) ; **brief sur le téléphone** (§15.135) | envoi par e-mail (service d'e-mails Brevo à brancher) |
 | 11 Gestion financière | **cascade jusqu'à la marge nette, dépenses en € ou en %, cible de la soirée, bilan sur une période** (§15.132, §15.133) | commission et frais du Click & Collect (attendent l'import des ventes C&C) |
 | 16 Conformité | journal technique, vérification des chaînes, clôtures scellées ; dossier v0.1 | attestation, registre des versions, connexions par caisse, archive annuelle, accès vérificateur (**à voir avec Rémi**) |

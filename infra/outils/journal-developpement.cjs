@@ -45,6 +45,11 @@ const CLES = [
   ["Tablette", "apps/web/src/pages/caisse/memoire.ts", ["memoriserTicket", "envoyer"]],
   ["Revenue Engine", "packages/domain/src/pertes.ts", ["estimerRupture", "pleinRegime", "analyserPertes"]],
   ["Revenue Engine", "apps/api/src/routes/pertes.ts", ["analysePertes", "/api/pertes"]],
+  ["Temps de commande", "packages/domain/src/temps-service.ts", ["tempsDeService"]],
+  ["Centre d'alertes", "apps/api/src/routes/alertes.ts", ["centreAlertes", "pousserAlertesStock"]],
+  ["Fournisseurs", "packages/domain/src/fournisseurs.ts", ["comparerFournisseurs"]],
+  ["Support niveau 2", "apps/api/src/routes/support.ts", ["controlerSupport", "/api/editeur/lieux/:id/support"]],
+  ["Prévision", "packages/domain/src/prevision.ts", ["prevoir", "fourchette"]],
 ];
 
 const commitsTous = git("log", "--reverse", "--date=short", "--pretty=format:%H|%h|%ad|%s").trim().split("\n").map((l) => {

@@ -43,6 +43,11 @@ const PHASES = [
   { n: 37, titre: "Brief de fin de soirée en notification sur le téléphone", dossier: "§15.134, §15.135", commits: ["bcb9455"] },
   { n: 38, titre: "Assistant « pose ta question » et brief reformulé par Mistral", dossier: "§15.136, §15.137", commits: ["4a30d13", "047ce76"] },
   { n: 39, titre: "Revenue Engine : « Où je perds de l'argent »", dossier: "§15.138", commits: ["21c7f53", "6679d7e", "f001e72"] },
+  { n: 40, titre: "Temps de prise de commande, par caisse et par stand", dossier: "§15.139", commits: ["72f087a"] },
+  { n: 41, titre: "Centre d'alertes et rupture de stock poussée sur le téléphone", dossier: "§15.140", commits: ["b24b3c6"] },
+  { n: 42, titre: "Comparaison des prix entre fournisseurs", dossier: "§15.141", commits: ["cb5cb03"] },
+  { n: 43, titre: "Back-office niveau 2 : support sur autorisation du lieu", dossier: "§15.142", commits: ["0a675eb"] },
+  { n: 44, titre: "Prévision du prochain événement", dossier: "§15.143", commits: ["534a3a6"] },
 ];
 
 module.exports = { PHASES };

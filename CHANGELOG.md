@@ -3,7 +3,109 @@
 > Généré par `node infra/outils/journal-developpement.cjs` à partir de Git. Ne pas modifier à la main.
 > Chaque entrée : date, commit (lien GitHub), message, fichiers créés ou modifiés. Le plus récent en premier. Phases : [docs/developpement/JOURNAL_DES_PHASES.md](docs/developpement/JOURNAL_DES_PHASES.md).
 
+## 2026-10-05
+
+### [`534a3a6`](https://github.com/Break-Eat-APP/flaix-expert/commit/534a3a6d867afcbcf5840bc11afcfd7c0f245267) — Prévision du prochain événement (dossier §15.143) *(phase 44)*
+
+- créé : `apps/api/src/routes/prevision.ts`
+- modifié : `apps/api/src/serveur.ts`
+- créé : `apps/api/test/prevision.test.ts`
+- modifié : `apps/web/src/App.tsx`
+- créé : `apps/web/src/pages/prevision/Prevision.test.tsx`
+- créé : `apps/web/src/pages/prevision/Prevision.tsx`
+- modifié : `apps/web/src/pages/resultats/Tableaux.tsx`
+- modifié : `apps/web/src/pages/stock/Stock.tsx`
+- modifié : `packages/domain/src/index.ts`
+- créé : `packages/domain/src/prevision.test.ts`
+- créé : `packages/domain/src/prevision.ts`
+
+### [`0a675eb`](https://github.com/Break-Eat-APP/flaix-expert/commit/0a675ebb0890bbe6e768539eac7b651b1c0d73a6) — Back-office niveau 2 : support FlaiX Expert sur autorisation du lieu (dossier §15.142) *(phase 43)*
+
+- modifié : `apps/api/src/auth/contexte.ts`
+- modifié : `apps/api/src/auth/routes.ts`
+- modifié : `apps/api/src/base.ts`
+- modifié : `apps/api/src/routes/editeur.ts`
+- modifié : `apps/api/src/routes/outils.ts`
+- créé : `apps/api/src/routes/support.ts`
+- modifié : `apps/api/src/serveur.ts`
+- créé : `apps/api/test/support.test.ts`
+- modifié : `apps/web/src/App.tsx`
+- modifié : `apps/web/src/composants/Coquille.tsx`
+- modifié : `apps/web/src/pages/Resultats.tsx`
+- modifié : `apps/web/src/pages/editeur/EspaceEditeur.tsx`
+- modifié : `apps/web/src/pages/parametres/Parametres.tsx`
+- créé : `apps/web/src/pages/parametres/SupportFlaix.test.tsx`
+- créé : `apps/web/src/pages/parametres/SupportFlaix.tsx`
+- créé : `db/migrations/0033_support_niveau2.sql`
+- modifié : `packages/domain/src/editeur.ts`
+- modifié : `packages/domain/src/journal-technique.ts`
+- modifié : `packages/domain/src/modele.ts`
+
+### [`cb5cb03`](https://github.com/Break-Eat-APP/flaix-expert/commit/cb5cb039544ae547d7f86b649da7a5af4e35f00c) — Comparaison des prix entre fournisseurs (module 5, dossier §15.141) *(phase 42)*
+
+- créé : `apps/api/src/routes/fournisseurs.ts`
+- modifié : `apps/api/src/serveur.ts`
+- créé : `apps/api/test/fournisseurs.test.ts`
+- créé : `apps/web/src/pages/stock/PrixFournisseurs.tsx`
+- modifié : `apps/web/src/pages/stock/Stock.tsx`
+- créé : `db/migrations/0032_conditionnements_fournisseurs.sql`
+- créé : `packages/domain/src/fournisseurs.test.ts`
+- créé : `packages/domain/src/fournisseurs.ts`
+- modifié : `packages/domain/src/index.ts`
+- modifié : `packages/domain/src/journal-technique.ts`
+
+### [`b24b3c6`](https://github.com/Break-Eat-APP/flaix-expert/commit/b24b3c607722123e302c890c09795f70f602d59f) — Centre d'alertes et rupture de stock poussée sur le téléphone (module 18, dossier §15.140) *(phase 41)*
+
+- créé : `apps/api/src/routes/alertes.ts`
+- modifié : `apps/api/src/routes/caisse.ts`
+- modifié : `apps/api/src/routes/click-collect.ts`
+- modifié : `apps/api/src/routes/notifications.ts`
+- modifié : `apps/api/src/serveur.ts`
+- créé : `apps/api/test/alertes.test.ts`
+- modifié : `apps/web/src/App.tsx`
+- modifié : `apps/web/src/pages/Resultats.tsx`
+- créé : `apps/web/src/pages/alertes/CentreAlertes.test.tsx`
+- créé : `apps/web/src/pages/alertes/CentreAlertes.tsx`
+- modifié : `apps/web/src/pages/parametres/Notifications.test.tsx`
+- modifié : `apps/web/src/pages/parametres/Notifications.tsx`
+- modifié : `apps/web/src/pages/parametres/Parametres.tsx`
+- créé : `db/migrations/0031_centre_alertes.sql`
+- créé : `packages/domain/src/alertes.test.ts`
+- créé : `packages/domain/src/alertes.ts`
+- modifié : `packages/domain/src/index.ts`
+- modifié : `packages/domain/src/journal-technique.ts`
+
+### [`72f087a`](https://github.com/Break-Eat-APP/flaix-expert/commit/72f087a9c12264b7aa6c658c949a6008d8e4b290) — Temps de prise de commande, par caisse et par stand (dossier §15.139) *(phase 40)*
+
+- modifié : `apps/api/src/routes/caisse.ts`
+- modifié : `apps/api/src/routes/pertes.ts`
+- modifié : `apps/api/test/pertes.test.ts`
+- modifié : `apps/web/src/pages/caisse/EcranCaisse.test.tsx`
+- modifié : `apps/web/src/pages/caisse/EcranCaisse.tsx`
+- modifié : `apps/web/src/pages/resultats/Pertes.test.tsx`
+- modifié : `apps/web/src/pages/resultats/Pertes.tsx`
+- créé : `db/migrations/0030_temps_de_service.sql`
+- modifié : `packages/domain/src/caisse-scellee.ts`
+- modifié : `packages/domain/src/index.ts`
+- modifié : `packages/domain/src/pertes.ts`
+- créé : `packages/domain/src/temps-service.test.ts`
+- créé : `packages/domain/src/temps-service.ts`
+
+### [`5516b41`](https://github.com/Break-Eat-APP/flaix-expert/commit/5516b41e3dbdcc3ce1c10a7ccff1063ff76554b5) — Dossier : temps de commande, centre d'alertes, prix fournisseurs, support niveau 2, prévision, copie de configuration abandonnée (§15.139 à §15.144)
+
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+
 ## 2026-10-04
+
+### [`4d416ac`](https://github.com/Break-Eat-APP/flaix-expert/commit/4d416ac5c9af2fd00b7ef7a4294d8bfd6935d208) — Journal : phase 39 (Revenue Engine) ; décision du temps de prise de commande par caisse (dossier §15.139)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/journal-developpement.cjs`
+- modifié : `infra/outils/phases.cjs`
 
 ### [`f001e72`](https://github.com/Break-Eat-APP/flaix-expert/commit/f001e72807328fbfd90912174919d11b7dd5f91b) — Revenue Engine : onglet « Où je perds de l'argent » dans Résultats (dossier §15.138) *(phase 39)*
 
