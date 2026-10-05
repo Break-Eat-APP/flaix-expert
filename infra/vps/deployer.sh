@@ -86,6 +86,9 @@ EnvironmentFile=-/etc/flaix/mistral.env
 EnvironmentFile=-/etc/flaix/ovh-ia.env
 # E-mails par Brevo (§15.146), posés par « flaix-admin cle-brevo » ; facultatif.
 EnvironmentFile=-/etc/flaix/brevo.env
+# Carte abonné Apple Wallet et Google Wallet (§15.147), posées par « flaix-admin wallet-… » ; facultatives.
+EnvironmentFile=-/etc/flaix/wallet-apple.env
+EnvironmentFile=-/etc/flaix/wallet-google.env
 Environment=PATH=/opt/node/bin:/usr/bin:/bin
 ExecStart=/srv/flaix/app/apps/api/node_modules/.bin/tsx src/index.ts
 Restart=on-failure

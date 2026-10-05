@@ -8,6 +8,10 @@
 #   flaix-admin cle-mistral           règle (ou retire) la clé de l'API Mistral de l'assistant IA (dossier §15.136)
 #   flaix-admin cle-ovh-ia            règle (ou retire) le jeton OVHcloud AI Endpoints, moteur de l'assistant IA (dossier §15.137, §15.145)
 #   flaix-admin cle-brevo             règle (ou retire) la clé Brevo et l'adresse d'expédition des e-mails (dossier §15.146)
+#   flaix-admin wallet-apple-demande     carte Apple Wallet, étape 1 : clé (reste sur le serveur) et demande de certificat (§15.147)
+#   flaix-admin wallet-apple-certificat  carte Apple Wallet, étape 2 : installe le certificat pass.cer d'Apple
+#   flaix-admin wallet-google         carte Google Wallet : clé du compte de service et Issuer ID
+#   flaix-admin wallet-retirer        retire la carte Apple ou Google
 # Mots de passe, clés et codes s'affichent une seule fois, dans cette fenêtre seulement.
 set -euo pipefail
 
@@ -241,8 +245,135 @@ ENV
     echo "Pour essayer : Paramètres > Notifications > E-mails > « Envoyer un e-mail d'essai »."
     ;;
 
+  wallet-apple-demande)
+    # Carte Apple Wallet (§15.147), étape 1 : la clé privée est fabriquée ici et ne quitte jamais le serveur ;
+    # seule la « demande de certificat » (.certSigningRequest), sans rien de secret, part chez Apple.
+    DOSSIER=/etc/flaix/wallet
+    install -d -m 750 -o root -g flaix "$DOSSIER"
+    if [ -f "$DOSSIER/apple-pass.key" ]; then
+      echo "La clé de la carte Apple existe déjà sur ce serveur : la demande est refaite avec la même clé."
+    else
+      (umask 027 && openssl genrsa -out "$DOSSIER/apple-pass.key" 2048 2>/dev/null)
+      chown root:flaix "$DOSSIER/apple-pass.key" && chmod 640 "$DOSSIER/apple-pass.key"
+    fi
+    DEMANDE=/home/debian/flaix-wallet.certSigningRequest
+    openssl req -new -key "$DOSSIER/apple-pass.key" -subj "/CN=FlaiX Expert Wallet/O=Break Eat App/C=FR" -out "$DEMANDE"
+    chown debian:debian "$DEMANDE"
+    echo "Demande de certificat prête sur le serveur : $DEMANDE"
+    echo
+    echo "1. Sur ton PC, dans un terminal, récupère-la :"
+    echo "   scp -i C:\\Users\\notta\\.ssh\\flaix_ovh debian@146.59.154.196:flaix-wallet.certSigningRequest ."
+    echo "2. developer.apple.com > Certificates, IDs & Profiles > Certificates > « + » > Pass Type ID Certificate,"
+    echo "   choisis ton Pass Type ID (pass.com.flaixlabs.abonne), envoie le fichier .certSigningRequest, télécharge pass.cer."
+    echo "3. Renvoie pass.cer sur le serveur (depuis le dossier où il est téléchargé) :"
+    echo "   scp -i C:\\Users\\notta\\.ssh\\flaix_ovh pass.cer debian@146.59.154.196:pass.cer"
+    echo "4. Puis : sudo flaix-admin wallet-apple-certificat"
+    ;;
+
+  wallet-apple-certificat)
+    # Carte Apple Wallet (§15.147), étape 2 : le certificat d'Apple est contrôlé (même clé que la demande, encore
+    # valable, signé par l'intermédiaire d'Apple), puis installé ; Team ID et Pass Type ID sont lus dans le certificat.
+    DOSSIER=/etc/flaix/wallet
+    CER=/home/debian/pass.cer
+    [ -f "$DOSSIER/apple-pass.key" ] || { echo "Aucune demande faite sur ce serveur : lance d'abord « sudo flaix-admin wallet-apple-demande »."; exit 1; }
+    [ -f "$CER" ] || { echo "Fichier $CER introuvable : renvoie d'abord le certificat téléchargé chez Apple (voir « sudo flaix-admin wallet-apple-demande »)."; exit 1; }
+    TMP="$(mktemp -d)"
+    trap 'rm -rf "$TMP"' EXIT
+    openssl x509 -inform DER -in "$CER" -out "$TMP/pass.pem" 2>/dev/null || openssl x509 -in "$CER" -out "$TMP/pass.pem" 2>/dev/null || { echo "Ce fichier n'est pas un certificat lisible : retélécharge pass.cer chez Apple."; exit 1; }
+    if [ "$(openssl x509 -in "$TMP/pass.pem" -noout -pubkey | openssl sha256)" != "$(openssl pkey -in "$DOSSIER/apple-pass.key" -pubout | openssl sha256)" ]; then
+      echo "Ce certificat ne correspond pas à la demande faite sur ce serveur : refais « sudo flaix-admin wallet-apple-demande » et utilise ce fichier-là chez Apple. Rien n'est installé."
+      exit 1
+    fi
+    openssl x509 -in "$TMP/pass.pem" -noout -checkend 0 >/dev/null || { echo "Ce certificat est expiré : crée-en un nouveau chez Apple. Rien n'est installé."; exit 1; }
+    SUJET="$(openssl x509 -in "$TMP/pass.pem" -noout -subject -nameopt RFC2253)"
+    PASS_TYPE="$(printf '%s' "$SUJET" | sed -n 's/.*UID=\(pass\.[A-Za-z0-9.-]*\).*/\1/p')"
+    TEAM="$(printf '%s' "$SUJET" | sed -n 's/.*OU=\([A-Z0-9]\{10\}\).*/\1/p')"
+    if [ -z "$PASS_TYPE" ] || [ -z "$TEAM" ]; then echo "Ce n'est pas un certificat « Pass Type ID » d'Apple ($SUJET). Rien n'est installé."; exit 1; fi
+    INTERMEDIAIRE=""
+    for G in G4 G3; do
+      curl -sf -m 20 -o "$TMP/wwdr.cer" "https://www.apple.com/certificateauthority/AppleWWDRCA$G.cer" || continue
+      openssl x509 -inform DER -in "$TMP/wwdr.cer" -out "$TMP/wwdr.pem" 2>/dev/null || continue
+      if openssl verify -partial_chain -CAfile "$TMP/wwdr.pem" "$TMP/pass.pem" >/dev/null 2>&1; then INTERMEDIAIRE=$G; break; fi
+    done
+    [ -n "$INTERMEDIAIRE" ] || { echo "Impossible de vérifier le certificat avec l'intermédiaire d'Apple (WWDR G4) : réessaie dans quelques minutes. Rien n'est installé."; exit 1; }
+    install -m 640 -o root -g flaix "$TMP/pass.pem" "$DOSSIER/apple-pass.pem"
+    install -m 640 -o root -g flaix "$TMP/wwdr.pem" "$DOSSIER/apple-wwdr.pem"
+    ENV_APPLE=/etc/flaix/wallet-apple.env
+    (umask 027 && printf 'WALLET_APPLE_TEAM_ID=%s\nWALLET_APPLE_PASS_TYPE_ID=%s\n' "$TEAM" "$PASS_TYPE" > "$ENV_APPLE")
+    chown root:flaix "$ENV_APPLE" && chmod 640 "$ENV_APPLE"
+    systemctl restart flaix-api
+    FIN_VALIDITE="$(openssl x509 -in "$TMP/pass.pem" -noout -enddate | cut -d= -f2)"
+    echo "Carte Apple Wallet prête : Team ID $TEAM, Pass Type ID $PASS_TYPE (intermédiaire Apple WWDR $INTERMEDIAIRE)."
+    echo "Certificat valable jusqu'au $FIN_VALIDITE : à renouveler avant (même procédure)."
+    ;;
+
+  wallet-google)
+    # Carte Google Wallet (§15.147) : clé du compte de service Google (fichier JSON envoyé par Rémi, jamais affiché),
+    # Issuer ID ; vérifiés auprès de Google (la clé est acceptée et le compte de service a accès à l'émetteur).
+    DOSSIER=/etc/flaix/wallet
+    JSON=/home/debian/google-wallet.json
+    [ -f "$JSON" ] || { echo "Fichier $JSON introuvable. Depuis ton PC : scp -i C:\\Users\\notta\\.ssh\\flaix_ovh <fichier téléchargé>.json debian@146.59.154.196:google-wallet.json"; exit 1; }
+    read -r -p "Issuer ID (Google Pay & Wallet Console, en haut de la page Google Wallet API) : " ISSUER
+    ISSUER="$(printf '%s' "$ISSUER" | tr -d '[:space:]')"
+    [[ "$ISSUER" =~ ^[0-9]{10,25}$ ]] || { echo "L'Issuer ID est un nombre (une vingtaine de chiffres) : rien n'est enregistré."; exit 1; }
+    echo "Vérification auprès de Google…"
+    # Petit programme Node (déjà installé pour FlaiX Expert) : jeton d'accès signé par la clé, puis lecture de l'émetteur.
+    VERIF="$(mktemp --suffix=.cjs)"
+    cat > "$VERIF" <<'JS'
+const fs = require("fs");
+const crypto = require("crypto");
+(async () => {
+  let c;
+  try { c = JSON.parse(fs.readFileSync(process.env.FICHIER, "utf8")); } catch { return console.log("erreur Ce fichier n'est pas un JSON lisible."); }
+  if (c.type !== "service_account" || !c.client_email || !c.private_key) return console.log("erreur Ce fichier n'est pas une clé de compte de service Google (type service_account).");
+  const b = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  const t = Math.floor(Date.now() / 1000);
+  const corps = b({ alg: "RS256", typ: "JWT" }) + "." + b({ iss: c.client_email, scope: "https://www.googleapis.com/auth/wallet_object.issuer", aud: "https://oauth2.googleapis.com/token", iat: t, exp: t + 600 });
+  let sig;
+  try { sig = crypto.createSign("RSA-SHA256").update(corps).sign(c.private_key).toString("base64url"); } catch { return console.log("erreur La clé privée du fichier est illisible."); }
+  const r = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: corps + "." + sig }), signal: AbortSignal.timeout(20000) });
+  if (!r.ok) return console.log("erreur Google refuse la clé du compte de service (réponse " + r.status + ") : clé supprimée ou mal téléchargée ?");
+  const { access_token } = await r.json();
+  const i = await fetch("https://walletobjects.googleapis.com/walletobjects/v1/issuer/" + process.env.ISSUER, { headers: { authorization: "Bearer " + access_token }, signal: AbortSignal.timeout(20000) });
+  if (i.status === 200) return console.log("ok " + c.client_email);
+  const message = ((await i.json().catch(() => ({}))).error || {}).message || "";
+  if (i.status === 404) return console.log("erreur Issuer ID inconnu chez Google : vérifie le numéro.");
+  if (i.status === 401 || i.status === 403) return console.log("erreur Accès refusé (" + i.status + ") pour " + c.client_email + ". Vérifie : API Google Wallet activée dans Google Cloud, et ce compte de service ajouté dans Google Pay & Wallet Console > Utilisateurs. Google dit : " + message.slice(0, 300));
+  console.log("erreur Réponse inattendue de Google (" + i.status + ") : " + message.slice(0, 300));
+})().catch((e) => console.log("erreur Google injoignable : " + e.message));
+JS
+    RESULTAT="$(FICHIER="$JSON" ISSUER="$ISSUER" /opt/node/bin/node "$VERIF" || true)"
+    rm -f "$VERIF"
+    case "$RESULTAT" in
+      "ok "*) ;;
+      *) echo "${RESULTAT#erreur }"; echo "Rien n'est enregistré (le fichier reste dans /home/debian pour réessayer)."; exit 1 ;;
+    esac
+    install -d -m 750 -o root -g flaix "$DOSSIER"
+    install -m 640 -o root -g flaix "$JSON" "$DOSSIER/google.json"
+    shred -u "$JSON" 2>/dev/null || rm -f "$JSON"
+    ENV_GOOGLE=/etc/flaix/wallet-google.env
+    (umask 027 && printf 'WALLET_GOOGLE_ISSUER_ID=%s\n' "$ISSUER" > "$ENV_GOOGLE")
+    chown root:flaix "$ENV_GOOGLE" && chmod 640 "$ENV_GOOGLE"
+    systemctl restart flaix-api
+    echo "Carte Google Wallet prête : émetteur $ISSUER, compte de service ${RESULTAT#ok }."
+    echo "Le fichier de clé a été effacé de /home/debian ; supprime aussi celui de ton PC (Téléchargements)."
+    ;;
+
+  wallet-retirer)
+    # Retire la carte Apple ou Google : les boutons disparaissent de la page de l'abonné ; les cartes déjà
+    # ajoutées restent dans les téléphones, sans plus de mise à jour.
+    read -r -p "Retirer la carte « apple » ou « google » ? " QUOI
+    case "$QUOI" in
+      apple) rm -f /etc/flaix/wallet-apple.env /etc/flaix/wallet/apple-pass.pem /etc/flaix/wallet/apple-wwdr.pem ;;
+      google) rm -f /etc/flaix/wallet-google.env /etc/flaix/wallet/google.json ;;
+      *) echo "Réponds « apple » ou « google »."; exit 1 ;;
+    esac
+    systemctl restart flaix-api
+    echo "Carte $QUOI retirée."
+    ;;
+
   *)
-    echo "Usage : flaix-admin creer-lieu | nouveau-mot-de-passe | creer-editeur | sauvegarde-externe | essai-restauration | cle-mistral | cle-ovh-ia | cle-brevo"
+    echo "Usage : flaix-admin creer-lieu | nouveau-mot-de-passe | creer-editeur | sauvegarde-externe | essai-restauration | cle-mistral | cle-ovh-ia | cle-brevo | wallet-apple-demande | wallet-apple-certificat | wallet-google | wallet-retirer"
     exit 1
     ;;
 esac
