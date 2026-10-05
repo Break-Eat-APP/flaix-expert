@@ -88,16 +88,16 @@ Coût : les sauvegardes font aujourd'hui 0,3 Mo chacune ; le prix exact est affi
 
 Pourquoi : l'assistant « pose ta question » et le brief de fin de soirée reformulé ont besoin d'un modèle de langage. Décision du 2026-10-05 (dossier §15.145) : **OVHcloud AI Endpoints**, avec ton compte OVH existant, hébergé en Europe. L'agent (ce que l'IA peut lire, les consignes, le contrôle des chiffres, la trace) reste celui de FlaiX Expert. Sans jeton, tout le reste fonctionne ; le brief part rédigé par les règles.
 
-**1. Créer le jeton (toi seul : compte et paiement)**
+**1. Créer la clé d'API (toi seul : compte et paiement)**
 1. Connecte-toi à ton **espace client OVHcloud** (le même compte que le serveur).
-2. Va dans **Public Cloud** (choisis le projet du serveur s'il y en a plusieurs) → **AI Endpoints** → **API keys**.
-3. Crée un jeton nommé par exemple `flaix-expert-serveur-test`. OVHcloud l'affiche une fois : garde la page ouverte. **Ne me l'envoie pas.**
-4. Le paiement se fait à l'usage, sur ta facture OVHcloud.
+2. Va dans **Public Cloud** (choisis le projet du serveur s'il y en a plusieurs) → **AI & Machine Learning** → **AI Endpoints** → **API keys** → **Create a new API key**.
+3. Nomme-la par exemple `flaix-expert-serveur-test`. OVHcloud l'affiche une fois : garde la page ouverte. **Ne me l'envoie pas.**
+4. Le projet Public Cloud doit avoir un **moyen de paiement** (sans lui, la clé ne fonctionne pas) ; le paiement se fait à l'usage, sur ta facture OVHcloud.
 
-**2. Le régler sur le serveur (dans ton terminal)**
-1. Se connecter au serveur : `ssh -i ~/.ssh/flaix_ovh debian@146.59.154.196`
-2. Lancer : `sudo flaix-admin cle-ovh-ia`, puis coller le jeton (il ne s'affiche pas).
-3. Le serveur vérifie qu'OVHcloud répond et accepte les outils de l'assistant, l'enregistre et redémarre l'application. Message attendu : « Jeton vérifié et enregistré ».
+**2. La régler sur le serveur (dans PowerShell, une seule ligne)**
+1. Lancer : `ssh -t -i C:\Users\notta\.ssh\flaix_ovh debian@146.59.154.196 sudo flaix-admin cle-ovh-ia` (la commande s'exécute sur le serveur : `sudo` n'a pas à exister sur ton ordinateur).
+2. Coller la clé (clic droit) : elle ne s'affiche pas ; Entrée.
+3. Le serveur vérifie qu'OVHcloud répond et accepte les outils de l'assistant, l'enregistre et redémarre l'application. Message attendu : « Clé vérifiée et enregistrée ».
 4. Pour le retirer : relancer la même commande et valider sans rien coller.
 
 **Mistral, en option seulement** : si un jour tu veux un modèle plus puissant, `sudo flaix-admin cle-mistral` règle une clé Mistral (compte sur console.mistral.ai, **offre payante « Scale » obligatoire** : avec l'offre gratuite « Experiment », Mistral peut entraîner ses modèles avec les données envoyées). Mistral est alors essayé d'abord, et OVHcloud prend le relais s'il ne répond pas.

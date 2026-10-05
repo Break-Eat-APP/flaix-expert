@@ -46,7 +46,7 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 | 5 | Copie de la configuration d'un lieu à l'autre | **abandonnée** (§15.144) — Rémi : « les lieux ne se ressemblent pas » |
 | 6 | Conformité : attestation, registre des versions, archive annuelle, accès vérificateur | **à voir avec Rémi** |
 | 7 | Facture FlaiX Expert au lieu | attend les prix de Rémi |
-| 8 | Import des ventes Click & Collect, commission et frais dans le résultat | à faire |
+| 8 | Import des ventes Click & Collect, commission et frais dans le résultat | **plus tard** (Rémi, 2026-10-05) — commandes passées dans l'application Break Eat, traitées par Flaix Ops : connexion directe Flaix Ops → FlaiX Expert recommandée ; il faudra le code de Flaix Ops |
 | 9 | E-mails par Brevo (rapport, rectifications, campagnes) | attend le compte Brevo de Rémi |
 | 10 | Wallet | attend les comptes Apple et Google de Rémi |
 | 11 | Back-office niveau 2 | **fait le 2026-10-05** (§15.142, commit `0a675eb`) — Paramètres → Support FlaiX Expert ; back-office « Ouvrir en lecture seule » |
