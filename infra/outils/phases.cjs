@@ -51,6 +51,7 @@ const PHASES = [
   { n: 45, titre: "IA : OVHcloud seul comme moteur de langage de l'agent", dossier: "§15.145", commits: ["0cf75f7", "b860416"] },
   { n: 46, titre: "E-mails par Brevo : rapport de soirée et rectifications", dossier: "§15.146", commits: ["3276652"] },
   { n: 47, titre: "Carte abonné dans Apple Wallet et Google Wallet", dossier: "§15.147", commits: ["91b5446", "6a23cf2", "0b0f1ee", "4662794"] },
+  { n: 48, titre: "Design de la carte abonné : logo, bannière, couleurs, textes et liens", dossier: "§15.148", commits: ["0721b51", "a6538ef"] },
 ];
 
 module.exports = { PHASES };

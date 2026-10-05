@@ -149,7 +149,7 @@ Dans PowerShell, `$HOME\Downloads` est ton dossier Téléchargements. Les comman
 6. Tant que la carte n'est pas publiée chez Google, seuls les **comptes de test** peuvent l'ajouter : Pay & Wallet Console → Google Wallet API → ajoute ton adresse Gmail (et celles des testeurs). Quand l'essai est bon : **Demander l'accès à la publication** (Google relit la carte, quelques jours).
 
 **C. Essai**
-1. FlaiX Expert → **Fidélité** → onglet **Carte téléphone** : les deux services doivent apparaître « en service » ; choisis la couleur des cartes.
+1. FlaiX Expert → **Fidélité** → onglet **Carte téléphone** : les deux services doivent apparaître « en service ». Règle le design (logo, bannière, couleurs, textes, liens) en regardant l'aperçu iPhone et Android, puis **Enregistrer le design**.
 2. Onglet **Abonnés** → ouvre un abonné → **Créer le lien de sa carte** → **Envoyer par e-mail** (ou copie le lien et ouvre-le sur ton téléphone).
 3. Sur iPhone (Safari) : **Ajouter à Apple Wallet**. Sur Android : **Ajouter à Google Wallet**.
 4. Ajuste ses points (fiche de l'abonné) : la carte du téléphone change toute seule dans la minute.

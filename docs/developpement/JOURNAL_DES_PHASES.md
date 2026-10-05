@@ -53,6 +53,7 @@
 | 45 | [IA : OVHcloud seul comme moteur de langage de l'agent](#phase-45) | §15.145 | [`0cf75f7`](https://github.com/Break-Eat-APP/flaix-expert/commit/0cf75f74279946891a5f97e9149a8f8086144895) [`b860416`](https://github.com/Break-Eat-APP/flaix-expert/commit/b8604166a371e12a7b414dbe8de26b42bae76ad6) | livrée |
 | 46 | [E-mails par Brevo : rapport de soirée et rectifications](#phase-46) | §15.146 | [`3276652`](https://github.com/Break-Eat-APP/flaix-expert/commit/3276652190fa7fd86d1a643f2ee027e7f657ecf5) | livrée |
 | 47 | [Carte abonné dans Apple Wallet et Google Wallet](#phase-47) | §15.147 | [`91b5446`](https://github.com/Break-Eat-APP/flaix-expert/commit/91b5446a293d1a7d981e749812d1e1e4e0f64cb4) [`6a23cf2`](https://github.com/Break-Eat-APP/flaix-expert/commit/6a23cf28837f784116a2d8c2af19180175019ce0) [`0b0f1ee`](https://github.com/Break-Eat-APP/flaix-expert/commit/0b0f1eea2f883d395f0a8b4a2f5bc2c208aeeae0) [`4662794`](https://github.com/Break-Eat-APP/flaix-expert/commit/466279489d406c8ac1230051e1717cb73e7cf8d5) | livrée |
+| 48 | [Design de la carte abonné : logo, bannière, couleurs, textes et liens](#phase-48) | §15.148 | [`0721b51`](https://github.com/Break-Eat-APP/flaix-expert/commit/0721b5128becc3a3b38e22653d7e7f98d6602f6a) [`a6538ef`](https://github.com/Break-Eat-APP/flaix-expert/commit/a6538ef335fcaf5bdf5e1d55b2f8b35af2b78561) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -1831,6 +1832,43 @@
 - **Autres** :
   - [`pnpm-lock.yaml`](../../pnpm-lock.yaml) — modifié
 
+<a id="phase-48"></a>
+## Phase 48 — Design de la carte abonné : logo, bannière, couleurs, textes et liens
+
+- **Dates** : 2026-10-05
+- **Décision et raisonnement** : dossier projet §15.148
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`0721b51`](https://github.com/Break-Eat-APP/flaix-expert/commit/0721b5128becc3a3b38e22653d7e7f98d6602f6a) 2026-10-05 — Design de la carte abonné (1/2) : logo, bannière, couleurs, textes, informations et liens ; modèle Google remplacé à chaque changement (dossier §15.148)
+  - [`a6538ef`](https://github.com/Break-Eat-APP/flaix-expert/commit/a6538ef335fcaf5bdf5e1d55b2f8b35af2b78561) 2026-10-05 — Design de la carte abonné (2/2) : éditeur avec aperçu iPhone et Android, logo et bannière retaillés dans le navigateur, page de l'abonné aux couleurs du club (dossier §15.148)
+- **Migrations (base)** :
+  - [`db/migrations/0036_design_carte.sql`](../../db/migrations/0036_design_carte.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/journal-technique.ts`](../../packages/domain/src/journal-technique.ts) — modifié
+  - [`packages/domain/src/wallet.ts`](../../packages/domain/src/wallet.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/fidelite.ts`](../../apps/api/src/routes/fidelite.ts) — modifié
+  - [`apps/api/src/routes/lieu.ts`](../../apps/api/src/routes/lieu.ts) — modifié
+  - [`apps/api/src/routes/wallet.ts`](../../apps/api/src/routes/wallet.ts) — modifié
+  - [`apps/api/src/wallet/apple.ts`](../../apps/api/src/wallet/apple.ts) — modifié
+  - [`apps/api/src/wallet/google.ts`](../../apps/api/src/wallet/google.ts) — modifié
+  - [`apps/api/src/wallet/images.ts`](../../apps/api/src/wallet/images.ts) — créé
+- **Écrans (apps/web)** :
+  - [`apps/web/src/api.ts`](../../apps/web/src/api.ts) — modifié
+  - [`apps/web/src/composants/ApercuCarte.tsx`](../../apps/web/src/composants/ApercuCarte.tsx) — créé
+  - [`apps/web/src/pages/carte/PageCarte.tsx`](../../apps/web/src/pages/carte/PageCarte.tsx) — modifié
+  - [`apps/web/src/pages/fidelite/CarteWallet.test.tsx`](../../apps/web/src/pages/fidelite/CarteWallet.test.tsx) — modifié
+  - [`apps/web/src/pages/fidelite/CarteWallet.tsx`](../../apps/web/src/pages/fidelite/CarteWallet.tsx) — modifié
+  - [`apps/web/src/pages/fidelite/DesignCarte.test.tsx`](../../apps/web/src/pages/fidelite/DesignCarte.test.tsx) — créé
+  - [`apps/web/src/pages/fidelite/DesignCarte.tsx`](../../apps/web/src/pages/fidelite/DesignCarte.tsx) — créé
+  - [`apps/web/src/pages/fidelite/Fidelite.tsx`](../../apps/web/src/pages/fidelite/Fidelite.tsx) — modifié
+  - [`apps/web/src/pages/fidelite/imagesCarte.ts`](../../apps/web/src/pages/fidelite/imagesCarte.ts) — créé
+  - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
+- **Tests** :
+  - [`apps/api/test/wallet-fichiers.test.ts`](../../apps/api/test/wallet-fichiers.test.ts) — modifié
+  - [`apps/api/test/wallet.test.ts`](../../apps/api/test/wallet.test.ts) — modifié
+  - [`packages/domain/src/wallet.test.ts`](../../packages/domain/src/wallet.test.ts) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -1853,3 +1891,6 @@
 - [`f340c85`](https://github.com/Break-Eat-APP/flaix-expert/commit/f340c853e04d5d91d99f11eb7aac9ce2a4badb9b) 2026-10-05 — Mise en ligne : le script de déploiement se met lui-même à jour sur le serveur
 - [`d123027`](https://github.com/Break-Eat-APP/flaix-expert/commit/d123027d3c4f02b8ca73cd8c990019473dee6bc5) 2026-10-05 — flaix-admin cle-brevo : affiche l'explication de Brevo en cas de refus, repère une clé SMTP collée à la place de la clé d'API
 - [`b53a267`](https://github.com/Break-Eat-APP/flaix-expert/commit/b53a2678daa08283526661fb0f6cc7dc412871f2) 2026-10-05 — Avancement : e-mails Brevo en service sur le serveur de test
+- [`e351ee5`](https://github.com/Break-Eat-APP/flaix-expert/commit/e351ee57abeae90827b77754ac066428182ab6e8) 2026-10-05 — Wallet : dossier (réalisé), guide de Rémi pour Apple et Google, avancement, journal des phases (phase 47)
+- [`be734a0`](https://github.com/Break-Eat-APP/flaix-expert/commit/be734a0497d48788218b17e3b7ca385dad80b572) 2026-10-05 — Avancement : carte wallet déployée sur le serveur de test
+- [`5f928e1`](https://github.com/Break-Eat-APP/flaix-expert/commit/5f928e10cc45c602f4c6025704971d34856183db) 2026-10-05 — Avancement : comptes Apple et Google de la carte wallet installés sur le serveur de test

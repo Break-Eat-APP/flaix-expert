@@ -53,6 +53,8 @@ const CLES = [
   ["Carte wallet", "packages/domain/src/wallet.ts", ["passApple", "objetGoogle"]],
   ["Carte wallet", "apps/api/src/routes/wallet.ts", ["mettreAJourCartes", "abonnesDesTickets"]],
   ["Carte wallet", "apps/api/src/wallet/apple.ts", ["pkpass", "notifierApple"]],
+  ["Carte wallet", "packages/domain/src/wallet.ts", ["cadrage", "contenuCarte"]],
+  ["Carte wallet", "apps/api/src/wallet/images.ts", ["controlerImages"]],
 ];
 
 const commitsTous = git("log", "--reverse", "--date=short", "--pretty=format:%H|%h|%ad|%s").trim().split("\n").map((l) => {

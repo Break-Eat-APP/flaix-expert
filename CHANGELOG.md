@@ -5,6 +5,53 @@
 
 ## 2026-10-05
 
+### [`a6538ef`](https://github.com/Break-Eat-APP/flaix-expert/commit/a6538ef335fcaf5bdf5e1d55b2f8b35af2b78561) — Design de la carte abonné (2/2) : éditeur avec aperçu iPhone et Android, logo et bannière retaillés dans le navigateur, page de l'abonné aux couleurs du club (dossier §15.148) *(phase 48)*
+
+- modifié : `apps/web/src/api.ts`
+- créé : `apps/web/src/composants/ApercuCarte.tsx`
+- modifié : `apps/web/src/pages/carte/PageCarte.tsx`
+- modifié : `apps/web/src/pages/fidelite/CarteWallet.test.tsx`
+- modifié : `apps/web/src/pages/fidelite/CarteWallet.tsx`
+- créé : `apps/web/src/pages/fidelite/DesignCarte.test.tsx`
+- créé : `apps/web/src/pages/fidelite/DesignCarte.tsx`
+- modifié : `apps/web/src/pages/fidelite/Fidelite.tsx`
+- créé : `apps/web/src/pages/fidelite/imagesCarte.ts`
+- modifié : `apps/web/src/styles.css`
+
+### [`0721b51`](https://github.com/Break-Eat-APP/flaix-expert/commit/0721b5128becc3a3b38e22653d7e7f98d6602f6a) — Design de la carte abonné (1/2) : logo, bannière, couleurs, textes, informations et liens ; modèle Google remplacé à chaque changement (dossier §15.148) *(phase 48)*
+
+- modifié : `apps/api/src/routes/fidelite.ts`
+- modifié : `apps/api/src/routes/lieu.ts`
+- modifié : `apps/api/src/routes/wallet.ts`
+- modifié : `apps/api/src/wallet/apple.ts`
+- modifié : `apps/api/src/wallet/google.ts`
+- créé : `apps/api/src/wallet/images.ts`
+- modifié : `apps/api/test/wallet-fichiers.test.ts`
+- modifié : `apps/api/test/wallet.test.ts`
+- créé : `db/migrations/0036_design_carte.sql`
+- modifié : `packages/domain/src/journal-technique.ts`
+- modifié : `packages/domain/src/wallet.test.ts`
+- modifié : `packages/domain/src/wallet.ts`
+
+### [`5f928e1`](https://github.com/Break-Eat-APP/flaix-expert/commit/5f928e10cc45c602f4c6025704971d34856183db) — Avancement : comptes Apple et Google de la carte wallet installés sur le serveur de test
+
+- modifié : `docs/avancement.md`
+
+### [`be734a0`](https://github.com/Break-Eat-APP/flaix-expert/commit/be734a0497d48788218b17e3b7ca385dad80b572) — Avancement : carte wallet déployée sur le serveur de test
+
+- modifié : `docs/avancement.md`
+
+### [`e351ee5`](https://github.com/Break-Eat-APP/flaix-expert/commit/e351ee57abeae90827b77754ac066428182ab6e8) — Wallet : dossier (réalisé), guide de Rémi pour Apple et Google, avancement, journal des phases (phase 47)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `docs/guide-serveur-test-ovh.md`
+- modifié : `infra/outils/journal-developpement.cjs`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`4662794`](https://github.com/Break-Eat-APP/flaix-expert/commit/466279489d406c8ac1230051e1717cb73e7cf8d5) — Wallet (4/4) : page de la carte de l'abonné (/carte/<jeton>), lien de la carte dans la fiche de l'abonné, onglet « Carte téléphone » et couleur des cartes (dossier §15.147) *(phase 47)*
 
 - modifié : `apps/web/src/App.tsx`
