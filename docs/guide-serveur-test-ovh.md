@@ -119,6 +119,43 @@ Pourquoi : le rapport de soirée part par e-mail à la clôture de l'événement
 3. Le serveur vérifie la clé auprès de Brevo, prévient si l'adresse n'est pas dans tes expéditeurs, enregistre et redémarre l'application. Message attendu : « Clé vérifiée et enregistrée ».
 4. Essai : FlaiX Expert → **Paramètres** → **Notifications** → carte **E-mails** → **M'envoyer un e-mail d'essai** ; le résultat s'affiche dans les derniers envois.
 
+## Carte abonné : Apple Wallet et Google Wallet (à faire par toi, environ 40 minutes)
+
+Pourquoi : chaque abonné peut ajouter sa carte (n° d'abonné en QR code, points, couleur du lieu) dans son téléphone ; le solde s'y met à jour tout seul (dossier §15.147). Sans ces réglages, le lien de la carte montre déjà la carte à l'écran ; seuls les boutons « Ajouter à… » manquent. **Aucun fichier ni aucune clé ne passe par moi** : tout va de ton PC au serveur.
+
+Dans PowerShell, `$HOME\Downloads` est ton dossier Téléchargements. Les commandes `ssh` et `scp` s'exécutent sur le serveur : `sudo` n'a pas à exister sur ton ordinateur.
+
+**A. Apple (compte Apple Developer)**
+1. **developer.apple.com** → **Account** → **Certificates, IDs & Profiles** → **Identifiers** → **+** → **Pass Type IDs** → Continue. Description : `Carte abonné`, identifiant : `pass.com.flaixlabs.abonne` → **Register**.
+2. Fabriquer la demande de certificat sur le serveur (la clé secrète y reste) :
+   `ssh -t -i C:\Users\notta\.ssh\flaix_ovh debian@146.59.154.196 sudo flaix-admin wallet-apple-demande`
+3. La rapatrier dans Téléchargements :
+   `scp -i C:\Users\notta\.ssh\flaix_ovh debian@146.59.154.196:flaix-wallet.certSigningRequest $HOME\Downloads\`
+4. Apple → **Certificates** → **+** → **Pass Type ID Certificate** → Continue → choisis `pass.com.flaixlabs.abonne` → envoie `flaix-wallet.certSigningRequest` → **Download** : le fichier `pass.cer` arrive dans Téléchargements.
+5. L'envoyer au serveur, puis l'installer :
+   `scp -i C:\Users\notta\.ssh\flaix_ovh $HOME\Downloads\pass.cer debian@146.59.154.196:pass.cer`
+   `ssh -t -i C:\Users\notta\.ssh\flaix_ovh debian@146.59.154.196 sudo flaix-admin wallet-apple-certificat`
+   Message attendu : « Carte Apple Wallet prête », avec ton Team ID (lu dans le certificat) et la date de fin du certificat (un an : même procédure pour le renouveler).
+
+**B. Google (Google Pay & Wallet Console et Google Cloud)**
+1. **pay.google.com/business/console** → **Google Wallet API** : si c'est la première fois, accepte les conditions ; note l'**Issuer ID** (une vingtaine de chiffres, en haut de la page).
+2. **console.cloud.google.com** → crée un projet `flaix-expert-wallet` → **API et services** → **Bibliothèque** → « Google Wallet API » → **Activer**.
+3. **IAM et administration** → **Comptes de service** → **Créer un compte de service** nommé `flaix-wallet` (aucun rôle à donner) → ouvre-le → **Clés** → **Ajouter une clé** → **Créer une clé** → **JSON** : un fichier `.json` arrive dans Téléchargements. **Ne me l'envoie pas.**
+4. De retour dans la **Pay & Wallet Console** → **Utilisateurs** → **Inviter un utilisateur** : l'adresse du compte de service (elle finit par `iam.gserviceaccount.com`, visible dans Google Cloud), rôle **Développeur**.
+5. L'envoyer au serveur (remplace `NOM` par le nom du fichier téléchargé), puis l'installer :
+   `scp -i C:\Users\notta\.ssh\flaix_ovh $HOME\Downloads\NOM.json debian@146.59.154.196:google-wallet.json`
+   `ssh -t -i C:\Users\notta\.ssh\flaix_ovh debian@146.59.154.196 sudo flaix-admin wallet-google`
+   Tape l'Issuer ID. Le serveur vérifie la clé et l'accès auprès de Google, l'enregistre et efface le fichier déposé. Message attendu : « Carte Google Wallet prête ». Si Google refuse l'accès juste après l'invitation, attends quelques minutes et relance. Supprime ensuite le `.json` de tes Téléchargements.
+6. Tant que la carte n'est pas publiée chez Google, seuls les **comptes de test** peuvent l'ajouter : Pay & Wallet Console → Google Wallet API → ajoute ton adresse Gmail (et celles des testeurs). Quand l'essai est bon : **Demander l'accès à la publication** (Google relit la carte, quelques jours).
+
+**C. Essai**
+1. FlaiX Expert → **Fidélité** → onglet **Carte téléphone** : les deux services doivent apparaître « en service » ; choisis la couleur des cartes.
+2. Onglet **Abonnés** → ouvre un abonné → **Créer le lien de sa carte** → **Envoyer par e-mail** (ou copie le lien et ouvre-le sur ton téléphone).
+3. Sur iPhone (Safari) : **Ajouter à Apple Wallet**. Sur Android : **Ajouter à Google Wallet**.
+4. Ajuste ses points (fiche de l'abonné) : la carte du téléphone change toute seule dans la minute.
+
+Pour retirer un service : `ssh -t -i C:\Users\notta\.ssh\flaix_ovh debian@146.59.154.196 sudo flaix-admin wallet-retirer`.
+
 ## À retenir
 
 - Coût : environ **4,57 € TTC par mois** (à confirmer selon l'engagement choisi).

@@ -52,6 +52,7 @@
 | 44 | [Prévision du prochain événement](#phase-44) | §15.143 | [`534a3a6`](https://github.com/Break-Eat-APP/flaix-expert/commit/534a3a6d867afcbcf5840bc11afcfd7c0f245267) | livrée |
 | 45 | [IA : OVHcloud seul comme moteur de langage de l'agent](#phase-45) | §15.145 | [`0cf75f7`](https://github.com/Break-Eat-APP/flaix-expert/commit/0cf75f74279946891a5f97e9149a8f8086144895) [`b860416`](https://github.com/Break-Eat-APP/flaix-expert/commit/b8604166a371e12a7b414dbe8de26b42bae76ad6) | livrée |
 | 46 | [E-mails par Brevo : rapport de soirée et rectifications](#phase-46) | §15.146 | [`3276652`](https://github.com/Break-Eat-APP/flaix-expert/commit/3276652190fa7fd86d1a643f2ee027e7f657ecf5) | livrée |
+| 47 | [Carte abonné dans Apple Wallet et Google Wallet](#phase-47) | §15.147 | [`91b5446`](https://github.com/Break-Eat-APP/flaix-expert/commit/91b5446a293d1a7d981e749812d1e1e4e0f64cb4) [`6a23cf2`](https://github.com/Break-Eat-APP/flaix-expert/commit/6a23cf28837f784116a2d8c2af19180175019ce0) [`0b0f1ee`](https://github.com/Break-Eat-APP/flaix-expert/commit/0b0f1eea2f883d395f0a8b4a2f5bc2c208aeeae0) [`4662794`](https://github.com/Break-Eat-APP/flaix-expert/commit/466279489d406c8ac1230051e1717cb73e7cf8d5) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -1779,6 +1780,57 @@
   - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
   - [`docs/guide-serveur-test-ovh.md`](../../docs/guide-serveur-test-ovh.md) — modifié
 
+<a id="phase-47"></a>
+## Phase 47 — Carte abonné dans Apple Wallet et Google Wallet
+
+- **Dates** : 2026-10-05
+- **Décision et raisonnement** : dossier projet §15.147
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`91b5446`](https://github.com/Break-Eat-APP/flaix-expert/commit/91b5446a293d1a7d981e749812d1e1e4e0f64cb4) 2026-10-05 — Wallet (1/4) : décision, migration 0035 et contenu de la carte abonné (dossier §15.147)
+  - [`6a23cf2`](https://github.com/Break-Eat-APP/flaix-expert/commit/6a23cf28837f784116a2d8c2af19180175019ce0) 2026-10-05 — Wallet (2/4) : carte Apple et Google côté serveur, service web PassKit, mises à jour du solde (dossier §15.147)
+  - [`0b0f1ee`](https://github.com/Break-Eat-APP/flaix-expert/commit/0b0f1eea2f883d395f0a8b4a2f5bc2c208aeeae0) 2026-10-05 — Wallet (3/4) : commandes flaix-admin pour la carte Apple (clé et demande de certificat sur le serveur, installation de pass.cer contrôlée) et Google (clé du compte de service vérifiée auprès de Google) (dossier §15.147)
+  - [`4662794`](https://github.com/Break-Eat-APP/flaix-expert/commit/466279489d406c8ac1230051e1717cb73e7cf8d5) 2026-10-05 — Wallet (4/4) : page de la carte de l'abonné (/carte/<jeton>), lien de la carte dans la fiche de l'abonné, onglet « Carte téléphone » et couleur des cartes (dossier §15.147)
+- **Migrations (base)** :
+  - [`db/migrations/0035_wallet.sql`](../../db/migrations/0035_wallet.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/editeur.ts`](../../packages/domain/src/editeur.ts) — modifié
+  - [`packages/domain/src/emails.ts`](../../packages/domain/src/emails.ts) — modifié
+  - [`packages/domain/src/index.ts`](../../packages/domain/src/index.ts) — modifié
+  - [`packages/domain/src/journal-technique.ts`](../../packages/domain/src/journal-technique.ts) — modifié
+  - [`packages/domain/src/wallet.ts`](../../packages/domain/src/wallet.ts) — créé
+- **Serveur (apps/api)** :
+  - [`apps/api/package.json`](../../apps/api/package.json) — modifié
+  - [`apps/api/src/config.ts`](../../apps/api/src/config.ts) — modifié
+  - [`apps/api/src/routes/caisse.ts`](../../apps/api/src/routes/caisse.ts) — modifié
+  - [`apps/api/src/routes/emails.ts`](../../apps/api/src/routes/emails.ts) — modifié
+  - [`apps/api/src/routes/fidelite.ts`](../../apps/api/src/routes/fidelite.ts) — modifié
+  - [`apps/api/src/routes/wallet.ts`](../../apps/api/src/routes/wallet.ts) — créé
+  - [`apps/api/src/serveur.ts`](../../apps/api/src/serveur.ts) — modifié
+  - [`apps/api/src/wallet/apple.ts`](../../apps/api/src/wallet/apple.ts) — créé
+  - [`apps/api/src/wallet/fichiers.ts`](../../apps/api/src/wallet/fichiers.ts) — créé
+  - [`apps/api/src/wallet/google.ts`](../../apps/api/src/wallet/google.ts) — créé
+- **Écrans (apps/web)** :
+  - [`apps/web/src/App.tsx`](../../apps/web/src/App.tsx) — modifié
+  - [`apps/web/src/pages/carte/PageCarte.tsx`](../../apps/web/src/pages/carte/PageCarte.tsx) — créé
+  - [`apps/web/src/pages/fidelite/CarteWallet.test.tsx`](../../apps/web/src/pages/fidelite/CarteWallet.test.tsx) — créé
+  - [`apps/web/src/pages/fidelite/CarteWallet.tsx`](../../apps/web/src/pages/fidelite/CarteWallet.tsx) — créé
+  - [`apps/web/src/pages/fidelite/Fidelite.tsx`](../../apps/web/src/pages/fidelite/Fidelite.tsx) — modifié
+  - [`apps/web/src/pages/parametres/EmailsLieu.tsx`](../../apps/web/src/pages/parametres/EmailsLieu.tsx) — modifié
+  - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
+- **Tests** :
+  - [`apps/api/test/emails.test.ts`](../../apps/api/test/emails.test.ts) — modifié
+  - [`apps/api/test/wallet-fichiers.test.ts`](../../apps/api/test/wallet-fichiers.test.ts) — créé
+  - [`apps/api/test/wallet.test.ts`](../../apps/api/test/wallet.test.ts) — créé
+  - [`packages/domain/src/wallet.test.ts`](../../packages/domain/src/wallet.test.ts) — créé
+- **Serveur et outils (infra)** :
+  - [`infra/vps/deployer.sh`](../../infra/vps/deployer.sh) — modifié
+  - [`infra/vps/flaix-admin.sh`](../../infra/vps/flaix-admin.sh) — modifié
+- **Documentation** :
+  - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
+- **Autres** :
+  - [`pnpm-lock.yaml`](../../pnpm-lock.yaml) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -1797,3 +1849,7 @@
 - [`7b69e85`](https://github.com/Break-Eat-APP/flaix-expert/commit/7b69e85de78f1fac19cd496629c63b9e522a6065) 2026-10-05 — Journal : phases 40 à 44 (temps de commande, centre d'alertes, fournisseurs, support niveau 2, prévision) ; avancement à jour
 - [`e9427a6`](https://github.com/Break-Eat-APP/flaix-expert/commit/e9427a6ab263b3b376ecb1e7ce3dd80bddafd756) 2026-10-05 — Avancement : vérification à l'écran terminée (prévision, temps de commande)
 - [`12c69e1`](https://github.com/Break-Eat-APP/flaix-expert/commit/12c69e10bb15cef6b7a2fe3c1b9aca1164f0447c) 2026-10-05 — Avancement : serveur de test mis à jour (version b860416, migrations 0030 à 0033)
+- [`4e7e74f`](https://github.com/Break-Eat-APP/flaix-expert/commit/4e7e74f45c43f70b3ee27ca74bfa94a7c3c24ac7) 2026-10-05 — Journal : phases 45 (IA OVHcloud) et 46 (e-mails Brevo)
+- [`f340c85`](https://github.com/Break-Eat-APP/flaix-expert/commit/f340c853e04d5d91d99f11eb7aac9ce2a4badb9b) 2026-10-05 — Mise en ligne : le script de déploiement se met lui-même à jour sur le serveur
+- [`d123027`](https://github.com/Break-Eat-APP/flaix-expert/commit/d123027d3c4f02b8ca73cd8c990019473dee6bc5) 2026-10-05 — flaix-admin cle-brevo : affiche l'explication de Brevo en cas de refus, repère une clé SMTP collée à la place de la clé d'API
+- [`b53a267`](https://github.com/Break-Eat-APP/flaix-expert/commit/b53a2678daa08283526661fb0f6cc7dc412871f2) 2026-10-05 — Avancement : e-mails Brevo en service sur le serveur de test

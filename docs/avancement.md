@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## Carte abonné wallet — faite le 2026-10-05 après-midi (§15.147)
+
+Serveur (lien, page publique, `.pkpass` signé, service web PassKit, lien Google, mises à jour du solde après tickets, ajustements, nom, règle de points, couleur), commandes `flaix-admin wallet-…`, écrans. Tests : serveur 13 + briques 3, écrans 5 ; non-régression fidélité, caisse, e-mails, support, options, conformité de la base, connexion (102) et tous les écrans (60). **Pour Rémi** : déploiement sur le serveur de test, puis guide `docs/guide-serveur-test-ovh.md` → « Carte abonné » (Apple : identifiant `pass.com.flaixlabs.abonne`, demande de certificat fabriquée sur le serveur, `pass.cer` renvoyé ; Google : Issuer ID, compte de service, invitation dans la console, comptes de test). Rien de secret ne passe par Claude. Essai local fait sur « Buvette de démonstration nocturne » (abonné de démonstration `AB-007` ajouté dans la base locale).
+
 ## Serveur de test — mis en ligne le 2026-10-05 à 10 h 38 (version `b860416`)
 
 Sauvegarde de la base prise juste avant ; migrations 0030 à 0033 appliquées ; site vérifié (`/api/sante`). Le serveur de test a donc le Revenue Engine, le temps de prise de commande, le centre d'alertes et la rupture poussée, les prix fournisseurs, le support niveau 2 et la prévision. **IA (OVHcloud)** : la clé d'API créée par Rémi n'est pas encore installée — OVHcloud exige un moyen de paiement sur le projet Public Cloud ; Rémi préfère avancer d'abord sur Brevo puis le wallet (2026-10-05).
@@ -52,7 +56,7 @@ Sauvegarde de la base prise juste avant ; migrations 0030 à 0033 appliquées ; 
 | 7 | Facture FlaiX Expert au lieu | attend les prix de Rémi |
 | 8 | Import des ventes Click & Collect, commission et frais dans le résultat | **plus tard** (Rémi, 2026-10-05) — commandes passées dans l'application Break Eat, traitées par Flaix Ops : connexion directe Flaix Ops → FlaiX Expert recommandée ; il faudra le code de Flaix Ops |
 | 9 | E-mails par Brevo (rapport, rectifications, campagnes) | **fait le 2026-10-05** (§15.146) — rapport de soirée et rectifications ; clé Brevo installée par Rémi, expéditeur de test `contact@breakeatapp.com` (**pour la production : une adresse flaixlabs.com**) ; campagnes vers les abonnés : plus tard (RGPD) |
-| 10 | Wallet | attend les comptes Apple et Google de Rémi |
+| 10 | Wallet (carte abonné Apple et Google) | **fait le 2026-10-05** (§15.147, commits `91b5446` à `4662794`) — Fidélité → fiche de l'abonné et onglet « Carte téléphone » ; page `/carte/<jeton>` ; **reste à Rémi** : certificat Apple et compte de service Google (guide serveur, section « Carte abonné ») |
 | 11 | Back-office niveau 2 | **fait le 2026-10-05** (§15.142, commit `0a675eb`) — Paramètres → Support FlaiX Expert ; back-office « Ouvrir en lecture seule » |
 | 12 | Passage en production | Rémi (serveur) |
 
