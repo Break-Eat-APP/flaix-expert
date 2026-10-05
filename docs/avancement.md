@@ -14,7 +14,7 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 - **Copie de configuration** : abandonnée, « les lieux ne se ressemblent pas » (§15.144).
 - **Commit et envoi** : faits le 2026-10-05 — un commit par module (`72f087a`, `b24b3c6`, `cb5cb03`, `0a675eb`, `534a3a6`), dossier `5516b41`, journal des phases 40 à 44 ; poussés sur GitHub (fenêtre d'identification validée par Rémi).
-- **Mémoire du PC** : Rémi a fermé des applications ; reste à voir à l'écran la prévision avec des données et la carte du temps de commande.
+- **Vérification à l'écran terminée le 2026-10-05** (après la fermeture d'applications par Rémi ; Docker, fermé au passage, a été relancé pour la base locale) : prévision avec 4 événements joués et 1 à venir (fourchettes, mise en place proposée, heure de pointe, fiabilité), carte du temps de prise de commande avec des mesures. Données créées sur le lieu d'essai local « Buvette de démonstration nocturne » par un script temporaire, supprimé ensuite.
 
 ## Consigne de Rémi du 2026-10-04 vers 23 h 30 (il est parti se coucher)
 
