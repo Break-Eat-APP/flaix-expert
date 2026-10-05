@@ -206,17 +206,28 @@ ENV
       exit 0
     fi
     [[ "$CLE" =~ ^[A-Za-z0-9_-]{20,300}$ ]] || { unset CLE; echo "Cette clé n'a pas la bonne forme (espace ou caractère inattendu ?) : rien n'est enregistré."; exit 1; }
+    if [[ "$CLE" == xsmtpsib-* ]]; then
+      unset CLE
+      echo "C'est une clé SMTP (elle commence par « xsmtpsib- »), pas une clé d'API : dans Brevo > SMTP & API, prends l'onglet « Clés API » (la clé commence par « xkeysib- »). Rien n'est enregistré."
+      exit 1
+    fi
     read -r -p "Adresse d'expédition (déclarée dans Brevo, par exemple no-reply@ton-domaine) : " EXPEDITEUR
     EXPEDITEUR="$(printf '%s' "$EXPEDITEUR" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
     [[ "$EXPEDITEUR" =~ ^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,24}$ ]] || { unset CLE; echo "Cette adresse n'a pas la bonne forme : rien n'est enregistré."; exit 1; }
     echo "Vérification auprès de Brevo…"
     # La clé passe par l'entrée standard de curl : elle n'apparaît jamais dans la liste des processus.
-    CODE="$(printf 'api-key: %s\n' "$CLE" | curl -s -o /dev/null -w '%{http_code}' -m 20 -H @- -H 'accept: application/json' https://api.brevo.com/v3/account || true)"
+    REPONSE="$(mktemp)"
+    CODE="$(printf 'api-key: %s\n' "$CLE" | curl -s -o "$REPONSE" -w '%{http_code}' -m 20 -H @- -H 'accept: application/json' https://api.brevo.com/v3/account || true)"
     if [ "$CODE" != "200" ]; then
       unset CLE
-      echo "Brevo refuse cette clé (réponse ${CODE:-aucune}) : vérifie-la (et, si le blocage des IP inconnues est actif, autorise l'adresse de ce serveur), puis recommence. Rien n'est enregistré."
+      # Le message de Brevo explique le refus (clé inconnue, adresse IP non reconnue…) ; il ne contient jamais la clé.
+      MESSAGE="$(sed -n 's/.*"message":"\([^"]*\)".*/\1/p' "$REPONSE" | head -c 400)"
+      rm -f "$REPONSE"
+      echo "Brevo refuse cette clé (réponse ${CODE:-aucune}). Explication de Brevo : ${MESSAGE:-aucune}"
+      echo "Causes fréquentes : clé SMTP au lieu de la clé d'API ; clé mal copiée ; adresse IP du serveur (146.59.154.196) bloquée dans Brevo > Sécurité > IP autorisées. Rien n'est enregistré."
       exit 1
     fi
+    rm -f "$REPONSE"
     EXPEDITEURS="$(printf 'api-key: %s\n' "$CLE" | curl -s -m 20 -H @- -H 'accept: application/json' https://api.brevo.com/v3/senders || true)"
     if ! printf '%s' "$EXPEDITEURS" | tr '[:upper:]' '[:lower:]' | grep -q "\"email\":\"$EXPEDITEUR\""; then
       echo "Attention : « $EXPEDITEUR » n'apparaît pas dans les expéditeurs de ton compte Brevo. Si les e-mails ne partent pas, ajoute-le dans Brevo (Expéditeurs, domaines et IP dédiées)."
