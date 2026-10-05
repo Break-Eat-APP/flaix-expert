@@ -4670,3 +4670,97 @@ Rémi a partagé une note produit rédigée avec ChatGPT (`FLAIX_EXPERT_PRODUCT_
 - Chiffres affichés, par caisse et par stand : durée médiane d'une commande (la médiane plutôt que la moyenne, qu'une commande oubliée ouverte fausserait), cadence en file (commandes par heure quand la file est là), part des commandes servies avec une file derrière.
 - Aucune donnée par caissière, ni à l'écran ni dans l'assistant.
 
+
+**Réalisé le 2026-10-05** (migration 0030, moteur `temps-service.ts`) : la tablette note l'heure du premier produit tapé (remise à zéro si le panier est vidé) et l'envoie à côté du ticket ; le serveur la range dans `mesure_ticket` (écriture seule), en ignorant une heure impossible (après l'encaissement ou plus de 4 h avant) ; le ticket scellé ne change pas. Résultats → « Où je perds de l'argent » → carte **« Temps de prise de commande »** : par stand puis par caisse, commandes mesurées, durée médiane, part avec file, cadence en file. Une commande de plus de 15 minutes est écartée (ticket oublié ouvert) ; sous 5 commandes, pas de médiane. **Tests** : moteur 5, serveur 2, écrans 2 (tablette : mesure à côté du ticket et remise à zéro ; carte).
+
+### 15.140 Centre d'alertes et rupture de stock en direct sur le téléphone (2026-10-04)
+
+**Demande de Rémi** (en partant se coucher) : *« développer le centre d'alerte avec la rupture de stock en direct sur le téléphone »*. Le centre d'alertes est le **module 18**, validé le 2026-09-12 (§14 module 18, délimitation §15.23) ; la rupture poussée était déjà notée comme reste au §15.112.
+
+**Règles du module 18, reprises sans changement** : un écran unique, qui **lit** ce que les autres modules calculent et ne calcule lui-même que trois comparaisons qui n'appartiennent à aucun module ; chaque alerte chiffre son impact en euros ; ce module ne corrige rien (un lien mène à l'écran où corriger).
+
+**Où** : une page `/alertes` sans nouvelle entrée de menu (les 6 entrées validées au §15.96 ne bougent pas), ouverte depuis une carte « Centre d'alertes · N alertes » en tête de Résultats, comme « En direct » (§15.112).
+
+**Contenu, dans cet ordre** :
+1. **En ce moment** (si un événement est ouvert) : ruptures et stocks faibles par stand, lus dans Stock (même règle : rupture à 0, faible à 15 % du départ), avec un lien vers « En direct » pour le réassort.
+2. **Lues dans les autres modules** (dernier événement clos qui a des ventes) : produits sous leur cible de marge réalisée (Résultats → Marges) ; pertes de stock valorisées et manques d'espèces (Revenue Engine, §15.138) ; tickets vendus à un autre prix que le tarif (« prix non respecté ») ; prix de l'application de commande qui ne couvre pas la marge du comptoir (Click & Collect, verdict existant).
+3. **Calculées ici (module 18)** :
+   - **Marge configurée sous la cible** : prix et coût actuels de la fiche, avant toute vente (calcul `margeConfiguree` déjà utilisé dans Produits & prix) ; impact = écart par vente × ventes du dernier événement.
+   - **Hausse (ou baisse) d'un prix fournisseur** : chaque livraison comparée à la livraison précédente du même produit (ou ingrédient) chez le même fournisseur ; alerte à **5 %** d'écart ou plus ; impact = écart de prix × quantité livrée. Seule la dernière livraison de chaque produit est jugée.
+   - **Écart à la mercuriale** : prix de référence saisi par le lieu, ici et nulle part ailleurs (« mercuriale » du module 18, faute de source de marché fiable) ; comparé au coût actuel (CUMP de Stock, ou prix de l'ingrédient) ; alerte à **10 %** au-dessus ou plus ; impact = écart × ventes du dernier événement pour un produit.
+   - Les deux seuils (5 % et 10 %) restent les **valeurs de test du module 18**, à ajuster avec Rémi quand le terrain parlera ; ils sont écrits une seule fois dans le code.
+4. Chaque alerte : niveau (forte / normale), phrase, impact en euros quand il existe, lien vers l'écran où agir. Classement : fortes d'abord, puis par impact.
+
+**Rupture en direct, poussée sur le téléphone** :
+- Quand le serveur reçoit des tickets d'une tablette, il recalcule le stock des seuls produits vendus dans ces tickets, au stand de la caisse. Si un produit dont le stock est suivi passe **sous 15 % de son départ** (« stock faible ») ou **à zéro** (« rupture »), une notification part vers les téléphones abonnés des directeurs du lieu (Web Push existant, §15.135) : « Rupture : Frites à Buvette Nord — reste 0 sur 120 · vendu 120 », qui ouvre « En direct » pour le réassort en deux gestes.
+- **Une seule notification par niveau**, par stand et par produit, **jusqu'au prochain réassort** : après un réassort, le produit peut alerter de nouveau. Chaque envoi est inscrit (table en écriture seule), ce qui empêche les doublons même si deux tablettes envoient en même temps.
+- La notification part **après** l'enregistrement des tickets ; si elle échoue, les tickets restent enregistrés (jamais l'inverse).
+- Une tablette restée sans réseau n'envoie ses tickets qu'au retour du réseau : l'alerte arrive alors en retard ; c'est dit dans l'écran Notifications.
+- Réglage du lieu, dans Paramètres → Notifications : « ruptures » et « stocks faibles », chacun activable ; **les deux actifs par défaut**. Le mode formation n'envoie aucune notification.
+
+**Réalisé le 2026-10-05** (migration 0031, moteur `alertes.ts`, route `routes/alertes.ts`) : page `/alertes` (« En ce moment », « À regarder », mercuriale saisie ligne par ligne) ; carte « Centre d'alertes : N alertes » en tête de Résultats ; Paramètres → Notifications → « Stock en direct, pendant l'événement » ; rupture et stock faible poussés à la réception des tickets (`pousserAlertesStock`, après l'enregistrement), trace `alerte_stock_poussee` en écriture seule ; mercuriale `prix_reference` recopiée dans le mode formation ; saisies journalisées (`mercuriale_modifiee`, `alertes_reglages_modifies`). Les pertes, manques d'espèces et prix non respectés sont lus dans le Revenue Engine (§15.138), sans second calcul. **Tests** : moteur 9, serveur 9 (faible puis rupture une seule fois, une bière ne réveille pas les frites, réassort qui réarme, trace inaltérable, réglage coupé, en direct, hausse fournisseur, mercuriale journalisée, marge configurée, refus), écrans 4.
+
+### 15.141 Comparaison des prix entre fournisseurs (2026-10-05)
+
+**Demande de Rémi** (2026-10-04 au soir) : *« comparaison des prix entre fournisseurs »*. C'est la partie restante du **module 5** (Marges & ratios, validé le 2026-09-11 ; choix de Rémi : « comparaison fournisseurs au prix unitaire, plus alerte de sur-conditionnement », §14 module 5 ; règle « un ingrédient s'achète par conditionnement », §4).
+
+**Règles du prototype, reprises** : prix comparés **à l'unité** (la portion pour un produit, le kg, le litre ou la pièce pour un ingrédient), jamais au colis — sinon un fût de 50 L paraît toujours plus cher qu'un fût de 30 L ; le moins cher est marqué, les autres affichent leur écart en % ; **écoulement** = contenance d'un colis ÷ consommation moyenne par événement ; **alerte de sur-conditionnement** quand le moins cher à l'unité est un colis qui couvre **plus de 1,5 événement** de consommation (« sur un produit frais ou un fût entamé, ce qui reste peut coûter plus cher que l'économie faite à l'achat »).
+
+**Ce que le logiciel réel sait, et ne sait pas** : le prototype avait un jeu de test d'achats avec leur conditionnement. Le logiciel a les **vraies livraisons** (Stock : produit ou ingrédient, quantité, prix, fournisseur, date), mais une livraison ne dit pas la taille d'un colis (10 fûts de 30 L arrivent comme 300 L). D'où :
+- **Prix de chaque fournisseur** = prix unitaire de sa **dernière livraison** (produit : prix unitaire saisi ; ingrédient : prix total ÷ quantité). Les noms de fournisseurs se regroupent sans tenir compte des majuscules ni des espaces ; une livraison sans fournisseur compte sous « Fournisseur non précisé ».
+- **Conditionnement** : se renseigne une fois par fournisseur et par article, dans le nouvel onglet (« fût », 30 L), modification journalisée. Sans conditionnement renseigné, l'écoulement s'affiche « — » et aucune alerte n'est donnée (jamais une taille devinée). Le formulaire de livraison de Stock ne change pas.
+- **Consommation moyenne par événement** : moyenne sur les 5 derniers événements qui ont des ventes (un produit non vendu compte 0) ; pour un ingrédient suivi, sa consommation figée à la clôture (§15.125). Sans historique : « — ».
+- **Où** : Stock → nouvel onglet **« Prix fournisseurs »** (extension additive ; les autres onglets ne changent pas). Les articles achetés chez au moins deux fournisseurs viennent d'abord ; un article à un seul fournisseur connu le dit (« rien à comparer »).
+- Rien ne se corrige ici : le coût matière reste le CUMP de Stock, le prix de vente se règle dans Produits & prix.
+
+**Réalisé le 2026-10-05** (migration 0032, moteur `fournisseurs.ts`, route `routes/fournisseurs.ts`, Stock → « Prix fournisseurs ») : un tableau par article (moins cher marqué, écart en %, colis, écoulement, dernier achat et nombre de livraisons), alerte de sur-conditionnement, colis renseigné en ligne (journalisé : `conditionnement_modifie`). **Tests** : moteur 5, serveur 3 (regroupement des noms, dernière livraison, colis qui couvre 1,5 puis 15 événements, refus).
+
+### 15.142 Back-office niveau 2 : support sur autorisation du lieu (2026-10-05)
+
+**Demande de Rémi** (2026-10-04 au soir) : *« back office niveau 2 »*. Cadrage déjà acté au §15.13 : *« accès aux données d'un lieu, en lecture seule, limité dans le temps, et seulement après autorisation explicite du lieu depuis son propre écran — même mécanique que le compte vérificateur (§15.12). Chaque ouverture et chaque consultation sont inscrites dans le journal des événements du lieu, visibles par lui. Break Eat ne peut jamais s'auto-ouvrir l'accès. »* Et la règle absolue : aucun compte de l'éditeur n'écrit jamais dans les données d'un lieu, **imposé par l'architecture**, pas par une consigne.
+
+**Côté lieu** (Paramètres → **Support FlaiX Expert**) :
+- Le directeur **autorise** le support pour **1 heure, 4 heures ou 24 heures** (4 heures proposé), avec un motif facultatif (« problème de clôture »). Une seule autorisation active à la fois ; il la **retire** quand il veut, et l'accès s'arrête à l'instant (la base ne valide plus la session).
+- L'écran dit ce que le support verra (tous les écrans du directeur, en lecture : ventes, tickets, stock, équipe, abonnés…) et ce qu'il ne pourra jamais faire (rien modifier, rien supprimer, rien encaisser).
+- Il liste les autorisations passées et, pour chacune, **ce qui a été consulté**, avec l'heure et le nom de la personne de FlaiX Expert.
+- Autorisation et retrait sont inscrits au journal technique du lieu (`support_autorise`, `support_retire`).
+
+**Côté FlaiX Expert** (back-office `/editeur`) :
+- Un lieu qui a autorisé le support affiche « Support autorisé jusqu'à 18 h 40 » et un bouton **« Ouvrir en lecture seule »**. Sans autorisation active, le bouton n'existe pas et la base refuse l'ouverture.
+- L'ouverture crée une **session « support »** rattachée au lieu, au nom de la personne de FlaiX Expert, qui expire à la fin de l'autorisation ; elle est inscrite au journal du lieu (`support_ouvert`). La personne voit les écrans du directeur avec un bandeau permanent « Support FlaiX Expert — lecture seule — jusqu'à … » et un bouton « Quitter ».
+- **Chaque écran consulté** (chaque adresse lue, une fois par session) est inscrit au journal du lieu (`support_consultation`).
+
+**Lecture seule, imposée à trois niveaux** :
+1. La **base** : toute transaction d'une session support est ouverte en **lecture seule** (`BEGIN READ ONLY`) ; PostgreSQL refuse alors toute écriture, quel que soit le code qui la tente.
+2. Le **serveur** : toute requête autre qu'une lecture d'une session support est refusée (403) avant même d'arriver à la route, et la tentative est inscrite au journal du lieu (`acces_refuse`).
+3. La **validation de la session** se fait dans la base : une session support n'est valide que tant qu'une autorisation du lieu est en cours (non retirée, non échue).
+- Conséquence assumée : un écran qui écrit en lisant (rapport de soirée établi à la première lecture, par exemple) affiche une erreur au support ; le directeur, lui, n'est pas concerné.
+- Le mode formation n'est pas accessible au support.
+
+**À valider plus tard avec Rémi** (dossier de conformité) : la durée de conservation de la trace des consultations (aujourd'hui : sans limite, comme le journal technique) ; la mention du support dans le contrat de sous-traitance RGPD avec chaque lieu.
+
+**Réalisé le 2026-10-05** (migration 0033, `routes/support.ts`, écrans Paramètres → Support FlaiX Expert et back-office) : autorisation 1 h / 4 h / 24 h avec motif, retrait immédiat (sessions fermées), historique avec les écrans consultés ; `ouvrir_session_support` (base) refuse sans autorisation en cours et ne s'ouvre jamais sur un lieu de formation ; `session_valide` n'accepte une session support que pendant l'autorisation ; transactions `BEGIN READ ONLY` pour toute requête support ; écritures refusées avant la route (403, journalisé `acces_refuse`) ; consultation inscrite une fois par adresse et par session (`consultation_support`, écriture seule, et `support_consultation` au journal) ; bandeau « Support FlaiX Expert — lecture seule — jusqu'à … » avec « Quitter » (`support_ferme`). **Tests** : serveur 7 (ouverture refusée sans autorisation, autorisation et refus d'une seconde, lecture et trace sans doublon, écriture refusée et journalisée, base qui refuse l'écriture en lecture seule, retrait qui coupe l'accès à la requête suivante, trace inaltérable), écrans 2.
+
+### 15.143 Prévision du prochain événement (2026-10-05)
+
+**Demande de Rémi** (2026-10-04 au soir) : *« prévision du prochain événement »*. C'est l'**étape 3** de l'analyse « Intelligence, prévision et décision » (§15.134) : *« mise en place par produit et par stand, personnel à prévoir, en fourchette »*, avec la règle : **les prévisions viennent de modèles statistiques classiques, qui donnent une fourchette et se vérifient** — jamais d'une IA qui rédige. Elle prolonge la « suggestion » de mise en place de Stock (moyenne des ventes − reste, §15.105), qui ne change pas.
+
+**Données utilisées** (celles de FlaiX Expert, rien d'extérieur : ni météo, ni vacances, ni billetterie) : les **8 derniers événements clos qui ont des ventes** (« comparables »), leurs ventes par stand et par produit, leur CA, leurs tickets, leur affluence quand elle est saisie, leurs tickets à l'heure de pointe par stand ; l'**affluence prévue** du prochain événement si le directeur l'a saisie (Paramètres → Saison).
+
+**Méthode** :
+- **Avec l'affluence** (affluence prévue saisie, et au moins 3 comparables avec leur affluence) : chaque comparable donne un **taux par spectateur** (ventes ÷ affluence) ; prévision = taux × affluence prévue.
+- **Sans l'affluence** : les valeurs des comparables directement (« un événement comme les précédents »), et l'écran le dit.
+- **Fourchette** : du 1er au 3e quartile des comparables dès 4 comparables ; du plus bas au plus haut avec 2 ou 3 ; **pas de prévision avec moins de 2 comparables** (« pas encore assez d'historique »). Valeur centrale : la médiane. Un produit non vendu lors d'un comparable compte 0 pour ce comparable.
+- **Mise en place proposée**, par stand et par produit : médiane − reste compté au stand (même reste que Stock) ; « pour ne pas manquer » : haut de la fourchette − reste. Aucune quantité n'est saisie à la place du directeur.
+- **Caisses à l'heure de pointe**, par stand : tickets prévus à l'heure de pointe (même méthode) ÷ **cadence en file** mesurée par le temps de prise de commande (§15.139) ; sans cadence mesurée, seuls les tickets de l'heure de pointe s'affichent.
+- **La prévision se vérifie** : pour un événement déjà clos, la prévision est recalculée **avec les seuls événements joués avant lui**, et comparée au réalisé (« dans la fourchette », « au-dessus », « en dessous ») ; l'écran affiche combien de fois la fourchette a vu juste sur les derniers événements. Ainsi le directeur sait ce que vaut la prévision avant de s'y fier.
+
+**Où** : une page « Prochain événement » (`/prevision`, sans nouvelle entrée de menu), ouverte depuis la carte « Prochains événements » de Résultats et depuis Stock → Mise en place. On y choisit l'événement (à venir, ou déjà joué pour voir la vérification).
+
+**Limites dites à l'écran** : pas de météo, d'adversaire, de vacances ni d'horaire dans le calcul (à ajouter quand l'historique sera assez long pour les mesurer) ; une fourchette n'est pas une promesse.
+
+**Réalisé le 2026-10-05** (moteur `prevision.ts`, route `GET /api/prevision`, page `/prevision` ouverte depuis Résultats → Prochains événements et depuis Stock) : chiffres clés (CA et tickets prévus, événements comparés, fiabilité), ventes et mise en place proposée par stand et par produit, tickets et caisses à l'heure de pointe ; pour un événement joué, le réalisé et son verdict. **Tests** : moteur 5 (quartiles, affluence, comparables sans affluence refusés pour le calcul par spectateur, verdict, caisses), serveur 4 (prochain événement ramené à l'affluence, fiabilité 1 sur 2, événement joué recalculé avec les seuls événements d'avant, pas de prévision sans historique), écrans 2.
+
+### 15.144 Copie de la configuration d'un lieu à l'autre : abandonnée (2026-10-05)
+
+**Question posée à Rémi** : copier la configuration des Spartiates vers un autre lieu, ou vers le futur serveur de production ? **Réponse de Rémi** : *« non, car les lieux ne se ressemblent pas »*. Le module est retiré de la liste : chaque lieu construit sa propre configuration (règle du dossier : un lieu démarre vide). Le **script de reprise de la configuration** du passage en production (même lieu, du serveur de test vers la production) reste, lui, prévu dans la section « Passage en production » de l'avancement.
