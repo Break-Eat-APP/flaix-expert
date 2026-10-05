@@ -1,5 +1,13 @@
 # Avancement — reprise après coupure
 
+## Reprise du 2026-10-05 au soir (session Claude Code dans le cloud, pas sur le PC de Rémi)
+
+Demande de Rémi : « reprendre où on en était, on doit finaliser ». État trouvé : tout est sur GitHub jusqu'à `2bbfa35` (audit Codex corrigé et mis en ligne). **Si un travail non commité restait sur le PC de Rémi après 21 h 46, il n'est pas visible d'ici** : `git -C C:\Users\notta\dev\flaix-expert status` le dirait.
+- Tests rejoués ici d'un seul bloc (machine à 15 Go, PostgreSQL 16 local) : moteur 241, serveur 351, écrans 63, types : tout vert.
+- **Corrigé** : lien de carte wallet refusé pour un abonné désactivé (écart entre le §15.147 et le code, relevé par l'audit complémentaire) ; P3-1 (exemption PassKit lue sur la route reconnue), P3-2 (serveur à l'écoute sur `127.0.0.1` seulement), P3-3 (date des cartes à la milliseconde). Restent P3-4 à P3-6.
+- **Conformité — proposition écrite, rien de codé** : dossier §15.149 (registre et numéro de version, attestation, archive annuelle, compte vérificateur, étiquette Git). **Attend les réponses de Rémi** aux cinq questions de la fin du §15.149.
+- **Pas mis en ligne** : cette session n'a pas accès au serveur de test. Envoyé sur la branche `claude/cool-heisenberg-naw7hu` (pas sur `main`) ; à fusionner puis mettre en ligne depuis le PC de Rémi, en vérifiant que le site répond (changement d'adresse d'écoute, P3-2).
+
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
 ## Audit Codex du 2026-10-05 (phases 33 à 48) — corrigé le soir même
@@ -64,7 +72,7 @@ Sauvegarde de la base prise juste avant ; migrations 0030 à 0033 appliquées ; 
 | 3 | Centre d'alertes, rupture de stock en direct sur le téléphone | **fait le 2026-10-05** (§15.140, commit `b24b3c6`) — `/alertes`, carte en tête de Résultats, Paramètres → Notifications |
 | 4 | Comparaison des prix entre fournisseurs | **fait le 2026-10-05** (§15.141, commit `cb5cb03`) — Stock → « Prix fournisseurs » |
 | 5 | Copie de la configuration d'un lieu à l'autre | **abandonnée** (§15.144) — Rémi : « les lieux ne se ressemblent pas » |
-| 6 | Conformité : attestation, registre des versions, archive annuelle, accès vérificateur | **à voir avec Rémi** |
+| 6 | Conformité : attestation, registre des versions, archive annuelle, accès vérificateur | **proposition écrite le 2026-10-05** (§15.149) — attend les réponses de Rémi |
 | 7 | Facture FlaiX Expert au lieu | attend les prix de Rémi |
 | 8 | Import des ventes Click & Collect, commission et frais dans le résultat | **plus tard** (Rémi, 2026-10-05) — commandes passées dans l'application Break Eat, traitées par Flaix Ops : connexion directe Flaix Ops → FlaiX Expert recommandée ; il faudra le code de Flaix Ops |
 | 9 | E-mails par Brevo (rapport, rectifications, campagnes) | **fait le 2026-10-05** (§15.146) — rapport de soirée et rectifications ; clé Brevo installée par Rémi, expéditeur de test `contact@breakeatapp.com` (**pour la production : une adresse flaixlabs.com**) ; campagnes vers les abonnés : plus tard (RGPD) |
