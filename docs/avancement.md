@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## Serveur de test — mis en ligne le 2026-10-05 à 10 h 38 (version `b860416`)
+
+Sauvegarde de la base prise juste avant ; migrations 0030 à 0033 appliquées ; site vérifié (`/api/sante`). Le serveur de test a donc le Revenue Engine, le temps de prise de commande, le centre d'alertes et la rupture poussée, les prix fournisseurs, le support niveau 2 et la prévision. **IA (OVHcloud)** : la clé d'API créée par Rémi n'est pas encore installée — OVHcloud exige un moyen de paiement sur le projet Public Cloud ; Rémi préfère avancer d'abord sur Brevo puis le wallet (2026-10-05).
+
 ## Consigne de Rémi du 2026-10-04 vers 23 h 30 (il est parti se coucher)
 
 « Développer pour l'instant **sans commit** et enchaîner : centre d'alertes avec la rupture de stock en direct sur le téléphone, comparaison des prix entre fournisseurs, back-office niveau 2, prévision du prochain événement. On fera un commit sur GitHub quand je me connecterai. » → **Ne pas committer ni pousser** tant que Rémi ne l'a pas demandé : le travail reste dans l'arbre de travail du dépôt (`git status` le montre). Dernier commit fait avant la consigne : `4d416ac`.
