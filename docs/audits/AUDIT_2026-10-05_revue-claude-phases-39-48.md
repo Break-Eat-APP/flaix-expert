@@ -51,6 +51,9 @@ Scénario : service de Google lent pendant un match, lot de tickets portant 5 nu
 mais l'écran de la caissière et le suivi en direct prennent du retard. **Correctif** : lancer ces envois après la
 réponse (comme `suivreToutesLesCartes`), sans les attendre. **Test** : un notificateur qui ne répond pas ne retarde pas la
 réponse de la synchronisation.
+**Corrigé le 2026-10-05, commit `360895e`** : `apps/api/src/arriere-plan.ts` (travaux après la réponse, échecs journalisés) ;
+alertes de stock et cartes wallet après la synchronisation de la caisse, cartes après un ajustement ou une fiche modifiée.
+Test : notificateur bloqué → la caisse reçoit sa réponse, la notification part quand il se libère.
 
 **P2-2 — La carte d'un abonné désactivé reste affichée comme valable.**
 `packages/domain/src/wallet.ts` (`objetGoogle` : `state: "ACTIVE"` toujours) ; migration 0035 (`carte_par_serie` et
@@ -59,6 +62,9 @@ mise à jour ; l'iPhone n'est même pas prévenu (la liste des cartes modifiées
 carte telle quelle. La caisse refuse ses points, mais la carte paraît encore bonne. **Correctif** : état `INACTIVE` chez
 Google ; côté Apple, laisser le téléphone récupérer la carte de l'abonné désactivé et la marquer `voided` (barrée par
 Wallet). **Test** : désactivation → carte Google `INACTIVE`, carte Apple `voided: true`.
+**Corrigé le 2026-10-05, commit `360895e`** : `actif` dans le contenu de la carte ; migration 0037 (`carte_par_serie` et
+`cartes_appareil` sans filtre sur `actif` ; `carte_par_jeton`, la page publique, reste fermée). Tests : moteur (barrée,
+inactive) et serveur (téléphone prévenu, carte barrée puis valable après réactivation).
 
 **P2-3 — Mise à jour de toutes les cartes dans une seule transaction, avec un calcul de solde par carte.**
 `apps/api/src/routes/wallet.ts`, `mettreAJourCartes` : pour chaque abonné, `donneesCarte` relance le calcul du solde
@@ -66,17 +72,24 @@ Wallet). **Test** : désactivation → carte Google `INACTIVE`, carte Apple `voi
 changement de design dans un lieu de 2 000 cartes → 2 000 calculs de solde dans une transaction longue, en arrière-plan,
 puis 2 000 appels à Google. **Correctif** : lire les abonnés par lots (100), soldes par lots, transaction courte par lot.
 **Test** : mise à jour de 250 cartes en plusieurs lots, résultat identique.
+**Corrigé le 2026-10-05, commit `360895e`** : lots de 100, transaction par lot, `donneesCartes` et `soldesPoints` (une lecture
+par lot, même calcul que `soldePoints` de la caisse). Test : 250 cartes de plus → modèle Google une fois, chaque carte une
+fois ; soldes du lot égaux à ceux lus par la caisse.
 
 **P2-4 — Bibliothèque `node-forge` 1.3.1 vulnérable** (`apps/api/package.json`). `pnpm audit --prod` : 8 alertes (7
 « high »), toutes sur `node-forge` 1.3.1, ajoutée pour signer la carte Apple. FlaiX Expert ne s'en sert que pour signer
 et lire ses propres certificats (aucune donnée extérieure vérifiée), l'exposition est faible ; la version 1.4.0 corrige
 7 alertes (la 8ᵉ, vérification de signatures, n'a pas encore de version corrigée et ne concerne pas notre usage).
 **Correctif** : passer à 1.4.0 ; relancer les tests de signature (`openssl smime -verify`).
+**Corrigé le 2026-10-05, commit `360895e`** : 1.4.0 ; `pnpm audit --prod` : 1 alerte restante (vérification de signatures,
+sans version corrigée publiée, non utilisée par FlaiX Expert) ; carte signée vérifiée par `openssl smime -verify`.
 
 **P2-5 — Service web PassKit sans limite de requêtes.** `apps/api/src/routes/wallet.ts` : les adresses
 `/api/passkit/v1/...` n'ont pas de limitation (contrairement aux pages publiques de la carte). `POST /api/passkit/v1/log`
 accepte sans authentification 50 lignes de 1 000 caractères par requête, écrites au journal du serveur : remplissage du
 journal possible. **Correctif** : limite par adresse (par exemple 120 par minute ; journal : 10 par minute).
+**Corrigé le 2026-10-05, commit `360895e`** : 120 requêtes par minute et par adresse, journal 10 par minute. Test : 11ᵉ envoi
+du journal refusé (429).
 
 ### P3 — qualité, robustesse
 
@@ -91,6 +104,12 @@ journal possible. **Correctif** : limite par adresse (par exemple 120 par minute
 - **P3-5** Pas d'en-tête `Content-Security-Policy` (défense en profondeur ; React échappe déjà le contenu).
 - **P3-6** Centre d'alertes : le stock de l'événement est recalculé à chaque envoi de tickets contenant des ventes (toutes
   les 8 s par tablette pendant le service). Sans effet visible au volume de test ; à mesurer lors du premier match.
+
+## Suite
+
+Les cinq P2 sont corrigés (commit `360895e`) ; les P3 restent, à recouper avec l'audit Codex. Tests après corrections :
+moteur 241, serveur au vert (le fichier « formation » relancé seul, 10 sur 10, après un arrêt de Node faute de mémoire sur le
+PC), types vérifiés.
 
 ## Ce qui reste à vérifier sur le terrain (pas du code)
 

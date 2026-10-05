@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## Audit du 2026-10-05 au soir (avant l'audit Codex)
+
+Revue des phases 39 à 48 par Claude : `docs/audits/AUDIT_2026-10-05_revue-claude-phases-39-48.md`. Verdict : passage en **test** possible (club qui utilise FlaiX Expert sans encaisser de vraies ventes avec), après la **copie des sauvegardes chez OVH (à faire par Rémi : non réglée, vérifié sur le serveur)**. Vraies ventes : après les pièces de conformité. Les cinq défauts P2 sont corrigés (commit `360895e`, migration 0037) ; les P3 restent. Prompt Codex mis à jour (phases 33 à 48). **Envoi GitHub** : à lancer par Rémi dans sa propre fenêtre PowerShell (la fenêtre d'identification GitHub ne s'ouvre pas depuis Claude) : `git -C C:\Users\notta\dev\flaix-expert push`. Puis déployer la version corrigée sur le serveur de test.
+
 ## Design de la carte abonné — fait le 2026-10-05 au soir (§15.148)
 
 Demande de Rémi : « le maximum afin de personnaliser la carte ». Fidélité → onglet « Carte téléphone » : logo et bannière (retaillés dans le navigateur aux formats Apple et Google), couleurs (fond, texte, intitulés), nom du programme, nom des points, nom du lieu à côté du logo, message au dos, remise et réduction disponible affichables, liens (site, téléphone, e-mail, application), aperçu iPhone et Android. Les cartes déjà distribuées et le modèle Google du lieu se mettent à jour en arrière-plan. Tests : moteur 13, briques 5, serveur 15 (+ non-régression 112), écrans 63 au total. **Déployé sur le serveur de test le 2026-10-05 à 20 h 53** (version `405b044`, sauvegarde prise juste avant, migration 0036). Vu à l'écran en local (lieu d'essai ; mot de passe du compte d'essai local `verif-nuit@` renouvelé par l'outil du projet pour la vérification).
