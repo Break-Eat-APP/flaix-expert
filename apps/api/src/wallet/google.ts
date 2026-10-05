@@ -45,8 +45,12 @@ export function lienGoogle(classe: Record<string, unknown>, objet: Record<string
   return `https://pay.google.com/gp/v/save/${jwt(charge, r.cle)}`;
 }
 
-/** Mise à jour d'une carte chez Google. Remplaçable dans les tests. */
-export type MiseAJourGoogle = (objetId: string, modification: Record<string, unknown>, r: ReglageGoogle) => Promise<number>;
+/**
+ * Remplacement d'une classe (modèle de carte du lieu) ou d'une carte d'abonné chez Google (réponse HTTP ; 404 :
+ * pas encore créée chez Google, aucun abonné ne l'a ajoutée). Remplaçable dans les tests.
+ */
+export type RessourceGoogle = "loyaltyClass" | "loyaltyObject";
+export type MiseAJourGoogle = (ressource: RessourceGoogle, id: string, contenu: Record<string, unknown>, r: ReglageGoogle) => Promise<number>;
 
 let jetonAcces: { valeur: string; expire: number } | null = null;
 async function acces(r: ReglageGoogle): Promise<string | null> {
@@ -65,13 +69,13 @@ async function acces(r: ReglageGoogle): Promise<string | null> {
   return j.access_token;
 }
 
-const miseAJourReelle: MiseAJourGoogle = async (objetId, modification, r) => {
+const miseAJourReelle: MiseAJourGoogle = async (ressource, id, contenu, r) => {
   const jeton = await acces(r);
   if (!jeton) return 0;
-  const rep = await fetch(`https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/${encodeURIComponent(objetId)}`, {
-    method: "PATCH",
+  const rep = await fetch(`https://walletobjects.googleapis.com/walletobjects/v1/${ressource}/${encodeURIComponent(id)}`, {
+    method: "PUT",
     headers: { authorization: `Bearer ${jeton}`, "content-type": "application/json" },
-    body: JSON.stringify(modification),
+    body: JSON.stringify(contenu),
     signal: AbortSignal.timeout(10_000),
   }).catch(() => null);
   return rep?.status ?? 0;
@@ -80,4 +84,4 @@ let miseAJour: MiseAJourGoogle = miseAJourReelle;
 export function definirMiseAJourGoogle(f: MiseAJourGoogle | null): void {
   miseAJour = f ?? miseAJourReelle;
 }
-export const mettreAJourGoogle = (objetId: string, modification: Record<string, unknown>, r: ReglageGoogle) => miseAJour(objetId, modification, r);
+export const mettreAJourGoogle = (ressource: RessourceGoogle, id: string, contenu: Record<string, unknown>, r: ReglageGoogle) => miseAJour(ressource, id, contenu, r);

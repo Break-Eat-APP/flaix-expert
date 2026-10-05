@@ -111,6 +111,8 @@ export const TYPES_JET = {
   emails_reglages_modifies: "E-mails du lieu : réglages modifiés",
   carte_wallet_couleur: "Carte abonné (Apple Wallet, Google Wallet) : couleur modifiée",
   carte_wallet_lien: "Carte abonné : lien personnel créé ou renouvelé",
+  carte_wallet_design: "Carte abonné : design modifié (couleurs, textes, liens)",
+  carte_wallet_image: "Carte abonné : logo ou bannière déposé ou retiré",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

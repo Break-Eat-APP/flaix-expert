@@ -7,6 +7,7 @@ import { exigerDirecteur, exigerSession } from "../auth/contexte.ts";
 import { introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { contexte, corps, differences, texte, texteFacultatif } from "./outils.ts";
+import { suivreToutesLesCartes } from "./wallet.ts";
 
 // Identité de l'exploitant : ces mentions figureront sur chaque ticket (BOFiP §50)
 // et sur l'attestation de conformité.
@@ -62,10 +63,12 @@ export async function routesLieu(app: FastifyInstance, { base }: { base: Base })
   app.put("/api/lieu", async (req) => {
     const auth = await exigerDirecteur(req, base);
     const identite = corps(Identite, req);
-    return base.transaction(contexte(auth), async (c) => {
+    let nomChange = false;
+    const lieu = await base.transaction(contexte(auth), async (c) => {
       const { id: _id, remiseAbonnePb: _r, seuilEcartEspeces: _s, ...avant } = await lireLieu(c, auth.lieuId);
       const modifications = differences(avant, identite);
       if (Object.keys(modifications).length === 0) return lireLieu(c, auth.lieuId);
+      nomChange = "nom" in modifications;
       await c.query(
         `UPDATE lieu SET nom = $2, raison_sociale = $3, siret = $4, tva_intracom = $5,
                          adresse = $6, code_postal = $7, ville = $8
@@ -80,6 +83,9 @@ export async function routesLieu(app: FastifyInstance, { base }: { base: Base })
       });
       return lireLieu(c, auth.lieuId);
     });
+    // Le nom du lieu est sur chaque carte abonné (§15.148).
+    if (nomChange) suivreToutesLesCartes(base, req.log, contexte(auth), auth.lieuId);
+    return lieu;
   });
 
   // Options activées par FlaiX Expert (§15.118) : l'écran n'affiche que celles-là.
@@ -91,9 +97,11 @@ export async function routesLieu(app: FastifyInstance, { base }: { base: Base })
   app.put("/api/lieu/reglages-caisse", async (req) => {
     const auth = await exigerDirecteur(req, base);
     const { remiseAbonnePb } = corps(ReglagesCaisse, req);
-    return base.transaction(contexte(auth), async (c) => {
+    let remiseChange = false;
+    const lieu = await base.transaction(contexte(auth), async (c) => {
       const avant = await lireLieu(c, auth.lieuId);
       if (avant.remiseAbonnePb !== remiseAbonnePb) {
+        remiseChange = true;
         await c.query("UPDATE lieu SET remise_abonne_pb = $2 WHERE id = $1", [auth.lieuId, remiseAbonnePb]);
         await inscrireJet(c, {
           lieuId: auth.lieuId,
@@ -104,6 +112,9 @@ export async function routesLieu(app: FastifyInstance, { base }: { base: Base })
       }
       return lireLieu(c, auth.lieuId);
     });
+    // La remise abonné peut figurer sur chaque carte abonné (§15.148).
+    if (remiseChange) suivreToutesLesCartes(base, req.log, contexte(auth), auth.lieuId);
+    return lieu;
   });
 
   app.put("/api/lieu/seuil-especes", async (req) => {

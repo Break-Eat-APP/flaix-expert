@@ -16,7 +16,7 @@ import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { ParamId, contexte, corps, differences, texteFacultatif } from "./outils.ts";
-import { abonnesAvecCarte, suivreCartes } from "./wallet.ts";
+import { suivreCartes, suivreToutesLesCartes } from "./wallet.ts";
 
 /**
  * Fidélité, partie gestion (module 19 ; dossier §15.114) : registre des abonnés, points, codes promo.
@@ -179,7 +179,7 @@ export async function routesFidelite(app: FastifyInstance, { base }: { base: Bas
   app.put("/api/fidelite/reglages", async (req): Promise<EtatFidelite> => {
     const auth = await exigerDirecteur(req, base);
     const r = corps(Reglages, req);
-    let cartes: string[] = [];
+    let change = false;
     const e = await base.transaction(contexte(auth), async (c) => {
       const avant = (await lireReglages(c, auth.lieuId)) ?? { pointsParEuro: null, palierPoints: null, valeurPalier: null };
       await c.query("UPDATE lieu SET fid_points_par_euro = $2, fid_palier_points = $3, fid_valeur_palier_centimes = $4 WHERE id = $1", [
@@ -190,10 +190,11 @@ export async function routesFidelite(app: FastifyInstance, { base }: { base: Bas
       ]);
       const diff = differences(avant as Record<string, unknown>, r);
       if (Object.keys(diff).length) await inscrireJet(c, { lieuId: auth.lieuId, type: "fidelite_reglages_modifies", utilisateurId: auth.utilisateurId, details: diff });
-      if (avant.pointsParEuro !== r.pointsParEuro) cartes = await abonnesAvecCarte(c, auth.lieuId);
+      change = Object.keys(diff).length > 0;
       return etat(c, auth.lieuId);
     });
-    await suivreCartes(base, req, contexte(auth), auth.lieuId, cartes);
+    // Solde, réduction disponible et règle au dos de chaque carte (§15.148).
+    if (change) suivreToutesLesCartes(base, req.log, contexte(auth), auth.lieuId);
     return e;
   });
 

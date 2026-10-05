@@ -1,19 +1,29 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyBaseLogger, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import {
   COULEUR_CARTE_DEFAUT,
+  LIMITES_DESIGN,
+  VARIANTES_IMAGE,
   classeGoogle,
+  contenuCarte,
   couleurValide,
   emailLienCarte,
+  emailValide,
+  idClasseGoogle,
   idObjetGoogle,
+  lienValide,
+  lireDesign,
   objetGoogle,
   passApple,
+  telephoneValide,
   type CarteAbonne,
   type CartePublique,
+  type DesignCarte,
   type DonneesCarte,
   type EmailEnvoye,
   type EtatWallet,
+  type SorteImage,
 } from "@flaix/domain";
 import type { Base, Client, Contexte } from "../base.ts";
 import { config } from "../config.ts";
@@ -24,36 +34,73 @@ import { inscrireJet } from "../journal-technique.ts";
 import { notifierApple, pkpass, reglageApple } from "../wallet/apple.ts";
 import { pngUni } from "../wallet/fichiers.ts";
 import { lienGoogle, mettreAJourGoogle, reglageGoogle } from "../wallet/google.ts";
+import { controlerImages, imageCarte, imagesApple, versionsImages } from "../wallet/images.ts";
 import { envoyerEtTracer } from "./emails.ts";
 import { soldePoints } from "./fidelite-caisse.ts";
 import { ParamId, Uuid, contexte, corps } from "./outils.ts";
 
 /*
- * Carte abonné dans Apple Wallet et Google Wallet (dossier §14 module 20, §15.147).
- *   - Directeur : lien personnel de l'abonné (créé ou renouvelé), envoi par e-mail, couleur de la carte.
- *   - Abonné, sans connexion : page /carte/<jeton>, carte Apple (.pkpass), lien Google, logo pour Google.
- *   - Apple : service web PassKit (inscription des téléphones, carte à jour), notification quand le solde change.
+ * Carte abonné dans Apple Wallet et Google Wallet (dossier §14 module 20, §15.147, design §15.148).
+ *   - Directeur : lien personnel de l'abonné (créé ou renouvelé), envoi par e-mail ; design des cartes du lieu
+ *     (couleurs, textes, liens, logo et bannière).
+ *   - Abonné, sans connexion : page /carte/<jeton>, carte Apple (.pkpass), lien Google, logo et bannière pour Google.
+ *   - Apple : service web PassKit (inscription des téléphones, carte à jour), notification quand la carte change.
+ *   - Google : modèle de carte du lieu (classe) et carte de chaque abonné, remplacés quand ils changent.
  * Les pages publiques ne lisent la base qu'au travers de carte_par_jeton / carte_par_serie (migration 0035).
  */
 
 const adresseSite = () => (config.originesAutorisees[0]?.startsWith("https://") ? config.originesAutorisees[0] : "https://flaixexpert.flaixlabs.com");
 const jetonAleatoire = () => randomBytes(32).toString("base64url"); // 43 caractères
 const JetonCarte = z.object({ jeton: z.string().regex(/^[A-Za-z0-9_-]{40,64}$/, "Lien de carte invalide.") });
+const Sorte = z.object({ sorte: z.enum(["logo", "banniere"], { message: "Image inconnue." }) });
 
-/** Ce que montre la carte d'un abonné : lieu, couleur, nom, numéro, solde (lu comme le lit la caisse). */
-export async function donneesCarte(c: Client, lieuId: string, abonneId: string): Promise<DonneesCarte & { auth: string | null; jeton: string | null; maj: Date | null; email: string | null }> {
-  const { rows } = await c.query<{ lieu: string; couleur: string | null; p: number | null; nom: string; numero: string; auth: string | null; jeton: string | null; maj: Date | null; email: string | null }>(
-    `SELECT l.nom AS lieu, l.carte_couleur AS couleur, l.fid_points_par_euro AS p, a.nom, a.numero, a.carte_auth AS auth, a.carte_jeton AS jeton, a.carte_maj_le AS maj, a.email
+type Carte = DonneesCarte & { auth: string | null; jeton: string | null; maj: Date | null; email: string | null };
+
+/** Ce que montre la carte d'un abonné : lieu, design, nom, numéro, solde (lu comme le lit la caisse), règle, remise. */
+export async function donneesCarte(c: Client, lieuId: string, abonneId: string): Promise<Carte> {
+  const { rows } = await c.query<{
+    lieu: string;
+    couleur: string | null;
+    design: unknown;
+    p: number | null;
+    palier: number | null;
+    valeur: number | null;
+    remise: number | null;
+    nom: string;
+    numero: string;
+    auth: string | null;
+    jeton: string | null;
+    maj: Date | null;
+    email: string | null;
+  }>(
+    `SELECT l.nom AS lieu, l.carte_couleur AS couleur, l.carte_design AS design, l.fid_points_par_euro AS p, l.fid_palier_points AS palier,
+            l.fid_valeur_palier_centimes AS valeur, l.remise_abonne_pb AS remise,
+            a.nom, a.numero, a.carte_auth AS auth, a.carte_jeton AS jeton, a.carte_maj_le AS maj, a.email
        FROM abonne_fidelite a JOIN lieu l ON l.id = a.lieu_id WHERE a.lieu_id = $1 AND a.id = $2`,
     [lieuId, abonneId],
   );
   const r = rows[0];
   if (!r) throw introuvable("Abonné");
   const points = r.p === null ? null : Math.max(0, (await soldePoints(c, lieuId, abonneId, r.numero, r.p)).solde);
-  return { lieuId, lieu: r.lieu, couleur: r.couleur ?? COULEUR_CARTE_DEFAUT, abonneId, nom: r.nom, numero: r.numero, points, auth: r.auth, jeton: r.jeton, maj: r.maj, email: r.email };
+  return {
+    lieuId,
+    lieu: r.lieu,
+    couleur: r.couleur ?? COULEUR_CARTE_DEFAUT,
+    design: lireDesign(r.design),
+    abonneId,
+    nom: r.nom,
+    numero: r.numero,
+    points,
+    regles: r.p !== null && r.palier && r.valeur ? { pointsParEuro: r.p, palierPoints: r.palier, valeurPalier: r.valeur } : null,
+    remisePb: r.remise,
+    auth: r.auth,
+    jeton: r.jeton,
+    maj: r.maj,
+    email: r.email,
+  };
 }
 
-/** Abonnés du lieu qui ont une carte (changement de couleur, de règle de points). */
+/** Abonnés du lieu qui ont une carte (changement de design, de règle de points, de remise). */
 export async function abonnesAvecCarte(c: Client, lieuId: string): Promise<string[]> {
   return (await c.query<{ id: string }>("SELECT id FROM abonne_fidelite WHERE lieu_id = $1 AND carte_jeton IS NOT NULL", [lieuId])).rows.map((r) => r.id);
 }
@@ -64,13 +111,20 @@ async function carteAbonne(c: Client, lieuId: string, abonneId: string): Promise
   return { lien: d.jeton ? `${adresseSite()}/carte/${d.jeton}` : null, email: d.email, apple: !!reglageApple(), google: !!reglageGoogle(), appareilsApple: rows[0]!.n };
 }
 
-/** Mise à jour des cartes après un enregistrement : journalisée en cas d'échec, jamais bloquante. */
-export async function suivreCartes(base: Base, req: FastifyRequest, ctx: Contexte, lieuId: string, abonneIds: readonly string[]): Promise<void> {
-  await mettreAJourCartes(base, ctx, lieuId, abonneIds).catch((erreur) => req.log.error({ err: erreur }, "cartes wallet non mises à jour"));
+/**
+ * Adresses publiques du logo et de la bannière (Google va les chercher). La version change à chaque dépôt (et,
+ * pour le logo uni par défaut, avec la couleur) : Google reprend alors l'image au lieu de garder l'ancienne.
+ */
+async function imagesGoogle(c: Client, lieuId: string, couleur: string): Promise<{ logo: string; banniere: string | null }> {
+  const v = await versionsImages(c, lieuId);
+  return {
+    logo: `${adresseSite()}/api/carte-logo/${lieuId}.png?v=${v.logo ?? couleur.slice(1)}`,
+    banniere: v.banniere ? `${adresseSite()}/api/carte-banniere/${lieuId}.png?v=${v.banniere}` : null,
+  };
 }
 
 /** La carte Apple d'un abonné (le jeton d'authentification PassKit est créé au premier besoin). */
-async function fichierApple(c: Client, lieuId: string, abonneId: string): Promise<Buffer> {
+async function fichierApple(c: Client, lieuId: string, abonneId: string): Promise<{ fichier: Buffer; maj: Date | null }> {
   const r = reglageApple();
   if (!r) throw new ErreurMetier(404, "La carte Apple Wallet n'est pas encore disponible.");
   const d = await donneesCarte(c, lieuId, abonneId);
@@ -79,7 +133,8 @@ async function fichierApple(c: Client, lieuId: string, abonneId: string): Promis
     auth = jetonAleatoire();
     await c.query("UPDATE abonne_fidelite SET carte_auth = $3 WHERE lieu_id = $1 AND id = $2", [lieuId, abonneId, auth]);
   }
-  return pkpass(passApple(d, { passTypeId: r.passTypeId, teamId: r.teamId, webServiceURL: `${adresseSite()}/api/passkit`, authenticationToken: auth }), d.couleur, r);
+  const pass = passApple(d, { passTypeId: r.passTypeId, teamId: r.teamId, webServiceURL: `${adresseSite()}/api/passkit`, authenticationToken: auth });
+  return { fichier: pkpass(pass, await imagesApple(c, lieuId), d.couleur, r), maj: d.maj };
 }
 
 /** Lieu et abonné d'un lien public ; 404 si le lien n'existe pas ou n'est plus valable. */
@@ -106,26 +161,31 @@ function envoyerPkpass(rep: FastifyReply, fichier: Buffer, maj: Date | null) {
 }
 
 /**
- * Ce que montre la carte a changé (points, nom) : date de mise à jour, notification aux téléphones Apple inscrits,
- * modification de la carte Google. Appelé après l'enregistrement ; un échec ne remet jamais rien en cause.
+ * Ce que montre la carte a changé (points, nom, design) : date de mise à jour, notification aux téléphones Apple
+ * inscrits, carte Google remplacée ; avec `classe`, le modèle de carte Google du lieu aussi (design, règle, remise).
+ * Appelé après l'enregistrement ; un échec ne remet jamais rien en cause.
  */
-export async function mettreAJourCartes(base: Base, ctx: Contexte, lieuId: string, abonneIds: readonly string[]): Promise<void> {
+export async function mettreAJourCartes(base: Base, ctx: Contexte, lieuId: string, abonneIds: readonly string[], options: { classe?: boolean } = {}): Promise<void> {
   if (abonneIds.length === 0) return;
   const apple = reglageApple();
   const google = reglageGoogle();
-  const aFaire = await base.transaction(ctx, async (c) => {
+  const { cartes, images } = await base.transaction(ctx, async (c) => {
     const { rows } = await c.query<{ id: string }>(
       "UPDATE abonne_fidelite SET carte_maj_le = now() WHERE lieu_id = $1 AND id = ANY($2::uuid[]) AND carte_jeton IS NOT NULL RETURNING id",
       [lieuId, abonneIds],
     );
     const ids = rows.map((r) => r.id);
-    if (ids.length === 0) return [];
+    if (ids.length === 0) return { cartes: [], images: null };
     const { rows: appareils } = await c.query<{ abonne_id: string; appareil: string; push_token: string }>("SELECT abonne_id, appareil, push_token FROM wallet_appareil WHERE lieu_id = $1 AND abonne_id = ANY($2::uuid[])", [lieuId, ids]);
-    const resultat = [];
-    for (const id of ids) resultat.push({ id, donnees: google ? await donneesCarte(c, lieuId, id) : null, appareils: appareils.filter((a) => a.abonne_id === id) });
-    return resultat;
+    const cartes = [];
+    for (const id of ids) cartes.push({ id, donnees: google ? await donneesCarte(c, lieuId, id) : null, appareils: appareils.filter((a) => a.abonne_id === id) });
+    const premiere = cartes[0]?.donnees;
+    return { cartes, images: google && options.classe && premiere ? await imagesGoogle(c, lieuId, premiere.couleur) : null };
   });
-  for (const carte of aFaire) {
+  // 404 : le modèle n'existe pas encore chez Google (aucun abonné n'a ajouté sa carte) ; il sera créé au premier ajout.
+  const premiere = cartes[0]?.donnees;
+  if (google && images && premiere) await mettreAJourGoogle("loyaltyClass", idClasseGoogle(google.issuerId, lieuId), classeGoogle(premiere, google.issuerId, images), google);
+  for (const carte of cartes) {
     if (apple) {
       for (const a of carte.appareils) {
         const statut = await notifierApple(a.push_token, apple);
@@ -133,12 +193,27 @@ export async function mettreAJourCartes(base: Base, ctx: Contexte, lieuId: strin
         if (statut === 410) await base.transaction(ctx, (c) => c.query("DELETE FROM wallet_appareil WHERE lieu_id = $1 AND abonne_id = $2 AND appareil = $3", [lieuId, carte.id, a.appareil]));
       }
     }
-    if (google && carte.donnees) {
-      const o = objetGoogle(carte.donnees, google.issuerId);
-      // 404 : l'abonné n'a pas (encore) ajouté sa carte dans Google Wallet ; rien à mettre à jour.
-      await mettreAJourGoogle(idObjetGoogle(google.issuerId, carte.id), { accountName: o.accountName, ...(o.loyaltyPoints ? { loyaltyPoints: o.loyaltyPoints } : {}) }, google);
-    }
+    // 404 : l'abonné n'a pas (encore) ajouté sa carte dans Google Wallet ; rien à mettre à jour.
+    if (google && carte.donnees) await mettreAJourGoogle("loyaltyObject", idObjetGoogle(google.issuerId, carte.id), objetGoogle(carte.donnees, google.issuerId), google);
   }
+}
+
+/** Mise à jour des cartes d'abonnés après un enregistrement : attendue, journalisée en cas d'échec, jamais bloquante. */
+export async function suivreCartes(base: Base, req: FastifyRequest, ctx: Contexte, lieuId: string, abonneIds: readonly string[], options: { classe?: boolean } = {}): Promise<void> {
+  await mettreAJourCartes(base, ctx, lieuId, abonneIds, options).catch((erreur) => req.log.error({ err: erreur }, "cartes wallet non mises à jour"));
+}
+
+/**
+ * Toutes les cartes du lieu changent (design, règle, remise) : mise à jour en arrière-plan, la réponse n'attend pas
+ * les centaines de notifications. Rendue pour les tests, qui l'attendent.
+ */
+let derniereMiseAJour: Promise<void> = Promise.resolve();
+export const miseAJourEnCours = () => derniereMiseAJour;
+export function suivreToutesLesCartes(base: Base, log: FastifyBaseLogger, ctx: Contexte, lieuId: string): void {
+  derniereMiseAJour = base
+    .transaction(ctx, (c) => abonnesAvecCarte(c, lieuId))
+    .then((ids) => mettreAJourCartes(base, ctx, lieuId, ids, { classe: true }))
+    .catch((erreur) => log.error({ err: erreur }, "cartes wallet non mises à jour"));
 }
 
 /**
@@ -163,28 +238,127 @@ export async function abonnesDesTickets(base: Base, ctx: Contexte, lieuId: strin
   return rows.map((r) => r.id);
 }
 
+// ---------- Design (§15.148) ----------
+
+const texteOuNull = (max: number, message: string) =>
+  z
+    .string()
+    .trim()
+    .max(max, message)
+    .nullable()
+    .transform((v) => (v ? v : null));
+const couleurOuNull = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .nullable()
+  .refine((v) => v === null || couleurValide(v), "Couleur invalide (format #rrggbb).");
+const lienOuNull = texteOuNull(LIMITES_DESIGN.lien, "Lien trop long.").refine((v) => v === null || lienValide(v), "Le lien doit commencer par https://.");
+
+const Design = z.object({
+  couleur: z.string().trim().toLowerCase().refine(couleurValide, "Couleur invalide (format #rrggbb)."),
+  design: z.object({
+    titre: texteOuNull(LIMITES_DESIGN.titre, `Nom du programme : ${LIMITES_DESIGN.titre} caractères au plus.`),
+    afficherNomLieu: z.boolean(),
+    couleurTexte: couleurOuNull,
+    couleurLibelles: couleurOuNull,
+    libellePoints: texteOuNull(LIMITES_DESIGN.libellePoints, `Nom des points : ${LIMITES_DESIGN.libellePoints} caractères au plus.`),
+    message: texteOuNull(LIMITES_DESIGN.message, `Message : ${LIMITES_DESIGN.message} caractères au plus.`),
+    afficherRemise: z.boolean(),
+    afficherReduction: z.boolean(),
+    siteWeb: lienOuNull,
+    telephone: texteOuNull(LIMITES_DESIGN.telephone, "Téléphone trop long.").refine((v) => v === null || telephoneValide(v), "Numéro de téléphone invalide."),
+    email: texteOuNull(LIMITES_DESIGN.email, "Adresse e-mail trop longue.").refine((v) => v === null || emailValide(v), "Adresse e-mail invalide."),
+    lienApp: lienOuNull,
+  }) satisfies z.ZodType<DesignCarte, unknown>,
+});
+
+async function etatWallet(c: Client, lieuId: string): Promise<EtatWallet> {
+  const { rows } = await c.query<{ nom: string; couleur: string | null; design: unknown; p: number | null; palier: number | null; valeur: number | null; remise: number | null; cartes: number }>(
+    `SELECT l.nom, l.carte_couleur AS couleur, l.carte_design AS design, l.fid_points_par_euro AS p, l.fid_palier_points AS palier,
+            l.fid_valeur_palier_centimes AS valeur, l.remise_abonne_pb AS remise,
+            (SELECT count(*)::int FROM abonne_fidelite a WHERE a.lieu_id = l.id AND a.carte_jeton IS NOT NULL) AS cartes
+       FROM lieu l WHERE l.id = $1`,
+    [lieuId],
+  );
+  const r = rows[0]!;
+  const v = await versionsImages(c, lieuId);
+  const apercu = (sorte: SorteImage, apple: string, google: string) =>
+    v[sorte] ? { apple: `/api/wallet/image/${apple}?v=${v[sorte]}`, google: `/api/wallet/image/${google}?v=${v[sorte]}` } : null;
+  return {
+    apple: !!reglageApple(),
+    google: !!reglageGoogle(),
+    lieu: r.nom,
+    couleur: r.couleur ?? COULEUR_CARTE_DEFAUT,
+    design: lireDesign(r.design),
+    images: { logo: apercu("logo", "logo@3x", "google-logo"), banniere: apercu("banniere", "strip@3x", "google-hero") },
+    regles: r.p !== null && r.palier && r.valeur ? { pointsParEuro: r.p, palierPoints: r.palier, valeurPalier: r.valeur } : null,
+    remisePb: r.remise,
+    cartes: r.cartes,
+  };
+}
+
 export async function routesWallet(app: FastifyInstance, { base }: { base: Base }) {
   // ---------- Directeur ----------
   app.get("/api/wallet", async (req): Promise<EtatWallet> => {
     const auth = await exigerDirecteur(req, base);
-    return base.transaction(contexte(auth), async (c) => {
-      const { rows } = await c.query<{ couleur: string | null }>("SELECT carte_couleur AS couleur FROM lieu WHERE id = $1", [auth.lieuId]);
-      return { apple: !!reglageApple(), google: !!reglageGoogle(), couleur: rows[0]?.couleur ?? COULEUR_CARTE_DEFAUT };
-    });
+    return base.transaction(contexte(auth), (c) => etatWallet(c, auth.lieuId));
   });
 
-  app.put("/api/wallet/couleur", async (req): Promise<EtatWallet> => {
+  // Couleurs, textes, informations et liens de la carte : un seul enregistrement, inscrit au journal.
+  app.put("/api/wallet/design", async (req): Promise<EtatWallet> => {
     const auth = await exigerDirecteur(req, base);
-    const { couleur } = corps(z.object({ couleur: z.string().trim().toLowerCase().refine(couleurValide, "Couleur invalide (format #rrggbb).") }), req);
-    const ids = await base.transaction(contexte(auth), async (c) => {
-      const { rows } = await c.query<{ couleur: string | null }>("SELECT carte_couleur AS couleur FROM lieu WHERE id = $1", [auth.lieuId]);
-      if (rows[0]?.couleur === couleur) return [];
-      await c.query("UPDATE lieu SET carte_couleur = $2 WHERE id = $1", [auth.lieuId, couleur]);
-      await inscrireJet(c, { lieuId: auth.lieuId, type: "carte_wallet_couleur", utilisateurId: auth.utilisateurId, details: { avant: rows[0]?.couleur ?? null, apres: couleur } });
-      return abonnesAvecCarte(c, auth.lieuId);
+    const d = corps(Design, req);
+    const { etat, change } = await base.transaction(contexte(auth), async (c) => {
+      const avant = await etatWallet(c, auth.lieuId);
+      const champs = (Object.keys(d.design) as (keyof DesignCarte)[]).filter((k) => d.design[k] !== avant.design[k]);
+      if (d.couleur !== avant.couleur) champs.unshift("couleur" as keyof DesignCarte);
+      if (champs.length === 0) return { etat: avant, change: false };
+      await c.query("UPDATE lieu SET carte_couleur = $2, carte_design = $3 WHERE id = $1", [auth.lieuId, d.couleur, JSON.stringify(d.design)]);
+      await inscrireJet(c, { lieuId: auth.lieuId, type: "carte_wallet_design", utilisateurId: auth.utilisateurId, details: { champs } });
+      return { etat: await etatWallet(c, auth.lieuId), change: true };
     });
-    await suivreCartes(base, req, contexte(auth), auth.lieuId, ids);
-    return { apple: !!reglageApple(), google: !!reglageGoogle(), couleur };
+    if (change) suivreToutesLesCartes(base, req.log, contexte(auth), auth.lieuId);
+    return etat;
+  });
+
+  // Logo ou bannière : l'écran envoie l'image déjà retaillée à chaque format (PNG en base64).
+  app.put("/api/wallet/images/:sorte", { bodyLimit: 12 * 1024 * 1024 }, async (req): Promise<EtatWallet> => {
+    const auth = await exigerDirecteur(req, base);
+    const { sorte } = Sorte.parse(req.params);
+    const { variantes } = corps(z.object({ variantes: z.record(z.string(), z.string().max(4_000_000)) }), req);
+    const fichiers = controlerImages(sorte, variantes);
+    const etat = await base.transaction(contexte(auth), async (c) => {
+      await c.query("DELETE FROM carte_image WHERE lieu_id = $1 AND sorte = $2", [auth.lieuId, sorte]);
+      for (const f of fichiers) {
+        await c.query("INSERT INTO carte_image (lieu_id, variante, sorte, contenu, largeur, hauteur) VALUES ($1, $2, $3, $4, $5, $6)", [auth.lieuId, f.variante, sorte, f.contenu, f.largeur, f.hauteur]);
+      }
+      await inscrireJet(c, { lieuId: auth.lieuId, type: "carte_wallet_image", utilisateurId: auth.utilisateurId, details: { sorte, action: "deposee", octets: fichiers.reduce((s, f) => s + f.contenu.length, 0) } });
+      return etatWallet(c, auth.lieuId);
+    });
+    suivreToutesLesCartes(base, req.log, contexte(auth), auth.lieuId);
+    return etat;
+  });
+
+  app.delete("/api/wallet/images/:sorte", async (req): Promise<EtatWallet> => {
+    const auth = await exigerDirecteur(req, base);
+    const { sorte } = Sorte.parse(req.params);
+    const { etat, retiree } = await base.transaction(contexte(auth), async (c) => {
+      const { rowCount } = await c.query("DELETE FROM carte_image WHERE lieu_id = $1 AND sorte = $2", [auth.lieuId, sorte]);
+      if (rowCount) await inscrireJet(c, { lieuId: auth.lieuId, type: "carte_wallet_image", utilisateurId: auth.utilisateurId, details: { sorte, action: "retiree" } });
+      return { etat: await etatWallet(c, auth.lieuId), retiree: !!rowCount };
+    });
+    if (retiree) suivreToutesLesCartes(base, req.log, contexte(auth), auth.lieuId);
+    return etat;
+  });
+
+  // Aperçu des images déposées, pour l'écran du directeur.
+  app.get("/api/wallet/image/:variante", async (req, rep) => {
+    const auth = await exigerDirecteur(req, base);
+    const { variante } = z.object({ variante: z.enum(VARIANTES_IMAGE.map((x) => x.nom) as [string, ...string[]]) }).parse(req.params);
+    const image = await base.transaction(contexte(auth), (c) => imageCarte(c, auth.lieuId, variante));
+    if (!image) throw introuvable("Image");
+    return rep.header("content-type", "image/png").header("cache-control", "private, max-age=86400").send(image);
   });
 
   app.get("/api/fidelite/abonnes/:id/carte", async (req): Promise<CarteAbonne> => {
@@ -229,14 +403,33 @@ export async function routesWallet(app: FastifyInstance, { base }: { base: Base 
     const { lieuId, abonneId } = await parJeton(base, jeton);
     return base.transaction({ lieuId }, async (c) => {
       const d = await donneesCarte(c, lieuId, abonneId);
-      return { lieu: d.lieu, couleur: d.couleur, nom: d.nom, numero: d.numero, points: d.points, apple: !!reglageApple(), google: !!reglageGoogle() };
+      const x = contenuCarte(d);
+      const v = await versionsImages(c, lieuId);
+      return {
+        lieu: d.lieu,
+        couleur: x.couleurs.fond,
+        couleurTexte: x.couleurs.texte,
+        couleurLibelles: x.couleurs.libelles,
+        titre: x.titre,
+        afficherNomLieu: d.design.afficherNomLieu,
+        libellePoints: x.libellePoints,
+        nom: d.nom,
+        numero: d.numero,
+        points: d.points,
+        reduction: x.reduction,
+        remise: x.remise,
+        logo: v.logo ? `/api/carte-logo/${lieuId}.png?v=${v.logo}` : null,
+        banniere: v.banniere ? `/api/carte-banniere/${lieuId}.png?v=${v.banniere}` : null,
+        apple: !!reglageApple(),
+        google: !!reglageGoogle(),
+      };
     });
   });
 
   app.get("/api/carte/:jeton/apple", limite, async (req, rep) => {
     const { jeton } = JetonCarte.parse(req.params);
     const { lieuId, abonneId } = await parJeton(base, jeton);
-    const fichier = await base.transaction({ lieuId }, (c) => fichierApple(c, lieuId, abonneId));
+    const { fichier } = await base.transaction({ lieuId }, (c) => fichierApple(c, lieuId, abonneId));
     return envoyerPkpass(rep, fichier, null);
   });
 
@@ -245,16 +438,32 @@ export async function routesWallet(app: FastifyInstance, { base }: { base: Base 
     const r = reglageGoogle();
     if (!r) throw new ErreurMetier(404, "La carte Google Wallet n'est pas encore disponible.");
     const { lieuId, abonneId } = await parJeton(base, jeton);
-    const d = await base.transaction({ lieuId }, (c) => donneesCarte(c, lieuId, abonneId));
-    return rep.redirect(lienGoogle(classeGoogle(d, r.issuerId, `${adresseSite()}/api/carte-logo/${lieuId}.png`), objetGoogle(d, r.issuerId), adresseSite(), r));
+    const { d, images } = await base.transaction({ lieuId }, async (c) => {
+      const d = await donneesCarte(c, lieuId, abonneId);
+      return { d, images: await imagesGoogle(c, lieuId, d.couleur) };
+    });
+    return rep.redirect(lienGoogle(classeGoogle(d, r.issuerId, images), objetGoogle(d, r.issuerId), adresseSite(), r));
   });
 
-  // Logo de la carte Google (Google l'exige) : un carré aux couleurs du lieu.
+  // Logo de la carte Google (Google l'exige) : celui déposé par le lieu, sinon un carré à sa couleur.
   app.get("/api/carte-logo/:lieu.png", limite, async (req, rep) => {
     const { lieu } = z.object({ lieu: Uuid }).parse(req.params);
-    const { rows } = await base.transaction({ lieuId: lieu }, (c) => c.query<{ couleur: string | null }>("SELECT carte_couleur AS couleur FROM lieu WHERE id = $1", [lieu]));
-    if (!rows[0]) throw introuvable("Lieu");
-    return rep.header("content-type", "image/png").header("cache-control", "public, max-age=3600").send(pngUni(rows[0].couleur ?? COULEUR_CARTE_DEFAUT, 660, 660));
+    const image = await base.transaction({ lieuId: lieu }, async (c) => {
+      const depose = await imageCarte(c, lieu, "google-logo");
+      if (depose) return depose;
+      const { rows } = await c.query<{ couleur: string | null }>("SELECT carte_couleur AS couleur FROM lieu WHERE id = $1", [lieu]);
+      return rows[0] ? pngUni(rows[0].couleur ?? COULEUR_CARTE_DEFAUT, 660, 660) : null;
+    });
+    if (!image) throw introuvable("Lieu");
+    return rep.header("content-type", "image/png").header("cache-control", "public, max-age=3600").send(image);
+  });
+
+  // Bannière de la carte Google (image principale), si le lieu en a déposé une.
+  app.get("/api/carte-banniere/:lieu.png", limite, async (req, rep) => {
+    const { lieu } = z.object({ lieu: Uuid }).parse(req.params);
+    const image = await base.transaction({ lieuId: lieu }, (c) => imageCarte(c, lieu, "google-hero"));
+    if (!image) throw introuvable("Image");
+    return rep.header("content-type", "image/png").header("cache-control", "public, max-age=3600").send(image);
   });
 
   // ---------- Service web PassKit (Apple) ----------
@@ -297,7 +506,7 @@ export async function routesWallet(app: FastifyInstance, { base }: { base: Base 
     const { type, serie } = req.params as { type: string; serie: string };
     const carte = typeValide(type) ? await parSerie(base, req, serie) : null;
     if (!carte) return rep.code(401).send();
-    const { fichier, maj } = await base.transaction({ lieuId: carte.lieuId }, async (c) => ({ fichier: await fichierApple(c, carte.lieuId, carte.abonneId), maj: (await donneesCarte(c, carte.lieuId, carte.abonneId)).maj }));
+    const { fichier, maj } = await base.transaction({ lieuId: carte.lieuId }, (c) => fichierApple(c, carte.lieuId, carte.abonneId));
     return envoyerPkpass(rep, fichier, maj);
   });
 

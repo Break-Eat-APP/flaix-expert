@@ -69,14 +69,15 @@ function signer(manifeste: Buffer, r: ReglageApple): Buffer {
   return Buffer.from(forge.asn1.toDer(p7.toAsn1()).getBytes(), "binary");
 }
 
-/** Le fichier .pkpass d'une carte : pass.json, icône et logo aux couleurs du lieu, manifeste, signature. */
-export function pkpass(pass: Record<string, unknown>, couleur: string, r: ReglageApple): Buffer {
+/**
+ * Le fichier .pkpass d'une carte : pass.json, images (logo, icône, bande du lieu, §15.148 ; nom sans « .png »),
+ * manifeste, signature. Sans icône déposée, une icône unie à la couleur du lieu (Apple l'exige).
+ */
+export function pkpass(pass: Record<string, unknown>, images: Record<string, Buffer>, couleur: string, r: ReglageApple): Buffer {
+  const icones = images.icon ? {} : { icon: pngUni(couleur, 29, 29), "icon@2x": pngUni(couleur, 58, 58), "icon@3x": pngUni(couleur, 87, 87) };
   const fichiers: Record<string, Buffer> = {
     "pass.json": Buffer.from(JSON.stringify(pass), "utf8"),
-    "icon.png": pngUni(couleur, 29, 29),
-    "icon@2x.png": pngUni(couleur, 58, 58),
-    "logo.png": pngUni(couleur, 50, 50),
-    "logo@2x.png": pngUni(couleur, 100, 100),
+    ...Object.fromEntries(Object.entries({ ...icones, ...images }).map(([nom, contenu]) => [`${nom}.png`, contenu])),
   };
   const manifeste = Buffer.from(JSON.stringify(Object.fromEntries(Object.entries(fichiers).map(([n, c]) => [n, createHash("sha1").update(c).digest("hex")]))), "utf8");
   return zip({ ...fichiers, "manifest.json": manifeste, signature: signer(manifeste, r) });

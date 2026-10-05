@@ -12,6 +12,8 @@ import type { CarteAbonne, CartePublique, EtatFidelite, EtatWallet, Evenement, P
 import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { definirEnvoyeurEmail } from "../src/routes/emails.ts";
+import { miseAJourEnCours } from "../src/routes/wallet.ts";
+import { pngUni } from "../src/wallet/fichiers.ts";
 import { definirNotifieurApple, definirReglageApple } from "../src/wallet/apple.ts";
 import { dezip } from "../src/wallet/fichiers.ts";
 import { definirMiseAJourGoogle, definirReglageGoogle } from "../src/wallet/google.ts";
@@ -29,13 +31,13 @@ let abonneId = "";
 let jeton = "";
 let auth = "";
 const notifies: string[] = [];
-const google: { id: string; modification: Record<string, unknown> }[] = [];
+const google: { ressource: string; id: string; contenu: Record<string, unknown> }[] = [];
 const emails: string[][] = [];
 let reponseApple = 200;
 
 const PASS_TYPE = "pass.com.flaixlabs.abonne";
 const EN_TETES = { "content-type": "application/json", origin: "http://localhost:5173" };
-async function appel<T = unknown>(method: "GET" | "POST" | "PUT" | "PATCH", url: string, payload?: unknown) {
+async function appel<T = unknown>(method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", url: string, payload?: unknown) {
   const r = await serveur.inject({ method, url, headers: { ...(method === "GET" ? {} : EN_TETES), cookie }, payload: method === "GET" ? undefined : ((payload ?? {}) as object) });
   return { statut: r.statusCode, corps: (r.headers["content-type"]?.toString().startsWith("application/json") ? r.json() : null) as T, brut: r };
 }
@@ -68,8 +70,8 @@ beforeAll(async () => {
     return reponseApple;
   });
   definirReglageGoogle({ issuerId: "3388000000012345678", email: "flaix@projet.iam.gserviceaccount.com", cle: generateKeyPairSync("rsa", { modulusLength: 2048 }).privateKey });
-  definirMiseAJourGoogle(async (id, modification) => {
-    google.push({ id, modification });
+  definirMiseAJourGoogle(async (ressource, id, contenu) => {
+    google.push({ ressource, id, contenu });
     return 200;
   });
   definirEnvoyeurEmail(async (a) => {
@@ -125,9 +127,11 @@ describe("lien de la carte (directeur)", () => {
   });
 
   it("couleur des cartes : contrôlée, enregistrée, journalisée", async () => {
-    expect((await appel("PUT", "/api/wallet/couleur", { couleur: "rouge" })).statut).toBe(400);
-    const r = await appel<EtatWallet>("PUT", "/api/wallet/couleur", { couleur: "#C8102E" });
-    expect(r.corps).toEqual({ apple: true, google: true, couleur: "#c8102e" });
+    const { design } = (await appel<EtatWallet>("GET", "/api/wallet")).corps;
+    expect((await appel("PUT", "/api/wallet/design", { couleur: "rouge", design })).statut).toBe(400);
+    const r = await appel<EtatWallet>("PUT", "/api/wallet/design", { couleur: "#C8102E", design });
+    expect(r.corps).toMatchObject({ apple: true, google: true, couleur: "#c8102e", cartes: 1, images: { logo: null, banniere: null } });
+    await miseAJourEnCours();
   });
 });
 
@@ -135,7 +139,24 @@ describe("page publique et cartes", () => {
   it("le lien montre la carte sans connexion : nom, numéro, solde ; un faux lien est refusé", async () => {
     const r = await publique(`/api/carte/${jeton}`);
     expect(r.statusCode).toBe(200);
-    expect(r.json<CartePublique>()).toEqual({ lieu: expect.any(String), couleur: "#c8102e", nom: "Karim", numero: "AB-7", points: 40, apple: true, google: true });
+    expect(r.json<CartePublique>()).toEqual({
+      lieu: expect.any(String),
+      couleur: "#c8102e",
+      couleurTexte: "#ffffff",
+      couleurLibelles: "#ffffff",
+      titre: "Carte abonné",
+      afficherNomLieu: true,
+      libellePoints: "Points",
+      nom: "Karim",
+      numero: "AB-7",
+      points: 40,
+      reduction: 0,
+      remise: "10 %",
+      logo: null,
+      banniere: null,
+      apple: true,
+      google: true,
+    });
     expect((await publique(`/api/carte/${"x".repeat(43)}`)).statusCode).toBe(404);
   });
 
@@ -180,7 +201,9 @@ describe("service web PassKit", () => {
     vendreHorsLigne(t, [ligne(biere, 3)], { ajustement: { remisePb: 1000, motif: "abonne", reference: "AB-7" } });
     expect((await envoyer(appel, t)).statut).toBe(200);
     expect(notifies).toEqual(["jeton-push-1"]);
-    expect(google).toEqual([{ id: `3388000000012345678.abonne_${abonneId.replace(/-/g, "")}`, modification: expect.objectContaining({ loyaltyPoints: expect.objectContaining({ balance: { int: 58 } }) }) }]);
+    expect(google).toEqual([
+      { ressource: "loyaltyObject", id: `3388000000012345678.abonne_${abonneId.replace(/-/g, "")}`, contenu: expect.objectContaining({ loyaltyPoints: expect.objectContaining({ balance: { int: 58 } }) }) },
+    ]);
 
     const liste = await telephone("GET", `/api/passkit/v1/devices/iphone-1/registrations/${PASS_TYPE}?passesUpdatedSince=${encodeURIComponent(avant)}`);
     expect(liste.json()).toMatchObject({ serialNumbers: [abonneId] });
@@ -212,6 +235,90 @@ describe("service web PassKit", () => {
     expect((await telephone("DELETE", inscription())).statusCode).toBe(200);
     expect((await appel<CarteAbonne>("GET", `/api/fidelite/abonnes/${abonneId}/carte`)).corps.appareilsApple).toBe(0);
     expect((await telephone("POST", "/api/passkit/v1/log", { logs: ["essai"] })).statusCode).toBe(200);
+  });
+});
+
+describe("design de la carte (§15.148)", () => {
+  const png = (l: number, h: number, couleur = "#ffffff") => pngUni(couleur, l, h).toString("base64");
+  const logo = { logo: png(50, 50), "logo@2x": png(100, 100), "logo@3x": png(150, 150), icon: png(29, 29), "icon@2x": png(58, 58), "icon@3x": png(87, 87), "google-logo": png(660, 660) };
+  const banniere = { strip: png(375, 123, "#123456"), "strip@2x": png(750, 246, "#123456"), "strip@3x": png(1125, 369, "#123456"), "google-hero": png(1032, 336, "#123456") };
+  const design = {
+    titre: "Carte Supporter",
+    afficherNomLieu: false,
+    couleurTexte: "#ffd400",
+    couleurLibelles: null,
+    libellePoints: "Spartapoints",
+    message: "Une boisson offerte à ton anniversaire.",
+    afficherRemise: true,
+    afficherReduction: true,
+    siteWeb: "https://spartiates.fr",
+    telephone: "04 91 00 00 00",
+    email: "contact@spartiates.fr",
+    lienApp: null,
+  };
+  const carteApple = async () => dezip((await telephone("GET", `/api/passkit/v1/passes/${PASS_TYPE}/${abonneId}`)).rawPayload);
+
+  it("contrôlé ; enregistré et journalisé ; téléphone prévenu, modèle et carte Google remplacés ; rien de changé, rien d'envoyé", async () => {
+    expect((await telephone("POST", `/api/passkit/v1/devices/iphone-3/registrations/${PASS_TYPE}/${abonneId}`, { pushToken: "jeton-push-3" })).statusCode).toBe(201);
+    expect((await appel("PUT", "/api/wallet/design", { couleur: "#c8102e", design: { ...design, siteWeb: "http://spartiates.fr" } })).statut).toBe(400);
+    expect((await appel("PUT", "/api/wallet/design", { couleur: "#c8102e", design: { ...design, telephone: "appelle-moi" } })).statut).toBe(400);
+    expect((await appel("PUT", "/api/wallet/design", { couleur: "#c8102e", design: { ...design, couleurTexte: "jaune" } })).statut).toBe(400);
+    notifies.length = 0;
+    google.length = 0;
+    const r = await appel<EtatWallet>("PUT", "/api/wallet/design", { couleur: "#c8102e", design });
+    expect(r.statut).toBe(200);
+    expect(r.corps.design).toEqual(design);
+    await miseAJourEnCours();
+    expect(notifies).toEqual(["jeton-push-3"]);
+    expect(google.map((g) => g.ressource)).toEqual(["loyaltyClass", "loyaltyObject"]);
+    expect(google[0]!.contenu).toMatchObject({ programName: "Carte Supporter", hexBackgroundColor: "#c8102e", reviewStatus: "UNDER_REVIEW" });
+    expect(google[1]!.contenu).toMatchObject({ loyaltyPoints: { label: "Spartapoints" } });
+    const { rows } = await proprietaire.pool.query("SELECT details FROM journal_technique WHERE type = 'carte_wallet_design' ORDER BY numero DESC LIMIT 1");
+    expect(rows[0].details.champs).toEqual(expect.arrayContaining(["titre", "libellePoints", "siteWeb", "message"]));
+    const pass = JSON.parse((await carteApple())["pass.json"]!.toString("utf8"));
+    expect(pass).toMatchObject({ description: expect.stringMatching(/^Carte Supporter — /), foregroundColor: "rgb(255, 212, 0)" });
+    expect(pass).not.toHaveProperty("logoText");
+
+    notifies.length = 0;
+    await appel("PUT", "/api/wallet/design", { couleur: "#c8102e", design });
+    await miseAJourEnCours();
+    expect(notifies).toEqual([]);
+  });
+
+  it("logo et bannière : formats contrôlés, rangés, dans la carte Apple, la page de l'abonné et le modèle Google ; retirés", async () => {
+    const { rows } = await proprietaire.pool.query<{ lieu_id: string }>("SELECT lieu_id FROM abonne_fidelite WHERE id = $1", [abonneId]);
+    const lieuId = rows[0]!.lieu_id;
+    expect((await appel("PUT", "/api/wallet/images/banniere", { variantes: { ...banniere, "strip@3x": png(1125, 370) } })).statut).toBe(400);
+    expect((await appel("PUT", "/api/wallet/images/photo", { variantes: banniere })).statut).toBe(400);
+    google.length = 0;
+    expect((await appel("PUT", "/api/wallet/images/logo", { variantes: logo })).statut).toBe(200);
+    await miseAJourEnCours();
+    const r = await appel<EtatWallet>("PUT", "/api/wallet/images/banniere", { variantes: banniere });
+    expect(r.statut).toBe(200);
+    expect(r.corps.images.banniere?.apple).toMatch(/^\/api\/wallet\/image\/strip@3x\?v=\d+$/);
+    expect(r.corps.images.logo?.google).toMatch(/^\/api\/wallet\/image\/google-logo\?v=\d+$/);
+    await miseAJourEnCours();
+    expect(google.filter((g) => g.ressource === "loyaltyClass").at(-1)!.contenu).toMatchObject({
+      programLogo: { sourceUri: { uri: expect.stringMatching(/\/api\/carte-logo\/[\w-]+\.png\?v=\d+$/) } },
+      heroImage: { sourceUri: { uri: expect.stringMatching(/\/api\/carte-banniere\/[\w-]+\.png\?v=\d+$/) } },
+    });
+
+    const apercu = await serveur.inject({ method: "GET", url: r.corps.images.banniere!.apple, headers: { cookie } });
+    expect(apercu.headers["content-type"]).toBe("image/png");
+    const carte = (await publique(`/api/carte/${jeton}`)).json<CartePublique>();
+    expect(carte).toMatchObject({ titre: "Carte Supporter", libellePoints: "Spartapoints", couleurTexte: "#ffd400", afficherNomLieu: false });
+    expect((await publique(carte.banniere!)).headers["content-type"]).toBe("image/png");
+    expect((await publique(carte.logo!)).rawPayload).toEqual(Buffer.from(logo["google-logo"], "base64"));
+
+    const fichiers = Object.keys(await carteApple()).filter((n) => n.endsWith(".png"));
+    expect(fichiers.sort()).toEqual(["icon.png", "icon@2x.png", "icon@3x.png", "logo.png", "logo@2x.png", "logo@3x.png", "strip.png", "strip@2x.png", "strip@3x.png"]);
+
+    expect((await appel<EtatWallet>("DELETE", "/api/wallet/images/banniere")).corps.images.banniere).toBeNull();
+    await miseAJourEnCours();
+    expect((await publique(`/api/carte-banniere/${lieuId}.png`)).statusCode).toBe(404);
+    expect(Object.keys(await carteApple()).some((n) => n.startsWith("strip"))).toBe(false);
+    const { rows: jets } = await proprietaire.pool.query("SELECT details->>'action' AS action FROM journal_technique WHERE type = 'carte_wallet_image' ORDER BY numero");
+    expect(jets.map((j) => j.action)).toEqual(["deposee", "deposee", "retiree"]);
   });
 });
 
