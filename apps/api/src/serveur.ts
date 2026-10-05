@@ -63,8 +63,9 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   app.addHook("onRequest", async (req) => {
     if (!METHODES_MODIFIANTES.has(req.method)) return;
     // Service web PassKit (§15.147) : appelé par les téléphones Apple, sans cookie ni origine ; la suppression
-    // d'une inscription n'a pas de corps. L'accès y est contrôlé par le jeton propre à chaque carte.
-    if (req.url.startsWith("/api/passkit/")) return;
+    // d'une inscription n'a pas de corps. L'accès y est contrôlé par le jeton propre à chaque carte. Exemption lue sur
+    // la route reconnue, pas sur l'adresse brute (audit du 2026-10-05, P3-1).
+    if (req.routeOptions.url?.startsWith("/api/passkit/")) return;
     const type = req.headers["content-type"] ?? "";
     if (!type.startsWith("application/json")) {
       throw new ErreurMetier(415, "Requête refusée : format JSON attendu.");

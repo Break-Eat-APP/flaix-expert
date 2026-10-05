@@ -95,11 +95,15 @@ du journal refusé (429).
 
 - **P3-1** `apps/api/src/serveur.ts` : l'exemption de la protection intersite pour PassKit repose sur `req.url` ; préférer
   l'adresse de la route reconnue (`req.routeOptions.url`). Pas d'attaque trouvée (les navigateurs normalisent les chemins),
-  durcissement.
+  durcissement. **Corrigé le 2026-10-05 au soir** : exemption lue sur `req.routeOptions.url` (test « désinscription sans
+  corps ni JSON » toujours vert).
 - **P3-2** Serveur : l'API écoute sur `0.0.0.0:3001` ; le pare-feu ne laisse passer que 22, 80 et 443, mais l'écoute devrait
-  être limitée à `127.0.0.1`.
+  être limitée à `127.0.0.1`. **Corrigé le 2026-10-05 au soir** (`apps/api/src/index.ts`) : écoute sur `127.0.0.1` partout ;
+  Caddy relaie déjà vers `127.0.0.1:3001` (`infra/vps/deployer.sh`). **À vérifier à la prochaine mise en ligne** (site qui répond).
 - **P3-3** PassKit : `lastUpdated` est rendu à la milliseconde, `carte_maj_le` est en microsecondes ; après une notification,
-  un téléphone peut retélécharger une carte inchangée. Arrondir à la milliseconde.
+  un téléphone peut retélécharger une carte inchangée. Arrondir à la milliseconde. **Corrigé le 2026-10-05 au soir** :
+  `carte_maj_le` écrite à la milliseconde ; test « la date rendue au téléphone ne lui fait pas retélécharger une carte
+  inchangée » (échoue sur l'ancien code, passe sur le nouveau).
 - **P3-4** Apple : une connexion HTTP/2 par notification ; à mutualiser pour les mises à jour de toutes les cartes.
 - **P3-5** Pas d'en-tête `Content-Security-Policy` (défense en profondeur ; React échappe déjà le contenu).
 - **P3-6** Centre d'alertes : le stock de l'événement est recalculé à chaque envoi de tickets contenant des ventes (toutes
@@ -107,7 +111,7 @@ du journal refusé (429).
 
 ## Suite
 
-Les cinq P2 sont corrigés (commit `360895e`) ; les P3 restent, à recouper avec l'audit Codex. Tests après corrections :
+Les cinq P2 sont corrigés (commit `360895e`) ; P3-1, P3-2 et P3-3 corrigés le 2026-10-05 au soir ; P3-4 à P3-6 restent, à recouper avec l'audit Codex. Tests après corrections :
 moteur 241, serveur au vert (le fichier « formation » relancé seul, 10 sur 10, après un arrêt de Node faute de mémoire sur le
 PC), types vérifiés.
 

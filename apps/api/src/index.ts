@@ -7,7 +7,9 @@ const base = ouvrirBase(config.databaseUrl);
 const app = await construireServeur(base);
 
 try {
-  await app.listen({ port: config.port, host: config.production ? "0.0.0.0" : "127.0.0.1" });
+  // Écoute locale seulement, en production aussi : Caddy, sur la même machine, relaie vers 127.0.0.1:3001
+  // (infra/vps/deployer.sh) ; rien d'autre n'a à joindre ce port (audit du 2026-10-05, P3-2).
+  await app.listen({ port: config.port, host: "127.0.0.1" });
 } catch (erreur) {
   app.log.error(erreur);
   process.exit(1);

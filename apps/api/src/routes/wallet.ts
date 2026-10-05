@@ -55,6 +55,12 @@ const jetonAleatoire = () => randomBytes(32).toString("base64url"); // 43 caract
 const JetonCarte = z.object({ jeton: z.string().regex(/^[A-Za-z0-9_-]{40,64}$/, "Lien de carte invalide.") });
 const Sorte = z.object({ sorte: z.enum(["logo", "banniere"], { message: "Image inconnue." }) });
 
+const ABONNE_DESACTIVE = "Cet abonné est désactivé : réactive-le avant de lui donner sa carte.";
+
+/*
+ * Dates de mise à jour des cartes arrondies à la milliseconde (audit du 2026-10-05, P3-3) : le service web PassKit les
+ * rend au téléphone à la milliseconde ; à la microseconde, le téléphone retéléchargeait une carte inchangée.
+ */
 type Carte = DonneesCarte & { auth: string | null; jeton: string | null; maj: Date | null; email: string | null };
 
 /**
@@ -214,7 +220,7 @@ export async function mettreAJourCartes(base: Base, ctx: Contexte, lieuId: strin
     const lot = abonneIds.slice(debut, debut + LOT_CARTES);
     const { cartes, images } = await base.transaction(ctx, async (c) => {
       const { rows } = await c.query<{ id: string }>(
-        "UPDATE abonne_fidelite SET carte_maj_le = now() WHERE lieu_id = $1 AND id = ANY($2::uuid[]) AND carte_jeton IS NOT NULL RETURNING id",
+        "UPDATE abonne_fidelite SET carte_maj_le = date_trunc('milliseconds', now()) WHERE lieu_id = $1 AND id = ANY($2::uuid[]) AND carte_jeton IS NOT NULL RETURNING id",
         [lieuId, lot],
       );
       const ids = rows.map((r) => r.id);
@@ -458,8 +464,10 @@ export async function routesWallet(app: FastifyInstance, { base }: { base: Base 
     const { id } = ParamId.parse(req.params);
     return base.transaction(contexte(auth), async (c) => {
       const d = await donneesCarte(c, auth.lieuId, id);
+      // §15.147 : pas de lien pour un abonné désactivé (la page de la carte lui resterait fermée).
+      if (!d.actif) throw new ErreurMetier(409, ABONNE_DESACTIVE);
       const jeton = jetonAleatoire();
-      await c.query("UPDATE abonne_fidelite SET carte_jeton = $3, carte_auth = coalesce(carte_auth, $4), carte_maj_le = now() WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id, jeton, jetonAleatoire()]);
+      await c.query("UPDATE abonne_fidelite SET carte_jeton = $3, carte_auth = coalesce(carte_auth, $4), carte_maj_le = date_trunc('milliseconds', now()) WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id, jeton, jetonAleatoire()]);
       await inscrireJet(c, { lieuId: auth.lieuId, type: "carte_wallet_lien", utilisateurId: auth.utilisateurId, details: { abonne: id, numero: d.numero, renouvele: d.jeton !== null } });
       return carteAbonne(c, auth.lieuId, id);
     });
@@ -472,6 +480,7 @@ export async function routesWallet(app: FastifyInstance, { base }: { base: Base 
     // Lecture d'abord ; l'envoi par Brevo se fait ensuite, hors de la transaction (audit Codex du 2026-10-05).
     const { email, a } = await base.transaction(contexte(auth), async (c) => {
       const d = await donneesCarte(c, auth.lieuId, id);
+      if (!d.actif) throw new ErreurMetier(409, ABONNE_DESACTIVE);
       if (!d.jeton) throw new ErreurMetier(409, "Crée d'abord le lien de la carte.");
       if (!d.email) throw new ErreurMetier(409, "Cet abonné n'a pas d'adresse e-mail.");
       const { rows } = await c.query<{ formation: boolean }>("SELECT formation_de IS NOT NULL AS formation FROM lieu WHERE id = $1", [auth.lieuId]);

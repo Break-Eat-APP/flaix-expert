@@ -50,6 +50,8 @@ Je ne validerais toutefois pas encore la mise en production pour deux raisons :
 
 **Correction recommandée.** Refuser la création/envoi avec un `409` explicite lorsque l’abonné est désactivé, ou assumer la pré-provision et tester le parcours « réactivation puis ouverture du lien ».
 
+**Corrigé le 2026-10-05 au soir** (le dossier §15.147 disait déjà « lien refusé pour un abonné désactivé » : le code ne suivait pas la décision) : création et envoi du lien refusés (409, « Cet abonné est désactivé : réactive-le avant de lui donner sa carte. ») ; l'écran masquait déjà ces boutons. Test : `wallet.test.ts`, « abonné désactivé » (échoue sur l'ancien code).
+
 ### P2 — Les e-mails Brevo sont envoyés à l’intérieur d’une transaction SQL
 
 `apps/api/src/routes/emails.ts:90-102` appelle Brevo avec un timeout de 15 secondes avant d’insérer la trace. `envoyerRapportParEmail` et `envoyerRectificationParEmail` appellent cette fonction dans `base.transaction` (`:110-128`).
@@ -57,6 +59,8 @@ Je ne validerais toutefois pas encore la mise en production pour deux raisons :
 **Risques.** Une indisponibilité Brevo immobilise une connexion et une transaction pendant 15 secondes. Deux clôtures/reprises concurrentes peuvent aussi envoyer deux e-mails avant que l’index unique `email_envoye_rapport_unique` (`db/migrations/0034_emails.sql:24`) ne fasse échouer l’un des inserts : la contrainte protège la trace, pas l’envoi externe déjà effectué.
 
 **Correction recommandée.** Enregistrer d’abord une intention idempotente/outbox, valider la transaction, puis envoyer en tâche de fond avec retry et statut final.
+
+**Suite (2026-10-05)** : envoi hors transaction et en arrière-plan (audit Codex, commit `9df5acd`). Double envoi par deux clôtures concurrentes : non reproductible dans FlaiX Expert — l'e-mail du rapport n'est déclenché que par la clôture de l'événement (`apps/api/src/routes/evenements.ts`), qui ne réussit qu'une fois. Pas de nouvel essai automatique d'un e-mail en échec : l'échec est tracé et affiché (Paramètres → Notifications → E-mails), choix du §15.146 (« jamais bloquant »).
 
 ### P2 — La suite de tests n’est pas verte dans l’état audité
 

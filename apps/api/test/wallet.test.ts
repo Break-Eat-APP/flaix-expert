@@ -217,6 +217,12 @@ describe("service web PassKit", () => {
     expect((await telephone("GET", `/api/passkit/v1/devices/iphone-1/registrations/${PASS_TYPE}?passesUpdatedSince=${encodeURIComponent(new Date().toISOString())}`)).statusCode).toBe(204);
   });
 
+  it("la date rendue au téléphone ne lui fait pas retélécharger une carte inchangée (audit P3-3)", async () => {
+    const liste = await telephone("GET", `/api/passkit/v1/devices/iphone-1/registrations/${PASS_TYPE}`);
+    const { lastUpdated } = liste.json() as { lastUpdated: string };
+    expect((await telephone("GET", `/api/passkit/v1/devices/iphone-1/registrations/${PASS_TYPE}?passesUpdatedSince=${encodeURIComponent(lastUpdated)}`)).statusCode).toBe(204);
+  });
+
   it("la caisse n'attend ni Apple ni Google : réponse d'abord, notification ensuite (audit P2-1)", async () => {
     let liberer!: () => void;
     const bloque = new Promise<void>((r) => (liberer = r));
@@ -501,6 +507,13 @@ describe("lien renouvelé et option", () => {
     const carte = await telephone("GET", `/api/passkit/v1/passes/${PASS_TYPE}/${abonneId}`);
     expect(carte.statusCode).toBe(200);
     expect(JSON.parse(dezip(carte.rawPayload)["pass.json"]!.toString("utf8"))).toMatchObject({ voided: true });
+
+    // §15.147 : ni lien créé ni lien envoyé pour un abonné désactivé (audit complémentaire du 2026-10-05).
+    const refus = await appel<{ erreur: string }>("POST", `/api/fidelite/abonnes/${abonneId}/carte`);
+    expect(refus.statut).toBe(409);
+    expect(refus.corps.erreur).toContain("désactivé");
+    expect((await appel("POST", `/api/fidelite/abonnes/${abonneId}/carte/email`)).statut).toBe(409);
+    expect((await publique(`/api/carte/${jeton}`)).statusCode).toBe(404);
 
     // Réactivé : la carte redevient valable.
     await appel("PATCH", `/api/fidelite/abonnes/${abonneId}`, { actif: true });
