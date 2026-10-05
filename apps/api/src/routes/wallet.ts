@@ -1,4 +1,4 @@
-import type { FastifyBaseLogger, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import {
@@ -25,6 +25,7 @@ import {
   type EtatWallet,
   type SorteImage,
 } from "@flaix/domain";
+import { enArrierePlan } from "../arriere-plan.ts";
 import type { Base, Client, Contexte } from "../base.ts";
 import { config } from "../config.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
@@ -36,7 +37,7 @@ import { pngUni } from "../wallet/fichiers.ts";
 import { lienGoogle, mettreAJourGoogle, reglageGoogle } from "../wallet/google.ts";
 import { controlerImages, imageCarte, imagesApple, versionsImages } from "../wallet/images.ts";
 import { envoyerEtTracer } from "./emails.ts";
-import { soldePoints } from "./fidelite-caisse.ts";
+import { soldesPoints } from "./fidelite-caisse.ts";
 import { ParamId, Uuid, contexte, corps } from "./outils.ts";
 
 /*
@@ -56,9 +57,14 @@ const Sorte = z.object({ sorte: z.enum(["logo", "banniere"], { message: "Image i
 
 type Carte = DonneesCarte & { auth: string | null; jeton: string | null; maj: Date | null; email: string | null };
 
-/** Ce que montre la carte d'un abonné : lieu, design, nom, numéro, solde (lu comme le lit la caisse), règle, remise. */
-export async function donneesCarte(c: Client, lieuId: string, abonneId: string): Promise<Carte> {
+/**
+ * Ce que montrent les cartes de plusieurs abonnés : lieu, design, nom, numéro, solde (lu comme le lit la caisse),
+ * règle, remise, abonné actif ou non. Une seule lecture pour tout le lot (audit du 2026-10-05, P2-3).
+ */
+export async function donneesCartes(c: Client, lieuId: string, abonneIds: readonly string[]): Promise<Carte[]> {
+  if (abonneIds.length === 0) return [];
   const { rows } = await c.query<{
+    id: string;
     lieu: string;
     couleur: string | null;
     design: unknown;
@@ -68,36 +74,44 @@ export async function donneesCarte(c: Client, lieuId: string, abonneId: string):
     remise: number | null;
     nom: string;
     numero: string;
+    actif: boolean;
     auth: string | null;
     jeton: string | null;
     maj: Date | null;
     email: string | null;
   }>(
-    `SELECT l.nom AS lieu, l.carte_couleur AS couleur, l.carte_design AS design, l.fid_points_par_euro AS p, l.fid_palier_points AS palier,
+    `SELECT a.id, l.nom AS lieu, l.carte_couleur AS couleur, l.carte_design AS design, l.fid_points_par_euro AS p, l.fid_palier_points AS palier,
             l.fid_valeur_palier_centimes AS valeur, l.remise_abonne_pb AS remise,
-            a.nom, a.numero, a.carte_auth AS auth, a.carte_jeton AS jeton, a.carte_maj_le AS maj, a.email
-       FROM abonne_fidelite a JOIN lieu l ON l.id = a.lieu_id WHERE a.lieu_id = $1 AND a.id = $2`,
-    [lieuId, abonneId],
+            a.nom, a.numero, a.actif, a.carte_auth AS auth, a.carte_jeton AS jeton, a.carte_maj_le AS maj, a.email
+       FROM abonne_fidelite a JOIN lieu l ON l.id = a.lieu_id WHERE a.lieu_id = $1 AND a.id = ANY($2::uuid[])`,
+    [lieuId, abonneIds],
   );
-  const r = rows[0];
-  if (!r) throw introuvable("Abonné");
-  const points = r.p === null ? null : Math.max(0, (await soldePoints(c, lieuId, abonneId, r.numero, r.p)).solde);
-  return {
+  const p = rows[0]?.p ?? null;
+  const soldes = p === null ? null : await soldesPoints(c, lieuId, rows.map((r) => r.id), p);
+  return rows.map((r) => ({
     lieuId,
     lieu: r.lieu,
     couleur: r.couleur ?? COULEUR_CARTE_DEFAUT,
     design: lireDesign(r.design),
-    abonneId,
+    abonneId: r.id,
     nom: r.nom,
     numero: r.numero,
-    points,
+    actif: r.actif,
+    points: soldes ? Math.max(0, soldes.get(r.id) ?? 0) : null,
     regles: r.p !== null && r.palier && r.valeur ? { pointsParEuro: r.p, palierPoints: r.palier, valeurPalier: r.valeur } : null,
     remisePb: r.remise,
     auth: r.auth,
     jeton: r.jeton,
     maj: r.maj,
     email: r.email,
-  };
+  }));
+}
+
+/** La carte d'un abonné ; 404 s'il n'existe pas dans ce lieu. */
+export async function donneesCarte(c: Client, lieuId: string, abonneId: string): Promise<Carte> {
+  const [d] = await donneesCartes(c, lieuId, [abonneId]);
+  if (!d) throw introuvable("Abonné");
+  return d;
 }
 
 /** Abonnés du lieu qui ont une carte (changement de design, de règle de points, de remise). */
@@ -160,60 +174,62 @@ function envoyerPkpass(rep: FastifyReply, fichier: Buffer, maj: Date | null) {
   return rep.send(fichier);
 }
 
+/** Taille des lots de cartes mises à jour ensemble : transaction courte, une lecture des soldes par lot. */
+const LOT_CARTES = 100;
+
 /**
- * Ce que montre la carte a changé (points, nom, design) : date de mise à jour, notification aux téléphones Apple
- * inscrits, carte Google remplacée ; avec `classe`, le modèle de carte Google du lieu aussi (design, règle, remise).
- * Appelé après l'enregistrement ; un échec ne remet jamais rien en cause.
+ * Ce que montre la carte a changé (points, nom, design, abonné désactivé) : date de mise à jour, notification aux
+ * téléphones Apple inscrits, carte Google remplacée ; avec `classe`, le modèle de carte Google du lieu aussi (design,
+ * règle, remise). Par lots de 100, chacun dans sa transaction. Appelé après l'enregistrement, en arrière-plan.
  */
 export async function mettreAJourCartes(base: Base, ctx: Contexte, lieuId: string, abonneIds: readonly string[], options: { classe?: boolean } = {}): Promise<void> {
-  if (abonneIds.length === 0) return;
   const apple = reglageApple();
   const google = reglageGoogle();
-  const { cartes, images } = await base.transaction(ctx, async (c) => {
-    const { rows } = await c.query<{ id: string }>(
-      "UPDATE abonne_fidelite SET carte_maj_le = now() WHERE lieu_id = $1 AND id = ANY($2::uuid[]) AND carte_jeton IS NOT NULL RETURNING id",
-      [lieuId, abonneIds],
-    );
-    const ids = rows.map((r) => r.id);
-    if (ids.length === 0) return { cartes: [], images: null };
-    const { rows: appareils } = await c.query<{ abonne_id: string; appareil: string; push_token: string }>("SELECT abonne_id, appareil, push_token FROM wallet_appareil WHERE lieu_id = $1 AND abonne_id = ANY($2::uuid[])", [lieuId, ids]);
-    const cartes = [];
-    for (const id of ids) cartes.push({ id, donnees: google ? await donneesCarte(c, lieuId, id) : null, appareils: appareils.filter((a) => a.abonne_id === id) });
-    const premiere = cartes[0]?.donnees;
-    return { cartes, images: google && options.classe && premiere ? await imagesGoogle(c, lieuId, premiere.couleur) : null };
-  });
-  // 404 : le modèle n'existe pas encore chez Google (aucun abonné n'a ajouté sa carte) ; il sera créé au premier ajout.
-  const premiere = cartes[0]?.donnees;
-  if (google && images && premiere) await mettreAJourGoogle("loyaltyClass", idClasseGoogle(google.issuerId, lieuId), classeGoogle(premiere, google.issuerId, images), google);
-  for (const carte of cartes) {
-    if (apple) {
-      for (const a of carte.appareils) {
-        const statut = await notifierApple(a.push_token, apple);
-        // 410 : la carte a été retirée du téléphone ; on cesse de le prévenir.
-        if (statut === 410) await base.transaction(ctx, (c) => c.query("DELETE FROM wallet_appareil WHERE lieu_id = $1 AND abonne_id = $2 AND appareil = $3", [lieuId, carte.id, a.appareil]));
-      }
+  let classeAFaire = !!(google && options.classe);
+  for (let debut = 0; debut < abonneIds.length; debut += LOT_CARTES) {
+    const lot = abonneIds.slice(debut, debut + LOT_CARTES);
+    const { cartes, images } = await base.transaction(ctx, async (c) => {
+      const { rows } = await c.query<{ id: string }>(
+        "UPDATE abonne_fidelite SET carte_maj_le = now() WHERE lieu_id = $1 AND id = ANY($2::uuid[]) AND carte_jeton IS NOT NULL RETURNING id",
+        [lieuId, lot],
+      );
+      const ids = rows.map((r) => r.id);
+      if (ids.length === 0) return { cartes: [], images: null };
+      const { rows: appareils } = await c.query<{ abonne_id: string; appareil: string; push_token: string }>("SELECT abonne_id, appareil, push_token FROM wallet_appareil WHERE lieu_id = $1 AND abonne_id = ANY($2::uuid[])", [lieuId, ids]);
+      const donnees = google ? await donneesCartes(c, lieuId, ids) : [];
+      const cartes = ids.map((id) => ({ id, donnees: donnees.find((d) => d.abonneId === id) ?? null, appareils: appareils.filter((a) => a.abonne_id === id) }));
+      const premiere = donnees[0];
+      return { cartes, images: classeAFaire && premiere ? await imagesGoogle(c, lieuId, premiere.couleur) : null };
+    });
+    // 404 : le modèle n'existe pas encore chez Google (aucun abonné n'a ajouté sa carte) ; il sera créé au premier ajout.
+    const premiere = cartes.find((x) => x.donnees)?.donnees;
+    if (google && images && premiere) {
+      await mettreAJourGoogle("loyaltyClass", idClasseGoogle(google.issuerId, lieuId), classeGoogle(premiere, google.issuerId, images), google);
+      classeAFaire = false;
     }
-    // 404 : l'abonné n'a pas (encore) ajouté sa carte dans Google Wallet ; rien à mettre à jour.
-    if (google && carte.donnees) await mettreAJourGoogle("loyaltyObject", idObjetGoogle(google.issuerId, carte.id), objetGoogle(carte.donnees, google.issuerId), google);
+    for (const carte of cartes) {
+      if (apple) {
+        for (const a of carte.appareils) {
+          const statut = await notifierApple(a.push_token, apple);
+          // 410 : la carte a été retirée du téléphone ; on cesse de le prévenir.
+          if (statut === 410) await base.transaction(ctx, (c) => c.query("DELETE FROM wallet_appareil WHERE lieu_id = $1 AND abonne_id = $2 AND appareil = $3", [lieuId, carte.id, a.appareil]));
+        }
+      }
+      // 404 : l'abonné n'a pas (encore) ajouté sa carte dans Google Wallet ; rien à mettre à jour.
+      if (google && carte.donnees) await mettreAJourGoogle("loyaltyObject", idObjetGoogle(google.issuerId, carte.id), objetGoogle(carte.donnees, google.issuerId), google);
+    }
   }
 }
 
-/** Mise à jour des cartes d'abonnés après un enregistrement : attendue, journalisée en cas d'échec, jamais bloquante. */
-export async function suivreCartes(base: Base, req: FastifyRequest, ctx: Contexte, lieuId: string, abonneIds: readonly string[], options: { classe?: boolean } = {}): Promise<void> {
-  await mettreAJourCartes(base, ctx, lieuId, abonneIds, options).catch((erreur) => req.log.error({ err: erreur }, "cartes wallet non mises à jour"));
+/** Cartes de quelques abonnés à mettre à jour après un enregistrement : en arrière-plan, la réponse n'attend pas. */
+export function suivreCartes(base: Base, req: FastifyRequest, ctx: Contexte, lieuId: string, abonneIds: readonly string[], options: { classe?: boolean } = {}): void {
+  if (abonneIds.length === 0) return;
+  enArrierePlan(req.log, "cartes wallet non mises à jour", () => mettreAJourCartes(base, ctx, lieuId, abonneIds, options));
 }
 
-/**
- * Toutes les cartes du lieu changent (design, règle, remise) : mise à jour en arrière-plan, la réponse n'attend pas
- * les centaines de notifications. Rendue pour les tests, qui l'attendent.
- */
-let derniereMiseAJour: Promise<void> = Promise.resolve();
-export const miseAJourEnCours = () => derniereMiseAJour;
-export function suivreToutesLesCartes(base: Base, log: FastifyBaseLogger, ctx: Contexte, lieuId: string): void {
-  derniereMiseAJour = base
-    .transaction(ctx, (c) => abonnesAvecCarte(c, lieuId))
-    .then((ids) => mettreAJourCartes(base, ctx, lieuId, ids, { classe: true }))
-    .catch((erreur) => log.error({ err: erreur }, "cartes wallet non mises à jour"));
+/** Toutes les cartes du lieu changent (design, règle, remise, nom du lieu) : en arrière-plan, par lots. */
+export function suivreToutesLesCartes(base: Base, log: FastifyRequest["log"], ctx: Contexte, lieuId: string): void {
+  enArrierePlan(log, "cartes wallet non mises à jour", async () => mettreAJourCartes(base, ctx, lieuId, await base.transaction(ctx, (c) => abonnesAvecCarte(c, lieuId)), { classe: true }));
 }
 
 /**
@@ -468,8 +484,11 @@ export async function routesWallet(app: FastifyInstance, { base }: { base: Base 
 
   // ---------- Service web PassKit (Apple) ----------
   const typeValide = (t: string) => t === reglageApple()?.passTypeId;
+  // Limites par adresse (audit du 2026-10-05, P2-5) : un téléphone n'appelle qu'à l'ajout, au retrait et après une notification.
+  const limitePasskit = { config: { rateLimit: { max: 120, timeWindow: "1 minute" } } };
+  const limiteJournal = { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } };
 
-  app.post("/api/passkit/v1/devices/:appareil/registrations/:type/:serie", async (req, rep) => {
+  app.post("/api/passkit/v1/devices/:appareil/registrations/:type/:serie", limitePasskit, async (req, rep) => {
     const { appareil, type, serie } = req.params as { appareil: string; type: string; serie: string };
     const carte = typeValide(type) && appareil.length <= 200 ? await parSerie(base, req, serie) : null;
     if (!carte) return rep.code(401).send();
@@ -483,7 +502,7 @@ export async function routesWallet(app: FastifyInstance, { base }: { base: Base 
     return rep.code(nouveau ? 201 : 200).send();
   });
 
-  app.delete("/api/passkit/v1/devices/:appareil/registrations/:type/:serie", async (req, rep) => {
+  app.delete("/api/passkit/v1/devices/:appareil/registrations/:type/:serie", limitePasskit, async (req, rep) => {
     const { appareil, type, serie } = req.params as { appareil: string; type: string; serie: string };
     const carte = typeValide(type) ? await parSerie(base, req, serie) : null;
     if (!carte) return rep.code(401).send();
@@ -491,7 +510,7 @@ export async function routesWallet(app: FastifyInstance, { base }: { base: Base 
     return rep.code(200).send();
   });
 
-  app.get("/api/passkit/v1/devices/:appareil/registrations/:type", async (req, rep) => {
+  app.get("/api/passkit/v1/devices/:appareil/registrations/:type", limitePasskit, async (req, rep) => {
     const { appareil, type } = req.params as { appareil: string; type: string };
     if (!typeValide(type)) return rep.code(404).send();
     const depuis = (req.query as { passesUpdatedSince?: string }).passesUpdatedSince;
@@ -502,7 +521,7 @@ export async function routesWallet(app: FastifyInstance, { base }: { base: Base 
     return { serialNumbers: rows.map((r) => r.abonne_id), lastUpdated: new Date(derniere || Date.now()).toISOString() };
   });
 
-  app.get("/api/passkit/v1/passes/:type/:serie", async (req, rep) => {
+  app.get("/api/passkit/v1/passes/:type/:serie", limitePasskit, async (req, rep) => {
     const { type, serie } = req.params as { type: string; serie: string };
     const carte = typeValide(type) ? await parSerie(base, req, serie) : null;
     if (!carte) return rep.code(401).send();
@@ -510,7 +529,7 @@ export async function routesWallet(app: FastifyInstance, { base }: { base: Base 
     return envoyerPkpass(rep, fichier, maj);
   });
 
-  app.post("/api/passkit/v1/log", async (req, rep) => {
+  app.post("/api/passkit/v1/log", limiteJournal, async (req, rep) => {
     const { logs } = z.object({ logs: z.array(z.string().max(1000)).max(50).default([]) }).parse(req.body ?? {});
     for (const l of logs) req.log.warn({ passkit: l }, "journal Apple Wallet");
     return rep.code(200).send();

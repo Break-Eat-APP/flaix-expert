@@ -31,6 +31,7 @@ import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { inscrireCaisse, inscrireEvenementTablette, teteChaine, verifierCaisses } from "../journal-caisse.ts";
 import { pousserAlertesStock } from "./alertes.ts";
+import { enArrierePlan } from "../arriere-plan.ts";
 import { abonnesDesTickets, mettreAJourCartes } from "./wallet.ts";
 import { ParamId, Uuid, contexte, corps } from "./outils.ts";
 import { consommerFidelite } from "./fidelite-caisse.ts";
@@ -750,22 +751,12 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
       }
       return { tete, recus, deja };
     });
-    // Les tickets sont enregistrés : une alerte qui échoue ne les remet jamais en cause.
+    // Les tickets sont enregistrés. Alertes de stock (§15.140) et cartes abonné (§15.147) partent ensuite, en
+    // arrière-plan : la tablette n'attend ni les téléphones des directeurs, ni Apple, ni Google (audit du 2026-10-05, P2-1).
     const v = vendus as { evenementId: string; standId: string; produits: Set<string> } | null;
-    if (v) {
-      try {
-        await pousserAlertesStock(base, contexte(auth), auth.lieuId, v.evenementId, v.standId, [...v.produits]);
-      } catch (erreur) {
-        req.log.error({ err: erreur, caisseId: id }, "alerte de stock non envoyée");
-      }
-    }
-    // Carte abonné dans le téléphone (§15.147) : le solde de points suit les tickets, sans jamais les retarder.
+    if (v) enArrierePlan(req.log, "alerte de stock non envoyée", () => pousserAlertesStock(base, contexte(auth), auth.lieuId, v.evenementId, v.standId, [...v.produits]));
     if (ticketsRecus.length) {
-      try {
-        await mettreAJourCartes(base, contexte(auth), auth.lieuId, await abonnesDesTickets(base, contexte(auth), auth.lieuId, ticketsRecus));
-      } catch (erreur) {
-        req.log.error({ err: erreur, caisseId: id }, "cartes wallet non mises à jour");
-      }
+      enArrierePlan(req.log, "cartes wallet non mises à jour", async () => mettreAJourCartes(base, contexte(auth), auth.lieuId, await abonnesDesTickets(base, contexte(auth), auth.lieuId, ticketsRecus)));
     }
     return reponse;
   });

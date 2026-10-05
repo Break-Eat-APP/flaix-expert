@@ -28,6 +28,7 @@ const carte: DonneesCarte = {
   abonneId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
   nom: "Karim Belaïd",
   numero: "AB-20482",
+  actif: true,
   points: 340,
   regles,
   remisePb: 1000,
@@ -72,6 +73,13 @@ describe("carte abonné (§15.147)", () => {
     expect(classe).toMatchObject({ issuerName: "Les Spartiates", programName: "Carte abonné", hexBackgroundColor: "#c8102e", reviewStatus: "UNDER_REVIEW" });
     expect(classe).not.toHaveProperty("heroImage");
     expect(classe).not.toHaveProperty("linksModuleData");
+  });
+
+  it("abonné désactivé : carte Apple barrée, carte Google inactive (audit P2-2)", () => {
+    expect(passApple({ ...carte, actif: false }, apple)).toMatchObject({ voided: true });
+    expect(passApple(carte, apple)).not.toHaveProperty("voided");
+    expect(objetGoogle({ ...carte, actif: false }, "338")).toMatchObject({ state: "INACTIVE" });
+    expect(objetGoogle(carte, "338")).toMatchObject({ state: "ACTIVE" });
   });
 
   it("couleurs : rgb, texte lisible sur fond clair ou foncé", () => {

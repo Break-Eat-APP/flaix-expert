@@ -65,6 +65,32 @@ export async function soldePoints(c: Client, lieuId: string, abonneId: string, n
   return { solde: r.euros * pointsParEuro - r.depenses + r.mouvements, reserves: r.reserves };
 }
 
+/**
+ * Soldes de plusieurs abonnés en une lecture (cartes wallet mises à jour par lots, audit du 2026-10-05, P2-3) : même
+ * calcul que `soldePoints`, sans les réservations. Un test vérifie que les deux donnent le même solde.
+ */
+export async function soldesPoints(c: Client, lieuId: string, abonneIds: readonly string[], pointsParEuro: number): Promise<Map<string, number>> {
+  const { rows } = await c.query<{ id: string; euros: number; depenses: number; mouvements: number }>(
+    `WITH a AS (SELECT id, numero FROM abonne_fidelite WHERE lieu_id = $1 AND id = ANY($2::uuid[])),
+          t AS (
+            SELECT upper(btrim(v.details->'ajustement'->>'reference')) AS numero, v.total_ttc_centimes AS ttc,
+                   coalesce((v.details->'fidelite'->'points'->>'points')::int, 0) AS depense,
+                   EXISTS (SELECT 1 FROM journal_caisse x WHERE x.lieu_id = v.lieu_id AND x.ref_evenement = v.id AND x.type = 'annulation') AS annule
+              FROM journal_caisse v
+             WHERE v.lieu_id = $1 AND v.type = 'vente' AND v.details->'ajustement'->>'motif' = 'abonne'
+               AND upper(btrim(v.details->'ajustement'->>'reference')) IN (SELECT numero FROM a)),
+          parNumero AS (
+            SELECT numero, coalesce(sum(floor(ttc / 100.0)) FILTER (WHERE NOT annule AND ttc > 0), 0)::int AS euros,
+                   coalesce(sum(depense) FILTER (WHERE NOT annule), 0)::int AS depenses
+              FROM t GROUP BY numero)
+     SELECT a.id, coalesce(p.euros, 0) AS euros, coalesce(p.depenses, 0) AS depenses,
+            coalesce((SELECT sum(m.points) FROM mouvement_points m WHERE m.lieu_id = $1 AND m.abonne_id = a.id), 0)::int AS mouvements
+       FROM a LEFT JOIN parNumero p ON p.numero = a.numero`,
+    [lieuId, abonneIds],
+  );
+  return new Map(rows.map((r) => [r.id, r.euros * pointsParEuro - r.depenses + r.mouvements]));
+}
+
 /** Usages d'un code : tickets non annulés qui l'ont utilisé, et réservations encore actives. */
 export async function usagesCode(c: Client, lieuId: string, codeId: string, code: string): Promise<{ usages: number; reserves: number }> {
   const { rows } = await c.query<{ usages: number; reserves: number }>(

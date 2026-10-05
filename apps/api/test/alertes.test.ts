@@ -8,6 +8,7 @@ import type { CentreAlertes, EntreeJournalTechnique, Evenement, Produit, Reprise
 import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { definirEnvoyeurPush } from "../src/routes/notifications.ts";
+import { travauxTermines } from "../src/arriere-plan.ts";
 import { MOT_DE_PASSE_TEST, basesDeTest, creerLieuDeTest } from "./aide.ts";
 import { envoyer, ligne, tablette, vendreHorsLigne, type Tablette } from "./tablette.ts";
 
@@ -35,6 +36,7 @@ const jour = (decalage = 0) => new Date(Date.now() + decalage * 86_400_000).toIS
 async function vendreFrites(n: number) {
   for (let i = 0; i < n; i++) vendreHorsLigne(t, [ligne(frites)]);
   expect((await envoyer(appel, t)).statut).toBe(200);
+  await travauxTermines();
 }
 
 beforeAll(async () => {
@@ -86,6 +88,7 @@ describe("rupture de stock poussée sur le téléphone (§15.140)", () => {
     expect(recus).toEqual([{ titre: "Stock faible : Frites à Buvette Nord", corps: "Reste 2 sur 10 · vendu 8. Touche pour un réassort depuis « En direct ».", url: "/direct" }]);
     vendreHorsLigne(t, [ligne(biere)]);
     expect((await envoyer(appel, t)).statut).toBe(200);
+    await travauxTermines();
     expect(recus).toHaveLength(1); // une bière vendue ne réveille pas l'alerte des frites
   });
 

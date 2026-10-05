@@ -231,6 +231,8 @@ export interface DonneesCarte {
   abonneId: string;
   nom: string;
   numero: string;
+  /** Abonné désactivé : la carte reste dans le téléphone, barrée (Apple) ou inactive (Google). */
+  actif: boolean;
   /** Solde de points ; null si le programme de points n'est pas réglé. */
   points: number | null;
   regles: ReglesPoints | null;
@@ -323,6 +325,8 @@ export function passApple(d: DonneesCarte, r: { passTypeId: string; teamId: stri
     labelColor: rgb(c.couleurs.libelles),
     webServiceURL: r.webServiceURL,
     authenticationToken: r.authenticationToken,
+    // Abonné désactivé : Wallet barre la carte (audit du 2026-10-05, P2-2).
+    ...(d.actif ? {} : { voided: true }),
     storeCard: {
       headerFields: [{ key: "titre", value: c.titre }],
       primaryFields:
@@ -380,7 +384,7 @@ export function objetGoogle(d: DonneesCarte, issuerId: string): Record<string, u
   return {
     id: idObjetGoogle(issuerId, d.abonneId),
     classId: idClasseGoogle(issuerId, d.lieuId),
-    state: "ACTIVE",
+    state: d.actif ? "ACTIVE" : "INACTIVE",
     accountId: d.numero,
     accountName: d.nom,
     barcode: { type: "QR_CODE", value: d.numero, alternateText: d.numero },

@@ -12,7 +12,8 @@ import type { CarteAbonne, CartePublique, EtatFidelite, EtatWallet, Evenement, P
 import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { definirEnvoyeurEmail } from "../src/routes/emails.ts";
-import { miseAJourEnCours } from "../src/routes/wallet.ts";
+import { travauxTermines } from "../src/arriere-plan.ts";
+import { soldePoints, soldesPoints } from "../src/routes/fidelite-caisse.ts";
 import { pngUni } from "../src/wallet/fichiers.ts";
 import { definirNotifieurApple, definirReglageApple } from "../src/wallet/apple.ts";
 import { dezip } from "../src/wallet/fichiers.ts";
@@ -131,7 +132,7 @@ describe("lien de la carte (directeur)", () => {
     expect((await appel("PUT", "/api/wallet/design", { couleur: "rouge", design })).statut).toBe(400);
     const r = await appel<EtatWallet>("PUT", "/api/wallet/design", { couleur: "#C8102E", design });
     expect(r.corps).toMatchObject({ apple: true, google: true, couleur: "#c8102e", cartes: 1, images: { logo: null, banniere: null } });
-    await miseAJourEnCours();
+    await travauxTermines();
   });
 });
 
@@ -200,6 +201,7 @@ describe("service web PassKit", () => {
     // 3 bières à 21,00 € − 10 % abonné = 18,90 € → 18 points.
     vendreHorsLigne(t, [ligne(biere, 3)], { ajustement: { remisePb: 1000, motif: "abonne", reference: "AB-7" } });
     expect((await envoyer(appel, t)).statut).toBe(200);
+    await travauxTermines();
     expect(notifies).toEqual(["jeton-push-1"]);
     expect(google).toEqual([
       { ressource: "loyaltyObject", id: `3388000000012345678.abonne_${abonneId.replace(/-/g, "")}`, contenu: expect.objectContaining({ loyaltyPoints: expect.objectContaining({ balance: { int: 58 } }) }) },
@@ -213,19 +215,43 @@ describe("service web PassKit", () => {
     expect((await telephone("GET", `/api/passkit/v1/devices/iphone-1/registrations/${PASS_TYPE}?passesUpdatedSince=${encodeURIComponent(new Date().toISOString())}`)).statusCode).toBe(204);
   });
 
+  it("la caisse n'attend ni Apple ni Google : réponse d'abord, notification ensuite (audit P2-1)", async () => {
+    let liberer!: () => void;
+    const bloque = new Promise<void>((r) => (liberer = r));
+    definirNotifieurApple(async (pushToken) => {
+      await bloque;
+      notifies.push(pushToken);
+      return 200;
+    });
+    notifies.length = 0;
+    vendreHorsLigne(t, [ligne(biere, 1)], { ajustement: { remisePb: 1000, motif: "abonne", reference: "AB-7" } });
+    expect((await envoyer(appel, t)).statut).toBe(200);
+    expect(notifies).toEqual([]);
+    liberer();
+    await travauxTermines();
+    expect(notifies).toEqual(["jeton-push-1"]);
+    definirNotifieurApple(async (pushToken) => {
+      notifies.push(pushToken);
+      return reponseApple;
+    });
+  });
+
   it("une vente sans abonné ne prévient personne", async () => {
     notifies.length = 0;
     vendreHorsLigne(t, [ligne(biere, 1)]);
     expect((await envoyer(appel, t)).statut).toBe(200);
+    await travauxTermines();
     expect(notifies).toEqual([]);
   });
 
   it("ajustement de points et changement de nom prévenus ; téléphone qui a retiré la carte (410) oublié", async () => {
     notifies.length = 0;
     await appel("POST", `/api/fidelite/abonnes/${abonneId}/points`, { points: 10, commentaire: "Geste commercial" });
+    await travauxTermines();
     expect(notifies).toEqual(["jeton-push-1"]);
     reponseApple = 410;
     await appel("PATCH", `/api/fidelite/abonnes/${abonneId}`, { nom: "Karim B." });
+    await travauxTermines();
     reponseApple = 200;
     expect((await appel<CarteAbonne>("GET", `/api/fidelite/abonnes/${abonneId}/carte`)).corps.appareilsApple).toBe(0);
   });
@@ -235,6 +261,13 @@ describe("service web PassKit", () => {
     expect((await telephone("DELETE", inscription())).statusCode).toBe(200);
     expect((await appel<CarteAbonne>("GET", `/api/fidelite/abonnes/${abonneId}/carte`)).corps.appareilsApple).toBe(0);
     expect((await telephone("POST", "/api/passkit/v1/log", { logs: ["essai"] })).statusCode).toBe(200);
+  });
+
+  it("journal du téléphone limité à 10 envois par minute (audit P2-5)", async () => {
+    const codes: number[] = [];
+    for (let i = 0; i < 11; i++) codes.push((await telephone("POST", "/api/passkit/v1/log", { logs: ["essai"] })).statusCode);
+    expect(codes[0]).toBe(200);
+    expect(codes.at(-1)).toBe(429);
   });
 });
 
@@ -268,7 +301,7 @@ describe("design de la carte (§15.148)", () => {
     const r = await appel<EtatWallet>("PUT", "/api/wallet/design", { couleur: "#c8102e", design });
     expect(r.statut).toBe(200);
     expect(r.corps.design).toEqual(design);
-    await miseAJourEnCours();
+    await travauxTermines();
     expect(notifies).toEqual(["jeton-push-3"]);
     expect(google.map((g) => g.ressource)).toEqual(["loyaltyClass", "loyaltyObject"]);
     expect(google[0]!.contenu).toMatchObject({ programName: "Carte Supporter", hexBackgroundColor: "#c8102e", reviewStatus: "UNDER_REVIEW" });
@@ -281,7 +314,7 @@ describe("design de la carte (§15.148)", () => {
 
     notifies.length = 0;
     await appel("PUT", "/api/wallet/design", { couleur: "#c8102e", design });
-    await miseAJourEnCours();
+    await travauxTermines();
     expect(notifies).toEqual([]);
   });
 
@@ -292,12 +325,12 @@ describe("design de la carte (§15.148)", () => {
     expect((await appel("PUT", "/api/wallet/images/photo", { variantes: banniere })).statut).toBe(400);
     google.length = 0;
     expect((await appel("PUT", "/api/wallet/images/logo", { variantes: logo })).statut).toBe(200);
-    await miseAJourEnCours();
+    await travauxTermines();
     const r = await appel<EtatWallet>("PUT", "/api/wallet/images/banniere", { variantes: banniere });
     expect(r.statut).toBe(200);
     expect(r.corps.images.banniere?.apple).toMatch(/^\/api\/wallet\/image\/strip@3x\?v=\d+$/);
     expect(r.corps.images.logo?.google).toMatch(/^\/api\/wallet\/image\/google-logo\?v=\d+$/);
-    await miseAJourEnCours();
+    await travauxTermines();
     expect(google.filter((g) => g.ressource === "loyaltyClass").at(-1)!.contenu).toMatchObject({
       programLogo: { sourceUri: { uri: expect.stringMatching(/\/api\/carte-logo\/[\w-]+\.png\?v=\d+$/) } },
       heroImage: { sourceUri: { uri: expect.stringMatching(/\/api\/carte-banniere\/[\w-]+\.png\?v=\d+$/) } },
@@ -314,11 +347,39 @@ describe("design de la carte (§15.148)", () => {
     expect(fichiers.sort()).toEqual(["icon.png", "icon@2x.png", "icon@3x.png", "logo.png", "logo@2x.png", "logo@3x.png", "strip.png", "strip@2x.png", "strip@3x.png"]);
 
     expect((await appel<EtatWallet>("DELETE", "/api/wallet/images/banniere")).corps.images.banniere).toBeNull();
-    await miseAJourEnCours();
+    await travauxTermines();
     expect((await publique(`/api/carte-banniere/${lieuId}.png`)).statusCode).toBe(404);
     expect(Object.keys(await carteApple()).some((n) => n.startsWith("strip"))).toBe(false);
     const { rows: jets } = await proprietaire.pool.query("SELECT details->>'action' AS action FROM journal_technique WHERE type = 'carte_wallet_image' ORDER BY numero");
     expect(jets.map((j) => j.action)).toEqual(["deposee", "deposee", "retiree"]);
+  });
+});
+
+describe("mise à jour de toutes les cartes par lots (audit P2-3)", () => {
+  it("250 cartes de plus : modèle Google une fois, chaque carte une fois ; soldes identiques à ceux lus par la caisse", async () => {
+    const { rows } = await proprietaire.pool.query<{ lieu_id: string; cree_par: string }>("SELECT lieu_id, cree_par FROM abonne_fidelite WHERE id = $1", [abonneId]);
+    const { lieu_id: lieuId, cree_par: par } = rows[0]!;
+    await proprietaire.pool.query(
+      `INSERT INTO abonne_fidelite (lieu_id, numero, nom, source, cree_par, carte_jeton)
+       SELECT $1, 'LOT-' || n, 'Abonné ' || n, 'saisie', $2, rpad('lot' || n || 'x', 43, 'abcdefghij') FROM generate_series(1, 250) n`,
+      [lieuId, par],
+    );
+    const { rows: cartes } = await proprietaire.pool.query<{ n: number }>("SELECT count(*)::int AS n FROM abonne_fidelite WHERE lieu_id = $1 AND carte_jeton IS NOT NULL", [lieuId]);
+    google.length = 0;
+    const { design } = (await appel<EtatWallet>("GET", "/api/wallet")).corps;
+    expect((await appel("PUT", "/api/wallet/design", { couleur: "#c8102e", design: { ...design, titre: "Carte Kop" } })).statut).toBe(200);
+    await travauxTermines();
+    expect(google.filter((g) => g.ressource === "loyaltyClass")).toHaveLength(1);
+    const objets = google.filter((g) => g.ressource === "loyaltyObject");
+    expect(objets).toHaveLength(cartes[0]!.n);
+    expect(new Set(objets.map((o) => o.id)).size).toBe(cartes[0]!.n);
+
+    const ids = (await proprietaire.pool.query<{ id: string; numero: string }>("SELECT id, numero FROM abonne_fidelite WHERE lieu_id = $1 ORDER BY numero LIMIT 3", [lieuId])).rows;
+    const tous = [...ids, { id: abonneId, numero: "AB-7" }];
+    await app.transaction({ lieuId }, async (c) => {
+      const lot = await soldesPoints(c, lieuId, tous.map((x) => x.id), 1);
+      for (const x of tous) expect(lot.get(x.id)).toBe((await soldePoints(c, lieuId, x.id, x.numero, 1)).solde);
+    });
   });
 });
 
@@ -332,9 +393,25 @@ describe("lien renouvelé et option", () => {
     jeton = nouveau;
   });
 
-  it("abonné désactivé : la page de la carte et le service web la refusent", async () => {
+  it("abonné désactivé : page de la carte fermée ; téléphone prévenu, carte Apple barrée, carte Google inactive (audit P2-2)", async () => {
+    const avant = new Date(Date.now() - 1000).toISOString();
+    expect((await telephone("POST", `/api/passkit/v1/devices/iphone-9/registrations/${PASS_TYPE}/${abonneId}`, { pushToken: "jeton-push-9" })).statusCode).toBe(201);
+    notifies.length = 0;
+    google.length = 0;
     await appel("PATCH", `/api/fidelite/abonnes/${abonneId}`, { actif: false });
+    await travauxTermines();
     expect((await publique(`/api/carte/${jeton}`)).statusCode).toBe(404);
-    expect((await telephone("GET", `/api/passkit/v1/passes/${PASS_TYPE}/${abonneId}`)).statusCode).toBe(401);
+    expect(notifies).toContain("jeton-push-9");
+    expect(google.find((g) => g.ressource === "loyaltyObject")!.contenu).toMatchObject({ state: "INACTIVE" });
+    const liste = await telephone("GET", `/api/passkit/v1/devices/iphone-9/registrations/${PASS_TYPE}?passesUpdatedSince=${encodeURIComponent(avant)}`);
+    expect(liste.json()).toMatchObject({ serialNumbers: [abonneId] });
+    const carte = await telephone("GET", `/api/passkit/v1/passes/${PASS_TYPE}/${abonneId}`);
+    expect(carte.statusCode).toBe(200);
+    expect(JSON.parse(dezip(carte.rawPayload)["pass.json"]!.toString("utf8"))).toMatchObject({ voided: true });
+
+    // Réactivé : la carte redevient valable.
+    await appel("PATCH", `/api/fidelite/abonnes/${abonneId}`, { actif: true });
+    await travauxTermines();
+    expect(JSON.parse(dezip((await telephone("GET", `/api/passkit/v1/passes/${PASS_TYPE}/${abonneId}`)).rawPayload)["pass.json"]!.toString("utf8"))).not.toHaveProperty("voided");
   });
 });

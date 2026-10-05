@@ -241,7 +241,7 @@ export async function routesFidelite(app: FastifyInstance, { base }: { base: Bas
       return etat(c, auth.lieuId);
     });
     // Nom sur la carte, carte retirée ou rendue (abonné désactivé ou réactivé).
-    if (carte) await suivreCartes(base, req, contexte(auth), auth.lieuId, [id]);
+    if (carte) suivreCartes(base, req, contexte(auth), auth.lieuId, [id]);
     return e;
   });
 
@@ -304,7 +304,7 @@ export async function routesFidelite(app: FastifyInstance, { base }: { base: Bas
       await inscrireJet(c, { lieuId: auth.lieuId, type: "points_ajustes", utilisateurId: auth.utilisateurId, details: { abonne: id, numero: rows[0].numero, points: a.points, motif: a.commentaire } });
       return etat(c, auth.lieuId);
     });
-    await suivreCartes(base, req, contexte(auth), auth.lieuId, [id]);
+    suivreCartes(base, req, contexte(auth), auth.lieuId, [id]);
     return e;
   });
 
