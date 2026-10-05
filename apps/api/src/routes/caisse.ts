@@ -30,6 +30,7 @@ import { exigerAccesCaisse, exigerDirecteur, type Authentification } from "../au
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { inscrireCaisse, inscrireEvenementTablette, teteChaine, verifierCaisses } from "../journal-caisse.ts";
+import { pousserAlertesStock } from "./alertes.ts";
 import { ParamId, Uuid, contexte, corps } from "./outils.ts";
 import { consommerFidelite } from "./fidelite-caisse.ts";
 import { exigerMoisOuvert } from "./periodes.ts";
@@ -581,7 +582,9 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
     const { id } = ParamId.parse(req.params);
     const auth = await exigerAccesCaisse(req, base, id);
     const s = corps(Synchro, req);
-    return base.transaction(contexte(auth), async (c) => {
+    // Produits vendus dans ce lot, pour la rupture poussée sur le téléphone (§15.140), après l'enregistrement.
+    let vendus: { evenementId: string; standId: string; produits: Set<string> } | null = null;
+    const reponse = await base.transaction(contexte(auth), async (c) => {
       const k = await lireCaisse(c, auth.lieuId, id);
       await verrouiller(c, `caisse:${id}`);
       const session = await sessionOuverte(c, id);
@@ -717,6 +720,10 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
           });
         }
         if (controle.horsLigne) horsLigne.push(e);
+        if (e.type === "vente") {
+          vendus ??= { evenementId: session.evenement_id, standId: session.stand_id, produits: new Set() };
+          for (const l of e.details.lignes) vendus.produits.add(l.produitId);
+        }
         tete = { sequence: e.sequence, empreinte: e.empreinte, dernierTicket: e.numeroTicket, horodatage: e.horodatage };
         recus++;
       }
@@ -740,6 +747,16 @@ export async function routesCaisse(app: FastifyInstance, { base }: { base: Base 
       }
       return { tete, recus, deja };
     });
+    // Les tickets sont enregistrés : une alerte qui échoue ne les remet jamais en cause.
+    const v = vendus as { evenementId: string; standId: string; produits: Set<string> } | null;
+    if (v) {
+      try {
+        await pousserAlertesStock(base, contexte(auth), auth.lieuId, v.evenementId, v.standId, [...v.produits]);
+      } catch (erreur) {
+        req.log.error({ err: erreur, caisseId: id }, "alerte de stock non envoyée");
+      }
+    }
+    return reponse;
   });
 
   // ---------- Nouvelles de la tablette (§15.130) ----------

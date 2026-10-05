@@ -72,7 +72,7 @@ async function clesServeur(c: Client): Promise<Cles> {
 }
 
 /** Envoie une notification aux téléphones abonnés des directeurs du lieu ; retire les abonnements expirés. */
-async function notifierDirecteurs(c: Client, lieuId: string, charge: { titre: string; corps: string; url: string }, seulement?: string): Promise<{ envoyees: number; echecs: number }> {
+export async function notifierDirecteurs(c: Client, lieuId: string, charge: { titre: string; corps: string; url: string }, seulement?: string): Promise<{ envoyees: number; echecs: number }> {
   const { rows } = await c.query<Destinataire>(
     `SELECT a.id, a.endpoint, a.p256dh, a.auth FROM abonnement_push a
        JOIN membre m ON m.lieu_id = a.lieu_id AND m.utilisateur_id = a.utilisateur_id AND m.role = 'directeur'

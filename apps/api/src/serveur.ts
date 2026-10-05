@@ -35,12 +35,13 @@ import { routesFactures } from "./routes/factures.ts";
 import { routesEditeur } from "./routes/editeur.ts";
 import { routesRecettes } from "./routes/recettes.ts";
 import { routesPertes } from "./routes/pertes.ts";
+import { routesAlertes } from "./routes/alertes.ts";
 import { lireOptions, optionInactive } from "./options.ts";
 import { optionDeLaRoute } from "@flaix/domain";
 
 const METHODES_MODIFIANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 /** Routes de configuration, en lecture seule en mode formation. */
-const CONFIGURATION = [/^\/api\/(stands|categories|produits|lieu|equipe|appareils|click-collect|couts-buvette|fidelite|ingredients)(\/|$)/, /^\/api\/caisses\/:id(\/appareil)?$/];
+const CONFIGURATION = [/^\/api\/(stands|categories|produits|lieu|equipe|appareils|click-collect|couts-buvette|fidelite|ingredients|alertes)(\/|$)/, /^\/api\/caisses\/:id(\/appareil)?$/];
 
 export async function construireServeur(base: Base, options: { journaliser?: boolean } = {}): Promise<FastifyInstance> {
   // Derrière le relais https du serveur (Caddy), l'adresse du visiteur est celle transmise par le
@@ -158,6 +159,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesEditeur, { base });
   await app.register(routesRecettes, { base });
   await app.register(routesPertes, { base });
+  await app.register(routesAlertes, { base });
 
   return app;
 }

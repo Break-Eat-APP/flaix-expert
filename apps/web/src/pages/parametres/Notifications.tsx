@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BellOff, BellRing, Send } from "lucide-react";
+import type { ReglagesAlertesPoussees } from "@flaix/domain";
 import { api } from "../../api.ts";
+import { useSession } from "../../session.tsx";
 import { Carte, EntetePage, MessageErreur, Regles } from "../../composants/communs.tsx";
 
 /** Clé publique du serveur (base64url) → octets attendus par le navigateur. */
@@ -17,6 +20,38 @@ const possible = () => "serviceWorker" in navigator && "PushManager" in window &
 
 async function enregistrement(): Promise<ServiceWorkerRegistration> {
   return (await navigator.serviceWorker.getRegistration()) ?? (await navigator.serviceWorker.register("/sw.js"));
+}
+
+/** Ruptures et stocks faibles poussés en direct (§15.140) : réglage du lieu, pour tous ses directeurs. */
+function AlertesStock() {
+  const client = useQueryClient();
+  const formation = !!useSession().data?.formation;
+  const q = useQuery({ queryKey: ["alertes-reglages"], queryFn: () => api.get<ReglagesAlertesPoussees>("/alertes/reglages") });
+  const m = useMutation({
+    mutationFn: (r: ReglagesAlertesPoussees) => api.put<ReglagesAlertesPoussees>("/alertes/reglages", r),
+    onSuccess: (r) => client.setQueryData(["alertes-reglages"], r),
+  });
+  const r = q.data;
+  return (
+    <Carte titre="Stock en direct, pendant l'événement" description="Une notification dès qu'un produit suivi en stock passe sous 15 % de sa mise en place, ou tombe à zéro, à un stand. Une seule par niveau, jusqu'au prochain réassort.">
+      {r ? (
+        <div style={{ display: "grid", gap: 8 }}>
+          <label className="en-ligne" style={{ gap: 8 }}>
+            <input type="checkbox" checked={r.rupture} disabled={m.isPending || formation} onChange={(e) => m.mutate({ ...r, rupture: e.target.checked })} />
+            Ruptures (stock à zéro)
+          </label>
+          <label className="en-ligne" style={{ gap: 8 }}>
+            <input type="checkbox" checked={r.faible} disabled={m.isPending || formation} onChange={(e) => m.mutate({ ...r, faible: e.target.checked })} />
+            Stocks faibles (15 % de la mise en place ou moins)
+          </label>
+        </div>
+      ) : (
+        <MessageErreur erreur={q.error} />
+      )}
+      <MessageErreur erreur={m.error} />
+      <p className="note">Réglage du lieu, pour tous ses directeurs ; chaque téléphone doit aussi avoir activé les notifications ci-dessus. Une tablette restée sans réseau n'envoie ses tickets qu'au retour du réseau : l'alerte arrive alors en retard. Le mode formation n'envoie aucune notification.</p>
+    </Carte>
+  );
 }
 
 /**
@@ -86,7 +121,7 @@ export function Notifications() {
 
   return (
     <>
-      <EntetePage fil="Paramètres" filLien="/parametres" titre="Notifications" description="Le brief de fin de soirée sur ton téléphone, à chaque clôture d'événement." />
+      <EntetePage fil="Paramètres" filLien="/parametres" titre="Notifications" description="Sur ton téléphone : les ruptures de stock pendant l'événement, et le brief de fin de soirée à chaque clôture." />
       <Carte titre="Sur cet appareil">
         {etat === "impossible" ? (
           <div className="message message-alerte" style={{ marginTop: 0 }}>
@@ -112,7 +147,7 @@ export function Notifications() {
               </>
             ) : (
               <button className="btn" disabled={enCours || etat === "inconnu"} onClick={() => void activer()}>
-                <BellRing size={15} /> Recevoir le brief de fin de soirée ici
+                <BellRing size={15} /> Recevoir les notifications ici
               </button>
             )}
           </div>
@@ -120,9 +155,11 @@ export function Notifications() {
         {message && <div className="message message-ok">{message}</div>}
         <MessageErreur erreur={erreur} />
       </Carte>
+      <AlertesStock />
       <Regles>
         <ul>
           <li><strong>Brief de fin de soirée</strong> : envoyé à la clôture de l'événement, sur chaque appareil où un directeur a activé les notifications. Il reprend les chiffres du rapport de soirée figé, sans en inventer : encaissé, tickets, panier moyen, marge nette face à sa cible, évolution par rapport à l'événement précédent, et ce qui demande une vérification (écart d'espèces, écart de stock). Le toucher ouvre le rapport complet.</li>
+          <li><strong>Stock en direct</strong> : quand une tablette envoie ses tickets, le serveur recalcule le stock des produits vendus, au stand de la caisse (même règle que Stock : faible à 15 % du départ, rupture à zéro). La notification ouvre « En direct », où le réassort se fait en deux gestes. Seuls les produits dont le stock est suivi (mise en place faite) peuvent alerter.</li>
           <li><strong>Un réglage par appareil</strong> : active-le sur chaque téléphone qui doit le recevoir. Sur iPhone, l'application doit être ajoutée à l'écran d'accueil.</li>
           <li><strong>Aucun service extérieur</strong> : la notification passe par le service de notification du téléphone (Apple ou Google), sans compte à créer.</li>
         </ul>

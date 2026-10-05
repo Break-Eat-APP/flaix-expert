@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Radio } from "lucide-react";
-import type { Evenement, Lieu, Produit, SessionInfo, Stand } from "@flaix/domain";
+import { BellRing, CheckCircle2, Radio } from "lucide-react";
+import type { CentreAlertes, Evenement, Lieu, Produit, SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
 import { Carte, Chargement, EntetePage, MessageErreur } from "../composants/communs.tsx";
 import { Tableaux } from "./resultats/Tableaux.tsx";
@@ -16,6 +16,8 @@ export function Resultats({ session }: { session: SessionInfo }) {
   const stands = useQuery({ queryKey: ["stands"], queryFn: () => api.get<Stand[]>("/stands") });
   const produits = useQuery({ queryKey: ["produits"], queryFn: () => api.get<Produit[]>("/produits") });
   const evenements = useQuery({ queryKey: ["evenements"], queryFn: () => api.get<Evenement[]>("/evenements") });
+  // Centre d'alertes (§15.140) : chargé à part, il ne retarde jamais l'affichage des résultats.
+  const alertes = useQuery({ queryKey: ["alertes"], queryFn: () => api.get<CentreAlertes>("/alertes") });
 
   if (lieu.isPending || stands.isPending || produits.isPending || evenements.isPending) return <Chargement />;
   const erreur = lieu.error ?? stands.error ?? produits.error ?? evenements.error;
@@ -85,6 +87,20 @@ export function Resultats({ session }: { session: SessionInfo }) {
           <span style={{ minWidth: 0 }}>
             <strong>{enCours.libelle} : événement en cours</strong>
             <span className="discret"> — CA, caisses et ruptures en direct</span>
+          </span>
+        </Link>
+      )}
+      {alertes.data && alertes.data.alertes.length > 0 && (
+        <Link to="/alertes" className="carte direct-accroche">
+          <BellRing size={18} />
+          <span style={{ minWidth: 0 }}>
+            <strong>
+              Centre d'alertes : {alertes.data.alertes.length} alerte{alertes.data.alertes.length > 1 ? "s" : ""}
+            </strong>
+            <span className="discret">
+              {" "}
+              — {alertes.data.alertes.filter((a) => a.niveau === "forte").length || "aucune"} forte{alertes.data.alertes.filter((a) => a.niveau === "forte").length > 1 ? "s" : ""} · prix, marges, stock, fournisseurs
+            </span>
           </span>
         </Link>
       )}

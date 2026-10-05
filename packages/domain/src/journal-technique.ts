@@ -100,6 +100,8 @@ export const TYPES_JET = {
   cloture_mois: "Clôture mensuelle",
   cloture_exercice: "Clôture de l'exercice",
   exercice_modifie: "Premier mois de l'exercice modifié",
+  mercuriale_modifiee: "Prix de référence (mercuriale) modifié",
+  alertes_reglages_modifies: "Alertes poussées sur le téléphone : réglages modifiés",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

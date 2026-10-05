@@ -98,6 +98,9 @@ async function etat(c: Client, lieuId: string): Promise<EtatClickCollect> {
   };
 }
 
+/** Catalogue et réglages du Click & Collect, lus aussi par le centre d'alertes (§15.140). */
+export const etatClickCollect = etat;
+
 export async function routesClickCollect(app: FastifyInstance, { base }: { base: Base }) {
   app.get("/api/click-collect", async (req): Promise<EtatClickCollect> => {
     const auth = await exigerDirecteur(req, base);
