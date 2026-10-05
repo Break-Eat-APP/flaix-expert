@@ -148,6 +148,8 @@ systemctl restart caddy
 etape "sauvegarde quotidienne de la base (14 jours sur le serveur, 1er du mois sans limite ; copie chiffrée chez OVH si réglée)"
 command -v rclone >/dev/null && command -v age >/dev/null || DEBIAN_FRONTEND=noninteractive apt-get -y install rclone age
 install -m 750 -o root -g root "$VERSION/infra/vps/flaix-admin.sh" /usr/local/sbin/flaix-admin
+# Le script de mise en ligne se met lui-même à jour : la prochaine mise en ligne utilisera cette version.
+install -m 750 -o root -g root "$VERSION/infra/vps/deployer.sh" /usr/local/sbin/deployer-flaix.sh
 cat > /usr/local/sbin/sauvegarde-flaix.sh <<'SAUVE'
 #!/bin/bash
 set -euo pipefail
