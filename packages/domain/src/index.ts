@@ -31,3 +31,4 @@ export * from "./pertes.ts";
 export * from "./temps-service.ts";
 export * from "./alertes.ts";
 export * from "./fournisseurs.ts";
+export * from "./prevision.ts";

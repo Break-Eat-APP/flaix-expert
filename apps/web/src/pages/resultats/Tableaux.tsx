@@ -166,7 +166,7 @@ export function Tableaux() {
               </div>
             )}
           </Carte>
-          <Carte titre="Prochains événements">
+          <Carte titre="Prochains événements" actions={d.prochains.length > 0 ? <Link className="btn-lien" to="/prevision">Prévision</Link> : undefined}>
             {d.prochains.length === 0 ? (
               <div className="discret" style={{ fontSize: 12.5 }}>
                 Aucun événement à venir. <Link to="/parametres/saison">Préparer la saison</Link>

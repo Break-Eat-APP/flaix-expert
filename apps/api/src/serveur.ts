@@ -38,6 +38,7 @@ import { routesPertes } from "./routes/pertes.ts";
 import { routesAlertes } from "./routes/alertes.ts";
 import { routesFournisseurs } from "./routes/fournisseurs.ts";
 import { controlerSupport, routesSupport } from "./routes/support.ts";
+import { routesPrevision } from "./routes/prevision.ts";
 import { lireOptions, optionInactive } from "./options.ts";
 import { optionDeLaRoute } from "@flaix/domain";
 
@@ -166,6 +167,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesAlertes, { base });
   await app.register(routesFournisseurs, { base });
   await app.register(routesSupport, { base });
+  await app.register(routesPrevision, { base });
 
   return app;
 }

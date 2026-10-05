@@ -43,7 +43,15 @@ export function Stock() {
 
   return (
     <>
-      <EntetePage titre="Stock" description="Qu'est-ce que j'envoie aux stands, qu'est-ce qu'il reste ?" />
+      <EntetePage
+        titre="Stock"
+        description="Qu'est-ce que j'envoie aux stands, qu'est-ce qu'il reste ?"
+        actions={
+          <Link className="btn btn-fantome" to="/prevision">
+            Prévision du prochain événement
+          </Link>
+        }
+      />
       <div className="onglets">
         {bouton("mep", "Mise en place")}
         {bouton("match", "Pendant l'événement")}
