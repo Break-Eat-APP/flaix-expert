@@ -84,27 +84,25 @@ Coût : les sauvegardes font aujourd'hui 0,3 Mo chacune ; le prix exact est affi
 **3. Vérifier qu'on sait restaurer (à refaire une fois par trimestre)**
 - `sudo flaix-admin essai-restauration` : télécharge la dernière copie, te demande la clé de restauration (elle ne s'affiche pas), restaure dans une base temporaire, compare avec la base en service, puis supprime la base temporaire. Rien n'est modifié dans la base en service.
 
-## Assistant IA : brancher Mistral (à faire par toi, environ 10 minutes)
+## Assistant IA : brancher l'IA d'OVHcloud (à faire par toi, environ 5 minutes)
 
-Pourquoi : l'assistant « pose ta question » et le brief de fin de soirée reformulé utilisent Mistral (décision du 2026-10-04, dossier §15.136). Sans clé, tout le reste fonctionne ; le brief part rédigé par les règles.
+Pourquoi : l'assistant « pose ta question » et le brief de fin de soirée reformulé ont besoin d'un modèle de langage. Décision du 2026-10-05 (dossier §15.145) : **OVHcloud AI Endpoints**, avec ton compte OVH existant, hébergé en Europe. L'agent (ce que l'IA peut lire, les consignes, le contrôle des chiffres, la trace) reste celui de FlaiX Expert. Sans jeton, tout le reste fonctionne ; le brief part rédigé par les règles.
 
-**1. Créer la clé (toi seul : compte et paiement)**
-1. Va sur **console.mistral.ai** et crée un compte au nom de Break Eat App.
-2. Choisis l'offre **payante à l'usage** et ajoute le moyen de paiement (facturation à la question ; fixe-toi une limite de dépense mensuelle dans l'espace Mistral).
-3. Dans **API Keys**, crée une clé nommée par exemple `flaix-expert-serveur-test`. Mistral l'affiche une fois : garde la page ouverte. **Ne me l'envoie pas.**
+**1. Créer le jeton (toi seul : compte et paiement)**
+1. Connecte-toi à ton **espace client OVHcloud** (le même compte que le serveur).
+2. Va dans **Public Cloud** (choisis le projet du serveur s'il y en a plusieurs) → **AI Endpoints** → **API keys**.
+3. Crée un jeton nommé par exemple `flaix-expert-serveur-test`. OVHcloud l'affiche une fois : garde la page ouverte. **Ne me l'envoie pas.**
+4. Le paiement se fait à l'usage, sur ta facture OVHcloud.
 
-**2. La régler sur le serveur (dans ton terminal)**
+**2. Le régler sur le serveur (dans ton terminal)**
 1. Se connecter au serveur : `ssh -i ~/.ssh/flaix_ovh debian@146.59.154.196`
-2. Lancer : `sudo flaix-admin cle-mistral`, puis coller la clé (elle ne s'affiche pas).
-3. Le serveur la vérifie auprès de Mistral, l'enregistre et redémarre l'application. Message attendu : « Clé vérifiée et enregistrée ».
-4. Pour la retirer : relancer la même commande et valider sans rien coller.
+2. Lancer : `sudo flaix-admin cle-ovh-ia`, puis coller le jeton (il ne s'affiche pas).
+3. Le serveur vérifie qu'OVHcloud répond et accepte les outils de l'assistant, l'enregistre et redémarre l'application. Message attendu : « Jeton vérifié et enregistré ».
+4. Pour le retirer : relancer la même commande et valider sans rien coller.
 
-**Secours si Mistral ne répond pas (recommandé, environ 5 minutes)** : OVHcloud AI Endpoints, hébergé en Europe, avec ton compte OVH existant.
-1. Espace OVHcloud → **Public Cloud** → **AI Endpoints** → **API keys** → créer un jeton (garde la page ouverte ; ne me l'envoie pas).
-2. Sur le serveur : `sudo flaix-admin cle-ovh-ia`, puis coller le jeton. Le serveur vérifie qu'OVH répond et accepte les outils de l'assistant, puis l'enregistre.
-3. Désormais, si Mistral est en panne ou saturé, l'assistant passe par OVH (modèle Mistral Small hébergé par OVH) ; l'écran indique quel modèle a répondu.
+**Mistral, en option seulement** : si un jour tu veux un modèle plus puissant, `sudo flaix-admin cle-mistral` règle une clé Mistral (compte sur console.mistral.ai, **offre payante « Scale » obligatoire** : avec l'offre gratuite « Experiment », Mistral peut entraîner ses modèles avec les données envoyées). Mistral est alors essayé d'abord, et OVHcloud prend le relais s'il ne répond pas.
 
-**3. L'activer pour un lieu** : back-office (`/editeur`) → le lieu → option **« Assistant IA »** (désactivée par défaut, parce que chaque question coûte). L'entrée « Assistant » apparaît alors dans le menu du directeur, et le brief de fin de soirée est reformulé par Mistral — seulement si la reformulation ne change aucun chiffre.
+**3. L'activer pour un lieu** : back-office (`/editeur`) → le lieu → option **« Assistant IA »** (désactivée par défaut, parce que chaque question coûte). L'entrée « Assistant » apparaît alors dans le menu du directeur, et le brief de fin de soirée est reformulé par l'IA — seulement si la reformulation ne change aucun chiffre.
 
 ## À retenir
 

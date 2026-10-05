@@ -132,7 +132,7 @@ export const OPTIONS_LIEU: { cle: OptionLieu; libelle: string; aide: string }[] 
   { cle: "click_collect", libelle: "Click & Collect", aide: "Prix sur l'application de commande" },
   { cle: "factures", libelle: "Factures fournisseurs", aide: "Saisie, rapprochement avec les livraisons" },
   { cle: "couts_buvette", libelle: "Coûts par buvette", aide: "Frais et coûts par stand" },
-  { cle: "assistant", libelle: "Assistant IA", aide: "Questions en langage courant et brief reformulé par Mistral (payant à l'usage, désactivé par défaut)" },
+  { cle: "assistant", libelle: "Assistant IA", aide: "Questions en langage courant et brief reformulé par l'IA, hébergée par OVHcloud (payant à l'usage, désactivé par défaut)" },
 ];
 
 /** Toutes les options sont actives sans réglage, sauf l'assistant IA : chaque question coûte (§15.136). */

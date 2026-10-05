@@ -4764,3 +4764,10 @@ Rémi a partagé une note produit rédigée avec ChatGPT (`FLAIX_EXPERT_PRODUCT_
 ### 15.144 Copie de la configuration d'un lieu à l'autre : abandonnée (2026-10-05)
 
 **Question posée à Rémi** : copier la configuration des Spartiates vers un autre lieu, ou vers le futur serveur de production ? **Réponse de Rémi** : *« non, car les lieux ne se ressemblent pas »*. Le module est retiré de la liste : chaque lieu construit sa propre configuration (règle du dossier : un lieu démarre vide). Le **script de reprise de la configuration** du passage en production (même lieu, du serveur de test vers la production) reste, lui, prévu dans la section « Passage en production » de l'avancement.
+
+### 15.145 Moteur de langage de l'agent : OVHcloud seul (2026-10-05)
+
+**Question de Rémi** : *« étions-nous obligés de passer par Mistral ? On a dit que nous développons notre propre agent. »* **Réponse** : non. L'agent est bien celui de FlaiX Expert (outils en lecture seule, consignes, contrôle des chiffres, trace, limite par jour, §15.137) ; seul le **modèle de langage** (le moteur qui comprend la question et rédige) est loué, ou installé chez nous. Trois voies présentées : Mistral en direct (meilleur modèle ; nouveau compte, offre payante « Scale » obligatoire car l'offre gratuite « Experiment » permet à Mistral d'entraîner ses modèles avec les données envoyées) ; **OVHcloud AI Endpoints seul** (compte OVH existant, hébergement en Europe, aucun nouveau contrat, modèle plus petit) ; un modèle sur notre propre serveur (carte graphique, coût sans rapport avec l'usage actuel).
+
+**Décision de Rémi** : **OVHcloud seul** (la recommandation). Rien à reprogrammer : la passerelle essaie les modèles branchés dans l'ordre ; avec le seul jeton OVHcloud, c'est lui qui répond. Les textes affichés ne nomment plus Mistral (l'écran de l'assistant indique le modèle sous chaque réponse) ; le guide du serveur commence par OVHcloud ; `flaix-admin cle-mistral` reste disponible en option.
+

@@ -6,7 +6,7 @@
 #   flaix-admin sauvegarde-externe    règle la copie chiffrée des sauvegardes chez OVHcloud (dossier §15.108)
 #   flaix-admin essai-restauration    restaure la dernière copie OVH dans une base temporaire et la compare
 #   flaix-admin cle-mistral           règle (ou retire) la clé de l'API Mistral de l'assistant IA (dossier §15.136)
-#   flaix-admin cle-ovh-ia            règle (ou retire) le secours OVHcloud AI Endpoints de l'assistant (dossier §15.137)
+#   flaix-admin cle-ovh-ia            règle (ou retire) le jeton OVHcloud AI Endpoints, moteur de l'assistant IA (dossier §15.137, §15.145)
 # Mots de passe, clés et codes s'affichent une seule fois, dans cette fenêtre seulement.
 set -euo pipefail
 
@@ -159,17 +159,17 @@ ENV
     ;;
 
   cle-ovh-ia)
-    # Secours de l'assistant si Mistral ne répond pas : OVHcloud AI Endpoints (dossier §15.137).
-    echo "Jeton d'accès OVHcloud AI Endpoints (secours de l'assistant IA)."
+    # Moteur de l'assistant IA : OVHcloud AI Endpoints (dossier §15.137, §15.145) ; secours de Mistral si une clé Mistral est aussi réglée.
+    echo "Jeton d'accès OVHcloud AI Endpoints (moteur de l'assistant IA de FlaiX Expert)."
     echo "Il se crée dans l'espace OVHcloud : Public Cloud > AI Endpoints > API keys."
     echo
-    read -r -s -p "Jeton OVHcloud AI Endpoints (il ne s'affiche pas ; vide = retirer le secours) : " JETON
+    read -r -s -p "Jeton OVHcloud AI Endpoints (il ne s'affiche pas ; vide = retirer le jeton) : " JETON
     echo
     ENV_OVH_IA=/etc/flaix/ovh-ia.env
     if [ -z "$JETON" ]; then
       rm -f "$ENV_OVH_IA"
       systemctl restart flaix-api
-      echo "Secours retiré."
+      echo "Jeton retiré : l'assistant IA est débranché (sauf si une clé Mistral est réglée)."
       exit 0
     fi
     [[ "$JETON" =~ ^[A-Za-z0-9._=-]{20,2000}$ ]] || { unset JETON; echo "Ce jeton n'a pas la bonne forme : rien n'est enregistré."; exit 1; }
@@ -187,7 +187,7 @@ ENV
     unset JETON
     chown root:flaix "$ENV_OVH_IA" && chmod 640 "$ENV_OVH_IA"
     systemctl restart flaix-api
-    echo "Jeton vérifié et enregistré : si Mistral ne répond pas, l'assistant passe par OVHcloud."
+    echo "Jeton vérifié et enregistré : l'assistant IA passe par OVHcloud."
     ;;
 
   *)

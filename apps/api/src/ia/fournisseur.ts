@@ -3,8 +3,8 @@ import { config } from "../config.ts";
 /*
  * Passerelle vers les modèles d'IA (dossier §15.136, §15.137). FlaiX garde l'agent — ses outils, ses
  * consignes, le contrôle des chiffres et la trace — et ne fait qu'emprunter un modèle pour rédiger :
- * Mistral d'abord (décision de Rémi du 2026-10-04), OVHcloud AI Endpoints en secours (hébergé en Europe,
- * même compte OVH que le serveur). Les deux parlent la même interface « chat/completions » avec outils :
+ * OVHcloud AI Endpoints (décision de Rémi du 2026-10-05, §15.145 : hébergé en Europe, même compte OVH que le
+ * serveur) ; Mistral reste branchable, essayé d'abord si une clé Mistral est réglée, OVHcloud prenant alors le relais. Les deux parlent la même interface « chat/completions » avec outils :
  * changer de modèle, c'est changer une adresse, pas réécrire l'agent. Sans aucune clé réglée sur le
  * serveur, l'IA est simplement absente : rien ne casse.
  */
@@ -76,7 +76,7 @@ export function passerelleIA(fournisseurs: readonly FournisseurIA[]): Fournisseu
 function depuisConfig(): { passerelle: FournisseurIA | null; modeles: string[] } {
   const liste: { f: FournisseurIA; nom: string }[] = [];
   if (config.mistralCle) liste.push({ f: fournisseurCompatible("https://api.mistral.ai/v1", config.mistralCle, config.mistralModele, "Mistral"), nom: `${config.mistralModele} (Mistral)` });
-  if (config.ovhIaJeton) liste.push({ f: fournisseurCompatible("https://oai.endpoints.kepler.ai.cloud.ovh.net/v1", config.ovhIaJeton, config.ovhIaModele, "OVHcloud, secours"), nom: `${config.ovhIaModele} (OVHcloud, secours)` });
+  if (config.ovhIaJeton) liste.push({ f: fournisseurCompatible("https://oai.endpoints.kepler.ai.cloud.ovh.net/v1", config.ovhIaJeton, config.ovhIaModele, config.mistralCle ? "OVHcloud, secours" : "OVHcloud"), nom: `${config.ovhIaModele} (OVHcloud${config.mistralCle ? ", secours" : ""})` });
   return { passerelle: liste.length ? passerelleIA(liste.map((x) => x.f)) : null, modeles: liste.map((x) => x.nom) };
 }
 

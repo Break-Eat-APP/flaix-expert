@@ -50,7 +50,7 @@ describe("assistant à l'écran", () => {
     expect(screen.getByText(/59 questions restantes/)).toBeTruthy();
   });
 
-  it("clé Mistral pas encore réglée : l'écran le dit, sans champ de question", async () => {
+  it("clé de l'IA pas encore réglée : l'écran le dit, sans champ de question", async () => {
     branche = false;
     monter();
     await screen.findByText(/n'est pas encore branché/);

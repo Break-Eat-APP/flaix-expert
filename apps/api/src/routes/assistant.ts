@@ -266,7 +266,7 @@ export async function routesAssistant(app: FastifyInstance, { base }: { base: Ba
     const auth = await exigerDirecteur(req, base);
     const q = corps(Question, req);
     const f = fournisseurIA();
-    if (!f) throw new ErreurMetier(409, "L'assistant n'est pas encore branché : la clé Mistral n'est pas réglée sur le serveur.");
+    if (!f) throw new ErreurMetier(409, "L'assistant n'est pas encore branché : la clé de l'IA n'est pas réglée sur le serveur.");
     const lieu = await base.transaction(contexte(auth), async (c) => {
       if ((await questionsDuJour(c, auth.lieuId)) >= LIMITE_QUESTIONS_JOUR) throw new ErreurMetier(429, `Limite de ${LIMITE_QUESTIONS_JOUR} questions par jour atteinte pour ce lieu : réessaie demain.`);
       const { rows } = await c.query<{ nom: string }>("SELECT nom FROM lieu WHERE id = $1", [auth.lieuId]);
@@ -287,8 +287,8 @@ export async function routesAssistant(app: FastifyInstance, { base }: { base: Ba
       try {
         r = await f(messages, tour < MAX_TOURS - 1 ? OUTILS : undefined);
       } catch (erreur) {
-        req.log.error({ err: erreur }, "assistant : Mistral injoignable");
-        throw new ErreurMetier(503, "Mistral ne répond pas pour l'instant : réessaie dans un moment.");
+        req.log.error({ err: erreur }, "assistant : IA injoignable");
+        throw new ErreurMetier(503, "L'IA ne répond pas pour l'instant : réessaie dans un moment.");
       }
       modele = r.modele;
       if (r.jetons) {

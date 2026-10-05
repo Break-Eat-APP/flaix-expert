@@ -92,13 +92,13 @@ describe("assistant « pose ta question »", () => {
     expect((await appel("POST", "/api/assistant", { question: "Combien ai-je encaissé ?" })).statut).toBe(403);
   });
 
-  it("option active mais clé Mistral absente : l'écran le sait, la question est refusée proprement", async () => {
+  it("option active mais clé de l'IA absente : l'écran le sait, la question est refusée proprement", async () => {
     await activerOption();
     definirFournisseurIA(null);
     expect((await appel<EtatAssistant>("GET", "/api/assistant")).corps).toMatchObject({ branche: false, limite: 60, restantes: 60 });
     const r = await appel<{ erreur: string }>("POST", "/api/assistant", { question: "Combien ai-je encaissé ?" });
     expect(r.statut).toBe(409);
-    expect(r.corps.erreur).toContain("clé Mistral");
+    expect(r.corps.erreur).toContain("clé de l'IA");
   });
 
   it("l'IA lit les résultats par un outil en lecture seule, recopie le montant, cite sa source ; l'échange est gardé", async () => {

@@ -18,7 +18,7 @@ interface Echange {
 }
 
 /**
- * Assistant « pose ta question » (dossier §15.136) : réponses rédigées par une IA (Mistral) à partir des
+ * Assistant « pose ta question » (dossier §15.136, §15.145) : réponses rédigées par une IA (OVHcloud) à partir des
  * données de FlaiX Expert, avec leurs sources ; un chiffre non retrouvé dans les données est signalé.
  */
 export function Assistant() {
@@ -44,11 +44,11 @@ export function Assistant() {
 
   return (
     <>
-      <EntetePage titre="Assistant" description="Pose une question sur tes chiffres, en langage courant. La réponse est rédigée par une IA (Mistral) à partir des données de FlaiX Expert." />
+      <EntetePage titre="Assistant" description="Pose une question sur tes chiffres, en langage courant. La réponse est rédigée par une IA à partir des données de FlaiX Expert." />
       {!e.branche ? (
         <Carte>
           <div className="message message-alerte" style={{ margin: 0 }}>
-            L'assistant n'est pas encore branché : la clé Mistral doit être réglée sur le serveur par FlaiX Expert.
+            L'assistant n'est pas encore branché : la clé de l'IA doit être réglée sur le serveur par FlaiX Expert.
           </div>
         </Carte>
       ) : (
@@ -123,7 +123,7 @@ export function Assistant() {
       )}
       <Regles>
         <ul>
-          <li><strong>Une IA, pas une personne</strong> : les réponses sont rédigées par Mistral (entreprise française, hébergement en Europe). Elles peuvent se tromper : les chiffres qui font foi sont ceux des écrans de FlaiX Expert.</li>
+          <li><strong>Une IA, pas une personne</strong> : les réponses sont rédigées par un modèle de langage hébergé en Europe par OVHcloud (le modèle est indiqué sous chaque réponse). Elles peuvent se tromper : les chiffres qui font foi sont ceux des écrans de FlaiX Expert.</li>
           <li><strong>Ce qu'elle lit</strong> : seulement tes données, au travers d'outils en lecture seule — résultats d'un événement ou d'une période, finances, rapports de soirée, marges du catalogue. Elle ne peut rien modifier. Chaque réponse dit ce qu'elle a lu.</li>
           <li><strong>Contrôle des chiffres</strong> : chaque nombre de la réponse est comparé aux données lues. S'il n'y figure pas, la réponse le signale (« à vérifier »).</li>
           <li><strong>Trace</strong> : chaque question et sa réponse sont gardées avec ce qui a été lu, pour pouvoir toujours savoir d'où vient une réponse.</li>
