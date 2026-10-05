@@ -102,6 +102,7 @@ export const TYPES_JET = {
   exercice_modifie: "Premier mois de l'exercice modifié",
   mercuriale_modifiee: "Prix de référence (mercuriale) modifié",
   alertes_reglages_modifies: "Alertes poussées sur le téléphone : réglages modifiés",
+  conditionnement_modifie: "Conditionnement d'un fournisseur renseigné ou modifié",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

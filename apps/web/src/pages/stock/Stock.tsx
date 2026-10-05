@@ -6,8 +6,9 @@ import { formaterMontant, lireMontant, type EtatReserve, type Evenement, type Li
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 import { StockIngredients } from "./StockIngredients.tsx";
+import { PrixFournisseurs } from "./PrixFournisseurs.tsx";
 
-type Onglet = "mep" | "match" | "comptage" | "reserve" | "ingredients";
+type Onglet = "mep" | "match" | "comptage" | "reserve" | "ingredients" | "fournisseurs";
 const ETAT = { a_venir: "à venir", ouvert: "en cours", clos: "clos" } as const;
 const dateCourte = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Paris" });
 const heure = new Intl.DateTimeFormat("fr-FR", { timeStyle: "short", timeZone: "Europe/Paris" });
@@ -32,7 +33,7 @@ export function Stock() {
     queryKey: ["stock", evenementId],
     queryFn: () => api.get<StockMatch | null>(`/stock${evenementId ? `?evenementId=${evenementId}` : ""}`),
     placeholderData: (avant) => avant,
-    enabled: onglet !== "reserve" && onglet !== "ingredients",
+    enabled: onglet !== "reserve" && onglet !== "ingredients" && onglet !== "fournisseurs",
   });
   const bouton = (id: Onglet, libelle: string) => (
     <button className={`onglet${onglet === id ? " actif" : ""}`} onClick={() => setOnglet(id)}>
@@ -49,9 +50,12 @@ export function Stock() {
         {bouton("comptage", "Comptage")}
         {bouton("reserve", "Réserve & livraisons")}
         {bouton("ingredients", "Ingrédients")}
+        {bouton("fournisseurs", "Prix fournisseurs")}
       </div>
       {onglet === "reserve" ? (
         <Reserve />
+      ) : onglet === "fournisseurs" ? (
+        <PrixFournisseurs />
       ) : onglet === "ingredients" ? (
         evenements.isPending ? <Chargement /> : evenements.error ? <MessageErreur erreur={evenements.error} /> : <StockIngredients evenements={evenements.data!} evenementId={evenementId} choisir={setEvenementId} />
       ) : stock.isPending || evenements.isPending ? (
@@ -65,7 +69,7 @@ export function Stock() {
           </EtatVide>
         </Carte>
       ) : (
-        <VueMatch onglet={onglet as Exclude<Onglet, "reserve" | "ingredients">} s={stock.data} evenements={evenements.data!} choisir={setEvenementId} standId={standId} choisirStand={setStandId} cle={evenementId} />
+        <VueMatch onglet={onglet as Exclude<Onglet, "reserve" | "ingredients" | "fournisseurs">} s={stock.data} evenements={evenements.data!} choisir={setEvenementId} standId={standId} choisirStand={setStandId} cle={evenementId} />
       )}
       <Regles>
         <ul>
@@ -75,6 +79,7 @@ export function Stock() {
           <li><strong>Pendant l'événement</strong> : <strong>réassort</strong> à quantité libre (« − » = retour en réserve d'un réassort saisi par erreur). <strong>Restant</strong> = reste précédent + mise en place + réassort − vendu (ventes lues en direct dans les caisses). Alerte « faible » à 15 % du départ, « rupture » à zéro.</li>
           <li><strong>Comptage</strong> : ce qu'on trouve au stand en fin d'événement. <strong>Écart</strong> = compté − restant attendu, valorisé au coût matière (jamais au prix de vente) : négatif = manquant (casse, coulage, vente non enregistrée), positif = surplus (souvent une erreur de comptage). Motif obligatoire au-delà de 3 % du départ. Le comptage se corrige jusqu'à la clôture de l'événement, puis il est figé ; une correction est inscrite au journal technique.</li>
           <li><strong>Clôture de l'événement</strong> : un événement qui a une mise en place ou un réassort ne se clôt qu'une fois chaque produit concerné compté (Clôtures → étape Restes).</li>
+          <li><strong>Prix fournisseurs</strong> : prix à l'unité (portion, kg, litre, pièce) de la dernière livraison chez chaque fournisseur, jamais au colis — sinon un fût de 50 L paraît toujours plus cher qu'un fût de 30 L. Le colis (« fût de 30 L ») se renseigne une fois par fournisseur ; il donne l'<strong>écoulement</strong> (contenance ÷ consommation moyenne des 5 derniers événements clos) et l'alerte de sur-conditionnement (le moins cher couvre plus de 1,5 événement).</li>
           <li><strong>Ingrédients</strong> (onglet du même nom) : un ingrédient coché « suivre » dans Produits & prix se suit comme un produit, en kg, litres ou pièces. Le <strong>consommé</strong> vient des recettes des produits vendus (une pinte de 50 cl déduit 0,5 L du fût), figé à la clôture de l'événement. Un ingrédient non coché sert seulement au coût des recettes.</li>
         </ul>
       </Regles>
@@ -91,7 +96,7 @@ function VueMatch({
   choisirStand,
   cle,
 }: {
-  onglet: Exclude<Onglet, "reserve" | "ingredients">;
+  onglet: Exclude<Onglet, "reserve" | "ingredients" | "fournisseurs">;
   s: StockMatch;
   evenements: Evenement[];
   choisir: (id: string) => void;
