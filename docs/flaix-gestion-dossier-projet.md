@@ -4771,3 +4771,20 @@ Rémi a partagé une note produit rédigée avec ChatGPT (`FLAIX_EXPERT_PRODUCT_
 
 **Décision de Rémi** : **OVHcloud seul** (la recommandation). Rien à reprogrammer : la passerelle essaie les modèles branchés dans l'ordre ; avec le seul jeton OVHcloud, c'est lui qui répond. Les textes affichés ne nomment plus Mistral (l'écran de l'assistant indique le modèle sous chaque réponse) ; le guide du serveur commence par OVHcloud ; `flaix-admin cle-mistral` reste disponible en option.
 
+
+### 15.146 E-mails par Brevo : rapport de soirée et rectifications (2026-10-05)
+
+**Demande de Rémi** : *« ok go pour Brevo »*, avec le compte Brevo existant (celui de Break Eat), une clé d'API dédiée à FlaiX Expert et une adresse d'expédition d'un domaine déjà vérifié. Décisions déjà actées : rapport de soirée envoyé par e-mail à la clôture (ajout validé au §15.95) ; rectification d'un Z **notifiée par e-mail au moment de l'enregistrement** (module 7, §14) ; service d'envoi : Brevo (§15.117).
+
+**Ce qui part** (e-mails « transactionnels », vers les directeurs du lieu) :
+1. **Rapport de soirée**, à la clôture de l'événement, une seule fois : le brief de fin de soirée (titre, résumé, points, §15.135 — mêmes chiffres, recopiés du rapport figé) et un lien vers le rapport complet (connexion nécessaire : aucun chiffre détaillé hors de l'application).
+2. **Rectification d'un Z** (tiroir ou coffre), à chaque enregistrement : caisse ou coffre, événement, compté et écart avant → après, motif, signature, auteur et heure, lien vers Clôtures.
+- **Destinataires** : les directeurs actifs du lieu (adresse de leur compte), plus jusqu'à 5 adresses ajoutées par le lieu (l'expert-comptable, par exemple), dans Paramètres → Notifications → E-mails. Chaque envoi se coupe séparément (rapport / rectifications) ; **les deux sont actifs par défaut**. Changements journalisés.
+- **Jamais bloquant** : l'e-mail part après l'enregistrement ; un échec n'annule ni la clôture ni la rectification. Chaque envoi est tracé (table en écriture seule : type, destinataires, sujet, résultat), et l'écran montre les derniers envois.
+- **Mode formation** : aucun e-mail.
+- **Pas de campagnes vers les abonnés** pour l'instant : leurs adresses appartiennent au lieu, elles ne passent pas par le compte Brevo de Break Eat (RGPD, campagnes à voir avec Rémi, §14 module 20).
+
+**Clé et expéditeur** : posés par Rémi sur le serveur avec `sudo flaix-admin cle-brevo` (clé tapée sans affichage, vérifiée auprès de Brevo ; adresse d'expédition demandée en clair ; nom affiché « FlaiX Expert »). Sans clé, rien ne part et l'écran le dit.
+
+**Réalisé le 2026-10-05** (migration 0034, moteur `emails.ts`, route `routes/emails.ts`, Paramètres → Notifications → carte « E-mails », commande `flaix-admin cle-brevo`) : rapport de soirée envoyé après la clôture (une fois, contrôlé par la trace), rectification de Z (tiroir et coffre) notifiée après l'enregistrement, e-mail d'essai à la personne connectée, derniers envois affichés avec leur résultat (« envoyé », « échec », « non envoyé (Brevo non réglé) »). Contenu échappé (un motif ne devient jamais du HTML). **Tests** : moteur 3, serveur 7 (réglages par défaut et destinataires, adresses refusées, rapport une seule fois au directeur et à l'expert-comptable, rectification notifiée avec motif et signature, Brevo en panne sans rien bloquer, essai à la seule personne connectée, trace inaltérable), écran 2.
+

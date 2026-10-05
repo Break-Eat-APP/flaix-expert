@@ -104,6 +104,21 @@ Pourquoi : l'assistant « pose ta question » et le brief de fin de soirée refo
 
 **3. L'activer pour un lieu** : back-office (`/editeur`) → le lieu → option **« Assistant IA »** (désactivée par défaut, parce que chaque question coûte). L'entrée « Assistant » apparaît alors dans le menu du directeur, et le brief de fin de soirée est reformulé par l'IA — seulement si la reformulation ne change aucun chiffre.
 
+## E-mails par Brevo (à faire par toi, environ 5 minutes)
+
+Pourquoi : le rapport de soirée part par e-mail à la clôture de l'événement, et chaque rectification d'un Z est notifiée (dossier §15.146). Sans clé, rien ne part ; tout le reste fonctionne.
+
+**1. Dans Brevo (toi seul)**
+1. **app.brevo.com** → ton nom (en haut à droite) → **SMTP & API** → **Clés API** → **Générer une nouvelle clé API**, nommée `flaix-expert` (une clé dédiée : elle se retire sans toucher aux autres logiciels). Garde-la ; **ne me l'envoie pas**.
+2. L'adresse d'expédition : une adresse déjà déclarée dans **Expéditeurs, domaines et IP dédiées** → **Expéditeurs** (celle de ton autre logiciel convient, ou une adresse dédiée du même domaine).
+3. Seulement si le **blocage des adresses IP inconnues** est actif dans Brevo : autoriser `146.59.154.196`.
+
+**2. Sur le serveur (dans PowerShell, une seule ligne)**
+1. `ssh -t -i C:\Users\notta\.ssh\flaix_ovh debian@146.59.154.196 sudo flaix-admin cle-brevo`
+2. Coller la clé (elle ne s'affiche pas), Entrée ; puis taper l'adresse d'expédition, Entrée.
+3. Le serveur vérifie la clé auprès de Brevo, prévient si l'adresse n'est pas dans tes expéditeurs, enregistre et redémarre l'application. Message attendu : « Clé vérifiée et enregistrée ».
+4. Essai : FlaiX Expert → **Paramètres** → **Notifications** → carte **E-mails** → **M'envoyer un e-mail d'essai** ; le résultat s'affiche dans les derniers envois.
+
 ## À retenir
 
 - Coût : environ **4,57 € TTC par mois** (à confirmer selon l'engagement choisi).

@@ -108,6 +108,7 @@ export const TYPES_JET = {
   support_ouvert: "Session du support FlaiX Expert ouverte (lecture seule)",
   support_consultation: "Écran consulté par le support FlaiX Expert",
   support_ferme: "Session du support FlaiX Expert fermée",
+  emails_reglages_modifies: "E-mails du lieu : réglages modifiés",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

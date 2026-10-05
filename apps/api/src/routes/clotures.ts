@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
   comptageCloturable,
@@ -15,10 +15,11 @@ import {
   type SessionACloturer,
 } from "@flaix/domain";
 import { verrouiller, type Base, type Client } from "../base.ts";
-import { exigerDirecteur } from "../auth/contexte.ts";
+import { exigerDirecteur, type Authentification } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { listerEvenements } from "./evenements.ts";
+import { envoyerRectificationParEmail } from "./emails.ts";
 import { restesDuMatch } from "./stock.ts";
 import { ParamId, Uuid, contexte, corps } from "./outils.ts";
 
@@ -238,6 +239,16 @@ export async function lireClotureMatch(c: Client, lieuId: string, evenementId: s
 }
 
 export async function routesClotures(app: FastifyInstance, { base }: { base: Base }) {
+  /** Rectification enregistrée : notifiée par e-mail (module 7, §15.146) ; un échec ne remet jamais en cause la rectification. */
+  async function notifierRectification(req: FastifyRequest, auth: Authentification, comptageId: string, avis: Parameters<typeof envoyerRectificationParEmail>[4] | null) {
+    if (!avis) return;
+    try {
+      await envoyerRectificationParEmail(base, contexte(auth), auth.lieuId, comptageId, avis);
+    } catch (erreur) {
+      req.log.error({ err: erreur, comptageId }, "rectification non notifiée par e-mail");
+    }
+  }
+
   app.get("/api/clotures", async (req): Promise<ClotureMatch> => {
     const auth = await exigerDirecteur(req, base);
     const { evenementId } = ParEvenement.parse(req.query);
@@ -404,7 +415,8 @@ export async function routesClotures(app: FastifyInstance, { base }: { base: Bas
     const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);
     const { compte, motif, signature } = corps(Rectification, req);
-    return base.transaction(contexte(auth), async (c) => {
+    let avis: Parameters<typeof envoyerRectificationParEmail>[4] | null = null;
+    const resultat = await base.transaction(contexte(auth), async (c) => {
       const { rows } = await c.query<{ evenement_id: string; attendu_centimes: number; compte_centimes: number; ecart_centimes: number; seuil_centimes: number }>(
         "SELECT evenement_id, attendu_centimes, compte_centimes, ecart_centimes, seuil_centimes FROM comptage_coffre WHERE lieu_id = $1 AND id = $2 AND type = 'comptage'",
         [auth.lieuId, id],
@@ -418,8 +430,12 @@ export async function routesClotures(app: FastifyInstance, { base }: { base: Bas
         [auth.lieuId, z.evenement_id, id, z.attendu_centimes, compte, ecart, z.seuil_centimes, motif, signature, auth.utilisateurId],
       );
       await inscrireJet(c, { lieuId: auth.lieuId, type: "z_coffre_rectifie", utilisateurId: auth.utilisateurId, details: { comptage: id, compteAvant: z.compte_centimes, ecartAvant: z.ecart_centimes, compte, ecart, motif, signature } });
-      return lireClotureMatch(c, auth.lieuId, z.evenement_id);
+      const cloture = await lireClotureMatch(c, auth.lieuId, z.evenement_id);
+      avis = { objet: "Coffre", evenement: cloture.evenement.libelle, compteAvant: z.compte_centimes, ecartAvant: z.ecart_centimes, compte, ecart, motif, signature, par: auth.nom };
+      return cloture;
     });
+    await notifierRectification(req, auth, id, avis);
+    return resultat;
   });
 
   // ---------- Rectification d'un Z : s'ajoute, ne remplace rien ----------
@@ -427,7 +443,8 @@ export async function routesClotures(app: FastifyInstance, { base }: { base: Bas
     const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);
     const { compte, motif, signature } = corps(Rectification, req);
-    return base.transaction(contexte(auth), async (c) => {
+    let avis: Parameters<typeof envoyerRectificationParEmail>[4] | null = null;
+    const resultat = await base.transaction(contexte(auth), async (c) => {
       const { rows } = await c.query<LigneComptage & { caisse_id: string; evenement_id: string; numero: number }>(
         `SELECT ce.*, u.nom AS par, k.numero FROM comptage_especes ce
            JOIN utilisateur u ON u.id = ce.par
@@ -451,7 +468,12 @@ export async function routesClotures(app: FastifyInstance, { base }: { base: Bas
         caisseId: z.caisse_id,
         details: { comptage: id, caisse: z.numero, compteAvant: z.compte_centimes, ecartAvant: z.ecart_centimes, compte, ecart, motif, signature },
       });
-      return lireClotureMatch(c, auth.lieuId, z.evenement_id);
+      const cloture = await lireClotureMatch(c, auth.lieuId, z.evenement_id);
+      const stand = cloture.sessions.find((s) => s.caisseNumero === z.numero)?.standNom;
+      avis = { objet: `Caisse ${z.numero}${stand ? ` (${stand})` : ""}`, evenement: cloture.evenement.libelle, compteAvant: z.compte_centimes, ecartAvant: z.ecart_centimes, compte, ecart, motif, signature, par: auth.nom };
+      return cloture;
     });
+    await notifierRectification(req, auth, id, avis);
+    return resultat;
   });
 }

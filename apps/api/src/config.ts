@@ -49,4 +49,10 @@ export const config = {
   /** Secours si Mistral ne répond pas (§15.137) : OVHcloud AI Endpoints, réglé avec `sudo flaix-admin cle-ovh-ia`. */
   ovhIaJeton: process.env.OVH_AI_ENDPOINTS_ACCESS_TOKEN || null,
   ovhIaModele: process.env.OVH_AI_MODELE || "Mistral-Small-3.2-24B-Instruct-2506",
+  /**
+   * E-mails par Brevo (§15.146) : clé d'API et adresse d'expédition, réglées par Rémi avec
+   * `sudo flaix-admin cle-brevo` ; absentes = aucun e-mail ne part, tout le reste fonctionne.
+   */
+  brevoCle: process.env.BREVO_API_KEY || null,
+  brevoExpediteur: process.env.BREVO_EXPEDITEUR || null,
 } as const;

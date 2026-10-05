@@ -5,6 +5,7 @@ import type { ReglagesAlertesPoussees } from "@flaix/domain";
 import { api } from "../../api.ts";
 import { useSession } from "../../session.tsx";
 import { Carte, EntetePage, MessageErreur, Regles } from "../../composants/communs.tsx";
+import { EmailsLieu } from "./EmailsLieu.tsx";
 
 /** Clé publique du serveur (base64url) → octets attendus par le navigateur. */
 function versOctets(base64url: string): Uint8Array<ArrayBuffer> {
@@ -121,7 +122,7 @@ export function Notifications() {
 
   return (
     <>
-      <EntetePage fil="Paramètres" filLien="/parametres" titre="Notifications" description="Sur ton téléphone : les ruptures de stock pendant l'événement, et le brief de fin de soirée à chaque clôture." />
+      <EntetePage fil="Paramètres" filLien="/parametres" titre="Notifications" description="Sur ton téléphone : les ruptures de stock pendant l'événement et le brief de fin de soirée. Par e-mail : le rapport de soirée et les rectifications." />
       <Carte titre="Sur cet appareil">
         {etat === "impossible" ? (
           <div className="message message-alerte" style={{ marginTop: 0 }}>
@@ -156,6 +157,7 @@ export function Notifications() {
         <MessageErreur erreur={erreur} />
       </Carte>
       <AlertesStock />
+      <EmailsLieu />
       <Regles>
         <ul>
           <li><strong>Brief de fin de soirée</strong> : envoyé à la clôture de l'événement, sur chaque appareil où un directeur a activé les notifications. Il reprend les chiffres du rapport de soirée figé, sans en inventer : encaissé, tickets, panier moyen, marge nette face à sa cible, évolution par rapport à l'événement précédent, et ce qui demande une vérification (écart d'espèces, écart de stock). Le toucher ouvre le rapport complet.</li>

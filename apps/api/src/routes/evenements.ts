@@ -9,6 +9,7 @@ import { restesDuMatch } from "./stock.ts";
 import { figerConsommationIngredients } from "./stock-ingredients.ts";
 import { figerRapportSoiree } from "./rapport-soiree.ts";
 import { envoyerBriefSoiree } from "./notifications.ts";
+import { envoyerRapportParEmail } from "./emails.ts";
 import { exigerMoisOuvert, zDuMatch } from "./periodes.ts";
 import { ParamId, contexte, corps, differences, texte } from "./outils.ts";
 
@@ -189,6 +190,12 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
       await envoyerBriefSoiree(base, contexte(auth), auth.lieuId, id);
     } catch (erreur) {
       req.log.error({ err: erreur, evenementId: id }, "brief de fin de soirée non envoyé");
+    }
+    // Rapport de soirée par e-mail (§15.146) : un échec n'annule jamais la clôture.
+    try {
+      await envoyerRapportParEmail(base, contexte(auth), auth.lieuId, id);
+    } catch (erreur) {
+      req.log.error({ err: erreur, evenementId: id }, "rapport de soirée non envoyé par e-mail");
     }
     return liste;
   });

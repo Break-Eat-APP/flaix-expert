@@ -7,6 +7,7 @@
 #   flaix-admin essai-restauration    restaure la dernière copie OVH dans une base temporaire et la compare
 #   flaix-admin cle-mistral           règle (ou retire) la clé de l'API Mistral de l'assistant IA (dossier §15.136)
 #   flaix-admin cle-ovh-ia            règle (ou retire) le jeton OVHcloud AI Endpoints, moteur de l'assistant IA (dossier §15.137, §15.145)
+#   flaix-admin cle-brevo             règle (ou retire) la clé Brevo et l'adresse d'expédition des e-mails (dossier §15.146)
 # Mots de passe, clés et codes s'affichent une seule fois, dans cette fenêtre seulement.
 set -euo pipefail
 
@@ -190,8 +191,47 @@ ENV
     echo "Clé vérifiée et enregistrée : l'assistant IA passe par OVHcloud."
     ;;
 
+  cle-brevo)
+    # E-mails de FlaiX Expert par Brevo (dossier §15.146) : clé d'API tapée par Rémi, jamais affichée ; adresse d'expédition en clair.
+    echo "Clé d'API Brevo (e-mails de FlaiX Expert : rapport de soirée, rectifications)."
+    echo "Elle se crée dans Brevo : ton nom (en haut à droite) > SMTP & API > Clés API > Générer une nouvelle clé API."
+    echo
+    read -r -s -p "Clé d'API Brevo (elle ne s'affiche pas ; vide = retirer la clé) : " CLE
+    echo
+    ENV_BREVO=/etc/flaix/brevo.env
+    if [ -z "$CLE" ]; then
+      rm -f "$ENV_BREVO"
+      systemctl restart flaix-api
+      echo "Clé retirée : plus aucun e-mail ne part."
+      exit 0
+    fi
+    [[ "$CLE" =~ ^[A-Za-z0-9_-]{20,300}$ ]] || { unset CLE; echo "Cette clé n'a pas la bonne forme (espace ou caractère inattendu ?) : rien n'est enregistré."; exit 1; }
+    read -r -p "Adresse d'expédition (déclarée dans Brevo, par exemple no-reply@ton-domaine) : " EXPEDITEUR
+    EXPEDITEUR="$(printf '%s' "$EXPEDITEUR" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+    [[ "$EXPEDITEUR" =~ ^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,24}$ ]] || { unset CLE; echo "Cette adresse n'a pas la bonne forme : rien n'est enregistré."; exit 1; }
+    echo "Vérification auprès de Brevo…"
+    # La clé passe par l'entrée standard de curl : elle n'apparaît jamais dans la liste des processus.
+    CODE="$(printf 'api-key: %s\n' "$CLE" | curl -s -o /dev/null -w '%{http_code}' -m 20 -H @- -H 'accept: application/json' https://api.brevo.com/v3/account || true)"
+    if [ "$CODE" != "200" ]; then
+      unset CLE
+      echo "Brevo refuse cette clé (réponse ${CODE:-aucune}) : vérifie-la (et, si le blocage des IP inconnues est actif, autorise l'adresse de ce serveur), puis recommence. Rien n'est enregistré."
+      exit 1
+    fi
+    EXPEDITEURS="$(printf 'api-key: %s\n' "$CLE" | curl -s -m 20 -H @- -H 'accept: application/json' https://api.brevo.com/v3/senders || true)"
+    if ! printf '%s' "$EXPEDITEURS" | tr '[:upper:]' '[:lower:]' | grep -q "\"email\":\"$EXPEDITEUR\""; then
+      echo "Attention : « $EXPEDITEUR » n'apparaît pas dans les expéditeurs de ton compte Brevo. Si les e-mails ne partent pas, ajoute-le dans Brevo (Expéditeurs, domaines et IP dédiées)."
+    fi
+    umask 027
+    printf 'BREVO_API_KEY=%s\nBREVO_EXPEDITEUR=%s\n' "$CLE" "$EXPEDITEUR" > "$ENV_BREVO"
+    unset CLE
+    chown root:flaix "$ENV_BREVO" && chmod 640 "$ENV_BREVO"
+    systemctl restart flaix-api
+    echo "Clé vérifiée et enregistrée. Expéditeur : FlaiX Expert <$EXPEDITEUR>."
+    echo "Pour essayer : Paramètres > Notifications > E-mails > « Envoyer un e-mail d'essai »."
+    ;;
+
   *)
-    echo "Usage : flaix-admin creer-lieu | nouveau-mot-de-passe | creer-editeur | sauvegarde-externe | essai-restauration | cle-mistral | cle-ovh-ia"
+    echo "Usage : flaix-admin creer-lieu | nouveau-mot-de-passe | creer-editeur | sauvegarde-externe | essai-restauration | cle-mistral | cle-ovh-ia | cle-brevo"
     exit 1
     ;;
 esac

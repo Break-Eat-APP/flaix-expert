@@ -84,6 +84,8 @@ EnvironmentFile=/etc/flaix/flaix.env
 EnvironmentFile=-/etc/flaix/mistral.env
 # Secours OVHcloud AI Endpoints (§15.137), posé par « flaix-admin cle-ovh-ia » ; facultatif.
 EnvironmentFile=-/etc/flaix/ovh-ia.env
+# E-mails par Brevo (§15.146), posés par « flaix-admin cle-brevo » ; facultatif.
+EnvironmentFile=-/etc/flaix/brevo.env
 Environment=PATH=/opt/node/bin:/usr/bin:/bin
 ExecStart=/srv/flaix/app/apps/api/node_modules/.bin/tsx src/index.ts
 Restart=on-failure
