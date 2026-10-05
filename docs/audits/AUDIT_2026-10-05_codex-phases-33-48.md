@@ -54,6 +54,16 @@ suite fait tomber Node (« out of memory », `ERR_WORKER_INIT_FAILED`) et les fi
 Nouvelle commande : `pnpm --filter @flaix/api test:un-par-un` (un fichier par processus, base neuve à chaque fichier,
 résumé à la fin) ; le prompt d'audit Codex la mentionne. Résultat fichier par fichier : voir la section suivante.
 
+## Défaut trouvé en vérifiant la mise en ligne (non vu par les audits)
+
+**Le serveur de test ne lisait pas les réglages Apple et Google.** Le script de mise en ligne installé sur le serveur datait du
+2026-10-05 à 10 h 47, avant la ligne qui le met à jour lui-même : chaque mise en ligne réécrivait donc le service avec
+l'ancienne liste de fichiers de réglages, sans `wallet-apple.env` ni `wallet-google.env`. Effet : les boutons « Ajouter à
+Apple Wallet / Google Wallet » ne pouvaient pas apparaître, bien que Rémi ait installé les deux comptes. Corrigé le
+2026-10-05 à 21 h 46 : script installé une fois à la main, nouvelle mise en ligne ; il se met désormais à jour seul. Vérifié
+sur le serveur : réglages Apple et Google lus, carte d'essai signée avec le vrai certificat d'Apple et vérifiée avec
+l'intermédiaire d'Apple (`openssl smime -verify` : « Verification successful »), service web Apple qui répond.
+
 ## Résultat des tests après corrections
 
 Serveur, fichier par fichier (`test:un-par-un`) le 2026-10-05 au soir : **37 fichiers, 351 tests, tous verts au premier essai**
