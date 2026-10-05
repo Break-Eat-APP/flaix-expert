@@ -5,6 +5,62 @@
 
 ## 2026-10-05
 
+### [`3276652`](https://github.com/Break-Eat-APP/flaix-expert/commit/3276652190fa7fd86d1a643f2ee027e7f657ecf5) — E-mails par Brevo : rapport de soirée à la clôture, notification des rectifications de Z (dossier §15.146) *(phase 46)*
+
+- modifié : `apps/api/src/config.ts`
+- modifié : `apps/api/src/routes/clotures.ts`
+- créé : `apps/api/src/routes/emails.ts`
+- modifié : `apps/api/src/routes/evenements.ts`
+- modifié : `apps/api/src/serveur.ts`
+- créé : `apps/api/test/emails.test.ts`
+- créé : `apps/web/src/pages/parametres/EmailsLieu.test.tsx`
+- créé : `apps/web/src/pages/parametres/EmailsLieu.tsx`
+- modifié : `apps/web/src/pages/parametres/Notifications.tsx`
+- créé : `db/migrations/0034_emails.sql`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `docs/guide-serveur-test-ovh.md`
+- modifié : `infra/vps/deployer.sh`
+- modifié : `infra/vps/flaix-admin.sh`
+- créé : `packages/domain/src/emails.test.ts`
+- créé : `packages/domain/src/emails.ts`
+- modifié : `packages/domain/src/index.ts`
+- modifié : `packages/domain/src/journal-technique.ts`
+
+### [`12c69e1`](https://github.com/Break-Eat-APP/flaix-expert/commit/12c69e10bb15cef6b7a2fe3c1b9aca1164f0447c) — Avancement : serveur de test mis à jour (version b860416, migrations 0030 à 0033)
+
+- modifié : `docs/avancement.md`
+
+### [`b860416`](https://github.com/Break-Eat-APP/flaix-expert/commit/b8604166a371e12a7b414dbe8de26b42bae76ad6) — IA OVHcloud : « clé d'API » comme dans l'espace OVHcloud, commande à lancer en une ligne depuis PowerShell *(phase 45)*
+
+- modifié : `docs/avancement.md`
+- modifié : `docs/guide-serveur-test-ovh.md`
+- modifié : `infra/vps/flaix-admin.sh`
+
+### [`0cf75f7`](https://github.com/Break-Eat-APP/flaix-expert/commit/0cf75f74279946891a5f97e9149a8f8086144895) — IA : OVHcloud seul comme moteur de langage de l'agent (dossier §15.145) *(phase 45)*
+
+- modifié : `apps/api/src/ia/fournisseur.ts`
+- modifié : `apps/api/src/routes/assistant.ts`
+- modifié : `apps/api/test/assistant.test.ts`
+- modifié : `apps/web/src/pages/Assistant.test.tsx`
+- modifié : `apps/web/src/pages/Assistant.tsx`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `docs/guide-serveur-test-ovh.md`
+- modifié : `infra/vps/flaix-admin.sh`
+- modifié : `packages/domain/src/editeur.ts`
+
+### [`e9427a6`](https://github.com/Break-Eat-APP/flaix-expert/commit/e9427a6ab263b3b376ecb1e7ce3dd80bddafd756) — Avancement : vérification à l'écran terminée (prévision, temps de commande)
+
+- modifié : `docs/avancement.md`
+
+### [`7b69e85`](https://github.com/Break-Eat-APP/flaix-expert/commit/7b69e85de78f1fac19cd496629c63b9e522a6065) — Journal : phases 40 à 44 (temps de commande, centre d'alertes, fournisseurs, support niveau 2, prévision) ; avancement à jour
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `infra/outils/journal-developpement.cjs`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`534a3a6`](https://github.com/Break-Eat-APP/flaix-expert/commit/534a3a6d867afcbcf5840bc11afcfd7c0f245267) — Prévision du prochain événement (dossier §15.143) *(phase 44)*
 
 - créé : `apps/api/src/routes/prevision.ts`

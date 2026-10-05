@@ -50,6 +50,8 @@
 | 42 | [Comparaison des prix entre fournisseurs](#phase-42) | §15.141 | [`cb5cb03`](https://github.com/Break-Eat-APP/flaix-expert/commit/cb5cb039544ae547d7f86b649da7a5af4e35f00c) | livrée |
 | 43 | [Back-office niveau 2 : support sur autorisation du lieu](#phase-43) | §15.142 | [`0a675eb`](https://github.com/Break-Eat-APP/flaix-expert/commit/0a675ebb0890bbe6e768539eac7b651b1c0d73a6) | livrée |
 | 44 | [Prévision du prochain événement](#phase-44) | §15.143 | [`534a3a6`](https://github.com/Break-Eat-APP/flaix-expert/commit/534a3a6d867afcbcf5840bc11afcfd7c0f245267) | livrée |
+| 45 | [IA : OVHcloud seul comme moteur de langage de l'agent](#phase-45) | §15.145 | [`0cf75f7`](https://github.com/Break-Eat-APP/flaix-expert/commit/0cf75f74279946891a5f97e9149a8f8086144895) [`b860416`](https://github.com/Break-Eat-APP/flaix-expert/commit/b8604166a371e12a7b414dbe8de26b42bae76ad6) | livrée |
+| 46 | [E-mails par Brevo : rapport de soirée et rectifications](#phase-46) | §15.146 | [`3276652`](https://github.com/Break-Eat-APP/flaix-expert/commit/3276652190fa7fd86d1a643f2ee027e7f657ecf5) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -1717,6 +1719,66 @@
   - [`apps/api/test/prevision.test.ts`](../../apps/api/test/prevision.test.ts) — créé
   - [`packages/domain/src/prevision.test.ts`](../../packages/domain/src/prevision.test.ts) — créé
 
+<a id="phase-45"></a>
+## Phase 45 — IA : OVHcloud seul comme moteur de langage de l'agent
+
+- **Dates** : 2026-10-05
+- **Décision et raisonnement** : dossier projet §15.145
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`0cf75f7`](https://github.com/Break-Eat-APP/flaix-expert/commit/0cf75f74279946891a5f97e9149a8f8086144895) 2026-10-05 — IA : OVHcloud seul comme moteur de langage de l'agent (dossier §15.145)
+  - [`b860416`](https://github.com/Break-Eat-APP/flaix-expert/commit/b8604166a371e12a7b414dbe8de26b42bae76ad6) 2026-10-05 — IA OVHcloud : « clé d'API » comme dans l'espace OVHcloud, commande à lancer en une ligne depuis PowerShell
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/editeur.ts`](../../packages/domain/src/editeur.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/ia/fournisseur.ts`](../../apps/api/src/ia/fournisseur.ts) — modifié
+  - [`apps/api/src/routes/assistant.ts`](../../apps/api/src/routes/assistant.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/Assistant.test.tsx`](../../apps/web/src/pages/Assistant.test.tsx) — modifié
+  - [`apps/web/src/pages/Assistant.tsx`](../../apps/web/src/pages/Assistant.tsx) — modifié
+- **Tests** :
+  - [`apps/api/test/assistant.test.ts`](../../apps/api/test/assistant.test.ts) — modifié
+- **Serveur et outils (infra)** :
+  - [`infra/vps/flaix-admin.sh`](../../infra/vps/flaix-admin.sh) — modifié
+- **Documentation** :
+  - [`docs/avancement.md`](../../docs/avancement.md) — modifié
+  - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
+  - [`docs/guide-serveur-test-ovh.md`](../../docs/guide-serveur-test-ovh.md) — modifié
+
+<a id="phase-46"></a>
+## Phase 46 — E-mails par Brevo : rapport de soirée et rectifications
+
+- **Dates** : 2026-10-05
+- **Décision et raisonnement** : dossier projet §15.146
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`3276652`](https://github.com/Break-Eat-APP/flaix-expert/commit/3276652190fa7fd86d1a643f2ee027e7f657ecf5) 2026-10-05 — E-mails par Brevo : rapport de soirée à la clôture, notification des rectifications de Z (dossier §15.146)
+- **Migrations (base)** :
+  - [`db/migrations/0034_emails.sql`](../../db/migrations/0034_emails.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/emails.ts`](../../packages/domain/src/emails.ts) — créé
+  - [`packages/domain/src/index.ts`](../../packages/domain/src/index.ts) — modifié
+  - [`packages/domain/src/journal-technique.ts`](../../packages/domain/src/journal-technique.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/config.ts`](../../apps/api/src/config.ts) — modifié
+  - [`apps/api/src/routes/clotures.ts`](../../apps/api/src/routes/clotures.ts) — modifié
+  - [`apps/api/src/routes/emails.ts`](../../apps/api/src/routes/emails.ts) — créé
+  - [`apps/api/src/routes/evenements.ts`](../../apps/api/src/routes/evenements.ts) — modifié
+  - [`apps/api/src/serveur.ts`](../../apps/api/src/serveur.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/parametres/EmailsLieu.test.tsx`](../../apps/web/src/pages/parametres/EmailsLieu.test.tsx) — créé
+  - [`apps/web/src/pages/parametres/EmailsLieu.tsx`](../../apps/web/src/pages/parametres/EmailsLieu.tsx) — créé
+  - [`apps/web/src/pages/parametres/Notifications.tsx`](../../apps/web/src/pages/parametres/Notifications.tsx) — modifié
+- **Tests** :
+  - [`apps/api/test/emails.test.ts`](../../apps/api/test/emails.test.ts) — créé
+  - [`packages/domain/src/emails.test.ts`](../../packages/domain/src/emails.test.ts) — créé
+- **Serveur et outils (infra)** :
+  - [`infra/vps/deployer.sh`](../../infra/vps/deployer.sh) — modifié
+  - [`infra/vps/flaix-admin.sh`](../../infra/vps/flaix-admin.sh) — modifié
+- **Documentation** :
+  - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
+  - [`docs/guide-serveur-test-ovh.md`](../../docs/guide-serveur-test-ovh.md) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -1732,3 +1794,6 @@
 - [`ffe43d3`](https://github.com/Break-Eat-APP/flaix-expert/commit/ffe43d3af21b6ddbc869b3f7da205f7d904c1aa1) 2026-10-04 — Avancement : inventaire des modules remis à jour au 2026-10-04
 - [`4d416ac`](https://github.com/Break-Eat-APP/flaix-expert/commit/4d416ac5c9af2fd00b7ef7a4294d8bfd6935d208) 2026-10-04 — Journal : phase 39 (Revenue Engine) ; décision du temps de prise de commande par caisse (dossier §15.139)
 - [`5516b41`](https://github.com/Break-Eat-APP/flaix-expert/commit/5516b41e3dbdcc3ce1c10a7ccff1063ff76554b5) 2026-10-05 — Dossier : temps de commande, centre d'alertes, prix fournisseurs, support niveau 2, prévision, copie de configuration abandonnée (§15.139 à §15.144)
+- [`7b69e85`](https://github.com/Break-Eat-APP/flaix-expert/commit/7b69e85de78f1fac19cd496629c63b9e522a6065) 2026-10-05 — Journal : phases 40 à 44 (temps de commande, centre d'alertes, fournisseurs, support niveau 2, prévision) ; avancement à jour
+- [`e9427a6`](https://github.com/Break-Eat-APP/flaix-expert/commit/e9427a6ab263b3b376ecb1e7ce3dd80bddafd756) 2026-10-05 — Avancement : vérification à l'écran terminée (prévision, temps de commande)
+- [`12c69e1`](https://github.com/Break-Eat-APP/flaix-expert/commit/12c69e10bb15cef6b7a2fe3c1b9aca1164f0447c) 2026-10-05 — Avancement : serveur de test mis à jour (version b860416, migrations 0030 à 0033)

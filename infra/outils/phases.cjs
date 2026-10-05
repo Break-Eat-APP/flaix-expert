@@ -48,6 +48,8 @@ const PHASES = [
   { n: 42, titre: "Comparaison des prix entre fournisseurs", dossier: "§15.141", commits: ["cb5cb03"] },
   { n: 43, titre: "Back-office niveau 2 : support sur autorisation du lieu", dossier: "§15.142", commits: ["0a675eb"] },
   { n: 44, titre: "Prévision du prochain événement", dossier: "§15.143", commits: ["534a3a6"] },
+  { n: 45, titre: "IA : OVHcloud seul comme moteur de langage de l'agent", dossier: "§15.145", commits: ["0cf75f7", "b860416"] },
+  { n: 46, titre: "E-mails par Brevo : rapport de soirée et rectifications", dossier: "§15.146", commits: ["3276652"] },
 ];
 
 module.exports = { PHASES };
