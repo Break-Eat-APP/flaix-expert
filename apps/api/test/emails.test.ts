@@ -8,6 +8,7 @@ import type { ClotureMatch, Email, EntreeJournalTechnique, EtatEmails, Evenement
 import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { definirEnvoyeurEmail, envoyerRapportParEmail } from "../src/routes/emails.ts";
+import { travauxTermines } from "../src/arriere-plan.ts";
 import { MOT_DE_PASSE_TEST, basesDeTest, creerLieuDeTest } from "./aide.ts";
 import { envoyer, ligne, tablette, vendreHorsLigne } from "./tablette.ts";
 
@@ -19,6 +20,8 @@ let lieu: { lieuId: string; utilisateurId: string; email: string };
 let rouen: Evenement;
 let comptageId = "";
 const envoyes: { a: string[]; email: Email }[] = [];
+/** Connexions à la base occupées pendant chaque envoi : aucune (audit Codex du 2026-10-05). */
+const occupees: number[] = [];
 let enPanne = false;
 
 const EN_TETES = { "content-type": "application/json", origin: "http://localhost:5173" };
@@ -33,6 +36,7 @@ beforeAll(async () => {
   serveur = await construireServeur(app, { journaliser: false });
   definirEnvoyeurEmail(async (a, email) => {
     if (enPanne) return { ok: false, erreur: "Brevo a répondu 503" };
+    occupees.push(app.pool.totalCount - app.pool.idleCount);
     envoyes.push({ a, email });
     return { ok: true, messageId: `<message-${envoyes.length}@brevo>` };
   });
@@ -79,6 +83,7 @@ describe("e-mails du lieu (§15.146)", () => {
 
   it("clôture de l'événement : le rapport part une fois, au directeur et à l'expert-comptable, avec le lien du rapport", async () => {
     expect((await appel("POST", `/api/evenements/${rouen.id}/cloture`)).statut).toBe(200);
+    await travauxTermines();
     const rapports = envoyes.filter((x) => x.email.sujet.startsWith("Rapport de soirée"));
     expect(rapports).toHaveLength(1);
     expect(rapports[0]!.a).toEqual([lieu.email, "expert@cabinet.fr"]);
@@ -91,6 +96,7 @@ describe("e-mails du lieu (§15.146)", () => {
   it("rectification du Z : notifiée aussitôt, avec le motif et la signature", async () => {
     const avant = envoyes.length;
     expect((await appel("POST", `/api/comptages/${comptageId}/rectification`, { compte: 11_400, motif: "Billet de 14 € retrouvé dans la réserve", signature: "Rémi Notta" })).statut).toBe(200);
+    await travauxTermines();
     expect(envoyes).toHaveLength(avant + 1);
     const m = envoyes.at(-1)!.email;
     expect(m.sujet).toBe("Rectification du Z — Caisse 1 (Buvette Nord), Rouen");
@@ -101,6 +107,7 @@ describe("e-mails du lieu (§15.146)", () => {
   it("[F] Brevo en panne : la rectification est enregistrée quand même, l'échec est tracé et visible", async () => {
     enPanne = true;
     expect((await appel("POST", `/api/comptages/${comptageId}/rectification`, { compte: 11_400, motif: "Seconde vérification du comptage", signature: "Rémi Notta" })).statut).toBe(200);
+    await travauxTermines();
     enPanne = false;
     const e = (await appel<EtatEmails>("GET", "/api/emails")).corps;
     expect(e.derniers[0]).toMatchObject({ type: "rectification", statut: "echec", erreur: "Brevo a répondu 503" });
@@ -111,6 +118,8 @@ describe("e-mails du lieu (§15.146)", () => {
     const e = (await appel<EtatEmails>("POST", "/api/emails/essai")).corps;
     expect(envoyes).toHaveLength(avant + 1);
     expect(envoyes.at(-1)!.a).toEqual([lieu.email]);
+    // Brevo est appelé hors de toute transaction : aucune connexion à la base n'attend sa réponse.
+    expect(occupees.every((n) => n === 0)).toBe(true);
     expect(e.derniers[0]).toMatchObject({ type: "essai", statut: "envoye", destinataires: 1 });
   });
 

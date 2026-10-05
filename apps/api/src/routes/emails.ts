@@ -86,21 +86,27 @@ async function directeurs(c: Client, lieuId: string): Promise<{ nom: string; ema
   return rows;
 }
 
-/** Envoie un e-mail et le trace ; « sans_service » si Brevo n'est pas réglé. Jamais d'exception. */
-export async function envoyerEtTracer(c: Client, lieuId: string, type: EmailEnvoye["type"], objetId: string | null, a: string[], email: Email): Promise<EmailEnvoye["statut"]> {
+/**
+ * Envoie un e-mail puis le trace ; « sans_service » si Brevo n'est pas réglé. Jamais d'exception de Brevo.
+ * L'envoi se fait hors de toute transaction (audit Codex du 2026-10-05) : Brevo peut mettre 15 s à répondre, aucune
+ * connexion à la base ne reste ouverte pendant ce temps ; la trace est écrite ensuite, dans sa propre transaction.
+ */
+export async function envoyerEtTracer(base: Base, ctx: Contexte, lieuId: string, type: EmailEnvoye["type"], objetId: string | null, a: string[], email: Email): Promise<EmailEnvoye["statut"]> {
   const f = service();
-  const r = f && a.length ? await f(a, email) : null;
+  const r = f && a.length ? await f(a, email).catch((erreur: unknown) => ({ ok: false as const, erreur: erreur instanceof Error ? erreur.message : "Envoi impossible" })) : null;
   const statut: EmailEnvoye["statut"] = !f ? "sans_service" : r?.ok ? "envoye" : "echec";
-  await c.query("INSERT INTO email_envoye (lieu_id, type, objet_id, sujet, destinataires, statut, erreur, message_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", [
-    lieuId,
-    type,
-    objetId,
-    email.sujet.slice(0, 300),
-    a.length,
-    statut,
-    r && !r.ok ? r.erreur.slice(0, 500) : null,
-    r && r.ok ? r.messageId?.slice(0, 300) ?? null : null,
-  ]);
+  await base.transaction(ctx, (c) =>
+    c.query("INSERT INTO email_envoye (lieu_id, type, objet_id, sujet, destinataires, statut, erreur, message_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", [
+      lieuId,
+      type,
+      objetId,
+      email.sujet.slice(0, 300),
+      a.length,
+      statut,
+      r && !r.ok ? r.erreur.slice(0, 500) : null,
+      r && r.ok ? r.messageId?.slice(0, 300) ?? null : null,
+    ]),
+  );
   return statut;
 }
 
@@ -108,24 +114,26 @@ const destinataires = async (c: Client, lieuId: string, supplementaires: string[
 
 /** Rapport de soirée par e-mail, une seule fois par événement, après la clôture (§15.146). */
 export async function envoyerRapportParEmail(base: Base, ctx: Contexte, lieuId: string, evenementId: string): Promise<void> {
-  await base.transaction(ctx, async (c) => {
+  const envoi = await base.transaction(ctx, async (c) => {
     const r = await lireReglages(c, lieuId);
-    if (!r.rapport || r.formation) return;
+    if (!r.rapport || r.formation) return null;
     const { rows: deja } = await c.query("SELECT 1 FROM email_envoye WHERE lieu_id = $1 AND objet_id = $2 AND type = 'rapport_soiree' AND statut = 'envoye'", [lieuId, evenementId]);
-    if (deja[0]) return;
+    if (deja[0]) return null;
     const rapport = await lireRapport(c, lieuId, evenementId);
-    if (!rapport) return;
-    await envoyerEtTracer(c, lieuId, "rapport_soiree", evenementId, await destinataires(c, lieuId, r.supplementaires), emailRapportSoiree(briefDeSoiree(rapport.rapport), adresseSite(), r.nom));
+    if (!rapport) return null;
+    return { a: await destinataires(c, lieuId, r.supplementaires), email: emailRapportSoiree(briefDeSoiree(rapport.rapport), adresseSite(), r.nom) };
   });
+  if (envoi) await envoyerEtTracer(base, ctx, lieuId, "rapport_soiree", evenementId, envoi.a, envoi.email);
 }
 
 /** Notification d'une rectification de Z, au moment de l'enregistrement (module 7, §15.146). */
 export async function envoyerRectificationParEmail(base: Base, ctx: Contexte, lieuId: string, comptageId: string, d: { objet: string; evenement: string; compteAvant: number; ecartAvant: number; compte: number; ecart: number; motif: string; signature: string; par: string }): Promise<void> {
-  await base.transaction(ctx, async (c) => {
+  const envoi = await base.transaction(ctx, async (c) => {
     const r = await lireReglages(c, lieuId);
-    if (!r.rectification || r.formation) return;
-    await envoyerEtTracer(c, lieuId, "rectification", comptageId, await destinataires(c, lieuId, r.supplementaires), emailRectification({ ...d, lieu: r.nom, le: new Date().toISOString() }, adresseSite()));
+    if (!r.rectification || r.formation) return null;
+    return { a: await destinataires(c, lieuId, r.supplementaires), email: emailRectification({ ...d, lieu: r.nom, le: new Date().toISOString() }, adresseSite()) };
   });
+  if (envoi) await envoyerEtTracer(base, ctx, lieuId, "rectification", comptageId, envoi.a, envoi.email);
 }
 
 async function etat(c: Client, lieuId: string): Promise<EtatEmails> {
@@ -172,11 +180,9 @@ export async function routesEmails(app: FastifyInstance, { base }: { base: Base 
   app.post("/api/emails/essai", async (req): Promise<EtatEmails> => {
     const auth = await exigerDirecteur(req, base);
     if (!auth.email) throw new ErreurMetier(409, "Ton compte n'a pas d'adresse e-mail.");
-    return base.transaction(contexte(auth), async (c) => {
-      const r = await lireReglages(c, auth.lieuId);
-      if (r.formation) throw new ErreurMetier(409, "Mode formation : aucun e-mail ne part.");
-      await envoyerEtTracer(c, auth.lieuId, "essai", null, [auth.email!], emailEssai(r.nom, adresseSite()));
-      return etat(c, auth.lieuId);
-    });
+    const r = await base.transaction(contexte(auth), (c) => lireReglages(c, auth.lieuId));
+    if (r.formation) throw new ErreurMetier(409, "Mode formation : aucun e-mail ne part.");
+    await envoyerEtTracer(base, contexte(auth), auth.lieuId, "essai", null, [auth.email], emailEssai(r.nom, adresseSite()));
+    return base.transaction(contexte(auth), (c) => etat(c, auth.lieuId));
   });
 }

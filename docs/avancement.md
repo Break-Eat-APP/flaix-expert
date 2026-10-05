@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## Audit Codex du 2026-10-05 (phases 33 à 48) — corrigé le soir même
+
+Conclusion de Codex transmise par Rémi ; suite donnée dans `docs/audits/AUDIT_2026-10-05_codex-phases-33-48.md` : P1 option Fidélité retirée → cartes révoquées ; `node-forge` retirée du serveur (signature Apple faite avec `node:crypto`, 1.4.1 non publiée) ; nouvel essai automatique des envois Apple et Google en échec (migration 0038, toutes les 5 minutes, abandon après 12 essais) ; e-mails Brevo hors transaction et en arrière-plan ; tests du serveur lancés fichier par fichier (`pnpm --filter @flaix/api test:un-par-un`) sur ce poste à 6 Go, où la suite d'un bloc fait tomber Node faute de mémoire. Pendant le travail, Docker s'est arrêté (mémoire) : relancé ; le conteneur `breakeat_audit` (autre projet de Rémi) est resté arrêté, pas touché.
+
 ## Audit du 2026-10-05 au soir (avant l'audit Codex)
 
 Revue des phases 39 à 48 par Claude : `docs/audits/AUDIT_2026-10-05_revue-claude-phases-39-48.md`. Verdict : passage en **test** possible (club qui utilise FlaiX Expert sans encaisser de vraies ventes avec), après la **copie des sauvegardes chez OVH (à faire par Rémi : non réglée, vérifié sur le serveur)**. Vraies ventes : après les pièces de conformité. Les cinq défauts P2 sont corrigés (commit `360895e`, migration 0037) ; les P3 restent. Prompt Codex mis à jour (phases 33 à 48). **Envoi GitHub** : à lancer par Rémi dans sa propre fenêtre PowerShell (la fenêtre d'identification GitHub ne s'ouvre pas depuis Claude) : `git -C C:\Users\notta\dev\flaix-expert push`. Version corrigée **déployée sur le serveur de test le 2026-10-05 à 21 h 12** (`76af5c9`, sauvegarde prise juste avant, migration 0037 ; limite du service web Apple vérifiée en ligne).

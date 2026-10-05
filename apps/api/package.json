@@ -10,6 +10,7 @@
     "db-reset": "tsx src/outils/reinitialiser-base-dev.ts",
     "cli": "tsx src/outils/cli.ts",
     "test": "vitest run",
+    "test:un-par-un": "node ../../infra/outils/tests-un-par-un.mjs",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
@@ -18,7 +19,6 @@
     "@flaix/domain": "workspace:*",
     "@node-rs/argon2": "^2.2.1",
     "fastify": "^5.12.5",
-    "node-forge": "1.4.0",
     "pg": "^8.23.0",
     "web-push": "3.6.7",
     "zod": "^4.6.5"
@@ -28,6 +28,7 @@
     "@types/node-forge": "1.3.11",
     "@types/pg": "^8.23.1",
     "@types/web-push": "3.6.4",
+    "node-forge": "1.4.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.2"

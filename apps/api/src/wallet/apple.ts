@@ -1,8 +1,8 @@
-import { createHash } from "node:crypto";
+import { X509Certificate, createHash, createPrivateKey, type KeyObject } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { connect } from "node:http2";
-import forge from "node-forge";
 import { config } from "../config.ts";
+import { signerDetache } from "./cms.ts";
 import { pngUni, zip } from "./fichiers.ts";
 
 /*
@@ -15,9 +15,10 @@ import { pngUni, zip } from "./fichiers.ts";
 export interface ReglageApple {
   teamId: string;
   passTypeId: string;
-  cle: forge.pki.rsa.PrivateKey;
-  certificat: forge.pki.Certificate;
-  wwdr: forge.pki.Certificate;
+  cle: KeyObject;
+  /** Certificat de la carte et intermédiaire d'Apple, en DER. */
+  certificat: Buffer;
+  wwdr: Buffer;
   /** Clé et certificat en PEM, pour la connexion au service de notification d'Apple. */
   clePem: string;
   certificatPem: string;
@@ -35,9 +36,9 @@ export function reglageApple(): ReglageApple | null {
   reglage = {
     teamId: config.walletAppleTeamId,
     passTypeId: config.walletApplePassTypeId,
-    cle: forge.pki.privateKeyFromPem(clePem) as forge.pki.rsa.PrivateKey,
-    certificat: forge.pki.certificateFromPem(certificatPem),
-    wwdr: forge.pki.certificateFromPem(wwdrPem),
+    cle: createPrivateKey(clePem),
+    certificat: new X509Certificate(certificatPem).raw,
+    wwdr: new X509Certificate(wwdrPem).raw,
     clePem,
     certificatPem,
   };
@@ -49,25 +50,8 @@ export function definirReglageApple(r: ReglageApple | null): void {
   reglage = r ?? undefined;
 }
 
-/** Signature PKCS #7 détachée (DER) du manifeste. */
-function signer(manifeste: Buffer, r: ReglageApple): Buffer {
-  const p7 = forge.pkcs7.createSignedData();
-  p7.content = forge.util.createBuffer(manifeste.toString("binary"));
-  p7.addCertificate(r.certificat);
-  p7.addCertificate(r.wwdr);
-  p7.addSigner({
-    key: r.cle,
-    certificate: r.certificat,
-    digestAlgorithm: forge.pki.oids.sha256!,
-    authenticatedAttributes: [
-      { type: forge.pki.oids.contentType!, value: forge.pki.oids.data },
-      { type: forge.pki.oids.messageDigest! },
-      { type: forge.pki.oids.signingTime!, value: new Date() as unknown as string },
-    ],
-  });
-  p7.sign({ detached: true });
-  return Buffer.from(forge.asn1.toDer(p7.toAsn1()).getBytes(), "binary");
-}
+/** Signature PKCS #7 détachée (DER) du manifeste, par le certificat de la carte, avec l'intermédiaire d'Apple. */
+const signer = (manifeste: Buffer, r: ReglageApple): Buffer => signerDetache(manifeste, r.cle, r.certificat, [r.wwdr]);
 
 /**
  * Le fichier .pkpass d'une carte : pass.json, images (logo, icône, bande du lieu, §15.148 ; nom sans « .png »),

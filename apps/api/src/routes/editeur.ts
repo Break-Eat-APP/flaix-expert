@@ -22,6 +22,7 @@ import { empreinteJeton, empreinteLeurre, genererMotDePasseProvisoire, hacherMot
 import { NouveauMotDePasse } from "../auth/routes.ts";
 import { verifierClotures } from "./periodes.ts";
 import { ParamId, Uuid, corps, texte } from "./outils.ts";
+import { suivreToutesLesCartes } from "./wallet.ts";
 
 /**
  * Back-office éditeur, niveau 1 : supervision technique (module 17 ; dossier §15.13, §15.116).
@@ -266,6 +267,8 @@ export async function routesEditeur(app: FastifyInstance, { base }: { base: Base
       await c.query("SELECT definir_option_lieu($1, $2, $3)", [id, option, active]);
       await inscrireJet(c, { lieuId: id, type: "option_modifiee", utilisateurId: e.utilisateurId, details: { option, active, par: `FlaiX Expert — ${e.nom}` } });
     });
+    // Option Fidélité retirée ou rendue : les cartes wallet déjà installées sont barrées, ou redeviennent valables.
+    if (option === "fidelite") suivreToutesLesCartes(base, req.log, { lieuId: id }, id);
     return { ok: true };
   });
 

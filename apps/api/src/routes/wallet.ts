@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyBaseLogger, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import {
@@ -88,6 +88,8 @@ export async function donneesCartes(c: Client, lieuId: string, abonneIds: readon
   );
   const p = rows[0]?.p ?? null;
   const soldes = p === null ? null : await soldesPoints(c, lieuId, rows.map((r) => r.id), p);
+  // Option Fidélité retirée au lieu (§15.118) : toutes ses cartes sont révoquées (audit Codex du 2026-10-05, P1).
+  const fidelite = (await lireOptions(c, lieuId)).fidelite;
   return rows.map((r) => ({
     lieuId,
     lieu: r.lieu,
@@ -96,7 +98,7 @@ export async function donneesCartes(c: Client, lieuId: string, abonneIds: readon
     abonneId: r.id,
     nom: r.nom,
     numero: r.numero,
-    actif: r.actif,
+    actif: r.actif && fidelite,
     points: soldes ? Math.max(0, soldes.get(r.id) ?? 0) : null,
     regles: r.p !== null && r.palier && r.valeur ? { pointsParEuro: r.p, palierPoints: r.palier, valeurPalier: r.valeur } : null,
     remisePb: r.remise,
@@ -178,6 +180,28 @@ function envoyerPkpass(rep: FastifyReply, fichier: Buffer, maj: Date | null) {
 const LOT_CARTES = 100;
 
 /**
+ * Réponse d'Apple ou de Google qui vaut d'être retentée plus tard : pas de réponse (0), délai, trop de requêtes, panne.
+ * Les autres refus (requête invalide…) ne guériraient pas en réessayant : ils restent visibles dans le journal du serveur.
+ */
+const passager = (statut: number) => statut === 0 || statut === 408 || statut === 429 || statut >= 500;
+/** Après 12 essais (environ un jour et demi), la relance est abandonnée et journalisée. */
+export const ESSAIS_RELANCE_MAX = 12;
+
+/** Note les envois à retenter et efface les relances devenues inutiles (audit Codex du 2026-10-05). */
+async function noterRelances(c: Client, lieuId: string, echecs: Map<string, string>, reussis: readonly string[]): Promise<void> {
+  if (reussis.length) await c.query("DELETE FROM wallet_relance WHERE lieu_id = $1 AND cible = ANY($2::text[])", [lieuId, reussis]);
+  for (const [cible, cause] of echecs) {
+    // Délai croissant : 5 min, 10, 20, 40… jusqu'à 6 h entre deux essais.
+    await c.query(
+      `INSERT INTO wallet_relance (lieu_id, cible, essais, prochain_essai, cause) VALUES ($1, $2, 1, now() + interval '5 minutes', $3)
+       ON CONFLICT (lieu_id, cible) DO UPDATE SET essais = least(wallet_relance.essais + 1, 100), cause = excluded.cause,
+              prochain_essai = now() + least(interval '5 minutes' * power(2, wallet_relance.essais), interval '6 hours')`,
+      [lieuId, cible, cause.slice(0, 200)],
+    );
+  }
+}
+
+/**
  * Ce que montre la carte a changé (points, nom, design, abonné désactivé) : date de mise à jour, notification aux
  * téléphones Apple inscrits, carte Google remplacée ; avec `classe`, le modèle de carte Google du lieu aussi (design,
  * règle, remise). Par lots de 100, chacun dans sa transaction. Appelé après l'enregistrement, en arrière-plan.
@@ -201,10 +225,15 @@ export async function mettreAJourCartes(base: Base, ctx: Contexte, lieuId: strin
       const premiere = donnees[0];
       return { cartes, images: classeAFaire && premiere ? await imagesGoogle(c, lieuId, premiere.couleur) : null };
     });
+    // Envois qui échouent passagèrement : notés pour être retentés (relancerCartes), sinon la carte resterait périmée.
+    const echecs = new Map<string, string>();
+    const reussis: string[] = [];
     // 404 : le modèle n'existe pas encore chez Google (aucun abonné n'a ajouté sa carte) ; il sera créé au premier ajout.
     const premiere = cartes.find((x) => x.donnees)?.donnees;
     if (google && images && premiere) {
-      await mettreAJourGoogle("loyaltyClass", idClasseGoogle(google.issuerId, lieuId), classeGoogle(premiere, google.issuerId, images), google);
+      const statut = await mettreAJourGoogle("loyaltyClass", idClasseGoogle(google.issuerId, lieuId), classeGoogle(premiere, google.issuerId, images), google);
+      if (passager(statut)) echecs.set("classe", `google ${statut}`);
+      else reussis.push("classe");
       classeAFaire = false;
     }
     for (const carte of cartes) {
@@ -213,12 +242,52 @@ export async function mettreAJourCartes(base: Base, ctx: Contexte, lieuId: strin
           const statut = await notifierApple(a.push_token, apple);
           // 410 : la carte a été retirée du téléphone ; on cesse de le prévenir.
           if (statut === 410) await base.transaction(ctx, (c) => c.query("DELETE FROM wallet_appareil WHERE lieu_id = $1 AND abonne_id = $2 AND appareil = $3", [lieuId, carte.id, a.appareil]));
+          else if (passager(statut)) echecs.set(carte.id, `apple ${statut}`);
         }
       }
       // 404 : l'abonné n'a pas (encore) ajouté sa carte dans Google Wallet ; rien à mettre à jour.
-      if (google && carte.donnees) await mettreAJourGoogle("loyaltyObject", idObjetGoogle(google.issuerId, carte.id), objetGoogle(carte.donnees, google.issuerId), google);
+      if (google && carte.donnees) {
+        const statut = await mettreAJourGoogle("loyaltyObject", idObjetGoogle(google.issuerId, carte.id), objetGoogle(carte.donnees, google.issuerId), google);
+        if (passager(statut)) echecs.set(carte.id, `google ${statut}`);
+      }
+    }
+    // Abonnés du lot sans échec (y compris ceux qui n'ont plus de carte) : plus rien à retenter pour eux.
+    reussis.push(...lot.filter((id) => !echecs.has(id)));
+    await base.transaction(ctx, (c) => noterRelances(c, lieuId, echecs, reussis));
+  }
+}
+
+/**
+ * Relance des cartes dont l'envoi à Apple ou à Google a échoué passagèrement (audit Codex du 2026-10-05) : lancée
+ * toutes les 5 minutes par le serveur. Abandon journalisé après 12 essais. Rend le nombre de relances traitées.
+ */
+export async function relancerCartes(base: Base, log: FastifyBaseLogger): Promise<number> {
+  const { rows: dues } = await base.transaction({}, (c) => c.query<{ lieu_id: string; cible: string }>("SELECT * FROM relances_wallet_dues($1)", [500]));
+  const parLieu = new Map<string, string[]>();
+  for (const d of dues) parLieu.set(d.lieu_id, [...(parLieu.get(d.lieu_id) ?? []), d.cible]);
+  for (const [lieuId, cibles] of parLieu) {
+    const ctx = { lieuId };
+    try {
+      const abandons = await base.transaction(ctx, async (c) => {
+        const { rows } = await c.query<{ cible: string; cause: string }>("DELETE FROM wallet_relance WHERE lieu_id = $1 AND cible = ANY($2::text[]) AND essais >= $3 RETURNING cible, cause", [lieuId, cibles, ESSAIS_RELANCE_MAX]);
+        return rows;
+      });
+      for (const a of abandons) log.error({ lieuId, cible: a.cible, cause: a.cause }, `carte wallet abandonnée après ${ESSAIS_RELANCE_MAX} essais`);
+      const restantes = cibles.filter((x) => !abandons.some((a) => a.cible === x));
+      const classe = restantes.includes("classe");
+      let ids = restantes.filter((x) => x !== "classe");
+      // Seul le modèle est à renvoyer : il se fabrique avec les données d'une carte du lieu.
+      if (classe && ids.length === 0) ids = (await base.transaction(ctx, (c) => abonnesAvecCarte(c, lieuId))).slice(0, 1);
+      if (classe && ids.length === 0) {
+        await base.transaction(ctx, (c) => c.query("DELETE FROM wallet_relance WHERE lieu_id = $1 AND cible = 'classe'", [lieuId]));
+        continue;
+      }
+      if (ids.length) await mettreAJourCartes(base, ctx, lieuId, ids, { classe });
+    } catch (erreur) {
+      log.error({ err: erreur, lieuId }, "relance des cartes wallet impossible");
     }
   }
+  return dues.length;
 }
 
 /** Cartes de quelques abonnés à mettre à jour après un enregistrement : en arrière-plan, la réponse n'attend pas. */
@@ -400,15 +469,16 @@ export async function routesWallet(app: FastifyInstance, { base }: { base: Base 
   app.post("/api/fidelite/abonnes/:id/carte/email", async (req): Promise<{ statut: EmailEnvoye["statut"] }> => {
     const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);
-    return base.transaction(contexte(auth), async (c) => {
+    // Lecture d'abord ; l'envoi par Brevo se fait ensuite, hors de la transaction (audit Codex du 2026-10-05).
+    const { email, a } = await base.transaction(contexte(auth), async (c) => {
       const d = await donneesCarte(c, auth.lieuId, id);
       if (!d.jeton) throw new ErreurMetier(409, "Crée d'abord le lien de la carte.");
       if (!d.email) throw new ErreurMetier(409, "Cet abonné n'a pas d'adresse e-mail.");
       const { rows } = await c.query<{ formation: boolean }>("SELECT formation_de IS NOT NULL AS formation FROM lieu WHERE id = $1", [auth.lieuId]);
       if (rows[0]?.formation) throw new ErreurMetier(409, "Mode formation : aucun e-mail ne part.");
-      const statut = await envoyerEtTracer(c, auth.lieuId, "carte_wallet", id, [d.email], emailLienCarte(d.lieu, d.nom, `${adresseSite()}/carte/${d.jeton}`));
-      return { statut };
+      return { a: d.email, email: emailLienCarte(d.lieu, d.nom, `${adresseSite()}/carte/${d.jeton}`) };
     });
+    return { statut: await envoyerEtTracer(base, contexte(auth), auth.lieuId, "carte_wallet", id, [a], email) };
   });
 
   // ---------- Abonné, sans connexion ----------

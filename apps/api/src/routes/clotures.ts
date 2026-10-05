@@ -20,6 +20,7 @@ import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { listerEvenements } from "./evenements.ts";
 import { envoyerRectificationParEmail } from "./emails.ts";
+import { enArrierePlan } from "../arriere-plan.ts";
 import { restesDuMatch } from "./stock.ts";
 import { ParamId, Uuid, contexte, corps } from "./outils.ts";
 
@@ -242,11 +243,8 @@ export async function routesClotures(app: FastifyInstance, { base }: { base: Bas
   /** Rectification enregistrée : notifiée par e-mail (module 7, §15.146) ; un échec ne remet jamais en cause la rectification. */
   async function notifierRectification(req: FastifyRequest, auth: Authentification, comptageId: string, avis: Parameters<typeof envoyerRectificationParEmail>[4] | null) {
     if (!avis) return;
-    try {
-      await envoyerRectificationParEmail(base, contexte(auth), auth.lieuId, comptageId, avis);
-    } catch (erreur) {
-      req.log.error({ err: erreur, comptageId }, "rectification non notifiée par e-mail");
-    }
+    // En arrière-plan : la rectification est enregistrée, l'écran n'attend pas Brevo.
+    enArrierePlan(req.log, "rectification non notifiée par e-mail", () => envoyerRectificationParEmail(base, contexte(auth), auth.lieuId, comptageId, avis));
   }
 
   app.get("/api/clotures", async (req): Promise<ClotureMatch> => {

@@ -10,6 +10,7 @@ import { figerConsommationIngredients } from "./stock-ingredients.ts";
 import { figerRapportSoiree } from "./rapport-soiree.ts";
 import { envoyerBriefSoiree } from "./notifications.ts";
 import { envoyerRapportParEmail } from "./emails.ts";
+import { enArrierePlan } from "../arriere-plan.ts";
 import { exigerMoisOuvert, zDuMatch } from "./periodes.ts";
 import { ParamId, contexte, corps, differences, texte } from "./outils.ts";
 
@@ -191,12 +192,8 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
     } catch (erreur) {
       req.log.error({ err: erreur, evenementId: id }, "brief de fin de soirée non envoyé");
     }
-    // Rapport de soirée par e-mail (§15.146) : un échec n'annule jamais la clôture.
-    try {
-      await envoyerRapportParEmail(base, contexte(auth), auth.lieuId, id);
-    } catch (erreur) {
-      req.log.error({ err: erreur, evenementId: id }, "rapport de soirée non envoyé par e-mail");
-    }
+    // Rapport de soirée par e-mail (§15.146), en arrière-plan : la clôture n'attend pas Brevo, un échec ne l'annule jamais.
+    enArrierePlan(req.log, "rapport de soirée non envoyé par e-mail", () => envoyerRapportParEmail(base, contexte(auth), auth.lieuId, id));
     return liste;
   });
 }

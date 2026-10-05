@@ -27,7 +27,10 @@ db/migrations : PostgreSQL (sécurité par ligne, droits, déclencheurs d'écrit
 
 ## Vérifications à faire
 1. Exécution : `pnpm install`, `pnpm db:up`, `pnpm test`, `pnpm typecheck`. Donne les chiffres
-   exacts (tests passés / échoués) et les erreurs telles quelles.
+   exacts (tests passés / échoués) et les erreurs telles quelles. Sur un poste à peu de mémoire
+   (6 Go : Node peut tomber, « out of memory » ou ERR_WORKER_INIT_FAILED), lance les tests du
+   serveur un fichier à la fois : `pnpm --filter @flaix/api test:un-par-un` ; distingue un échec
+   de test d'un arrêt de Node faute de mémoire.
 2. Inaltérabilité : aucune table d'encaissement ou de journal ne doit accepter UPDATE / DELETE /
    TRUNCATE, même pour le propriétaire (cherche dans db/migrations les tables oubliées). Les
    corrections sont-elles toujours des opérations inverses tracées ?

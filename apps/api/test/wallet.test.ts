@@ -4,7 +4,7 @@
  * notification au téléphone et mise à jour Google quand le solde change (vente, ajustement, nom), lien renouvelé.
  * Certificats et clés fabriqués pour le test ; Apple et Google remplacés par des enregistreurs.
  */
-import { generateKeyPairSync } from "node:crypto";
+import { createPrivateKey, generateKeyPairSync } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import forge from "node-forge";
@@ -13,6 +13,8 @@ import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { definirEnvoyeurEmail } from "../src/routes/emails.ts";
 import { travauxTermines } from "../src/arriere-plan.ts";
+import { hacherMotDePasse } from "../src/auth/secrets.ts";
+import { relancerCartes } from "../src/routes/wallet.ts";
 import { soldePoints, soldesPoints } from "../src/routes/fidelite-caisse.ts";
 import { pngUni } from "../src/wallet/fichiers.ts";
 import { definirNotifieurApple, definirReglageApple } from "../src/wallet/apple.ts";
@@ -58,14 +60,14 @@ function certificat(nom: string) {
   c.setSubject([{ name: "commonName", value: nom }]);
   c.setIssuer([{ name: "commonName", value: nom }]);
   c.sign(cles.privateKey, forge.md.sha256.create());
-  return { c, cle: cles.privateKey };
+  return { der: Buffer.from(forge.asn1.toDer(forge.pki.certificateToAsn1(c)).getBytes(), "binary"), cle: createPrivateKey(forge.pki.privateKeyToPem(cles.privateKey)) };
 }
 
 beforeAll(async () => {
   ({ proprietaire, app } = basesDeTest());
   serveur = await construireServeur(app, { journaliser: false });
   const carte = certificat(`Pass Type ID: ${PASS_TYPE}`);
-  definirReglageApple({ teamId: "ABCDE12345", passTypeId: PASS_TYPE, cle: carte.cle, certificat: carte.c, wwdr: certificat("WWDR").c, clePem: "", certificatPem: "" });
+  definirReglageApple({ teamId: "ABCDE12345", passTypeId: PASS_TYPE, cle: carte.cle, certificat: carte.der, wwdr: certificat("WWDR").der, clePem: "", certificatPem: "" });
   definirNotifieurApple(async (pushToken) => {
     notifies.push(pushToken);
     return reponseApple;
@@ -383,6 +385,70 @@ describe("mise à jour de toutes les cartes par lots (audit P2-3)", () => {
   });
 });
 
+describe("relance des envois en échec (audit Codex du 2026-10-05)", () => {
+  it("Google en panne : carte notée, renvoyée à l'heure prévue, relance effacée ; abandon après 12 essais", async () => {
+    const { rows } = await proprietaire.pool.query<{ lieu_id: string }>("SELECT lieu_id FROM abonne_fidelite WHERE id = $1", [abonneId]);
+    const lieuId = rows[0]!.lieu_id;
+    const relances = async () =>
+      (await proprietaire.pool.query("SELECT cible, essais, cause, prochain_essai > now() AS plus_tard FROM wallet_relance WHERE lieu_id = $1", [lieuId])).rows;
+    let statutGoogle = 503;
+    definirMiseAJourGoogle(async (ressource, id, contenu) => {
+      google.push({ ressource, id, contenu });
+      return statutGoogle;
+    });
+    await appel("POST", `/api/fidelite/abonnes/${abonneId}/points`, { points: 5, commentaire: "Essai de relance" });
+    await travauxTermines();
+    expect(await relances()).toEqual([{ cible: abonneId, essais: 1, cause: "google 503", plus_tard: true }]);
+
+    // Pas encore l'heure : rien n'est renvoyé.
+    google.length = 0;
+    expect(await relancerCartes(app, serveur.log)).toBe(0);
+    expect(google).toEqual([]);
+
+    // L'heure venue, Google répond de nouveau : la carte est renvoyée, la relance effacée.
+    await proprietaire.pool.query("UPDATE wallet_relance SET prochain_essai = now() - interval '1 second' WHERE lieu_id = $1", [lieuId]);
+    statutGoogle = 200;
+    expect(await relancerCartes(app, serveur.log)).toBe(1);
+    expect(google.map((g) => g.id)).toEqual([`3388000000012345678.abonne_${abonneId.replace(/-/g, "")}`]);
+    expect(await relances()).toEqual([]);
+
+    // Douzième essai : abandon (journalisé), plus de renvoi.
+    await proprietaire.pool.query("INSERT INTO wallet_relance (lieu_id, cible, essais, prochain_essai, cause) VALUES ($1, $2, 12, now() - interval '1 second', 'google 503')", [lieuId, abonneId]);
+    google.length = 0;
+    expect(await relancerCartes(app, serveur.log)).toBe(1);
+    expect(google).toEqual([]);
+    expect(await relances()).toEqual([]);
+    definirMiseAJourGoogle(async (ressource, id, contenu) => {
+      google.push({ ressource, id, contenu });
+      return 200;
+    });
+  });
+
+  it("une panne du modèle de carte Google est aussi relancée", async () => {
+    const { rows } = await proprietaire.pool.query<{ lieu_id: string }>("SELECT lieu_id FROM abonne_fidelite WHERE id = $1", [abonneId]);
+    const lieuId = rows[0]!.lieu_id;
+    definirMiseAJourGoogle(async (ressource, id, contenu) => {
+      google.push({ ressource, id, contenu });
+      return ressource === "loyaltyClass" ? 0 : 200;
+    });
+    const { design } = (await appel<EtatWallet>("GET", "/api/wallet")).corps;
+    await appel("PUT", "/api/wallet/design", { couleur: "#c8102e", design: { ...design, titre: "Carte Relance" } });
+    await travauxTermines();
+    const { rows: relances } = await proprietaire.pool.query("SELECT cible, cause FROM wallet_relance WHERE lieu_id = $1", [lieuId]);
+    expect(relances).toEqual([{ cible: "classe", cause: "google 0" }]);
+    definirMiseAJourGoogle(async (ressource, id, contenu) => {
+      google.push({ ressource, id, contenu });
+      return 200;
+    });
+    await proprietaire.pool.query("UPDATE wallet_relance SET prochain_essai = now() - interval '1 second' WHERE lieu_id = $1", [lieuId]);
+    google.length = 0;
+    await relancerCartes(app, serveur.log);
+    expect(google.filter((g) => g.ressource === "loyaltyClass")).toHaveLength(1);
+    expect(google.find((g) => g.ressource === "loyaltyClass")!.contenu).toMatchObject({ programName: "Carte Relance" });
+    expect((await proprietaire.pool.query("SELECT 1 FROM wallet_relance WHERE lieu_id = $1", [lieuId])).rows).toEqual([]);
+  });
+});
+
 describe("lien renouvelé et option", () => {
   it("renouveler le lien rend l'ancien inutilisable ; la carte Apple déjà installée reste à jour", async () => {
     const nouveau = (await appel<CarteAbonne>("POST", `/api/fidelite/abonnes/${abonneId}/carte`)).corps.lien!.split("/carte/")[1]!;
@@ -391,6 +457,33 @@ describe("lien renouvelé et option", () => {
     expect((await publique(`/api/carte/${nouveau}`)).statusCode).toBe(200);
     expect((await telephone("GET", `/api/passkit/v1/passes/${PASS_TYPE}/${abonneId}`)).statusCode).toBe(200);
     jeton = nouveau;
+  });
+
+  it("option Fidélité retirée par FlaiX Expert : cartes barrées et inactives, page fermée ; rendue : cartes valables (audit Codex P1)", async () => {
+    const { rows } = await proprietaire.pool.query<{ lieu_id: string }>("SELECT lieu_id FROM abonne_fidelite WHERE id = $1", [abonneId]);
+    const lieuId = rows[0]!.lieu_id;
+    const email = `editeur-wallet-${Date.now()}@flaixexpert.test`;
+    const { rows: u } = await proprietaire.pool.query<{ id: string }>("INSERT INTO utilisateur (email, nom, mot_de_passe_hash) VALUES ($1, 'Rémi', $2) RETURNING id", [email, await hacherMotDePasse(MOT_DE_PASSE_TEST)]);
+    await proprietaire.pool.query("INSERT INTO compte_editeur (utilisateur_id) VALUES ($1)", [u[0]!.id]);
+    const r = await serveur.inject({ method: "POST", url: "/api/editeur/connexion", headers: EN_TETES, payload: { email, motDePasse: MOT_DE_PASSE_TEST } });
+    const editeur = `fx_editeur=${r.cookies.find((k) => k.name === "fx_editeur")!.value}`;
+    const option = (active: boolean) => serveur.inject({ method: "PUT", url: `/api/editeur/lieux/${lieuId}/options`, headers: { ...EN_TETES, cookie: editeur }, payload: { option: "fidelite", active } });
+    const objet = `3388000000012345678.abonne_${abonneId.replace(/-/g, "")}`;
+    const passe = async () => JSON.parse(dezip((await telephone("GET", `/api/passkit/v1/passes/${PASS_TYPE}/${abonneId}`)).rawPayload)["pass.json"]!.toString("utf8"));
+
+    google.length = 0;
+    expect((await option(false)).statusCode).toBe(200);
+    await travauxTermines();
+    expect(google.filter((g) => g.id === objet).at(-1)!.contenu).toMatchObject({ state: "INACTIVE" });
+    expect((await publique(`/api/carte/${jeton}`)).statusCode).toBe(404);
+    expect(await passe()).toMatchObject({ voided: true });
+
+    google.length = 0;
+    expect((await option(true)).statusCode).toBe(200);
+    await travauxTermines();
+    expect(google.filter((g) => g.id === objet).at(-1)!.contenu).toMatchObject({ state: "ACTIVE" });
+    expect((await publique(`/api/carte/${jeton}`)).statusCode).toBe(200);
+    expect(await passe()).not.toHaveProperty("voided");
   });
 
   it("abonné désactivé : page de la carte fermée ; téléphone prévenu, carte Apple barrée, carte Google inactive (audit P2-2)", async () => {

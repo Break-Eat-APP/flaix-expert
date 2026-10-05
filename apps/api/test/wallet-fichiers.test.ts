@@ -3,7 +3,7 @@
  * le certificat de la carte et l'intermédiaire d'Apple), image PNG, jeton Google signé. Certificats fabriqués
  * pour le test : aucun vrai certificat ni aucune vraie clé.
  */
-import { createHash, createVerify, generateKeyPairSync } from "node:crypto";
+import { X509Certificate, createHash, createPrivateKey, createVerify, generateKeyPairSync, verify } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import forge from "node-forge";
 import { dezip, pngUni, zip } from "../src/wallet/fichiers.ts";
@@ -21,7 +21,8 @@ function certificat(nom: string, cleSignature?: forge.pki.rsa.PrivateKey) {
   c.setSubject([{ name: "commonName", value: nom }]);
   c.setIssuer([{ name: "commonName", value: nom }]);
   c.sign(cleSignature ?? cles.privateKey, forge.md.sha256.create());
-  return { c, cle: cles.privateKey };
+  // Le serveur lit des certificats DER et une clé node:crypto (plus de node-forge côté serveur, audit Codex du 2026-10-05).
+  return { c, cle: cles.privateKey, der: Buffer.from(forge.asn1.toDer(forge.pki.certificateToAsn1(c)).getBytes(), "binary"), cleNode: createPrivateKey(forge.pki.privateKeyToPem(cles.privateKey)) };
 }
 
 describe("archive zip et image", () => {
@@ -55,7 +56,7 @@ describe("carte Apple (.pkpass)", () => {
   it("contient pass.json, les images, un manifeste exact et une signature PKCS #7 qui porte le certificat de la carte et l'intermédiaire", () => {
     const carte = certificat("Pass Type ID: pass.com.flaixlabs.abonne");
     const wwdr = certificat("Apple WWDR (test)");
-    const r: ReglageApple = { teamId: "ABCDE12345", passTypeId: "pass.com.flaixlabs.abonne", cle: carte.cle, certificat: carte.c, wwdr: wwdr.c, clePem: "", certificatPem: "" };
+    const r: ReglageApple = { teamId: "ABCDE12345", passTypeId: "pass.com.flaixlabs.abonne", cle: carte.cleNode, certificat: carte.der, wwdr: wwdr.der, clePem: "", certificatPem: "" };
     const fichiers = dezip(pkpass({ formatVersion: 1, serialNumber: "x" }, {}, "#c8102e", r));
     // Sans image déposée : icônes unies (Apple les exige), pas de logo.
     expect(Object.keys(fichiers).sort()).toEqual(["icon.png", "icon@2x.png", "icon@3x.png", "manifest.json", "pass.json", "signature"]);
@@ -63,6 +64,22 @@ describe("carte Apple (.pkpass)", () => {
     for (const [nom, empreinte] of Object.entries(manifeste)) expect(createHash("sha1").update(fichiers[nom]!).digest("hex")).toBe(empreinte);
     const p7 = forge.pkcs7.messageFromAsn1(forge.asn1.fromDer(fichiers.signature!.toString("binary"))) as forge.pkcs7.PkcsSignedData;
     expect(p7.certificates.map((c) => c.subject.getField("CN").value)).toEqual(["Pass Type ID: pass.com.flaixlabs.abonne", "Apple WWDR (test)"]);
+
+    // Signature vérifiée indépendamment du code qui l'a faite : attributs signés relus avec forge, empreinte SHA-256 du
+    // manifeste, signature RSA des attributs par la clé publique du certificat de la carte.
+    const brut = (p7 as unknown as { rawCapture: { signerInfos: forge.asn1.Asn1[] } }).rawCapture.signerInfos[0]!;
+    const champs = brut.value as forge.asn1.Asn1[];
+    const attributs = champs.find((x) => x.tagClass === forge.asn1.Class.CONTEXT_SPECIFIC && x.type === 0)!;
+    const signature = Buffer.from(champs.at(-1)!.value as string, "binary");
+    const ensemble = Buffer.from(forge.asn1.toDer(forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SET, true, attributs.value as forge.asn1.Asn1[])).getBytes(), "binary");
+    expect(verify("sha256", ensemble, new X509Certificate(carte.der).publicKey, signature)).toBe(true);
+    const empreinte = (attributs.value as forge.asn1.Asn1[])
+      .map((a) => a.value as forge.asn1.Asn1[])
+      .find((a) => forge.asn1.derToOid(a[0]!.value as string) === forge.pki.oids.messageDigest)!;
+    const valeur = Buffer.from(((empreinte[1]!.value as forge.asn1.Asn1[])[0]!.value as string), "binary");
+    expect(valeur).toEqual(createHash("sha256").update(fichiers["manifest.json"]!).digest());
+    // Signature d'un autre contenu : refusée.
+    expect(verify("sha256", Buffer.concat([ensemble, Buffer.from("x")]), new X509Certificate(carte.der).publicKey, signature)).toBe(false);
 
     // Images du lieu (§15.148) : reprises telles quelles, et l'icône déposée remplace l'icône unie.
     const logo = pngUni("#ffffff", 150, 150);
