@@ -14,8 +14,9 @@ import {
 } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
+import { CarteAbonneBloc, ReglagesCarte } from "./CarteWallet.tsx";
 
-type Onglet = "abonnes" | "codes" | "import" | "reglages";
+type Onglet = "abonnes" | "codes" | "import" | "reglages" | "carte";
 const ETATS_CODE = { valide: ["Valide", "puce-vert"], a_venir: ["À venir", ""], expire: ["Expiré", ""], epuise: ["Épuisé", "puce-ambre"], desactive: ["Désactivé", ""] } as const;
 const dateCourte = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
 
@@ -42,8 +43,9 @@ export function Fidelite() {
         {bouton("codes", "Codes promo")}
         {bouton("import", "Importer")}
         {bouton("reglages", "Règles des points")}
+        {bouton("carte", "Carte téléphone")}
       </div>
-      {onglet === "abonnes" ? <Abonnes e={e} /> : onglet === "codes" ? <Codes e={e} /> : onglet === "import" ? <Import /> : <ReglagesPoints e={e} />}
+      {onglet === "abonnes" ? <Abonnes e={e} /> : onglet === "codes" ? <Codes e={e} /> : onglet === "import" ? <Import /> : onglet === "reglages" ? <ReglagesPoints e={e} /> : <ReglagesCarte />}
       <Regles>
         <ul>
           <li>
@@ -61,6 +63,11 @@ export function Fidelite() {
           <li>
             <strong>Codes promo</strong> : pourcentage ou montant, dates de validité, plafond d'usages facultatif ; un code ne se réutilise pas. Leur utilisation à la caisse
             arrive avec l'étape suivante du module.
+          </li>
+          <li>
+            <strong>Carte dans le téléphone</strong> : chaque abonné peut recevoir un lien personnel vers sa carte (n° d'abonné, QR code, points), à ajouter dans Apple Wallet
+            ou Google Wallet. Le solde s'y met à jour après chaque ticket et chaque ajustement. Renouveler le lien rend l'ancien inutilisable ; un abonné désactivé n'a
+            plus de carte.
           </li>
           <li>
             <strong>Données personnelles</strong> : nom, e-mail et téléphone ne servent qu'au programme de fidélité du lieu ; le journal note ce qui change, sans les recopier.
@@ -299,6 +306,8 @@ function DetailAbonne({ id }: { id: string }) {
         </button>
       </form>
       <MessageErreur erreur={ajuster.error} />
+
+      <CarteAbonneBloc id={id} nom={a.nom} actif={a.actif} />
 
       {d.mouvements.length > 0 && (
         <div>

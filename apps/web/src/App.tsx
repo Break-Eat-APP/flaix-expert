@@ -40,9 +40,20 @@ const Notifications = lazy(() => import("./pages/parametres/Notifications.tsx").
 const Objectifs = lazy(() => import("./pages/parametres/Objectifs.tsx").then((m) => ({ default: m.Objectifs })));
 const RapportSoiree = lazy(() => import("./pages/resultats/RapportSoiree.tsx").then((m) => ({ default: m.RapportSoiree })));
 const EspaceEditeur = lazy(() => import("./pages/editeur/EspaceEditeur.tsx").then((m) => ({ default: m.EspaceEditeur })));
+const PageCarte = lazy(() => import("./pages/carte/PageCarte.tsx").then((m) => ({ default: m.PageCarte })));
 
-/** Le back-office FlaiX Expert (/editeur) est un espace à part : autres comptes, autre cookie (dossier §15.116). */
+/**
+ * Le back-office FlaiX Expert (/editeur) est un espace à part : autres comptes, autre cookie (dossier §15.116).
+ * La carte abonné (/carte/<jeton>, §15.147) aussi : ouverte par l'abonné, sans connexion.
+ */
 export function App() {
+  if (window.location.pathname.startsWith("/carte/")) {
+    return (
+      <Suspense fallback={<Chargement />}>
+        <PageCarte />
+      </Suspense>
+    );
+  }
   return window.location.pathname.startsWith("/editeur") ? (
     <Suspense fallback={<Chargement />}>
       <EspaceEditeur />

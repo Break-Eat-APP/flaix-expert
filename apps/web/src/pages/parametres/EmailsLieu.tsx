@@ -6,7 +6,7 @@ import { api, formaterDateHeure } from "../../api.ts";
 import { useSession } from "../../session.tsx";
 import { Carte, MessageErreur } from "../../composants/communs.tsx";
 
-const TYPE = { rapport_soiree: "Rapport de soirée", rectification: "Rectification", essai: "Essai" } as const;
+const TYPE = { rapport_soiree: "Rapport de soirée", rectification: "Rectification", essai: "Essai", carte_wallet: "Carte abonné" } as const;
 const STATUT = { envoye: { texte: "envoyé", puce: "puce-vert" }, echec: { texte: "échec", puce: "puce-rouge" }, sans_service: { texte: "non envoyé (Brevo non réglé)", puce: "puce-ambre" } } as const;
 
 /**
