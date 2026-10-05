@@ -2,6 +2,7 @@
 
 > Copie le bloc ci-dessous et envoie-le à Codex, ouvert sur une copie du dépôt `Break-Eat-APP/flaix-expert`.
 > **Audit complet** : laisse « toutes les phases ». **Audit d'une phase** : remplace `[PHASE]` par son numéro et son titre (voir `docs/developpement/JOURNAL_DES_PHASES.md`).
+> **Audit du 2026-10 (conseillé)** : remplace `[PHASE]` par « phases 33 à 48 (construites depuis le premier audit Codex, phase 32) » ; la revue de Claude du 2026-10-05 est dans `docs/audits/AUDIT_2026-10-05_revue-claude-phases-39-48.md` (à recouper, pas à recopier).
 
 ---
 
@@ -17,7 +18,7 @@ docs/conformite/dossier-conformite-flaix-expert.md. Le raisonnement de chaque d�
 docs/flaix-gestion-dossier-projet.md (section §15.x indiquée pour chaque phase).
 
 ## Périmètre
-[PHASE] — ou toutes les phases (0 à 30).
+[PHASE] — ou toutes les phases (0 à 48).
 
 ## Stack
 pnpm monorepo, TypeScript strict. packages/domain : moteur pur partagé par le serveur et la
@@ -51,6 +52,14 @@ db/migrations : PostgreSQL (sécurité par ligne, droits, déclencheurs d'écrit
 10. Écarts entre la documentation (dossier §15.x, AGENTS.md, carte du code) et le code réel.
 11. Tests : couvrent-ils les cas d'erreur et les fraudes ([F]) de chaque phase ? Quels tests
     manquent ?
+12. Adresses publiques sans session (carte abonné /api/carte/*, images /api/carte-logo et
+    /api/carte-banniere, service web Apple /api/passkit/v1/*) : que révèlent-elles, que peut-on
+    deviner ou forcer, sont-elles limitées en nombre de requêtes ?
+13. Envois vers l'extérieur (Brevo, Apple, Google, notifications des navigateurs, IA OVHcloud) :
+    délais d'attente, effet d'une panne sur la caisse et sur les écrans, aucune clé ni donnée
+    personnelle inutile dans les journaux, rien de bloquant après un enregistrement.
+14. Session du support FlaiX Expert (§15.142) : peut-elle écrire quoi que ce soit, voir un autre
+    lieu, ou rester ouverte après le retrait de l'autorisation ?
 
 ## Format du rapport
 Fichier docs/audits/AUDIT_AAAA-MM-JJ_<sujet>.md :
