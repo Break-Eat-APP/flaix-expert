@@ -42,10 +42,11 @@ afterAll(async () => {
 });
 
 describe("options d'un lieu", () => {
-  it("sans réglage, toutes les options sont actives (rien ne change pour un lieu existant), sauf l'assistant IA, payant à l'usage", async () => {
-    const { assistant, ...autres } = (await requete<OptionsLieu>(directeur, "GET", "/api/lieu/options")).corps;
+  it("sans réglage, toutes les options sont actives (rien ne change pour un lieu existant), sauf l'assistant IA, payant à l'usage, et les caisses connectées (§15.150)", async () => {
+    const { assistant, caisses_connectees, ...autres } = (await requete<OptionsLieu>(directeur, "GET", "/api/lieu/options")).corps;
     expect(Object.values(autres).every(Boolean)).toBe(true);
     expect(assistant).toBe(false);
+    expect(caisses_connectees).toBe(false);
     expect((await requete(directeur, "GET", "/api/stock")).statut).toBe(200);
     expect((await requete(directeur, "GET", "/api/assistant")).statut).toBe(403);
   });

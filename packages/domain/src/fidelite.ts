@@ -9,6 +9,7 @@
  *
  * Les valeurs de test du dossier ne sont PAS appliquées : chaque lieu règle les siennes.
  */
+import { lireCsv, sansAccents } from "./csv.ts";
 import type { Centimes } from "./argent.ts";
 
 export interface ReglagesFidelite {
@@ -99,7 +100,6 @@ export interface LigneImportAbonne {
 }
 export type ChampImport = keyof LigneImportAbonne;
 
-const sansAccents = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 /** En-têtes reconnus, du plus précis au plus large. */
 const ALIAS: [ChampImport, RegExp][] = [
   ["numero", /^(n|no|num|numero|n abonne|numero abonne|numero d abonne|n d abonne|abonne|id abonne|carte|n carte|numero de carte|code abonne)$/],
@@ -108,23 +108,6 @@ const ALIAS: [ChampImport, RegExp][] = [
   ["points", /^(points|solde|solde points|points fidelite|pts)$/],
   ["nom", /^(nom|nom prenom|prenom nom|nom complet|client|abonne nom|name)$/],
 ];
-
-function decouper(ligne: string, sep: string): string[] {
-  const champs: string[] = [];
-  let cour = "", guillemets = false;
-  for (let i = 0; i < ligne.length; i++) {
-    const ch = ligne[i]!;
-    if (guillemets) {
-      if (ch === '"' && ligne[i + 1] === '"') { cour += '"'; i++; }
-      else if (ch === '"') guillemets = false;
-      else cour += ch;
-    } else if (ch === '"') guillemets = true;
-    else if (ch === sep) { champs.push(cour); cour = ""; }
-    else cour += ch;
-  }
-  champs.push(cour);
-  return champs.map((c) => c.trim());
-}
 
 export interface ResultatImport {
   colonnes: Partial<Record<ChampImport, number>>;
@@ -140,11 +123,9 @@ export interface ResultatImport {
  * importées ; un n° présent deux fois dans le fichier n'est pris qu'une fois.
  */
 export function lireImportAbonnes(texte: string): ResultatImport {
-  const lignes = texte.replace(/^﻿/, "").split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
-  if (lignes.length === 0) return { colonnes: {}, entetes: [], lignes: [], erreurs: [{ ligne: 1, message: "Fichier vide." }] };
-  const premiere = lignes[0]!;
-  const sep = [";", "\t", ","].sort((a, b) => premiere.split(b).length - premiere.split(a).length)[0]!;
-  const entetes = decouper(premiere, sep);
+  const fichier = lireCsv(texte);
+  if (fichier.entetes.length === 0) return { colonnes: {}, entetes: [], lignes: [], erreurs: [{ ligne: 1, message: "Fichier vide." }] };
+  const entetes = fichier.entetes;
   const colonnes: Partial<Record<ChampImport, number>> = {};
   entetes.forEach((e, i) => {
     const n = sansAccents(e);
@@ -158,9 +139,7 @@ export function lireImportAbonnes(texte: string): ResultatImport {
   }
   const vus = new Set<string>();
   const sortie: LigneImportAbonne[] = [];
-  lignes.slice(1).forEach((brute, k) => {
-    const n = k + 2;
-    const c = decouper(brute, sep);
+  fichier.lignes.forEach(({ numero: n, champs: c }) => {
     const champ = (f: ChampImport) => (colonnes[f] === undefined ? "" : (c[colonnes[f]!] ?? "").trim());
     const numero = normaliserNumeroAbonne(champ("numero"));
     const nom = champ("nom");

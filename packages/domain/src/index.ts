@@ -34,3 +34,5 @@ export * from "./fournisseurs.ts";
 export * from "./prevision.ts";
 export * from "./emails.ts";
 export * from "./wallet.ts";
+export * from "./csv.ts";
+export * from "./caisses-externes.ts";

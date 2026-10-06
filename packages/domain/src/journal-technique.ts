@@ -113,6 +113,10 @@ export const TYPES_JET = {
   carte_wallet_lien: "Carte abonné : lien personnel créé ou renouvelé",
   carte_wallet_design: "Carte abonné : design modifié (couleurs, textes, liens)",
   carte_wallet_image: "Carte abonné : logo ou bannière déposé ou retiré",
+  caisse_externe_creee: "Caisse connectée ajoutée",
+  caisse_externe_modifiee: "Caisse connectée renommée",
+  caisse_externe_import: "Ventes d'une caisse connectée importées",
+  correspondance_externe_modifiee: "Caisse connectée : correspondance d'un produit ou d'un point de vente modifiée",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

@@ -97,6 +97,7 @@ export function ecranConsulte(route: string): string {
     [/^\/api\/(equipe|planning)/, "Équipe"],
     [/^\/api\/(clotures|evenements|export-comptable)/, "Clôtures et événements"],
     [/^\/api\/(fidelite|wallet)/, "Fidélité"],
+    [/^\/api\/caisses-externes/, "Caisses connectées"],
     [/^\/api\/factures/, "Factures"],
     [/^\/api\/(lieu|stands|produits|categories|ingredients|recettes|click-collect|couts-buvette|notifications|support|options)/, "Paramètres"],
     [/^\/api\/assistant/, "Assistant"],
@@ -148,7 +149,7 @@ export function alertesLieuParc(l: LieuParc, maintenant: number): string[] {
 // résultats, paramètres, formation) est toujours là ; une option absente des réglages est active.
 // ---------------------------------------------------------------------------
 
-export type OptionLieu = "stock" | "equipe" | "fidelite" | "click_collect" | "factures" | "couts_buvette" | "assistant";
+export type OptionLieu = "stock" | "equipe" | "fidelite" | "click_collect" | "factures" | "couts_buvette" | "assistant" | "caisses_connectees";
 export type OptionsLieu = Record<OptionLieu, boolean>;
 
 export const OPTIONS_LIEU: { cle: OptionLieu; libelle: string; aide: string }[] = [
@@ -159,10 +160,11 @@ export const OPTIONS_LIEU: { cle: OptionLieu; libelle: string; aide: string }[] 
   { cle: "factures", libelle: "Factures fournisseurs", aide: "Saisie, rapprochement avec les livraisons" },
   { cle: "couts_buvette", libelle: "Coûts par buvette", aide: "Frais et coûts par stand" },
   { cle: "assistant", libelle: "Assistant IA", aide: "Questions en langage courant et brief reformulé par l'IA, hébergée par OVHcloud (payant à l'usage, désactivé par défaut)" },
+  { cle: "caisses_connectees", libelle: "Caisses connectées", aide: "Ventes d'une autre caisse (Digifood, Weezevent, L'Addition…) importées pour la gestion (désactivé par défaut)" },
 ];
 
 /** Toutes les options sont actives sans réglage, sauf l'assistant IA : chaque question coûte (§15.136). */
-export const OPTIONS_PAR_DEFAUT: OptionsLieu = { stock: true, equipe: true, fidelite: true, click_collect: true, factures: true, couts_buvette: true, assistant: false };
+export const OPTIONS_PAR_DEFAUT: OptionsLieu = { stock: true, equipe: true, fidelite: true, click_collect: true, factures: true, couts_buvette: true, assistant: false, caisses_connectees: false };
 
 /** Option dont dépend une adresse du serveur (null : la base, toujours ouverte). */
 export function optionDeLaRoute(url: string): OptionLieu | null {
@@ -175,5 +177,6 @@ export function optionDeLaRoute(url: string): OptionLieu | null {
   if (/^\/api\/factures(\/|$)/.test(url)) return "factures";
   if (/^\/api\/couts-buvette(\/|$)/.test(url)) return "couts_buvette";
   if (/^\/api\/assistant(\/|$)/.test(url)) return "assistant";
+  if (/^\/api\/caisses-externes(\/|$)/.test(url)) return "caisses_connectees";
   return null;
 }
