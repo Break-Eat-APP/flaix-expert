@@ -4832,3 +4832,45 @@ Rémi a partagé une note produit rédigée avec ChatGPT (`FLAIX_EXPERT_PRODUCT_
 **Réalisé le 2026-10-05** (migration 0036, moteur `wallet.ts`, `apps/api/src/wallet/images.ts`, routes `PUT /api/wallet/design`, `PUT` et `DELETE /api/wallet/images/:sorte`, aperçus, `/api/carte-banniere/:lieu.png` ; écrans `DesignCarte.tsx`, `ApercuCarte.tsx`, `imagesCarte.ts`, page de l'abonné). Journal : `carte_wallet_design` (champs modifiés), `carte_wallet_image` (déposée, retirée). **Tests** : moteur 13 (champs Apple et Google selon le design, réduction, remise, règle, liens, cadrage des images, tailles acceptées), briques 5 (PNG lus et contrôlés format par format), serveur 15 (dont design contrôlé, journalisé, cartes et modèle Google mis à jour, rien d'envoyé sans changement ; images contrôlées, dans la carte Apple, la page de l'abonné et le modèle Google, retirées), écrans 8. Vérifié à l'écran sur le lieu d'essai local : vraie image retaillée par le navigateur, enregistrée, aperçus iPhone et Android, page de l'abonné, affichage sur téléphone.
 
 **Limites** : l'aperçu est une approximation (chaque téléphone met en page à sa façon) ; sur iPhone, les points s'écrivent par-dessus la bannière (une image sans texte rend mieux) ; Google peut demander un vrai logo pour publier la carte.
+
+
+### 15.149 Compteur de consommation de l'IA dans le back-office (2026-10-06)
+
+**Demande de Rémi** : connaître le coût réel de l'IA (« combien coûte un agent IA pour chaque requête sur OVH ? » puis
+« oui » au compteur). **Estimation donnée** : Mistral Small 3.2 chez OVHcloud, environ 0,09 à 0,10 € par million de jetons
+lus et 0,28 à 0,31 € par million de jetons écrits (comparateurs, 2026-10-06) ; une question courante (2 à 3 appels au modèle)
+≈ 0,1 centime, la plus longue (5 appels) ≈ 0,5 centime ; 10 questions par jour ≈ 0,35 € par mois et par lieu.
+
+**Réalisé le 2026-10-06** (migration 0039, `GET /api/editeur/consommation-ia`, carte « Consommation de l'IA » du
+back-office) : les jetons de chaque question étaient déjà tracés (§15.136) ; ceux de la reformulation du brief le sont
+désormais (comptés même si la reformulation est écartée : l'appel a coûté). Totaux par lieu et par mois (un lieu de
+formation compte avec son vrai lieu), coût estimé hors taxes aux prix réglés sur le serveur (`IA_PRIX_ENTREE_MILLION`,
+`IA_PRIX_SORTIE_MILLION`, par défaut 0,10 et 0,31 €), jamais le texte des questions. La facture OVHcloud fait foi.
+**Tests** : serveur 2 (totaux et coût, mois sans consommation, mois invalide refusé, directeur refusé ; jetons du brief
+enregistrés, reformulation retenue ou écartée).
+
+### 15.150 Module « Caisses connectées » : ventes d'une caisse externe (2026-10-06)
+
+**Demande de Rémi** : *« si demain le logiciel d'encaissement tombe à l'eau […] est-ce que je pourrai me connecter via une
+API à un système de caisse qui fait remonter toutes les infos nécessaires […] sans avoir à ouvrir de ticket ? »*, puis
+*« développe ça dans un module à part »* et *« renseigne-toi […] L'Addition, Digifood, Weezevent »*.
+
+**Réponse** : l'API est celle de l'éditeur de caisse ; FlaiX Expert développe le connecteur. Recherche : `docs/reference/
+caisses-externes.md`. Aucune des trois API n'est publique (partenariat à demander ; Chift ouvre L'Addition et d'autres
+caisses de restauration par une seule intégration payante), mais **les trois savent exporter leurs ventes en fichier**.
+Avantage de ce mode : la caisse de l'éditeur porte la certification ; FlaiX Expert y est un logiciel de **gestion**, sans
+les obligations d'un logiciel de caisse pour ces lieux.
+
+**Décisions (recommandation de Claude, demande de Rémi)** :
+- **Module à part**, option du lieu « Caisses connectées », désactivée par défaut (activée par FlaiX Expert).
+- **Ventes importées rangées à part** des tickets scellés : elles n'entrent jamais dans les Z, les clôtures, l'export
+  comptable ni le journal de caisse de FlaiX Expert (ce ne sont pas ses encaissements).
+- **Première porte : le fichier d'export** de la caisse (CSV ; un fichier Excel s'enregistre en CSV), une ligne par
+  article vendu. Les colonnes sont reconnues d'après leurs en-têtes, corrigeables, et retenues pour l'import suivant ;
+  une vente déjà importée n'est jamais comptée deux fois (identifiant de la vente + caisse).
+- **Correspondances** : produit de la caisse → produit de FlaiX Expert (coût matière, donc marge) ou « ignoré » ;
+  point de vente de la caisse → stand. Rattachement à l'événement du même jour.
+- **Résultats du module** : chiffre d'affaires, marge estimée, ventes par produit, par stand, par événement.
+- **Ensuite** (étapes suivantes, après partenariats) : connecteurs par API (Digifood, Weezevent, L'Addition ou Chift)
+  avec relève automatique et notifications en direct ; branchement des modules existants (résultats, stock, prévisions,
+  alertes, « où je perds de l'argent ») sur les ventes importées.
