@@ -5,6 +5,9 @@ import { z } from "zod";
 import {
   OPTIONS_LIEU,
   OPTIONS_PAR_DEFAUT,
+  coutJetons,
+  jourParis,
+  type ConsommationIA,
   type DirecteurParc,
   type DirecteurRemis,
   type LieuCree,
@@ -23,6 +26,7 @@ import { NouveauMotDePasse } from "../auth/routes.ts";
 import { verifierClotures } from "./periodes.ts";
 import { ParamId, Uuid, corps, texte } from "./outils.ts";
 import { suivreToutesLesCartes } from "./wallet.ts";
+import { modeleIA } from "../ia/fournisseur.ts";
 
 /**
  * Back-office éditeur, niveau 1 : supervision technique (module 17 ; dossier §15.13, §15.116).
@@ -150,6 +154,32 @@ export async function routesEditeur(app: FastifyInstance, { base }: { base: Base
     const nouvelle = await hacherMotDePasse(nouveau);
     await base.transaction(ctx, (c) => c.query("SELECT changer_mot_de_passe_editeur($1, $2)", [nouvelle, e.jetonEmpreinte]));
     return { ok: true };
+  });
+
+  // Consommation de l'IA par lieu sur un mois (§15.149) : Break Eat paie l'IA ; comptages et coût estimé, sans les questions.
+  app.get("/api/editeur/consommation-ia", async (req): Promise<ConsommationIA> => {
+    const e = await exigerEditeur(base, req);
+    const { mois } = z.object({ mois: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Mois invalide (AAAA-MM).").optional() }).parse(req.query);
+    const choisi = mois ?? jourParis(new Date()).slice(0, 7);
+    const prix = { entree: config.iaPrixEntree, sortie: config.iaPrixSortie };
+    const { rows } = await base.transaction({ utilisateurId: e.utilisateurId }, (c) =>
+      c.query<{ lieu_id: string; nom: string; questions: number; briefs: number; jetons_entree: number; jetons_sortie: number }>(
+        `SELECT * FROM consommation_ia(($1 || '-01')::date AT TIME ZONE 'Europe/Paris', ((($1 || '-01')::date + interval '1 month')::date) AT TIME ZONE 'Europe/Paris')`,
+        [choisi],
+      ),
+    );
+    const lieux = rows.map((r) => ({
+      lieuId: r.lieu_id,
+      nom: r.nom,
+      questions: r.questions,
+      briefs: r.briefs,
+      jetonsEntree: r.jetons_entree,
+      jetonsSortie: r.jetons_sortie,
+      cout: coutJetons(r.jetons_entree, r.jetons_sortie, prix),
+    }));
+    const somme = (k: "questions" | "briefs" | "jetonsEntree" | "jetonsSortie") => lieux.reduce((s, l) => s + l[k], 0);
+    const total = { questions: somme("questions"), briefs: somme("briefs"), jetonsEntree: somme("jetonsEntree"), jetonsSortie: somme("jetonsSortie") };
+    return { mois: choisi, modele: modeleIA(), prix, lieux, total: { ...total, cout: coutJetons(total.jetonsEntree, total.jetonsSortie, prix) } };
   });
 
   app.get("/api/editeur/parc", async (req): Promise<ParcEditeur> => {

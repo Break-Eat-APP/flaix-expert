@@ -3,6 +3,32 @@
  * Aucun montant, aucun ticket, aucun nom de salarié : des dates, des compteurs et des états. Seule exception :
  * les directeurs (nom, e-mail), contact du client que FlaiX Expert crée lui-même (§15.122).
  */
+/** Consommation de l'IA d'un lieu sur une période (back-office, §15.149) : comptages seulement, jamais les questions. */
+export interface ConsommationIALieu {
+  lieuId: string;
+  nom: string;
+  questions: number;
+  /** Briefs de fin de soirée reformulés par l'IA. */
+  briefs: number;
+  jetonsEntree: number;
+  jetonsSortie: number;
+  /** Coût estimé en euros hors taxes (prix par million de jetons du serveur). */
+  cout: number;
+}
+
+/** Réponse de GET /api/editeur/consommation-ia. */
+export interface ConsommationIA {
+  /** Mois au format AAAA-MM (heure de Paris). */
+  mois: string;
+  modele: string | null;
+  prix: { entree: number; sortie: number };
+  lieux: ConsommationIALieu[];
+  total: Omit<ConsommationIALieu, "lieuId" | "nom">;
+}
+
+/** Coût en euros de jetons lus et écrits, aux prix donnés par million de jetons. */
+export const coutJetons = (entree: number, sortie: number, prix: { entree: number; sortie: number }) => (entree * prix.entree + sortie * prix.sortie) / 1_000_000;
+
 export interface DirecteurParc {
   utilisateurId: string;
   nom: string;

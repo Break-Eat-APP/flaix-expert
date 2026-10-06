@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, KeyRound, LogOut, Plus, ShieldCheck } from "lucide-react";
+import { Cpu, Eye, KeyRound, LogOut, Plus, ShieldCheck } from "lucide-react";
 import {
   LONGUEUR_MIN_MOT_DE_PASSE,
   OPTIONS_LIEU,
   alertesLieuParc,
+  type ConsommationIA,
   type DirecteurRemis,
   type LieuCree,
   type LieuParc,
@@ -225,11 +226,109 @@ function Parc({ nom }: { nom: string }) {
                 limité dans le temps : l'ouverture et chaque écran consulté sont inscrits à son journal.
               </p>
             </Carte>
+            <ConsommationDeLIA />
             <MotDePasse />
           </>
         )}
       </main>
     </div>
+  );
+}
+
+/** Mois AAAA-MM précédent ou suivant. */
+function decalerMois(mois: string, n: number): string {
+  const [a, m] = mois.split("-").map(Number) as [number, number];
+  const d = new Date(Date.UTC(a, m - 1 + n, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+const euros = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: n < 1 ? 4 : 2 });
+const nombre = (n: number) => n.toLocaleString("fr-FR");
+
+/** Consommation de l'IA par lieu et par mois (§15.149) : Break Eat paie l'IA ; comptages et coût estimé, jamais les questions. */
+function ConsommationDeLIA() {
+  const [mois, setMois] = useState<string | null>(null);
+  const conso = useQuery({ queryKey: ["editeur-conso-ia", mois], queryFn: () => api.get<ConsommationIA>(`/editeur/consommation-ia${mois ? `?mois=${mois}` : ""}`) });
+  const c = conso.data;
+  const courant = c?.mois ?? mois;
+  return (
+    <Carte
+      titre="Consommation de l'IA"
+      description="Questions à l'assistant et briefs de fin de soirée reformulés, par lieu : jetons lus et écrits, coût estimé hors taxes. Le texte des questions n'est jamais affiché ici."
+      actions={
+        courant && (
+          <span className="en-ligne" style={{ gap: 6 }}>
+            <button className="btn btn-fantome" onClick={() => setMois(decalerMois(courant, -1))} aria-label="Mois précédent">
+              ‹
+            </button>
+            <strong>{courant}</strong>
+            <button className="btn btn-fantome" onClick={() => setMois(decalerMois(courant, 1))} aria-label="Mois suivant">
+              ›
+            </button>
+          </span>
+        )
+      }
+    >
+      {conso.isPending ? (
+        <Chargement />
+      ) : conso.error ? (
+        <MessageErreur erreur={conso.error} />
+      ) : c!.lieux.length === 0 ? (
+        <EtatVide titre="Aucune consommation ce mois-ci">
+          <span className="discret">{c!.modele ? `Moteur : ${c!.modele}.` : "L'IA n'est pas encore branchée sur ce serveur (clé OVHcloud à régler)."}</span>
+        </EtatVide>
+      ) : (
+        <>
+          <div className="kpis">
+            <div className="kpi">
+              <div className="kpi-libelle">Coût estimé du mois</div>
+              <div className="kpi-valeur">{euros(c!.total.cout)}</div>
+              <div className="aide">hors taxes</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi-libelle">Questions</div>
+              <div className="kpi-valeur">{nombre(c!.total.questions)}</div>
+              <div className="aide">{c!.total.questions ? `${euros(c!.total.cout / Math.max(1, c!.total.questions + c!.total.briefs))} par appel en moyenne` : ""}</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi-libelle">Briefs reformulés</div>
+              <div className="kpi-valeur">{nombre(c!.total.briefs)}</div>
+            </div>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table className="tableau">
+              <thead>
+                <tr>
+                  <th>Lieu</th>
+                  <th className="chiffre">Questions</th>
+                  <th className="chiffre">Briefs</th>
+                  <th className="chiffre">Jetons lus</th>
+                  <th className="chiffre">Jetons écrits</th>
+                  <th className="chiffre">Coût estimé</th>
+                </tr>
+              </thead>
+              <tbody>
+                {c!.lieux.map((l) => (
+                  <tr key={l.lieuId}>
+                    <td>{l.nom}</td>
+                    <td className="chiffre">{nombre(l.questions)}</td>
+                    <td className="chiffre">{nombre(l.briefs)}</td>
+                    <td className="chiffre">{nombre(l.jetonsEntree)}</td>
+                    <td className="chiffre">{nombre(l.jetonsSortie)}</td>
+                    <td className="chiffre">{euros(l.cout)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+      {c && (
+        <p className="aide" style={{ marginBottom: 0 }}>
+          <Cpu size={13} /> {c.modele ? `Moteur : ${c.modele}. ` : ""}Prix retenus : {c.prix.entree.toLocaleString("fr-FR")} € par million de jetons lus, {c.prix.sortie.toLocaleString("fr-FR")} € par million de
+          jetons écrits (hors taxes). La facture OVHcloud fait foi.
+        </p>
+      )}
+    </Carte>
   );
 }
 

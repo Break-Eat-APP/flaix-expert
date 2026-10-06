@@ -50,6 +50,13 @@ export const config = {
   ovhIaJeton: process.env.OVH_AI_ENDPOINTS_ACCESS_TOKEN || null,
   ovhIaModele: process.env.OVH_AI_MODELE || "Mistral-Small-3.2-24B-Instruct-2506",
   /**
+   * Prix de l'IA en euros hors taxes par million de jetons, pour le compteur de consommation du back-office (§15.149).
+   * Par défaut, le tarif relevé le 2026-10-06 pour Mistral Small 3.2 chez OVHcloud (arrondi au-dessus) ; à corriger dans
+   * /etc/flaix/flaix.env (IA_PRIX_ENTREE_MILLION, IA_PRIX_SORTIE_MILLION) si OVHcloud change ses prix.
+   */
+  iaPrixEntree: Number(process.env.IA_PRIX_ENTREE_MILLION || 0.1),
+  iaPrixSortie: Number(process.env.IA_PRIX_SORTIE_MILLION || 0.31),
+  /**
    * E-mails par Brevo (§15.146) : clé d'API et adresse d'expédition, réglées par Rémi avec
    * `sudo flaix-admin cle-brevo` ; absentes = aucun e-mail ne part, tout le reste fonctionne.
    */

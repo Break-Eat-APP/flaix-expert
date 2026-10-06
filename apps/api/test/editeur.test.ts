@@ -4,7 +4,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
-import type { EntreeJournalTechnique, ParcEditeur, SessionInfo, VerificationEditeur } from "@flaix/domain";
+import type { ConsommationIA, EntreeJournalTechnique, ParcEditeur, SessionInfo, VerificationEditeur } from "@flaix/domain";
 import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { hacherMotDePasse } from "../src/auth/secrets.ts";
@@ -123,6 +123,34 @@ describe("vérification d'intégrité", () => {
   it("[F] un lieu inconnu ou de formation est refusé", async () => {
     const { rows } = await proprietaire.pool.query<{ id: string }>("SELECT id FROM lieu WHERE formation_de = $1", [lieu.lieuId]);
     expect((await requete(editeur, "POST", `/api/editeur/lieux/${rows[0]!.id}/verification`)).statut).toBe(404);
+  });
+});
+
+describe("consommation de l'IA (§15.149)", () => {
+  it("totaux par lieu et coût estimé, sans le texte des questions ; réservée aux comptes FlaiX Expert", async () => {
+    for (const [entree, sortie] of [
+      [10_000, 500],
+      [30_000, 1_500],
+    ]) {
+      await proprietaire.pool.query(
+        "INSERT INTO assistant_echange (lieu_id, utilisateur_id, question, reponse, sources, modele, verifie, jetons_entree, jetons_sortie) VALUES ($1, $2, 'Question secrète du directeur', 'Réponse', '[]', 'essai', true, $3, $4)",
+        [lieu.lieuId, lieu.utilisateurId, entree, sortie],
+      );
+    }
+    const r = await requete<ConsommationIA>(editeur, "GET", "/api/editeur/consommation-ia");
+    expect(r.statut).toBe(200);
+    expect(r.corps.mois).toMatch(/^\d{4}-\d{2}$/);
+    const l = r.corps.lieux.find((x) => x.lieuId === lieu.lieuId)!;
+    expect(l).toMatchObject({ questions: 2, briefs: 0, jetonsEntree: 40_000, jetonsSortie: 2_000 });
+    // 40 000 jetons lus à 0,10 € et 2 000 écrits à 0,31 € le million : 0,00462 €.
+    expect(l.cout).toBeCloseTo((40_000 * r.corps.prix.entree + 2_000 * r.corps.prix.sortie) / 1_000_000, 8);
+    expect(JSON.stringify(r.corps)).not.toContain("Question secrète");
+    // Le mois précédent n'a rien ; un mois mal écrit est refusé ; un directeur n'y a pas accès.
+    const [a, m] = r.corps.mois.split("-").map(Number) as [number, number];
+    const precedent = m === 1 ? `${a - 1}-12` : `${a}-${String(m - 1).padStart(2, "0")}`;
+    expect((await requete<ConsommationIA>(editeur, "GET", `/api/editeur/consommation-ia?mois=${precedent}`)).corps.lieux.find((x) => x.lieuId === lieu.lieuId)).toBeUndefined();
+    expect((await requete(editeur, "GET", "/api/editeur/consommation-ia?mois=2026-13")).statut).toBe(400);
+    expect((await requete(directeur, "GET", "/api/editeur/consommation-ia")).statut).toBe(401);
   });
 });
 

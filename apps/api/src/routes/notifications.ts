@@ -112,6 +112,8 @@ export async function envoyerBriefSoiree(base: Base, ctx: Contexte, lieuId: stri
   let corps = n.corps;
   let redigePar: "regles" | "mistral" = "regles";
   let modele: string | null = null;
+  // Jetons de l'appel à l'IA, comptés même si la reformulation est écartée : l'appel a coûté (§15.149).
+  let jetons: { entree: number; sortie: number } | null = null;
 
   // 2. Reformulation par Mistral si l'option est active : retenue seulement si elle n'ajoute ni ne change
   //    aucun chiffre (§15.136) ; sinon, le brief par règles part tel quel. Hors transaction : l'IA peut être lente.
@@ -126,6 +128,7 @@ export async function envoyerBriefSoiree(base: Base, ctx: Contexte, lieuId: stri
         },
         { role: "user", content: [n.titre, brief.resume, ...brief.points.map((p) => p.texte)].join("\n") },
       ]);
+      jetons = r.jetons;
       const texte = r.message.content.trim();
       if (texte && texte.length <= 400 && reformulationFidele(brief, texte)) {
         corps = texte;
@@ -143,13 +146,15 @@ export async function envoyerBriefSoiree(base: Base, ctx: Contexte, lieuId: stri
     const { rows: deja } = await c.query("SELECT 1 FROM brief_soiree WHERE lieu_id = $1 AND evenement_id = $2", [lieuId, evenementId]);
     if (deja[0]) return;
     const { envoyees } = await notifierDirecteurs(c, lieuId, { titre: n.titre, corps, url: brief.lien });
-    await c.query("INSERT INTO brief_soiree (lieu_id, evenement_id, contenu, redige_par, modele, envoye_a) VALUES ($1, $2, $3, $4, $5, $6)", [
+    await c.query("INSERT INTO brief_soiree (lieu_id, evenement_id, contenu, redige_par, modele, envoye_a, jetons_entree, jetons_sortie) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", [
       lieuId,
       evenementId,
       JSON.stringify({ ...brief, ...(redigePar === "mistral" ? { reformulation: corps } : {}) }),
       redigePar,
       modele,
       envoyees,
+      jetons?.entree ?? null,
+      jetons?.sortie ?? null,
     ]);
   });
 }

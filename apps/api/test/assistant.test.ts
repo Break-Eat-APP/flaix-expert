@@ -34,7 +34,7 @@ const dernierOutil = (messages: MessageIA[]) => [...messages].reverse().find((x)
 function fauxMistral(reponse: (encaisse: string) => string, reformulation?: (texte: string) => string): FournisseurIA {
   return async (messages) => {
     const systeme = messages[0]!.content;
-    if (systeme.startsWith("Tu reformules")) return { message: { content: reformulation ? reformulation((messages[1] as { content: string }).content) : "" }, modele: "faux-mistral", jetons: null };
+    if (systeme.startsWith("Tu reformules")) return { message: { content: reformulation ? reformulation((messages[1] as { content: string }).content) : "" }, modele: "faux-mistral", jetons: { entree: 300, sortie: 40 } };
     const lu = dernierOutil(messages);
     if (!lu) {
       return {
@@ -134,15 +134,19 @@ describe("brief reformulé par Mistral", () => {
     definirFournisseurIA(fauxMistral(() => "", (texte) => `Bonne soirée : ${texte.split("\n")[0]!.split(" : ")[1]}.`), "faux-mistral");
     const e = await jouer("Rouen", "2026-09-20T18:00:00Z", 2);
     expect(notifications.at(-1)!.startsWith("Bonne soirée")).toBe(true);
-    const { rows } = await proprietaire.transaction({}, (c) => c.query<{ redige_par: string; modele: string }>("SELECT redige_par, modele FROM brief_soiree WHERE evenement_id = $1", [e.id]));
-    expect(rows).toEqual([{ redige_par: "mistral", modele: "faux-mistral" }]);
+    const { rows } = await proprietaire.transaction({}, (c) =>
+      c.query<{ redige_par: string; modele: string }>("SELECT redige_par, modele, jetons_entree, jetons_sortie FROM brief_soiree WHERE evenement_id = $1", [e.id]),
+    );
+    // Jetons de l'appel comptés pour le compteur de consommation du back-office (§15.149).
+    expect(rows).toEqual([{ redige_par: "mistral", modele: "faux-mistral", jetons_entree: 300, jetons_sortie: 40 }]);
   });
 
   it("[F] reformulation qui invente un chiffre : refusée, le brief par règles part à la place", async () => {
     definirFournisseurIA(fauxMistral(() => "", () => "Soirée record : 25 000,00 € encaissés !"), "faux-mistral");
     const e = await jouer("Gap retour", "2026-09-27T18:00:00Z", 1);
     expect(notifications.at(-1)).not.toContain("25 000");
-    const { rows } = await proprietaire.transaction({}, (c) => c.query<{ redige_par: string }>("SELECT redige_par FROM brief_soiree WHERE evenement_id = $1", [e.id]));
-    expect(rows).toEqual([{ redige_par: "regles" }]);
+    const { rows } = await proprietaire.transaction({}, (c) => c.query<{ redige_par: string }>("SELECT redige_par, jetons_entree FROM brief_soiree WHERE evenement_id = $1", [e.id]));
+    // Reformulation écartée, mais l'appel a coûté : ses jetons sont comptés.
+    expect(rows).toEqual([{ redige_par: "regles", jetons_entree: 300 }]);
   });
 });
