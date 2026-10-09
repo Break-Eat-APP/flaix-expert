@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-09 : ventes déposées dans tout FlaiX Expert, fichiers Excel (§15.151)
+
+Priorité de Rémi (la conformité attendra) : les ventes d'une caisse connectée alimentent Résultats, marges, cibles, rapport de soirée, gestion financière, stock, prévision, coûts par buvette, prix fournisseurs (vues de gestion, migration 0041) ; jamais les Z, clôtures, export comptable, fidélité. Fichiers Excel (.xlsx, .xls, .ods) et CSV, titre et total reconnus. Bibliothèque SheetJS 0.20.3 (distribution officielle), chargée seulement à l'ouverture d'un classeur.
+
 ## 2026-10-06 : compteur IA et module « Caisses connectées »
 
 - **Compteur de consommation de l'IA** (§15.149) : back-office → carte « Consommation de l'IA » (questions, briefs, jetons, coût estimé par lieu et par mois).

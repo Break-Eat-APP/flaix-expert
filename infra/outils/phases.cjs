@@ -55,6 +55,7 @@ const PHASES = [
   { n: 49, titre: "Audits du 2026-10-05 (Claude puis Codex) et corrections", dossier: "docs/audits", commits: ["0100cd3", "360895e", "9df5acd"] },
   { n: 50, titre: "Compteur de consommation de l'IA dans le back-office", dossier: "§15.149", commits: ["4329abb"] },
   { n: 51, titre: "Caisses connectées : ventes d'une caisse externe importées", dossier: "§15.150", commits: ["77558bd", "1d5db67", "3f9b046"] },
+  { n: 52, titre: "Ventes déposées dans tout FlaiX Expert ; fichiers Excel", dossier: "§15.151", commits: ["944717e"] },
 ];
 
 module.exports = { PHASES };

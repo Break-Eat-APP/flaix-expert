@@ -57,6 +57,7 @@
 | 49 | [Audits du 2026-10-05 (Claude puis Codex) et corrections](#phase-49) | docs/audits | [`0100cd3`](https://github.com/Break-Eat-APP/flaix-expert/commit/0100cd3380139b256f15edbeccb9a6e011098fe0) [`360895e`](https://github.com/Break-Eat-APP/flaix-expert/commit/360895e746e57d6f985505fa58cf94afdb6f23de) [`9df5acd`](https://github.com/Break-Eat-APP/flaix-expert/commit/9df5acd92b8e84a20dd79f5618ce68696fbac7a5) | livrée |
 | 50 | [Compteur de consommation de l'IA dans le back-office](#phase-50) | §15.149 | [`4329abb`](https://github.com/Break-Eat-APP/flaix-expert/commit/4329abb8a9ad14e89f3b45f496ef0cfaa860b1be) | livrée |
 | 51 | [Caisses connectées : ventes d'une caisse externe importées](#phase-51) | §15.150 | [`77558bd`](https://github.com/Break-Eat-APP/flaix-expert/commit/77558bd28a81154bc1b4544160dea01271c53497) [`1d5db67`](https://github.com/Break-Eat-APP/flaix-expert/commit/1d5db67cea273c4e9af132ea8b73da8764ef5019) [`3f9b046`](https://github.com/Break-Eat-APP/flaix-expert/commit/3f9b0460764cd42cb2b79bd589fcb94b0c7e278e) | livrée |
+| 52 | [Ventes déposées dans tout FlaiX Expert ; fichiers Excel](#phase-52) | §15.151 | [`944717e`](https://github.com/Break-Eat-APP/flaix-expert/commit/944717ecf8426656dc270a9c29e8c93f2b991839) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -1974,6 +1975,39 @@
   - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
   - [`docs/reference/caisses-externes.md`](../../docs/reference/caisses-externes.md) — créé
 
+<a id="phase-52"></a>
+## Phase 52 — Ventes déposées dans tout FlaiX Expert ; fichiers Excel
+
+- **Dates** : 2026-10-09
+- **Décision et raisonnement** : dossier projet §15.151
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`944717e`](https://github.com/Break-Eat-APP/flaix-expert/commit/944717ecf8426656dc270a9c29e8c93f2b991839) 2026-10-09 — Ventes déposées dans tout FlaiX Expert ; fichiers Excel (dossier §15.151)
+- **Migrations (base)** :
+  - [`db/migrations/0041_ventes_gestion.sql`](../../db/migrations/0041_ventes_gestion.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/caisses-externes.ts`](../../packages/domain/src/caisses-externes.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/alertes.ts`](../../apps/api/src/routes/alertes.ts) — modifié
+  - [`apps/api/src/routes/couts-buvette.ts`](../../apps/api/src/routes/couts-buvette.ts) — modifié
+  - [`apps/api/src/routes/fournisseurs.ts`](../../apps/api/src/routes/fournisseurs.ts) — modifié
+  - [`apps/api/src/routes/prevision.ts`](../../apps/api/src/routes/prevision.ts) — modifié
+  - [`apps/api/src/routes/rapport-soiree.ts`](../../apps/api/src/routes/rapport-soiree.ts) — modifié
+  - [`apps/api/src/routes/resultats.ts`](../../apps/api/src/routes/resultats.ts) — modifié
+  - [`apps/api/src/routes/stock-ingredients.ts`](../../apps/api/src/routes/stock-ingredients.ts) — modifié
+  - [`apps/api/src/routes/stock.ts`](../../apps/api/src/routes/stock.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/package.json`](../../apps/web/package.json) — modifié
+  - [`apps/web/src/pages/caisses-connectees/CaissesConnectees.test.tsx`](../../apps/web/src/pages/caisses-connectees/CaissesConnectees.test.tsx) — modifié
+  - [`apps/web/src/pages/caisses-connectees/CaissesConnectees.tsx`](../../apps/web/src/pages/caisses-connectees/CaissesConnectees.tsx) — modifié
+  - [`apps/web/src/pages/caisses-connectees/fichiers.ts`](../../apps/web/src/pages/caisses-connectees/fichiers.ts) — créé
+- **Tests** :
+  - [`apps/api/test/caisses-externes.test.ts`](../../apps/api/test/caisses-externes.test.ts) — modifié
+  - [`apps/web/src/pages/caisses-connectees/fichiers.test.ts`](../../apps/web/src/pages/caisses-connectees/fichiers.test.ts) — créé
+  - [`packages/domain/src/caisses-externes.test.ts`](../../packages/domain/src/caisses-externes.test.ts) — modifié
+- **Autres** :
+  - [`pnpm-lock.yaml`](../../pnpm-lock.yaml) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -2004,3 +2038,5 @@
 - [`76af5c9`](https://github.com/Break-Eat-APP/flaix-expert/commit/76af5c92f3e186a120cd2e3668844fe9dc061ffe) 2026-10-05 — Audit du 2026-10-05 : corrections notées dans le rapport ; avancement
 - [`2d49d12`](https://github.com/Break-Eat-APP/flaix-expert/commit/2d49d1218f629a5d93562d3ba0a4ff5c745ce676) 2026-10-05 — Avancement : corrections de l'audit déployées sur le serveur de test
 - [`2bbfa35`](https://github.com/Break-Eat-APP/flaix-expert/commit/2bbfa3531dcfe02072e54fb3bd50af167f895278) 2026-10-05 — Audit Codex : mise en ligne vérifiée ; réglages Apple et Google enfin lus par le serveur (script de mise en ligne jamais mis à jour)
+- [`299ec93`](https://github.com/Break-Eat-APP/flaix-expert/commit/299ec934392869fd24bf16302be275f3e5dba987) 2026-10-09 — Caisses connectées et compteur IA : dossier (réalisé), avancement, journal des phases 49 à 51
+- [`86a44bc`](https://github.com/Break-Eat-APP/flaix-expert/commit/86a44bc1c9c76face424287b5696f88fc972f811) 2026-10-09 — Menu : le wallet n'est plus « plus tard » (fait le 2026-10-05)

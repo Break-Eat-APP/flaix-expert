@@ -5,6 +5,41 @@
 
 ## 2026-10-09
 
+### [`944717e`](https://github.com/Break-Eat-APP/flaix-expert/commit/944717ecf8426656dc270a9c29e8c93f2b991839) — Ventes déposées dans tout FlaiX Expert ; fichiers Excel (dossier §15.151) *(phase 52)*
+
+- modifié : `apps/api/src/routes/alertes.ts`
+- modifié : `apps/api/src/routes/couts-buvette.ts`
+- modifié : `apps/api/src/routes/fournisseurs.ts`
+- modifié : `apps/api/src/routes/prevision.ts`
+- modifié : `apps/api/src/routes/rapport-soiree.ts`
+- modifié : `apps/api/src/routes/resultats.ts`
+- modifié : `apps/api/src/routes/stock-ingredients.ts`
+- modifié : `apps/api/src/routes/stock.ts`
+- modifié : `apps/api/test/caisses-externes.test.ts`
+- modifié : `apps/web/package.json`
+- modifié : `apps/web/src/pages/caisses-connectees/CaissesConnectees.test.tsx`
+- modifié : `apps/web/src/pages/caisses-connectees/CaissesConnectees.tsx`
+- créé : `apps/web/src/pages/caisses-connectees/fichiers.test.ts`
+- créé : `apps/web/src/pages/caisses-connectees/fichiers.ts`
+- créé : `db/migrations/0041_ventes_gestion.sql`
+- modifié : `packages/domain/src/caisses-externes.test.ts`
+- modifié : `packages/domain/src/caisses-externes.ts`
+- modifié : `pnpm-lock.yaml`
+
+### [`86a44bc`](https://github.com/Break-Eat-APP/flaix-expert/commit/86a44bc1c9c76face424287b5696f88fc972f811) — Menu : le wallet n'est plus « plus tard » (fait le 2026-10-05)
+
+- modifié : `apps/web/src/composants/Coquille.tsx`
+
+### [`299ec93`](https://github.com/Break-Eat-APP/flaix-expert/commit/299ec934392869fd24bf16302be275f3e5dba987) — Caisses connectées et compteur IA : dossier (réalisé), avancement, journal des phases 49 à 51
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/journal-developpement.cjs`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`3f9b046`](https://github.com/Break-Eat-APP/flaix-expert/commit/3f9b0460764cd42cb2b79bd589fcb94b0c7e278e) — Caisses connectées (2/2) : écran (importer avec aperçu et colonnes corrigeables, correspondances, résultats), entrée de menu selon l'option du lieu (dossier §15.150) *(phase 51)*
 
 - modifié : `apps/web/src/App.tsx`

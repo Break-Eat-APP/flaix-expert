@@ -4887,3 +4887,38 @@ d'affaires, panier moyen, marge estimée des produits rapprochés (part du chiff
 moteur 5 (en-têtes, dates été et hiver, montants, regroupement et annulations, colonnes manquantes ou choisies), serveur 9
 (option désactivée par défaut, caisse, aperçu, import, réimport sans doublon, colonnes manquantes, correspondances,
 résultats, autre lieu isolé), écran 3. Non vu dans le navigateur : le poste de Rémi manquait de mémoire (0,1 Go libre).
+
+
+### 15.151 Ventes déposées dans tout FlaiX Expert ; fichiers Excel (2026-10-09)
+
+**Demande de Rémi** : « développe ça en priorité, la conformité on verra plus tard » (lecture des fichiers Excel, branchement
+des modules sur les ventes déposées), « à toi de développer le nécessaire, fichier xls, csv, excel ». Question préalable :
+*« est-ce que ce fichier déposé peut alimenter tous les modules y compris stock, marges, CA, gestion, cible ? »* — réponse :
+oui pour tout ce qui se fait après le match ; non pour le direct (vue « En direct », rupture poussée), le temps de prise de
+commande, les écarts de caisse, les Z et clôtures, les points de fidélité gagnés à la buvette.
+
+**Décisions** :
+- **Deux vues de gestion** (`vente_gestion`, `ligne_gestion`, migration 0041) réunissent les tickets scellés de la caisse
+  FlaiX Expert et les ventes importées, dans la même forme. Les écrans de gestion les lisent ; **rien de fiscal ne les lit**
+  (Z, clôtures mensuelles et annuelles, export comptable, journal de caisse, fidélité restent sur les seuls tickets scellés).
+  Vues « security_invoker » : la sécurité par lieu des tables s'applique.
+- Vente importée : comptée si elle n'est pas annulée ; lignes des produits ignorés écartées ; stand d'après la correspondance
+  du point de vente ; taux de TVA du fichier, sinon celui du produit rapproché, sinon inconnu (hors taxes inconnu, jamais
+  supposé) ; moyen de paiement reconnu « espèces » ou « carte » (le cashless n'est ni l'un ni l'autre).
+- **Produit non rapproché** : compte dans le chiffre d'affaires comme un produit **sans coût** (marge globale non annoncée,
+  alerte « Coût manquant… ; Caisses connectées → Correspondances ») : aucune marge inventée.
+- **Événement terminé** : clos dans la caisse FlaiX Expert, ou déjà commencé avec des ventes (un lieu à caisse connectée
+  n'ouvre ni ne clôt ses événements dans FlaiX Expert) ; sert à la prévision, aux prix fournisseurs, aux alertes, aux
+  coûts par buvette.
+- **Fichiers** : CSV, Excel (.xlsx, .xlsm, ancien .xls), OpenDocument (.ods), lus dans le navigateur avec SheetJS 0.20.3
+  (distribution officielle de l'éditeur, version npm ancienne et vulnérable écartée), chargé seulement à l'ouverture d'un
+  classeur ; feuille au choix ; dates Excel relues telles qu'affichées (sans fuseau, puis heure de Paris) ; titre au-dessus
+  du tableau et ligne de total reconnus.
+
+**Réalisé le 2026-10-09** : écrans branchés — Résultats (chiffre d'affaires, tickets, heures, stands, modes de paiement,
+produits, marges, cibles, TVA, bilan sur une période, comparaison), rapport de soirée, gestion financière, assistant IA (via
+Résultats), stock (vendu par stand, historique de mise en place), consommation des ingrédients, prévision (réalisé,
+comparables, pics par stand), coûts par buvette, prix fournisseurs, alertes. **Tests** : moteur 6 (dont titre et total,
+date « à minuit » et heure à part), serveur 11 (dont Résultats, prévision, stock alimentés par les ventes déposées,
+produit non rapproché sans marge, clôtures fiscales intactes), écran 6 (dont classeurs .xlsx et .xls fabriqués, feuille
+choisie, fichier abîmé) ; tous les tests des modules branchés repassés sans changement.
