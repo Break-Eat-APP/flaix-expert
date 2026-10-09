@@ -47,7 +47,7 @@ async function etablirRapport(c: Client, lieuId: string, e: Evenement): Promise<
 
   const { rows: reductions } = await c.query<{ remises: number; offerts: number; fidelite: number }>(
     `SELECT coalesce(sum(l.remise_centimes), 0)::int AS remises, coalesce(sum(l.offert_centimes), 0)::int AS offerts, coalesce(sum(l.fidelite_centimes), 0)::int AS fidelite
-       FROM ligne_ticket l JOIN journal_caisse j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
+       FROM ligne_gestion l JOIN vente_gestion j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
       WHERE l.lieu_id = $1 AND j.evenement_id = $2`,
     [lieuId, e.id],
   );

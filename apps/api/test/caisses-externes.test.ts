@@ -6,7 +6,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
-import type { CaisseExterne, Evenement, Produit, ProduitExterne, PointDeVenteExterne, Stand, SyntheseVentesExternes } from "@flaix/domain";
+import type { CaisseExterne, Evenement, Produit, ProduitExterne, PointDeVenteExterne, ReponsePrevision, Resultats, Stand, SyntheseVentesExternes } from "@flaix/domain";
 import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { MOT_DE_PASSE_TEST, basesDeTest, creerLieuDeTest } from "./aide.ts";
@@ -19,6 +19,7 @@ let lieu: { lieuId: string; utilisateurId: string; email: string };
 let caisse = "";
 let biere: Produit;
 let stand: Stand;
+let rouen: Evenement;
 
 const EN_TETES = { "content-type": "application/json", origin: "http://localhost:5173" };
 async function appel<T = unknown>(method: "GET" | "POST" | "PUT" | "PATCH", url: string, payload?: unknown) {
@@ -43,7 +44,7 @@ beforeAll(async () => {
   cookie = `fx_session=${r.cookies.find((k) => k.name === "fx_session")!.value}`;
   stand = (await appel<Stand[]>("POST", "/api/stands", { nom: "Buvette Nord" })).corps[0]!;
   biere = (await appel<Produit[]>("POST", "/api/produits", { nom: "Bière", prixTtc: 700, tauxTva: 2000, coutMatiere: 120, standIds: [stand.id] })).corps[0]!;
-  await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Rouen", debut: "2026-10-05T18:00:00.000Z" });
+  rouen = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Rouen", debut: "2026-10-05T18:00:00.000Z" })).corps.find((e) => e.libelle === "Rouen")!;
 });
 
 afterAll(async () => {
@@ -123,6 +124,30 @@ describe("caisses connectées", () => {
     expect(r.corps.parEvenement.map((e) => e.libelle)).toEqual(["Rouen", "Hors événement"]);
     expect(r.corps.parHeure.map((h) => h.heure)).toEqual([20, 22]);
     expect((await appel("GET", "/api/caisses-externes/synthese?du=2026-10-06&au=2026-10-05")).statut).toBe(400);
+  });
+
+  it("les ventes déposées alimentent les Résultats : chiffre d'affaires, stand, mode de paiement, marges ; produit non rapproché sans marge inventée (§15.151)", async () => {
+    const r = await appel<Resultats>("GET", `/api/resultats?evenementId=${rouen.id}`);
+    expect(r.statut).toBe(200);
+    expect(r.corps.matchs.map((m) => m.libelle)).toContain("Rouen");
+    // Rouen, le 05/10 : T-001 (bière 14,00 ; consigne ignorée), T-004 (frites 3,50), T-005 (bière 7,00) ; T-002 annulée.
+    expect(r.corps.actuel).toMatchObject({ caTtc: 2_450, tickets: 3, parStand: [{ nom: "Buvette Nord", ca: 2_450 }], parMode: { especes: 0, carte: 1_050 } });
+    const biereVendue = r.corps.actuel!.produits.find((p) => p.produitId === biere.id)!;
+    // 21,00 € TTC à 20 % = 17,50 € HT ; 3 × 1,20 € de coût matière ; marge 13,90 €.
+    expect(biereVendue).toMatchObject({ nom: "Bière", quantite: 3, caTtc: 2_100, caHt: 1_750, marge: 1_390 });
+    expect(r.corps.actuel!.produits.find((p) => p.produitId === "externe:Frites")).toMatchObject({ nom: "Frites", coutUnitaire: null, marge: null });
+    expect(r.corps.actuel).toMatchObject({ produitsSansCout: ["Frites"], margeBrute: null });
+    expect(r.corps.alertes.find((a) => a.titre.startsWith("Coût manquant"))!.detail).toContain("Caisses connectées");
+  });
+
+  it("… la prévision (réalisé de l'événement), le stock du stand ; et jamais les clôtures fiscales", async () => {
+    const p = await appel<ReponsePrevision>("GET", `/api/prevision?evenementId=${rouen.id}`);
+    expect(p.corps.realise).toMatchObject({ ca: 2_450, tickets: 3, produits: { [`${stand.id}|${biere.id}`]: 3 } });
+    const s = await appel<{ stands: { standId: string; lignes: { produitId: string; vendu: number }[] }[] }>("GET", `/api/stock?evenementId=${rouen.id}`);
+    expect(s.statut).toBe(200);
+    expect(s.corps.stands.find((x) => x.standId === stand.id)!.lignes.find((l) => l.produitId === biere.id)).toMatchObject({ vendu: 3 });
+    const { rows } = await proprietaire.pool.query("SELECT count(*)::int AS n FROM cloture_periode WHERE lieu_id = $1", [lieu.lieuId]);
+    expect(rows[0].n).toBe(0);
   });
 
   it("[F] un autre lieu ne voit rien de ces ventes", async () => {

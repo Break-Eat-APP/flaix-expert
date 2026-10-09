@@ -22,6 +22,7 @@ import {
   type ReglagesAlertesPoussees,
   type TauxTvaPb,
   type UniteIngredient,
+  evenementTermine,
 } from "@flaix/domain";
 import { verrouiller, type Base, type Client, type Contexte } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
@@ -112,7 +113,7 @@ export async function centreAlertes(c: Client, lieuId: string): Promise<CentreAl
 
   // 2. Lues dans les autres modules, sur le dernier événement clos qui a des ventes.
   const joues = await resumeMatchs(c, lieuId);
-  const dernierResume = joues.find((m) => m.etat === "clos") ?? null;
+  const dernierResume = joues.find((m) => evenementTermine(m, true)) ?? null;
   const dernier = dernierResume ? (evenements.find((e) => e.id === dernierResume.id) ?? null) : null;
   const ventes = new Map<string, number>();
   if (dernier) {

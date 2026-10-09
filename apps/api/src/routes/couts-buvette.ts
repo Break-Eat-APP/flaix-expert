@@ -33,7 +33,7 @@ async function couts(c: Client, lieuId: string, demande: string | undefined): Pr
   // Mois joués (événement ouvert ou clos), heure de Paris.
   const { rows: mois } = await c.query<{ cle: string; matchs: number }>(
     `SELECT to_char(debut AT TIME ZONE 'Europe/Paris', 'YYYY-MM') AS cle, count(*)::int AS matchs
-       FROM evenement WHERE lieu_id = $1 AND etat IN ('ouvert', 'clos') GROUP BY 1 ORDER BY 1 DESC`,
+       FROM evenement WHERE lieu_id = $1 AND (etat IN ('ouvert', 'clos') OR EXISTS (SELECT 1 FROM vente_externe v WHERE v.lieu_id = evenement.lieu_id AND v.evenement_id = evenement.id AND NOT v.annulee)) GROUP BY 1 ORDER BY 1 DESC`,
     [lieuId],
   );
   const frais = await lireFrais(c, lieuId);
@@ -51,15 +51,15 @@ async function couts(c: Client, lieuId: string, demande: string | undefined): Pr
   }
 
   const { rows: matchs } = await c.query<{ id: string }>(
-    "SELECT id FROM evenement WHERE lieu_id = $1 AND etat IN ('ouvert', 'clos') AND to_char(debut AT TIME ZONE 'Europe/Paris', 'YYYY-MM') = $2",
+    "SELECT id FROM evenement WHERE lieu_id = $1 AND (etat IN ('ouvert', 'clos') OR EXISTS (SELECT 1 FROM vente_externe v WHERE v.lieu_id = evenement.lieu_id AND v.evenement_id = evenement.id AND NOT v.annulee)) AND to_char(debut AT TIME ZONE 'Europe/Paris', 'YYYY-MM') = $2",
     [lieuId, cle],
   );
   const ids = matchs.map((m) => m.id);
   // Lignes des annulations en négatif : sommes nettes, comme dans Résultats.
   const { rows: ventes } = await c.query<{ stand_id: string; nom: string; cout: number | null; quantite: number; ht: number }>(
     `SELECT j.stand_id, p.nom, p.cout_matiere_centimes AS cout, sum(l.quantite)::int AS quantite, sum(l.ht_centimes)::int AS ht
-       FROM ligne_ticket l
-       JOIN journal_caisse j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
+       FROM ligne_gestion l
+       JOIN vente_gestion j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
        JOIN produit p ON p.lieu_id = l.lieu_id AND p.id = l.produit_id
       WHERE l.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[])
       GROUP BY j.stand_id, p.id, p.nom, p.cout_matiere_centimes`,

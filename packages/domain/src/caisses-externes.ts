@@ -151,7 +151,8 @@ export function lireDateExport(date: string, heure = ""): string | null {
     const t = Date.parse(d);
     return Number.isNaN(t) ? null : new Date(t).toISOString();
   }
-  const texte = `${d} ${heure.trim()}`.trim();
+  // Date « à minuit » d'un classeur suivie d'une heure dans une autre colonne : l'heure de la colonne fait foi.
+  const texte = `${heure.trim() ? d.replace(/[ T]+00:00(:00)?(\.0+)?$/, "") : d} ${heure.trim()}`.trim();
   const fr = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})(?:[ T]+(\d{1,2})[:h](\d{2})(?::(\d{2}))?)?$/.exec(texte);
   const iso = /^(\d{4})-(\d{2})-(\d{2})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?)?$/.exec(texte);
   let a: number, m: number, j: number, h: number, mi: number, s: number;
@@ -179,8 +180,23 @@ export function champsManquants(colonnes: ColonnesExport): ChampExport[] {
  * Lit un export de caisse (une ligne par article vendu). Les colonnes sont devinées d'après les en-têtes si elles ne sont
  * pas données. Les lignes fautives sont listées et écartées ; les articles d'une même vente sont regroupés.
  */
+/** Lignes de titre lues au plus avant les en-têtes (« Rapport des ventes du… », filtres, date d'édition). */
+const LIGNES_TITRE_MAX = 20;
+
+/**
+ * Ligne des en-têtes : la première des 20 premières qui en reconnaît au moins trois ; sinon la première ligne. Les
+ * exports Excel portent souvent un titre au-dessus du tableau.
+ */
+function ligneEntetes(lignes: readonly { champs: string[] }[]): number {
+  const k = lignes.slice(0, LIGNES_TITRE_MAX).findIndex((l) => Object.keys(devinerColonnes(l.champs)).length >= 3);
+  return k < 0 ? 0 : k;
+}
+
 export function lireExportCaisse(texte: string, colonnesDonnees?: ColonnesExport): ResultatLecture {
-  const fichier = lireCsv(texte);
+  const brut = lireCsv(texte);
+  const toutes = brut.entetes.length ? [{ numero: 1, champs: brut.entetes }, ...brut.lignes] : [];
+  const k = ligneEntetes(toutes);
+  const fichier = { entetes: toutes[k]?.champs ?? [], lignes: toutes.slice(k + 1) };
   const colonnes = colonnesDonnees ?? devinerColonnes(fichier.entetes);
   const manquants = champsManquants(colonnes);
   const resultat: ResultatLecture = { entetes: fichier.entetes, colonnes, lignesLues: fichier.lignes.length, ventes: [], erreurs: [], manquants };
@@ -196,6 +212,8 @@ export function lireExportCaisse(texte: string, colonnesDonnees?: ColonnesExport
   for (const { numero, champs } of fichier.lignes) {
     const champ = (f: ChampExport) => (colonnes[f] === undefined ? "" : (champs[colonnes[f]!] ?? "").trim());
     const idExterne = champ("vente");
+    // Ligne de total ou de sous-total, sans date : ignorée sans bruit.
+    if (!champ("date") && (!idExterne || /^(sous[ -]?)?totaux?|^total/i.test(sansAccents(idExterne)))) continue;
     if (!idExterne) {
       erreur(numero, "N° de vente vide.");
       continue;
@@ -248,6 +266,15 @@ export function lireExportCaisse(texte: string, colonnesDonnees?: ColonnesExport
   }
   resultat.ventes = [...parVente.values()];
   return resultat;
+}
+
+/**
+ * Événement terminé, pour l'historique des écrans de gestion (prévision, prix fournisseurs, alertes) : clos dans la caisse
+ * FlaiX Expert, ou — lieu dont les ventes viennent d'une caisse connectée, qui n'ouvre ni ne clôt ses événements dans
+ * FlaiX Expert — déjà commencé et avec des ventes (§15.151).
+ */
+export function evenementTermine(e: { etat: string; debut: string }, avecVentes: boolean, maintenant: number = Date.now()): boolean {
+  return e.etat === "clos" || (e.etat === "a_venir" && avecVentes && Date.parse(e.debut) <= maintenant);
 }
 
 // ---------- Écrans (réponses du serveur) ----------

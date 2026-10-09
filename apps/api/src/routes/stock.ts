@@ -91,8 +91,8 @@ export async function stockDuMatch(c: Client, lieuId: string, e: Evenement): Pro
     [lieuId],
   );
   const { rows: vendus } = await c.query<{ stand_id: string; produit_id: string; q: number }>(
-    `SELECT j.stand_id, l.produit_id, sum(l.quantite)::int AS q FROM ligne_ticket l JOIN journal_caisse j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
-      WHERE l.lieu_id = $1 AND j.evenement_id = $2 GROUP BY 1, 2`,
+    `SELECT j.stand_id, l.produit_id, sum(l.quantite)::int AS q FROM ligne_gestion l JOIN vente_gestion j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
+      WHERE l.lieu_id = $1 AND j.evenement_id = $2 AND l.produit_id IS NOT NULL AND j.stand_id IS NOT NULL GROUP BY 1, 2`,
     p,
   );
   const { rows: mouvements } = await c.query<{ stand_id: string; produit_id: string; type: string; q: number }>(
@@ -125,8 +125,8 @@ export async function stockDuMatch(c: Client, lieuId: string, e: Evenement): Pro
   const { rows: historique } = avant.length
     ? await c.query<{ evenement_id: string; stand_id: string; produit_id: string; q: number }>(
         `SELECT j.evenement_id, j.stand_id, l.produit_id, sum(l.quantite)::int AS q
-           FROM ligne_ticket l JOIN journal_caisse j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
-          WHERE l.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[]) GROUP BY 1, 2, 3`,
+           FROM ligne_gestion l JOIN vente_gestion j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
+          WHERE l.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[]) AND l.produit_id IS NOT NULL AND j.stand_id IS NOT NULL GROUP BY 1, 2, 3`,
         [lieuId, avant],
       )
     : { rows: [] };

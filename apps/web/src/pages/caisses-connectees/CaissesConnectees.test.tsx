@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { CaisseExterne, ProduitExterne, SyntheseVentesExternes } from "@flaix/domain";
-import { CaissesConnectees, lireFichierTexte } from "./CaissesConnectees.tsx";
+import { CaissesConnectees } from "./CaissesConnectees.tsx";
 
 const reponse = (statut: number, corps: unknown) => new Response(JSON.stringify(corps), { status: statut, headers: { "content-type": "application/json" } });
 const CAISSE: CaisseExterne = { id: "k1", nom: "Digifood stade", systeme: "digifood", colonnes: null, ventes: 0, premiereVente: null, derniereVente: null, dernierImport: null };
@@ -78,11 +78,6 @@ function monter() {
 }
 
 describe("caisses connectées", () => {
-  it("fichier lu en UTF-8, ou en Windows-1252 (export Excel français)", async () => {
-    expect(await lireFichierTexte(new Blob([new TextEncoder().encode("Bière;3,50")]))).toBe("Bière;3,50");
-    expect(await lireFichierTexte(new Blob([new Uint8Array([0x42, 0x69, 0xe8, 0x72, 0x65])]))).toBe("Bière");
-  });
-
   it("première caisse ajoutée, puis aperçu du fichier, colonne corrigée, import", async () => {
     monter();
     fireEvent.change(await screen.findByPlaceholderText("Ex. : Digifood stade"), { target: { value: "Digifood stade" } });

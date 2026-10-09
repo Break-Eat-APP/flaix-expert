@@ -59,9 +59,9 @@ const somme = (liste: Somme[]) => new Map(liste.map((x) => [cle(x.stand_id, x.in
 
 /** Consommation théorique d'un événement, en direct : Σ quantités vendues × recette, par stand et ingrédient. */
 const CONSOMMATION_EN_DIRECT = `
-  SELECT j.stand_id, r.ingredient_id, sum(l.quantite::bigint * r.quantite_milli)::float8 AS q
-    FROM ligne_ticket l
-    JOIN journal_caisse j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
+  SELECT j.stand_id, r.ingredient_id, sum(l.quantite * r.quantite_milli)::float8 AS q
+    FROM ligne_gestion l
+    JOIN vente_gestion j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
     JOIN recette_ligne r ON r.lieu_id = l.lieu_id AND r.produit_id = l.produit_id
    WHERE l.lieu_id = $1 AND j.evenement_id = $2
    GROUP BY 1, 2`;

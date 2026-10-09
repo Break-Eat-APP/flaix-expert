@@ -8,8 +8,9 @@ import { personnelDuMatch } from "./planning.ts";
 import { Uuid, contexte } from "./outils.ts";
 
 /*
- * Résultats (dossier §15.103) : tout est calculé sur le journal de caisse et ses lignes
- * (ventes moins annulations). Une donnée manquante reste null — jamais estimée.
+ * Résultats (dossier §15.103) : tout est calculé sur les ventes et leurs lignes (ventes moins annulations) : tickets
+ * scellés de la caisse FlaiX Expert et ventes importées d'une caisse connectée (vues de gestion, §15.151). Les signaux
+ * de contrôle restent ceux de la caisse FlaiX Expert. Une donnée manquante reste null — jamais estimée.
  */
 
 const Jour = z.string().refine(estJour, "Date invalide (AAAA-MM-JJ).");
@@ -37,7 +38,7 @@ export async function resumeMatchs(c: Client, lieuId: string): Promise<MatchResu
     `SELECT e.id, e.libelle, e.debut, e.etat, e.spectateurs, coalesce(e.ouvert_le, e.debut) AS joue_le,
             sum(j.total_ttc_centimes)::int AS ca,
             (count(*) FILTER (WHERE j.type = 'vente') - count(*) FILTER (WHERE j.type = 'annulation'))::int AS tickets
-       FROM evenement e JOIN journal_caisse j ON j.lieu_id = e.lieu_id AND j.evenement_id = e.id AND j.type IN ('vente', 'annulation')
+       FROM evenement e JOIN vente_gestion j ON j.lieu_id = e.lieu_id AND j.evenement_id = e.id AND j.type IN ('vente', 'annulation')
       WHERE e.lieu_id = $1
       GROUP BY e.id
       ORDER BY coalesce(e.ouvert_le, e.debut) DESC`,
@@ -60,39 +61,41 @@ export async function statsEvenements(c: Client, lieuId: string, evs: readonly E
             coalesce(-sum(total_ttc_centimes) FILTER (WHERE type = 'annulation'), 0)::int AS montant_annule,
             coalesce(sum(total_ttc_centimes) FILTER (WHERE mode_reglement = 'especes'), 0)::int AS especes,
             coalesce(sum(total_ttc_centimes) FILTER (WHERE mode_reglement = 'carte'), 0)::int AS carte
-       FROM journal_caisse WHERE lieu_id = $1 AND evenement_id = ANY($2::uuid[]) AND type IN ('vente', 'annulation')`,
+       FROM vente_gestion WHERE lieu_id = $1 AND evenement_id = ANY($2::uuid[]) AND type IN ('vente', 'annulation')`,
     p,
   );
   const { rows: heures } = await c.query<{ heure: number; ca: number; tickets: number }>(
     `SELECT extract(hour FROM horodatage AT TIME ZONE 'Europe/Paris')::int AS heure, sum(total_ttc_centimes)::int AS ca,
             (count(*) FILTER (WHERE type = 'vente') - count(*) FILTER (WHERE type = 'annulation'))::int AS tickets
-       FROM journal_caisse WHERE lieu_id = $1 AND evenement_id = ANY($2::uuid[]) AND type IN ('vente', 'annulation')
+       FROM vente_gestion WHERE lieu_id = $1 AND evenement_id = ANY($2::uuid[]) AND type IN ('vente', 'annulation')
       GROUP BY 1`,
     p,
   );
   const { rows: stands } = await c.query<{ stand_id: string; nom: string; ca: number }>(
     `SELECT j.stand_id, s.nom, sum(j.total_ttc_centimes)::int AS ca
-       FROM journal_caisse j JOIN stand s ON s.lieu_id = j.lieu_id AND s.id = j.stand_id
+       FROM vente_gestion j JOIN stand s ON s.lieu_id = j.lieu_id AND s.id = j.stand_id
       WHERE j.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[]) AND j.type IN ('vente', 'annulation')
       GROUP BY j.stand_id, s.nom ORDER BY 3 DESC`,
     p,
   );
   // Les lignes des annulations portent des quantités et montants négatifs : les sommes sont nettes.
   const { rows: lignes } = await c.query<{ produit_id: string; nom: string; categorie: string | null; cout: number | null; cible: number | null; quantite: number; ttc: number; ht: number }>(
-    `SELECT l.produit_id, p.nom, cat.nom AS categorie, p.cout_matiere_centimes AS cout, coalesce(p.cible_marge_pb, cat.cible_marge_pb) AS cible,
-            sum(l.quantite)::int AS quantite, sum(l.net_ttc_centimes)::int AS ttc, sum(l.ht_centimes)::int AS ht
-       FROM ligne_ticket l
-       JOIN journal_caisse j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
-       JOIN produit p ON p.lieu_id = l.lieu_id AND p.id = l.produit_id
+    // Produit d'une caisse connectée pas encore rapproché (§15.151) : vendu sans coût connu, comme un produit sans coût.
+    `SELECT coalesce(l.produit_id::text, 'externe:' || l.libelle) AS produit_id, coalesce(p.nom, l.libelle) AS nom, cat.nom AS categorie,
+            p.cout_matiere_centimes AS cout, coalesce(p.cible_marge_pb, cat.cible_marge_pb) AS cible,
+            sum(l.quantite)::int AS quantite, sum(l.net_ttc_centimes)::int AS ttc, coalesce(sum(l.ht_centimes), 0)::int AS ht
+       FROM ligne_gestion l
+       JOIN vente_gestion j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
+       LEFT JOIN produit p ON p.lieu_id = l.lieu_id AND p.id = l.produit_id
        LEFT JOIN categorie cat ON cat.lieu_id = p.lieu_id AND cat.id = p.categorie_id
       WHERE l.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[])
-      GROUP BY l.produit_id, p.nom, cat.nom, p.cout_matiere_centimes, p.cible_marge_pb, cat.cible_marge_pb
+      GROUP BY 1, 2, cat.nom, p.cout_matiere_centimes, p.cible_marge_pb, cat.cible_marge_pb
       ORDER BY 6 DESC`,
     p,
   );
   const { rows: taux } = await c.query<{ taux: TauxTvaPb; ht: number; tva: number; ttc: number }>(
     `SELECT l.taux_tva_pb AS taux, sum(l.ht_centimes)::int AS ht, sum(l.tva_centimes)::int AS tva, sum(l.net_ttc_centimes)::int AS ttc
-       FROM ligne_ticket l JOIN journal_caisse j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
+       FROM ligne_gestion l JOIN vente_gestion j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
       WHERE l.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[])
       GROUP BY 1 ORDER BY 1`,
     p,
@@ -186,7 +189,12 @@ async function alertesDe(c: Client, lieuId: string, evs: readonly Evenement[], s
   if (s.annulations.nombre) liste.push({ niveau: "normale", titre: `${s.annulations.nombre} annulation${s.annulations.nombre > 1 ? "s" : ""}`, detail: `${formaterMontant(s.annulations.montant)} annulés : Caisses → Tickets de l'événement` });
   if (s.produitsSansCout.length) {
     const part = s.caHt > 0 ? Math.round((s.caHtSansCout / s.caHt) * 100) : 0;
-    liste.push({ niveau: "normale", titre: `Coût manquant sur ${s.produitsSansCout.length} produit${s.produitsSansCout.length > 1 ? "s" : ""}`, detail: `${part} % du CA HT sans marge calculable : Paramètres → Produits & prix` });
+    const nonRapproches = s.produits.some((p) => p.produitId.startsWith("externe:") && p.coutUnitaire === null);
+    liste.push({
+      niveau: "normale",
+      titre: `Coût manquant sur ${s.produitsSansCout.length} produit${s.produitsSansCout.length > 1 ? "s" : ""}`,
+      detail: `${part} % du CA HT sans marge calculable : Paramètres → Produits & prix${nonRapproches ? " ; Caisses connectées → Correspondances" : ""}`,
+    });
   }
   // Marge réalisée sous la cible saisie (module 5) : jamais jugée sans cible ni sans coût.
   const sousCible = s.produits.filter((p) => etatCible(tauxMargePb(p.marge, p.caHt), p.cibleMarge ?? null).statut === "sous");

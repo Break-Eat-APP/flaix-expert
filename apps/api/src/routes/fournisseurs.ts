@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { cleFournisseur, comparerFournisseurs, formaterQuantiteStock, moyenneParEvenement, type ComparaisonFournisseurs, type Conditionnement, type LivraisonFournisseur, type UniteIngredient } from "@flaix/domain";
+import { cleFournisseur, comparerFournisseurs, evenementTermine, formaterQuantiteStock, moyenneParEvenement, type ComparaisonFournisseurs, type Conditionnement, type LivraisonFournisseur, type UniteIngredient } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { introuvable } from "../erreurs.ts";
@@ -45,12 +45,12 @@ export async function comparaisonFournisseurs(c: Client, lieuId: string): Promis
   const livraisons: LivraisonFournisseur[] = rows.map((r) => ({ cle: r.cle, nom: r.nom, unite: r.unite, fournisseur: r.fournisseur, prixUnitaire: r.prix, quantite: r.quantite, date: r.date, le: r.le.toISOString() }));
 
   // Consommation moyenne sur les derniers événements clos qui ont des ventes (un article non vendu compte 0).
-  const evenements = (await resumeMatchs(c, lieuId)).filter((m) => m.etat === "clos").slice(0, EVENEMENTS_CONSOMMATION).map((m) => m.id);
+  const evenements = (await resumeMatchs(c, lieuId)).filter((m) => evenementTermine(m, true)).slice(0, EVENEMENTS_CONSOMMATION).map((m) => m.id);
   const consommation = new Map<string, number>();
   if (evenements.length) {
     const { rows: produits } = await c.query<{ cle: string; q: number }>(
-      `SELECT 'p:' || l.produit_id AS cle, sum(l.quantite)::float8 AS q FROM ligne_ticket l JOIN journal_caisse j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
-        WHERE l.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[]) GROUP BY l.produit_id`,
+      `SELECT 'p:' || l.produit_id AS cle, sum(l.quantite)::float8 AS q FROM ligne_gestion l JOIN vente_gestion j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
+        WHERE l.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[]) AND l.produit_id IS NOT NULL GROUP BY l.produit_id`,
       [lieuId, evenements],
     );
     const { rows: ingredients } = await c.query<{ cle: string; q: number }>(

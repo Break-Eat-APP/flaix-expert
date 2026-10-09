@@ -30,6 +30,8 @@ describe("caisses connectées : lecture d'un export (§15.150)", () => {
     expect(lireDateExport("05/01/2026 21:34:10")).toBe("2026-01-05T20:34:10.000Z");
     expect(lireDateExport("2026-10-05 21:34:56")).toBe("2026-10-05T19:34:56.000Z");
     expect(lireDateExport("05/10/2026", "21h34")).toBe("2026-10-05T19:34:00.000Z");
+    // Date « à minuit » d'un classeur et heure dans une autre colonne.
+    expect(lireDateExport("2026-10-05 00:00:00", "20:15:00")).toBe("2026-10-05T18:15:00.000Z");
     expect(lireDateExport("2026-10-05T19:34:56Z")).toBe("2026-10-05T19:34:56.000Z");
     expect(lireDateExport("32/10/2026 21:34")).toBeNull();
     expect(lireDateExport("hier soir")).toBeNull();
@@ -81,5 +83,22 @@ describe("caisses connectées : lecture d'un export (§15.150)", () => {
     expect(choisi.ventes).toEqual([
       { idExterne: "A1", horodatage: "2026-10-05T18:00:00.000Z", pointDeVente: null, paiement: null, annulee: false, total: 300, lignes: [{ cle: "Coca", libelle: "Coca", code: null, quantite: 1, prixUnitaire: 300, montant: 300, tvaPb: null }] },
     ]);
+  });
+
+  it("titre au-dessus du tableau et ligne de total en bas (exports Excel) : tableau trouvé, total ignoré sans erreur", () => {
+    const csv = [
+      "Rapport des ventes;;;;",
+      "Du 05/10/2026 au 05/10/2026;;;;",
+      ";;;;",
+      "N° ticket;Date;Article;Qté;Montant TTC",
+      "T-1;05/10/2026 20:00;Bière;2;14,00",
+      "T-2;05/10/2026 20:05;Eau;1;2,00",
+      "Total;;;3;16,00",
+    ].join(String.fromCharCode(10));
+    const r = lireExportCaisse(csv);
+    expect(r.entetes).toEqual(["N° ticket", "Date", "Article", "Qté", "Montant TTC"]);
+    expect(r.manquants).toEqual([]);
+    expect(r.ventes.map((v) => v.idExterne)).toEqual(["T-1", "T-2"]);
+    expect(r.erreurs).toEqual([]);
   });
 });

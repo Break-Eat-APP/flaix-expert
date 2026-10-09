@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { PREVISION, prevoir, tempsDeService, verdict, type Evenement, type EvenementComparable, type ReponsePrevision } from "@flaix/domain";
+import { PREVISION, evenementTermine, prevoir, tempsDeService, verdict, type Evenement, type EvenementComparable, type ReponsePrevision } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { introuvable } from "../erreurs.ts";
@@ -34,7 +34,7 @@ async function comparables(c: Client, lieuId: string, evs: readonly Evenement[])
   // Les lignes des annulations portent des quantités négatives : les sommes sont nettes.
   const { rows: ventes } = await c.query<{ evenement_id: string; stand_id: string; stand: string; produit_id: string; produit: string; q: number }>(
     `SELECT j.evenement_id, j.stand_id, s.nom AS stand, l.produit_id, p.nom AS produit, sum(l.quantite)::int AS q
-       FROM ligne_ticket l JOIN journal_caisse j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
+       FROM ligne_gestion l JOIN vente_gestion j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
        JOIN stand s ON s.lieu_id = j.lieu_id AND s.id = j.stand_id JOIN produit p ON p.lieu_id = l.lieu_id AND p.id = l.produit_id
       WHERE l.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[])
       GROUP BY 1, 2, 3, 4, 5`,
@@ -45,7 +45,7 @@ async function comparables(c: Client, lieuId: string, evs: readonly Evenement[])
     `SELECT evenement_id, stand_id, max(n)::int AS pic FROM (
        SELECT evenement_id, stand_id, date_trunc('hour', horodatage) AS h,
               count(*) FILTER (WHERE type = 'vente') - count(*) FILTER (WHERE type = 'annulation') AS n
-         FROM journal_caisse WHERE lieu_id = $1 AND evenement_id = ANY($2::uuid[]) AND type IN ('vente', 'annulation')
+         FROM vente_gestion WHERE lieu_id = $1 AND evenement_id = ANY($2::uuid[]) AND type IN ('vente', 'annulation') AND stand_id IS NOT NULL
         GROUP BY 1, 2, 3) x
       GROUP BY 1, 2`,
     [lieuId, ids],
@@ -57,7 +57,7 @@ async function comparables(c: Client, lieuId: string, evs: readonly Evenement[])
 export async function prevision(c: Client, lieuId: string, evenementId: string | undefined): Promise<ReponsePrevision> {
   const evenements = await listerEvenements(c, lieuId);
   const avecVentes = new Set((await resumeMatchs(c, lieuId)).map((m) => m.id));
-  const joues = evenements.filter((e) => e.etat === "clos" && avecVentes.has(e.id)).sort((a, b) => jouerLe(b) - jouerLe(a));
+  const joues = evenements.filter((e) => avecVentes.has(e.id) && evenementTermine(e, true)).sort((a, b) => jouerLe(b) - jouerLe(a));
   const maintenant = Date.now();
   const aVenir = evenements.filter((e) => e.etat === "a_venir" && Date.parse(e.debut) >= maintenant - 6 * 3_600_000).sort((a, b) => Date.parse(a.debut) - Date.parse(b.debut));
   const cible = evenementId
@@ -107,7 +107,7 @@ export async function prevision(c: Client, lieuId: string, evenementId: string |
   }
 
   let realise: ReponsePrevision["realise"] = null;
-  if (cible.etat !== "a_venir" && avecVentes.has(cible.id)) {
+  if (avecVentes.has(cible.id) && (cible.etat === "ouvert" || evenementTermine(cible, true))) {
     const d = (await comparables(c, lieuId, [cible])).get(cible.id)!;
     realise = { ca: d.caTtc, tickets: d.tickets, produits: Object.fromEntries(d.ventes.map((v) => [`${v.standId}|${v.produitId}`, v.quantite])) };
   }

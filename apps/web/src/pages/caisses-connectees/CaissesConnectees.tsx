@@ -20,6 +20,7 @@ import {
 } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
+import { FICHIERS_ACCEPTES, lireFichierVentes } from "./fichiers.ts";
 
 /*
  * Caisses connectées (dossier §15.150) : ventes d'une autre caisse (Digifood, Weezevent, L'Addition…) importées depuis son
@@ -40,15 +41,6 @@ interface Apercu {
   erreurs: { ligne: number; message: string }[];
 }
 
-/** Texte d'un fichier : UTF-8, sinon Windows-1252 (exports Excel français). */
-export async function lireFichierTexte(f: Blob): Promise<string> {
-  const octets = await f.arrayBuffer();
-  try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(octets);
-  } catch {
-    return new TextDecoder("windows-1252").decode(octets);
-  }
-}
 
 const libelleChamp = (c: ChampExport) => CHAMPS_EXPORT.find((x) => x.champ === c)!.libelle;
 
@@ -95,7 +87,7 @@ export function CaissesConnectees() {
             d'origine reste le logiciel de caisse du lieu, avec ses propres obligations.
           </li>
           <li>
-            <strong>Fichier</strong> : l'export des ventes de la caisse, une ligne par article vendu (CSV ; un fichier Excel s'enregistre en CSV). Les colonnes sont reconnues d'après
+            <strong>Fichier</strong> : l'export des ventes de la caisse, une ligne par article vendu, en Excel (.xlsx, .xls), OpenDocument (.ods) ou CSV. Les colonnes sont reconnues d'après
             leurs en-têtes ; corrige-les si besoin, elles sont retenues pour l'import suivant. Les dates sans fuseau sont des heures de Paris.
           </li>
           <li>
@@ -106,8 +98,13 @@ export function CaissesConnectees() {
             <strong>Marge</strong> : estimée pour les produits rapprochés d'un produit FlaiX Expert qui a un coût matière. Un produit « ignoré » (consigne, frais…) sort des résultats.
           </li>
           <li>
-            <strong>Bientôt</strong> : relève automatique par l'API de la caisse (partenariat à obtenir auprès de Digifood, Weezevent ou L'Addition) et ventes importées dans les autres
-            écrans (résultats, stock, prévisions).
+            <strong>Dans tout FlaiX Expert</strong> : les ventes importées comptent dans Résultats (chiffre d'affaires, marges, cibles, bilan sur une période), le rapport de
+            soirée, la gestion financière, le stock (consommation du stand), la prévision, les coûts par buvette et les prix fournisseurs. Un produit non rapproché compte dans le
+            chiffre d'affaires mais sans marge (son coût est inconnu) ; une vente sans stand rapproché ne compte pas dans le stock d'un stand. Dépose le fichier avant de clôturer
+            l'événement pour qu'il figure dans le rapport de soirée figé.
+          </li>
+          <li>
+            <strong>Bientôt</strong> : relève automatique par l'API de la caisse (partenariat à obtenir auprès de Digifood, Weezevent ou L'Addition).
           </li>
         </ul>
       </Regles>
@@ -173,7 +170,8 @@ function NouvelleCaisse({ vide }: { vide: boolean }) {
 function Importer({ caisse }: { caisse: CaisseExterne }) {
   const client = useQueryClient();
   const entree = useRef<HTMLInputElement>(null);
-  const [fichier, setFichier] = useState<{ nom: string; contenu: string } | null>(null);
+  const [fichier, setFichier] = useState<{ nom: string; contenu: string; brut: File; feuilles: string[]; feuille: string | null } | null>(null);
+  const [lecture, setLecture] = useState<{ enCours: boolean; erreur: Error | null }>({ enCours: false, erreur: null });
   const [colonnes, setColonnes] = useState<ColonnesExport | null>(null);
   const [resultat, setResultat] = useState<string | null>(null);
   const apercu = useMutation({
@@ -199,6 +197,18 @@ function Importer({ caisse }: { caisse: CaisseExterne }) {
     },
   });
   const a = apercu.data;
+  // Lecture dans le navigateur (classeur remis en CSV), puis aperçu par le serveur ; une autre feuille relit le classeur.
+  const ouvrir = (f: File, feuille?: string) => {
+    setLecture({ enCours: true, erreur: null });
+    lireFichierVentes(f, feuille)
+      .then((lu) => {
+        setLecture({ enCours: false, erreur: null });
+        setFichier({ nom: f.name, contenu: lu.contenu, brut: f, feuilles: lu.feuilles, feuille: lu.feuille });
+        setColonnes(null);
+        apercu.mutate({ nom: f.name, contenu: lu.contenu });
+      })
+      .catch((erreur: unknown) => setLecture({ enCours: false, erreur: erreur instanceof Error ? erreur : new Error(String(erreur)) }));
+  };
   const changerColonne = (champ: ChampExport, valeur: string) => {
     const suivantes: ColonnesExport = { ...colonnes };
     if (valeur === "") delete suivantes[champ];
@@ -218,24 +228,37 @@ function Importer({ caisse }: { caisse: CaisseExterne }) {
       <input
         ref={entree}
         type="file"
-        accept=".csv,.txt,text/csv,text/plain"
+        accept={FICHIERS_ACCEPTES}
         hidden
         aria-label="Choisir le fichier d'export"
         onChange={(ev) => {
           const f = ev.target.files?.[0];
           ev.target.value = "";
           setResultat(null);
-          if (!f) return;
-          void lireFichierTexte(f).then((contenu) => {
-            setFichier({ nom: f.name, contenu });
-            setColonnes(null);
-            apercu.mutate({ nom: f.name, contenu });
-          });
+          if (f) ouvrir(f);
         }}
       />
-      <button className="btn btn-fantome" onClick={() => entree.current?.click()} disabled={apercu.isPending || importer.isPending}>
-        <FileUp size={14} /> {fichier ? `Changer de fichier (${fichier.nom})` : "Choisir le fichier (CSV)"}
-      </button>
+      <div className="en-ligne" style={{ gap: 8, flexWrap: "wrap" }}>
+        <button className="btn btn-fantome" onClick={() => entree.current?.click()} disabled={lecture.enCours || apercu.isPending || importer.isPending}>
+          <FileUp size={14} /> {lecture.enCours ? "Lecture du fichier…" : fichier ? `Changer de fichier (${fichier.nom})` : "Choisir le fichier (Excel ou CSV)"}
+        </button>
+        {fichier && fichier.feuilles.length > 1 && (
+          <label className="champ" style={{ margin: 0 }}>
+            <span>Feuille du classeur</span>
+            <select value={fichier.feuille ?? ""} aria-label="Feuille du classeur" disabled={lecture.enCours} onChange={(ev) => ouvrir(fichier.brut, ev.target.value)}>
+              {fichier.feuilles.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
+      <p className="discret" style={{ fontSize: 12, marginBottom: 0 }}>
+        Formats acceptés : Excel (.xlsx, .xls), OpenDocument (.ods), CSV. Un titre au-dessus du tableau et une ligne de total sont reconnus.
+      </p>
+      <MessageErreur erreur={lecture.erreur} />
       {resultat && (
         <p role="status" style={{ fontWeight: 600 }}>
           {resultat}
