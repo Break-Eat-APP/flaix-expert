@@ -277,6 +277,59 @@ export function evenementTermine(e: { etat: string; debut: string }, avecVentes:
   return e.etat === "clos" || (e.etat === "a_venir" && avecVentes && Date.parse(e.debut) <= maintenant);
 }
 
+// ---------- Correspondances suggérées (§15.152) ----------
+
+/** Nom comparé sans majuscules, accents, espaces ni ponctuation : « BIERE 50CL » = « Bière 50 cl ». */
+export const normaliserNom = (s: string) => sansAccents(s).replace(/ /g, "");
+
+const mots = (s: string) => new Set(sansAccents(s).split(" ").filter(Boolean));
+const nombres = (s: string) => new Set(sansAccents(s).match(/\d+/g) ?? []);
+function trigrammes(s: string): Set<string> {
+  const t = ` ${normaliserNom(s)} `;
+  const r = new Set<string>();
+  for (let i = 0; i + 3 <= t.length; i++) r.add(t.slice(i, i + 3));
+  return r;
+}
+function dice(a: Set<string>, b: Set<string>): number {
+  if (!a.size || !b.size) return 0;
+  let communs = 0;
+  for (const x of a) if (b.has(x)) communs++;
+  return (2 * communs) / (a.size + b.size);
+}
+
+/**
+ * Ressemblance de deux noms, de 0 à 1 : 1 pour le même nom (majuscules, accents, espaces près) ; sinon moyenne des mots
+ * communs et des groupes de trois lettres communs. Des nombres différents des deux côtés (« 33 cl » et « 50 cl ») : 0.
+ */
+export function ressemblance(a: string, b: string): number {
+  const na = normaliserNom(a);
+  if (!na) return 0;
+  if (na === normaliserNom(b)) return 1;
+  const [ca, cb] = [nombres(a), nombres(b)];
+  if (ca.size && cb.size && ![...ca].some((n) => cb.has(n))) return 0;
+  return (dice(mots(a), mots(b)) + dice(trigrammes(a), trigrammes(b))) / 2;
+}
+
+/** En dessous : noms trop éloignés pour être proposés. */
+export const SEUIL_SUGGESTION = 0.4;
+
+/** Candidat au nom le plus proche, s'il l'est assez (le premier en cas d'égalité) ; null sinon. */
+export function suggererCorrespondance<T extends { id: string; nom: string }>(nom: string, candidats: readonly T[]): (T & { score: number }) | null {
+  let meilleur: (T & { score: number }) | null = null;
+  for (const c of candidats) {
+    const score = ressemblance(nom, c.nom);
+    if (score >= SEUIL_SUGGESTION && (!meilleur || score > meilleur.score)) meilleur = { ...c, score };
+  }
+  return meilleur;
+}
+
+/** Seul candidat portant le même nom (majuscules, accents, espaces près) : relié sans demander ; aucun ou plusieurs : null. */
+export function correspondanceExacte<T extends { id: string; nom: string }>(nom: string, candidats: readonly T[]): T | null {
+  const n = normaliserNom(nom);
+  const memes = n ? candidats.filter((c) => normaliserNom(c.nom) === n) : [];
+  return memes.length === 1 ? memes[0]! : null;
+}
+
 // ---------- Écrans (réponses du serveur) ----------
 
 export interface CaisseExterne {

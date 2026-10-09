@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { devinerColonnes, instantDepuisHeureDeParis, lireDateExport, lireExportCaisse, lireMontantExport } from "./caisses-externes.ts";
+import {
+  correspondanceExacte,
+  devinerColonnes,
+  instantDepuisHeureDeParis,
+  lireDateExport,
+  lireExportCaisse,
+  lireMontantExport,
+  normaliserNom,
+  ressemblance,
+  suggererCorrespondance,
+} from "./caisses-externes.ts";
 
 describe("caisses connectées : lecture d'un export (§15.150)", () => {
   it("colonnes reconnues d'après des en-têtes variés", () => {
@@ -100,5 +110,32 @@ describe("caisses connectées : lecture d'un export (§15.150)", () => {
     expect(r.manquants).toEqual([]);
     expect(r.ventes.map((v) => v.idExterne)).toEqual(["T-1", "T-2"]);
     expect(r.erreurs).toEqual([]);
+  });
+});
+
+describe("correspondances suggérées (§15.152)", () => {
+  const produits = [
+    { id: "p1", nom: "Bière 50 cl" },
+    { id: "p2", nom: "Bière 33 cl" },
+    { id: "p3", nom: "Pression blonde 50 cl" },
+    { id: "p4", nom: "Coca-Cola 33cl" },
+  ];
+
+  it("même nom aux majuscules, accents, espaces et ponctuation près : relié ; homonymes ou rien : pas de lien", () => {
+    expect(normaliserNom("BIERE 50CL")).toBe(normaliserNom("Bière 50 cl"));
+    expect(ressemblance("BIERE 50CL", "Bière 50 cl")).toBe(1);
+    expect(correspondanceExacte("BIERE 50CL", produits)?.id).toBe("p1");
+    expect(correspondanceExacte("Bière 50 cl", [...produits, { id: "p5", nom: "biere-50cl" }])).toBeNull();
+    expect(correspondanceExacte("Frites", produits)).toBeNull();
+    expect(correspondanceExacte("  ", [{ id: "x", nom: "" }])).toBeNull();
+  });
+
+  it("nom proche : proposé ; contenances différentes jamais confondues ; nom sans rapport : rien", () => {
+    expect(suggererCorrespondance("Biere pression 50", produits.slice(1))?.id).toBe("p3");
+    expect(suggererCorrespondance("Coca", produits)?.id).toBe("p4");
+    expect(ressemblance("Bière 33 cl", "Bière 50 cl")).toBe(0);
+    expect(suggererCorrespondance("BIERE 25CL", produits)).toBeNull();
+    expect(suggererCorrespondance("Frites", produits)).toBeNull();
+    expect(suggererCorrespondance("Bière 50 cl", [])).toBeNull();
   });
 });
