@@ -2,6 +2,13 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-06 : compteur IA et module « Caisses connectées »
+
+- **Compteur de consommation de l'IA** (§15.149) : back-office → carte « Consommation de l'IA » (questions, briefs, jetons, coût estimé par lieu et par mois).
+- **Caisses connectées** (§15.150) : recherche sur L'Addition, Digifood, Weezevent (`docs/reference/caisses-externes.md`) — aucune API publique, partenariat à demander ; les trois savent exporter leurs ventes en fichier. Module à part, option du lieu désactivée par défaut : import des exports CSV (aperçu, colonnes corrigeables), correspondances produit et point de vente, résultats. **Reste** : connecteurs API (après partenariats) et branchement des autres écrans sur les ventes importées.
+- **GitHub** : envoi fait par Rémi (les 18 commits du 2026-10-05).
+- **Mémoire du poste** : 0,1 à 0,7 Go libres ; l'aperçu dans le navigateur a planté, tests lancés fichier par fichier (serveur `test:un-par-un`).
+
 ## Audit Codex du 2026-10-05 (phases 33 à 48) — corrigé le soir même
 
 Conclusion de Codex transmise par Rémi ; suite donnée dans `docs/audits/AUDIT_2026-10-05_codex-phases-33-48.md` : P1 option Fidélité retirée → cartes révoquées ; `node-forge` retirée du serveur (signature Apple faite avec `node:crypto`, 1.4.1 non publiée) ; nouvel essai automatique des envois Apple et Google en échec (migration 0038, toutes les 5 minutes, abandon après 12 essais) ; e-mails Brevo hors transaction et en arrière-plan ; tests du serveur lancés fichier par fichier (`pnpm --filter @flaix/api test:un-par-un`) sur ce poste à 6 Go, où la suite d'un bloc fait tomber Node faute de mémoire. **Mise en ligne le 2026-10-05 à 21 h 44 puis 21 h 46** (`9df5acd`, sauvegarde avant, migration 0038). En vérifiant : le serveur ne lisait pas les réglages Apple et Google (script de mise en ligne jamais mis à jour depuis 10 h 47) — corrigé, vérifié avec une carte d'essai signée par le vrai certificat d'Apple. Pendant le travail, Docker s'est arrêté (mémoire) : relancé ; le conteneur `breakeat_audit` (autre projet de Rémi) est resté arrêté, pas touché.

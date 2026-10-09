@@ -4874,3 +4874,16 @@ les obligations d'un logiciel de caisse pour ces lieux.
 - **Ensuite** (étapes suivantes, après partenariats) : connecteurs par API (Digifood, Weezevent, L'Addition ou Chift)
   avec relève automatique et notifications en direct ; branchement des modules existants (résultats, stock, prévisions,
   alertes, « où je perds de l'argent ») sur les ventes importées.
+
+**Réalisé le 2026-10-06** (moteur `csv.ts` et `caisses-externes.ts`, migration 0040, `routes/caisses-externes.ts`, écran « Caisses
+connectées » dans le menu quand l'option est active) : caisses du lieu ; import d'un export CSV avec **aperçu sans rien
+enregistrer**, colonnes reconnues d'après les en-têtes (français ou anglais), corrigeables et retenues ; fichier lu en UTF-8
+ou en Windows-1252 (exports Excel) ; lignes fautives écartées et listées ; ventes regroupées par n° de vente ; dates sans
+fuseau lues à l'heure de Paris ; aucune vente comptée deux fois, annulation reportée à l'import suivant ; vente rattachée à
+l'événement du jour ; correspondances produit (ou « ignoré ») et point de vente → stand ; résultats du … au … : chiffre
+d'affaires, panier moyen, marge estimée des produits rapprochés (part du chiffre d'affaires couverte), par produit, stand,
+événement et heure. Journal : `caisse_externe_creee`, `caisse_externe_modifiee`, `caisse_externe_import`,
+`correspondance_externe_modifiee`. Ventes importées jamais dans le journal de caisse (vérifié par un test). **Tests** :
+moteur 5 (en-têtes, dates été et hiver, montants, regroupement et annulations, colonnes manquantes ou choisies), serveur 9
+(option désactivée par défaut, caisse, aperçu, import, réimport sans doublon, colonnes manquantes, correspondances,
+résultats, autre lieu isolé), écran 3. Non vu dans le navigateur : le poste de Rémi manquait de mémoire (0,1 Go libre).

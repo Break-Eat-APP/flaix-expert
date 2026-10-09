@@ -52,6 +52,9 @@ const PHASES = [
   { n: 46, titre: "E-mails par Brevo : rapport de soirée et rectifications", dossier: "§15.146", commits: ["3276652"] },
   { n: 47, titre: "Carte abonné dans Apple Wallet et Google Wallet", dossier: "§15.147", commits: ["91b5446", "6a23cf2", "0b0f1ee", "4662794"] },
   { n: 48, titre: "Design de la carte abonné : logo, bannière, couleurs, textes et liens", dossier: "§15.148", commits: ["0721b51", "a6538ef"] },
+  { n: 49, titre: "Audits du 2026-10-05 (Claude puis Codex) et corrections", dossier: "docs/audits", commits: ["0100cd3", "360895e", "9df5acd"] },
+  { n: 50, titre: "Compteur de consommation de l'IA dans le back-office", dossier: "§15.149", commits: ["4329abb"] },
+  { n: 51, titre: "Caisses connectées : ventes d'une caisse externe importées", dossier: "§15.150", commits: ["77558bd", "1d5db67", "3f9b046"] },
 ];
 
 module.exports = { PHASES };

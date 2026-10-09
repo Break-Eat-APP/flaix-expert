@@ -3,7 +3,120 @@
 > Généré par `node infra/outils/journal-developpement.cjs` à partir de Git. Ne pas modifier à la main.
 > Chaque entrée : date, commit (lien GitHub), message, fichiers créés ou modifiés. Le plus récent en premier. Phases : [docs/developpement/JOURNAL_DES_PHASES.md](docs/developpement/JOURNAL_DES_PHASES.md).
 
+## 2026-10-09
+
+### [`3f9b046`](https://github.com/Break-Eat-APP/flaix-expert/commit/3f9b0460764cd42cb2b79bd589fcb94b0c7e278e) — Caisses connectées (2/2) : écran (importer avec aperçu et colonnes corrigeables, correspondances, résultats), entrée de menu selon l'option du lieu (dossier §15.150) *(phase 51)*
+
+- modifié : `apps/web/src/App.tsx`
+- modifié : `apps/web/src/composants/Coquille.tsx`
+- créé : `apps/web/src/pages/caisses-connectees/CaissesConnectees.test.tsx`
+- créé : `apps/web/src/pages/caisses-connectees/CaissesConnectees.tsx`
+
+## 2026-10-06
+
+### [`1d5db67`](https://github.com/Break-Eat-APP/flaix-expert/commit/1d5db67cea273c4e9af132ea8b73da8764ef5019) — Caisses connectées (1/2) : import des ventes d'une caisse externe, correspondances, résultats (dossier §15.150) *(phase 51)*
+
+- créé : `apps/api/src/routes/caisses-externes.ts`
+- modifié : `apps/api/src/serveur.ts`
+- créé : `apps/api/test/caisses-externes.test.ts`
+- modifié : `apps/api/test/options.test.ts`
+- créé : `db/migrations/0040_caisses_connectees.sql`
+- créé : `packages/domain/src/caisses-externes.test.ts`
+- créé : `packages/domain/src/caisses-externes.ts`
+- créé : `packages/domain/src/csv.ts`
+- modifié : `packages/domain/src/editeur.ts`
+- modifié : `packages/domain/src/fidelite.ts`
+- modifié : `packages/domain/src/index.ts`
+- modifié : `packages/domain/src/journal-technique.ts`
+
+### [`77558bd`](https://github.com/Break-Eat-APP/flaix-expert/commit/77558bd28a81154bc1b4544160dea01271c53497) — Caisses externes : recherche L'Addition, Digifood, Weezevent ; décisions §15.149 (compteur IA) et §15.150 (module Caisses connectées) *(phase 51)*
+
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- créé : `docs/reference/caisses-externes.md`
+
+### [`4329abb`](https://github.com/Break-Eat-APP/flaix-expert/commit/4329abb8a9ad14e89f3b45f496ef0cfaa860b1be) — Compteur de consommation de l'IA dans le back-office (dossier §15.149) *(phase 50)*
+
+- modifié : `apps/api/src/config.ts`
+- modifié : `apps/api/src/routes/editeur.ts`
+- modifié : `apps/api/src/routes/notifications.ts`
+- modifié : `apps/api/test/assistant.test.ts`
+- modifié : `apps/api/test/editeur.test.ts`
+- modifié : `apps/web/src/pages/editeur/EspaceEditeur.tsx`
+- créé : `db/migrations/0039_consommation_ia.sql`
+- modifié : `packages/domain/src/editeur.ts`
+
 ## 2026-10-05
+
+### [`2bbfa35`](https://github.com/Break-Eat-APP/flaix-expert/commit/2bbfa3531dcfe02072e54fb3bd50af167f895278) — Audit Codex : mise en ligne vérifiée ; réglages Apple et Google enfin lus par le serveur (script de mise en ligne jamais mis à jour)
+
+- modifié : `docs/audits/AUDIT_2026-10-05_codex-phases-33-48.md`
+- modifié : `docs/avancement.md`
+
+### [`9df5acd`](https://github.com/Break-Eat-APP/flaix-expert/commit/9df5acd92b8e84a20dd79f5618ce68696fbac7a5) — Audit Codex du 2026-10-05 : corrections *(phase 49)*
+
+- modifié : `apps/api/package.json`
+- modifié : `apps/api/src/index.ts`
+- modifié : `apps/api/src/routes/clotures.ts`
+- modifié : `apps/api/src/routes/editeur.ts`
+- modifié : `apps/api/src/routes/emails.ts`
+- modifié : `apps/api/src/routes/evenements.ts`
+- modifié : `apps/api/src/routes/wallet.ts`
+- modifié : `apps/api/src/wallet/apple.ts`
+- créé : `apps/api/src/wallet/cms.ts`
+- modifié : `apps/api/test/emails.test.ts`
+- modifié : `apps/api/test/wallet-fichiers.test.ts`
+- modifié : `apps/api/test/wallet.test.ts`
+- créé : `db/migrations/0038_wallet_relance.sql`
+- créé : `docs/audits/AUDIT_2026-10-05_codex-phases-33-48.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CODEX_AUDIT_PROMPT.md`
+- créé : `infra/outils/tests-un-par-un.mjs`
+- modifié : `pnpm-lock.yaml`
+
+### [`2d49d12`](https://github.com/Break-Eat-APP/flaix-expert/commit/2d49d1218f629a5d93562d3ba0a4ff5c745ce676) — Avancement : corrections de l'audit déployées sur le serveur de test
+
+- modifié : `docs/avancement.md`
+
+### [`76af5c9`](https://github.com/Break-Eat-APP/flaix-expert/commit/76af5c92f3e186a120cd2e3668844fe9dc061ffe) — Audit du 2026-10-05 : corrections notées dans le rapport ; avancement
+
+- modifié : `docs/audits/AUDIT_2026-10-05_revue-claude-phases-39-48.md`
+- créé : `docs/audits/AUDIT_2026-10-05_revue-supplementaire-wallet-modules.md`
+- modifié : `docs/avancement.md`
+
+### [`360895e`](https://github.com/Break-Eat-APP/flaix-expert/commit/360895e746e57d6f985505fa58cf94afdb6f23de) — Audit du 2026-10-05 : corrections P2-1 à P2-5 *(phase 49)*
+
+- modifié : `apps/api/package.json`
+- créé : `apps/api/src/arriere-plan.ts`
+- modifié : `apps/api/src/routes/caisse.ts`
+- modifié : `apps/api/src/routes/fidelite-caisse.ts`
+- modifié : `apps/api/src/routes/fidelite.ts`
+- modifié : `apps/api/src/routes/wallet.ts`
+- modifié : `apps/api/test/alertes.test.ts`
+- modifié : `apps/api/test/wallet.test.ts`
+- créé : `db/migrations/0037_carte_abonne_desactive.sql`
+- modifié : `packages/domain/src/wallet.test.ts`
+- modifié : `packages/domain/src/wallet.ts`
+- modifié : `pnpm-lock.yaml`
+
+### [`0100cd3`](https://github.com/Break-Eat-APP/flaix-expert/commit/0100cd3380139b256f15edbeccb9a6e011098fe0) — Audit : revue des phases 39 à 48 par Claude (P2 : caisse qui attend les notifications, carte d'un abonné désactivé, mise à jour des cartes par lots, node-forge, limite PassKit) ; prompt Codex pour les phases 33 à 48 *(phase 49)*
+
+- créé : `docs/audits/AUDIT_2026-10-05_revue-claude-phases-39-48.md`
+- modifié : `docs/developpement/CODEX_AUDIT_PROMPT.md`
+
+### [`c98b882`](https://github.com/Break-Eat-APP/flaix-expert/commit/c98b882efcd70c79f464cc1e546f91853d980989) — Avancement : design de la carte abonné déployé sur le serveur de test
+
+- modifié : `docs/avancement.md`
+
+### [`405b044`](https://github.com/Break-Eat-APP/flaix-expert/commit/405b04421a55f9f71482ed1e464f153e5a0a69fd) — Design de la carte abonné : dossier §15.148, avancement, guide, journal des phases (phase 48)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `docs/guide-serveur-test-ovh.md`
+- modifié : `infra/outils/journal-developpement.cjs`
+- modifié : `infra/outils/phases.cjs`
 
 ### [`a6538ef`](https://github.com/Break-Eat-APP/flaix-expert/commit/a6538ef335fcaf5bdf5e1d55b2f8b35af2b78561) — Design de la carte abonné (2/2) : éditeur avec aperçu iPhone et Android, logo et bannière retaillés dans le navigateur, page de l'abonné aux couleurs du club (dossier §15.148) *(phase 48)*
 
