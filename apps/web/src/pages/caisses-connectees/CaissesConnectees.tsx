@@ -180,7 +180,11 @@ function Importer({ caisse }: { caisse: CaisseExterne }) {
     onSuccess: (r) => setColonnes(r.colonnes),
   });
   const importer = useMutation({
-    mutationFn: () => api.post<{ ajoutees: number; deja: number; annulationsReportees: number; caisses: CaisseExterne[] }>(`/caisses-externes/${caisse.id}/import`, { fichier: fichier!.nom, contenu: fichier!.contenu, colonnes }),
+    mutationFn: () =>
+      api.post<{ ajoutees: number; deja: number; annulationsReportees: number; relies: { produits: number; pointsDeVente: number }; caisses: CaisseExterne[] }>(
+        `/caisses-externes/${caisse.id}/import`,
+        { fichier: fichier!.nom, contenu: fichier!.contenu, colonnes },
+      ),
     onSuccess: (r) => {
       client.setQueryData(["caisses-externes"], r.caisses);
       void client.invalidateQueries({ queryKey: ["caisses-externes-synthese"] });
@@ -190,7 +194,15 @@ function Importer({ caisse }: { caisse: CaisseExterne }) {
         `${r.ajoutees} vente${r.ajoutees > 1 ? "s" : ""} ajoutée${r.ajoutees > 1 ? "s" : ""}` +
           (r.deja ? `, ${r.deja} déjà importée${r.deja > 1 ? "s" : ""}` : "") +
           (r.annulationsReportees ? `, ${r.annulationsReportees} annulation${r.annulationsReportees > 1 ? "s" : ""} reportée${r.annulationsReportees > 1 ? "s" : ""}` : "") +
-          ".",
+          "." +
+          (r.relies.produits || r.relies.pointsDeVente
+            ? ` Reliés automatiquement (même nom) : ${[
+                r.relies.produits ? `${r.relies.produits} produit${r.relies.produits > 1 ? "s" : ""}` : "",
+                r.relies.pointsDeVente ? `${r.relies.pointsDeVente} point${r.relies.pointsDeVente > 1 ? "s" : ""} de vente` : "",
+              ]
+                .filter(Boolean)
+                .join(", ")} ; à vérifier dans Correspondances.`
+            : ""),
       );
       setFichier(null);
       apercu.reset();
@@ -367,13 +379,43 @@ function Correspondances({ caisse }: { caisse: CaisseExterne }) {
       void client.invalidateQueries({ queryKey: ["caisses-externes-synthese"] });
     },
   });
+  const accepterProduits = useMutation({
+    mutationFn: () => api.post<ProduitExterne[]>(`/caisses-externes/${caisse.id}/produits/suggestions`, {}),
+    onSuccess: (r) => {
+      client.setQueryData(["caisses-externes-produits", caisse.id], r);
+      void client.invalidateQueries({ queryKey: ["caisses-externes-synthese"] });
+    },
+  });
+  const accepterPdv = useMutation({
+    mutationFn: () => api.post<PointDeVenteExterne[]>(`/caisses-externes/${caisse.id}/points-de-vente/suggestions`, {}),
+    onSuccess: (r) => {
+      client.setQueryData(["caisses-externes-pdv", caisse.id], r);
+      void client.invalidateQueries({ queryKey: ["caisses-externes-synthese"] });
+    },
+  });
   if (produits.isPending || pdv.isPending || catalogue.isPending || stands.isPending) return <Chargement />;
   const erreur = produits.error ?? pdv.error ?? catalogue.error ?? stands.error;
   if (erreur) return <MessageErreur erreur={erreur} />;
   const aRapprocher = produits.data!.filter((p) => !p.produitId && !p.ignore).length;
+  const suggestionsProduits = produits.data!.filter((p) => p.suggestion).length;
+  const suggestionsPdv = pdv.data!.filter((p) => p.suggestion).length;
+  const occupe = lierProduit.isPending || accepterProduits.isPending;
   return (
     <>
-      <Carte titre="Produits" description={aRapprocher ? `${aRapprocher} produit${aRapprocher > 1 ? "s" : ""} à rapprocher : la marge n'est calculée que pour les produits rapprochés.` : "Tous les produits sont rapprochés ou ignorés."}>
+      <Carte
+        titre="Produits"
+        description={
+          (aRapprocher ? `${aRapprocher} produit${aRapprocher > 1 ? "s" : ""} à rapprocher : la marge n'est calculée que pour les produits rapprochés.` : "Tous les produits sont rapprochés ou ignorés.") +
+          " « auto » : relié d'après le même nom, à vérifier."
+        }
+        actions={
+          suggestionsProduits > 0 ? (
+            <button className="btn btn-fantome" disabled={occupe} onClick={() => accepterProduits.mutate()}>
+              Accepter {suggestionsProduits > 1 ? `les ${suggestionsProduits} suggestions` : "la suggestion"}
+            </button>
+          ) : null
+        }
+      >
         {produits.data!.length === 0 ? (
           <EtatVide titre="Aucune vente importée pour l'instant" />
         ) : (
@@ -397,23 +439,33 @@ function Correspondances({ caisse }: { caisse: CaisseExterne }) {
                     <td className="chiffre">{p.quantite.toLocaleString("fr-FR")}</td>
                     <td className="chiffre">{formaterMontant(p.montant)}</td>
                     <td>
-                      <select
-                        aria-label={`Correspondance : ${p.libelle}`}
-                        value={p.ignore ? "ignore" : (p.produitId ?? "")}
-                        disabled={lierProduit.isPending}
-                        onChange={(ev) => {
-                          const v = ev.target.value;
-                          lierProduit.mutate({ cle: p.cle, produitId: v && v !== "ignore" ? v : null, ignore: v === "ignore" });
-                        }}
-                      >
-                        <option value="">— à rapprocher —</option>
-                        <option value="ignore">Ignorer (consigne, frais…)</option>
-                        {catalogue.data!.map((x) => (
-                          <option key={x.id} value={x.id}>
-                            {x.nom}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="en-ligne">
+                        <select
+                          aria-label={`Correspondance : ${p.libelle}`}
+                          value={p.ignore ? "ignore" : (p.produitId ?? "")}
+                          disabled={occupe}
+                          onChange={(ev) => {
+                            const v = ev.target.value;
+                            lierProduit.mutate({ cle: p.cle, produitId: v && v !== "ignore" ? v : null, ignore: v === "ignore" });
+                          }}
+                        >
+                          <option value="">— à rapprocher —</option>
+                          <option value="ignore">Ignorer (consigne, frais…)</option>
+                          {catalogue.data!.map((x) => (
+                            <option key={x.id} value={x.id}>
+                              {x.nom}
+                            </option>
+                          ))}
+                        </select>
+                        {p.automatique ? (
+                          <span className="etiquette-auto" title="Relié automatiquement : même nom dans la caisse et dans FlaiX Expert. À changer si besoin.">
+                            auto
+                          </span>
+                        ) : null}
+                      </div>
+                      {p.suggestion ? (
+                        <Suggestion nom={p.suggestion.nom} memeNom={p.suggestion.memeNom} disabled={occupe} accepter={() => lierProduit.mutate({ cle: p.cle, produitId: p.suggestion!.id, ignore: false })} />
+                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -421,9 +473,19 @@ function Correspondances({ caisse }: { caisse: CaisseExterne }) {
             </table>
           </div>
         )}
-        <MessageErreur erreur={lierProduit.error} />
+        <MessageErreur erreur={lierProduit.error ?? accepterProduits.error} />
       </Carte>
-      <Carte titre="Points de vente" description="Chaque bar ou terminal de la caisse correspond à un stand de FlaiX Expert.">
+      <Carte
+        titre="Points de vente"
+        description="Chaque bar ou terminal de la caisse correspond à un stand de FlaiX Expert."
+        actions={
+          suggestionsPdv > 0 ? (
+            <button className="btn btn-fantome" disabled={lierPdv.isPending || accepterPdv.isPending} onClick={() => accepterPdv.mutate()}>
+              Accepter {suggestionsPdv > 1 ? `les ${suggestionsPdv} suggestions` : "la suggestion"}
+            </button>
+          ) : null
+        }
+      >
         {pdv.data!.length === 0 ? (
           <EtatVide titre="Aucun point de vente dans les ventes importées" />
         ) : (
@@ -444,14 +506,29 @@ function Correspondances({ caisse }: { caisse: CaisseExterne }) {
                     <td className="chiffre">{p.ventes}</td>
                     <td className="chiffre">{formaterMontant(p.montant)}</td>
                     <td>
-                      <select aria-label={`Stand : ${p.nom}`} value={p.standId ?? ""} disabled={lierPdv.isPending} onChange={(ev) => lierPdv.mutate({ nom: p.nom, standId: ev.target.value || null })}>
-                        <option value="">—</option>
-                        {stands.data!.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.nom}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="en-ligne">
+                        <select
+                          aria-label={`Stand : ${p.nom}`}
+                          value={p.standId ?? ""}
+                          disabled={lierPdv.isPending || accepterPdv.isPending}
+                          onChange={(ev) => lierPdv.mutate({ nom: p.nom, standId: ev.target.value || null })}
+                        >
+                          <option value="">—</option>
+                          {stands.data!.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.nom}
+                            </option>
+                          ))}
+                        </select>
+                        {p.automatique ? (
+                          <span className="etiquette-auto" title="Relié automatiquement : même nom dans la caisse et dans FlaiX Expert. À changer si besoin.">
+                            auto
+                          </span>
+                        ) : null}
+                      </div>
+                      {p.suggestion ? (
+                        <Suggestion nom={p.suggestion.nom} memeNom={p.suggestion.memeNom} disabled={lierPdv.isPending || accepterPdv.isPending} accepter={() => lierPdv.mutate({ nom: p.nom, standId: p.suggestion!.id })} />
+                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -459,9 +536,24 @@ function Correspondances({ caisse }: { caisse: CaisseExterne }) {
             </table>
           </div>
         )}
-        <MessageErreur erreur={lierPdv.error} />
+        <MessageErreur erreur={lierPdv.error ?? accepterPdv.error} />
       </Carte>
     </>
+  );
+}
+
+/** Produit ou stand de FlaiX Expert au nom proche : proposé, le directeur confirme (§15.152). */
+function Suggestion({ nom, memeNom, disabled, accepter }: { nom: string; memeNom: boolean; disabled: boolean; accepter: () => void }) {
+  return (
+    <div className="suggestion">
+      <span>
+        Suggestion : <strong>{nom}</strong>
+        {memeNom ? " (même nom)" : ""}
+      </span>
+      <button className="btn-lien" disabled={disabled} onClick={accepter} aria-label={`Accepter la suggestion ${nom}`}>
+        Accepter
+      </button>
+    </div>
   );
 }
 

@@ -3,7 +3,9 @@ import { z } from "zod";
 import {
   CHAMPS_EXPORT,
   SYSTEMES_CAISSE,
+  correspondanceExacte,
   lireExportCaisse,
+  suggererCorrespondance,
   type CaisseExterne,
   type ChampExport,
   type ColonnesExport,
@@ -12,6 +14,7 @@ import {
   type PointDeVenteExterne,
   type ProduitExterne,
   type ResultatLecture,
+  type SuggestionCorrespondance,
   type SyntheseVentesExternes,
 } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
@@ -91,31 +94,119 @@ async function listerCaisses(c: Client, lieuId: string): Promise<CaisseExterne[]
   }));
 }
 
+type Candidat = { id: string; nom: string };
+
+/** Produits ou stands actifs du lieu, candidats à une correspondance. */
+async function candidats(c: Client, lieuId: string, table: "produit" | "stand"): Promise<Candidat[]> {
+  const { rows } = await c.query<Candidat>(`SELECT id, nom FROM ${table} WHERE lieu_id = $1 AND actif ORDER BY nom, id`, [lieuId]);
+  return rows;
+}
+
+function suggestion(nom: string, liste: Candidat[]): SuggestionCorrespondance | null {
+  const s = suggererCorrespondance(nom, liste);
+  return s && { id: s.id, nom: s.nom, memeNom: s.score === 1 };
+}
+
 async function produitsExternes(c: Client, lieuId: string, caisseId: string): Promise<ProduitExterne[]> {
-  const { rows } = await c.query<{ cle: string; libelle: string; code: string | null; quantite: string; montant: number; produit_id: string | null; ignore: boolean | null }>(
+  const { rows } = await c.query<{ cle: string; libelle: string; code: string | null; quantite: string; montant: number; produit_id: string | null; ignore: boolean | null; automatique: boolean | null; decide: boolean }>(
     `SELECT l.cle, max(l.libelle) AS libelle, max(l.code) AS code, sum(l.quantite) AS quantite, sum(l.montant_centimes)::int AS montant,
-            m.produit_id, m.ignore
+            m.produit_id, m.ignore, m.automatique, m.cle IS NOT NULL AS decide
        FROM ligne_vente_externe l
        JOIN vente_externe v ON v.lieu_id = l.lieu_id AND v.caisse_externe_id = l.caisse_externe_id AND v.id_externe = l.id_externe AND NOT v.annulee
        LEFT JOIN correspondance_produit_externe m ON m.lieu_id = l.lieu_id AND m.caisse_externe_id = l.caisse_externe_id AND m.cle = l.cle
       WHERE l.lieu_id = $1 AND l.caisse_externe_id = $2
-      GROUP BY l.cle, m.produit_id, m.ignore
+      GROUP BY l.cle, m.cle, m.produit_id, m.ignore, m.automatique
       ORDER BY sum(l.montant_centimes) DESC, l.cle`,
     [lieuId, caisseId],
   );
-  return rows.map((r) => ({ cle: r.cle, libelle: r.libelle, code: r.code, quantite: Number(r.quantite), montant: r.montant, produitId: r.produit_id, ignore: r.ignore ?? false }));
+  // Suggestion pour un produit jamais décidé ; « aucun » choisi à la main est une décision.
+  const produits = rows.some((r) => !r.decide) ? await candidats(c, lieuId, "produit") : [];
+  return rows.map((r) => ({
+    cle: r.cle,
+    libelle: r.libelle,
+    code: r.code,
+    quantite: Number(r.quantite),
+    montant: r.montant,
+    produitId: r.produit_id,
+    ignore: r.ignore ?? false,
+    automatique: r.automatique ?? false,
+    suggestion: r.decide ? null : suggestion(r.libelle, produits),
+  }));
 }
 
 async function pointsDeVente(c: Client, lieuId: string, caisseId: string): Promise<PointDeVenteExterne[]> {
-  const { rows } = await c.query<{ nom: string; ventes: number; montant: number; stand_id: string | null }>(
-    `SELECT v.point_de_vente AS nom, count(*)::int AS ventes, sum(v.total_centimes)::int AS montant, m.stand_id
+  const { rows } = await c.query<{ nom: string; ventes: number; montant: number; stand_id: string | null; automatique: boolean | null; decide: boolean }>(
+    `SELECT v.point_de_vente AS nom, count(*)::int AS ventes, sum(v.total_centimes)::int AS montant, m.stand_id, m.automatique,
+            m.nom IS NOT NULL AS decide
        FROM vente_externe v
        LEFT JOIN correspondance_point_de_vente m ON m.lieu_id = v.lieu_id AND m.caisse_externe_id = v.caisse_externe_id AND m.nom = v.point_de_vente
       WHERE v.lieu_id = $1 AND v.caisse_externe_id = $2 AND v.point_de_vente IS NOT NULL AND NOT v.annulee
-      GROUP BY v.point_de_vente, m.stand_id ORDER BY sum(v.total_centimes) DESC, v.point_de_vente`,
+      GROUP BY v.point_de_vente, m.nom, m.stand_id, m.automatique ORDER BY sum(v.total_centimes) DESC, v.point_de_vente`,
     [lieuId, caisseId],
   );
-  return rows.map((r) => ({ nom: r.nom, ventes: r.ventes, montant: r.montant, standId: r.stand_id }));
+  const stands = rows.some((r) => !r.decide) ? await candidats(c, lieuId, "stand") : [];
+  return rows.map((r) => ({
+    nom: r.nom,
+    ventes: r.ventes,
+    montant: r.montant,
+    standId: r.stand_id,
+    automatique: r.automatique ?? false,
+    suggestion: r.decide ? null : suggestion(r.nom, stands),
+  }));
+}
+
+/**
+ * Produits et points de vente de la caisse jamais rapprochés (une correspondance retirée à la main reste retirée), au même
+ * nom — majuscules, accents et espaces près — qu'un seul produit ou stand actif : reliés sans demander, marqués
+ * « automatique » (§15.152).
+ */
+async function relierAutomatiquement(c: Client, lieuId: string, caisseId: string): Promise<{ produits: number; pointsDeVente: number }> {
+  const { rows: libres } = await c.query<{ cle: string; libelle: string }>(
+    `SELECT l.cle, max(l.libelle) AS libelle FROM ligne_vente_externe l
+      WHERE l.lieu_id = $1 AND l.caisse_externe_id = $2
+        AND NOT EXISTS (SELECT 1 FROM correspondance_produit_externe m WHERE m.lieu_id = l.lieu_id AND m.caisse_externe_id = l.caisse_externe_id AND m.cle = l.cle)
+      GROUP BY l.cle`,
+    [lieuId, caisseId],
+  );
+  const produits = libres.length ? await candidats(c, lieuId, "produit") : [];
+  const liensProduits = libres.flatMap((r) => {
+    const p = correspondanceExacte(r.libelle, produits);
+    return p ? [{ cle: r.cle, produit_id: p.id }] : [];
+  });
+  const { rows: pdv } = await c.query<{ nom: string }>(
+    `SELECT DISTINCT v.point_de_vente AS nom FROM vente_externe v
+      WHERE v.lieu_id = $1 AND v.caisse_externe_id = $2 AND v.point_de_vente IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM correspondance_point_de_vente m WHERE m.lieu_id = v.lieu_id AND m.caisse_externe_id = v.caisse_externe_id AND m.nom = v.point_de_vente)`,
+    [lieuId, caisseId],
+  );
+  const stands = pdv.length ? await candidats(c, lieuId, "stand") : [];
+  const liensStands = pdv.flatMap((r) => {
+    const s = correspondanceExacte(r.nom, stands);
+    return s ? [{ nom: r.nom, stand_id: s.id }] : [];
+  });
+  let nbProduits = 0;
+  let nbPointsDeVente = 0;
+  if (liensProduits.length)
+    nbProduits =
+      (
+        await c.query(
+          `INSERT INTO correspondance_produit_externe (lieu_id, caisse_externe_id, cle, produit_id, automatique)
+           SELECT $1, $2, x.cle, x.produit_id, true FROM jsonb_to_recordset($3::jsonb) AS x(cle text, produit_id uuid)
+           ON CONFLICT DO NOTHING`,
+          [lieuId, caisseId, JSON.stringify(liensProduits)],
+        )
+      ).rowCount ?? 0;
+  if (liensStands.length)
+    nbPointsDeVente =
+      (
+        await c.query(
+          `INSERT INTO correspondance_point_de_vente (lieu_id, caisse_externe_id, nom, stand_id, automatique)
+           SELECT $1, $2, x.nom, x.stand_id, true FROM jsonb_to_recordset($3::jsonb) AS x(nom text, stand_id uuid)
+           ON CONFLICT DO NOTHING`,
+          [lieuId, caisseId, JSON.stringify(liensStands)],
+        )
+      ).rowCount ?? 0;
+  return { produits: nbProduits, pointsDeVente: nbPointsDeVente };
 }
 
 /** Aperçu d'un fichier : ce qui serait importé, sans rien enregistrer. */
@@ -222,13 +313,23 @@ export async function routesCaissesExternes(app: FastifyInstance, { base }: { ba
         );
       }
       await c.query("UPDATE caisse_externe SET colonnes = $3 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id, JSON.stringify(lu.colonnes)]);
+      const relies = await relierAutomatiquement(c, auth.lieuId, id);
       await inscrireJet(c, {
         lieuId: auth.lieuId,
         type: "caisse_externe_import",
         utilisateurId: auth.utilisateurId,
-        details: { caisse: id, fichier: d.fichier, lignes: lu.lignesLues, ajoutees: nouvelles.length, deja: lu.ventes.length - nouvelles.length, annulationsReportees: annulees.length, erreurs: lu.erreurs.length },
+        details: {
+          caisse: id,
+          fichier: d.fichier,
+          lignes: lu.lignesLues,
+          ajoutees: nouvelles.length,
+          deja: lu.ventes.length - nouvelles.length,
+          annulationsReportees: annulees.length,
+          erreurs: lu.erreurs.length,
+          reliesAutomatiquement: relies,
+        },
       });
-      return { importId, ajoutees: nouvelles.length, deja: lu.ventes.length - nouvelles.length, annulationsReportees: annulees.length };
+      return { importId, ajoutees: nouvelles.length, deja: lu.ventes.length - nouvelles.length, annulationsReportees: annulees.length, relies };
     });
     return { ...resultat, lignesLues: lu.lignesLues, erreurs: lu.erreurs, caisses: await base.transaction(contexte(auth), (c) => listerCaisses(c, auth.lieuId)) };
   });
@@ -250,14 +351,39 @@ export async function routesCaissesExternes(app: FastifyInstance, { base }: { ba
     return base.transaction(contexte(auth), async (c) => {
       await exigerHorsFormation(c, auth.lieuId);
       await exigerCaisse(c, auth.lieuId, id);
-      if (!d.produitId && !d.ignore) await c.query("DELETE FROM correspondance_produit_externe WHERE lieu_id = $1 AND caisse_externe_id = $2 AND cle = $3", [auth.lieuId, id, d.cle]);
-      else
-        await c.query(
-          `INSERT INTO correspondance_produit_externe (lieu_id, caisse_externe_id, cle, produit_id, ignore) VALUES ($1, $2, $3, $4, $5)
-           ON CONFLICT (lieu_id, caisse_externe_id, cle) DO UPDATE SET produit_id = EXCLUDED.produit_id, ignore = EXCLUDED.ignore`,
-          [auth.lieuId, id, d.cle, d.produitId, d.ignore],
-        );
+      // Choix à la main, jamais « automatique » ; « aucun » est retenu : le produit n'est plus relié sans demander.
+      await c.query(
+        `INSERT INTO correspondance_produit_externe (lieu_id, caisse_externe_id, cle, produit_id, ignore, automatique) VALUES ($1, $2, $3, $4, $5, false)
+         ON CONFLICT (lieu_id, caisse_externe_id, cle) DO UPDATE SET produit_id = EXCLUDED.produit_id, ignore = EXCLUDED.ignore, automatique = false`,
+        [auth.lieuId, id, d.cle, d.produitId, d.ignore],
+      );
       await inscrireJet(c, { lieuId: auth.lieuId, type: "correspondance_externe_modifiee", utilisateurId: auth.utilisateurId, details: { caisse: id, produitExterne: d.cle, produit: d.produitId, ignore: d.ignore } });
+      return produitsExternes(c, auth.lieuId, id);
+    });
+  });
+
+  // Toutes les suggestions affichées acceptées d'un coup : choix du directeur, donc pas « automatique ».
+  app.post("/api/caisses-externes/:id/produits/suggestions", async (req): Promise<ProduitExterne[]> => {
+    const auth = await exigerDirecteur(req, base);
+    const { id } = ParamId.parse(req.params);
+    return base.transaction(contexte(auth), async (c) => {
+      await exigerHorsFormation(c, auth.lieuId);
+      await exigerCaisse(c, auth.lieuId, id);
+      const liens = (await produitsExternes(c, auth.lieuId, id)).flatMap((p) => (p.suggestion ? [{ cle: p.cle, produit_id: p.suggestion.id }] : []));
+      if (liens.length) {
+        await c.query(
+          `INSERT INTO correspondance_produit_externe (lieu_id, caisse_externe_id, cle, produit_id, automatique)
+           SELECT $1, $2, x.cle, x.produit_id, false FROM jsonb_to_recordset($3::jsonb) AS x(cle text, produit_id uuid)
+           ON CONFLICT DO NOTHING`,
+          [auth.lieuId, id, JSON.stringify(liens)],
+        );
+        await inscrireJet(c, {
+          lieuId: auth.lieuId,
+          type: "correspondances_suggerees_acceptees",
+          utilisateurId: auth.utilisateurId,
+          details: { caisse: id, produits: liens.map((l) => ({ produitExterne: l.cle, produit: l.produit_id })) },
+        });
+      }
       return produitsExternes(c, auth.lieuId, id);
     });
   });
@@ -278,14 +404,37 @@ export async function routesCaissesExternes(app: FastifyInstance, { base }: { ba
     return base.transaction(contexte(auth), async (c) => {
       await exigerHorsFormation(c, auth.lieuId);
       await exigerCaisse(c, auth.lieuId, id);
-      if (!d.standId) await c.query("DELETE FROM correspondance_point_de_vente WHERE lieu_id = $1 AND caisse_externe_id = $2 AND nom = $3", [auth.lieuId, id, d.nom]);
-      else
-        await c.query(
-          `INSERT INTO correspondance_point_de_vente (lieu_id, caisse_externe_id, nom, stand_id) VALUES ($1, $2, $3, $4)
-           ON CONFLICT (lieu_id, caisse_externe_id, nom) DO UPDATE SET stand_id = EXCLUDED.stand_id`,
-          [auth.lieuId, id, d.nom, d.standId],
-        );
+      await c.query(
+        `INSERT INTO correspondance_point_de_vente (lieu_id, caisse_externe_id, nom, stand_id, automatique) VALUES ($1, $2, $3, $4, false)
+         ON CONFLICT (lieu_id, caisse_externe_id, nom) DO UPDATE SET stand_id = EXCLUDED.stand_id, automatique = false`,
+        [auth.lieuId, id, d.nom, d.standId],
+      );
       await inscrireJet(c, { lieuId: auth.lieuId, type: "correspondance_externe_modifiee", utilisateurId: auth.utilisateurId, details: { caisse: id, pointDeVente: d.nom, stand: d.standId } });
+      return pointsDeVente(c, auth.lieuId, id);
+    });
+  });
+
+  app.post("/api/caisses-externes/:id/points-de-vente/suggestions", async (req): Promise<PointDeVenteExterne[]> => {
+    const auth = await exigerDirecteur(req, base);
+    const { id } = ParamId.parse(req.params);
+    return base.transaction(contexte(auth), async (c) => {
+      await exigerHorsFormation(c, auth.lieuId);
+      await exigerCaisse(c, auth.lieuId, id);
+      const liens = (await pointsDeVente(c, auth.lieuId, id)).flatMap((p) => (p.suggestion ? [{ nom: p.nom, stand_id: p.suggestion.id }] : []));
+      if (liens.length) {
+        await c.query(
+          `INSERT INTO correspondance_point_de_vente (lieu_id, caisse_externe_id, nom, stand_id, automatique)
+           SELECT $1, $2, x.nom, x.stand_id, false FROM jsonb_to_recordset($3::jsonb) AS x(nom text, stand_id uuid)
+           ON CONFLICT DO NOTHING`,
+          [auth.lieuId, id, JSON.stringify(liens)],
+        );
+        await inscrireJet(c, {
+          lieuId: auth.lieuId,
+          type: "correspondances_suggerees_acceptees",
+          utilisateurId: auth.utilisateurId,
+          details: { caisse: id, pointsDeVente: liens.map((l) => ({ pointDeVente: l.nom, stand: l.stand_id })) },
+        });
+      }
       return pointsDeVente(c, auth.lieuId, id);
     });
   });

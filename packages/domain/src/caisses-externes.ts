@@ -282,13 +282,55 @@ export function evenementTermine(e: { etat: string; debut: string }, avecVentes:
 /** Nom comparé sans majuscules, accents, espaces ni ponctuation : « BIERE 50CL » = « Bière 50 cl ». */
 export const normaliserNom = (s: string) => sansAccents(s).replace(/ /g, "");
 
-const mots = (s: string) => new Set(sansAccents(s).split(" ").filter(Boolean));
+/** Unités de contenance : sans valeur pour comparer (les nombres départagent). */
+const UNITES = new Set(["cl", "ml", "l", "cc", "g", "kg", "litre", "litres"]);
+/** Mots du nom, chiffres et lettres séparés (« 50cl » → « 50 », « cl »), unités écartées. */
+const mots = (s: string) =>
+  new Set(
+    sansAccents(s)
+      .replace(/(\d)(?=[a-z])|([a-z])(?=\d)/g, "$1$2 ")
+      .split(" ")
+      .filter((m) => m && !UNITES.has(m)),
+  );
 const nombres = (s: string) => new Set(sansAccents(s).match(/\d+/g) ?? []);
 function trigrammes(s: string): Set<string> {
   const t = ` ${normaliserNom(s)} `;
   const r = new Set<string>();
   for (let i = 0; i + 3 <= t.length; i++) r.add(t.slice(i, i + 3));
   return r;
+}
+/** Mots qui distinguent deux variantes d'un même produit ou stand : « Bar Nord » n'est pas « Bar Sud ». */
+const VARIANTES: Record<string, string> = {
+  nord: "direction:nord",
+  sud: "direction:sud",
+  est: "direction:est",
+  ouest: "direction:ouest",
+  haut: "niveau:haut",
+  bas: "niveau:bas",
+  gauche: "cote:gauche",
+  droite: "cote:droite",
+  blanc: "couleur:blanc",
+  blanche: "couleur:blanc",
+  rouge: "couleur:rouge",
+  rose: "couleur:rose",
+  blonde: "couleur:blonde",
+  brune: "couleur:brune",
+  ambree: "couleur:ambree",
+  noir: "couleur:noir",
+  noire: "couleur:noir",
+  petit: "taille:petit",
+  petite: "taille:petit",
+  moyen: "taille:moyen",
+  moyenne: "taille:moyen",
+  grand: "taille:grand",
+  grande: "taille:grand",
+};
+/** Une même sorte de variante des deux côtés, sans valeur commune (nord / sud, rouge / blanc, petite / grande). */
+function variantesOpposees(a: Set<string>, b: Set<string>): boolean {
+  const valeurs = (m: Set<string>) => [...m].flatMap((x) => (VARIANTES[x] ? [VARIANTES[x]] : []));
+  const [va, vb] = [valeurs(a), valeurs(b)];
+  const sorte = (v: string) => v.split(":")[0];
+  return va.some((v) => vb.some((w) => sorte(w) === sorte(v)) && !vb.some((w) => sorte(w) === sorte(v) && va.includes(w)));
 }
 function dice(a: Set<string>, b: Set<string>): number {
   if (!a.size || !b.size) return 0;
@@ -299,7 +341,8 @@ function dice(a: Set<string>, b: Set<string>): number {
 
 /**
  * Ressemblance de deux noms, de 0 à 1 : 1 pour le même nom (majuscules, accents, espaces près) ; sinon moyenne des mots
- * communs et des groupes de trois lettres communs. Des nombres différents des deux côtés (« 33 cl » et « 50 cl ») : 0.
+ * communs et des groupes de trois lettres communs. Des nombres différents des deux côtés (« 33 cl » et « 50 cl ») ou des
+ * variantes opposées (« nord » et « sud », « rouge » et « blanc ») : 0.
  */
 export function ressemblance(a: string, b: string): number {
   const na = normaliserNom(a);
@@ -307,7 +350,9 @@ export function ressemblance(a: string, b: string): number {
   if (na === normaliserNom(b)) return 1;
   const [ca, cb] = [nombres(a), nombres(b)];
   if (ca.size && cb.size && ![...ca].some((n) => cb.has(n))) return 0;
-  return (dice(mots(a), mots(b)) + dice(trigrammes(a), trigrammes(b))) / 2;
+  const [ma, mb] = [mots(a), mots(b)];
+  if (variantesOpposees(ma, mb)) return 0;
+  return (dice(ma, mb) + dice(trigrammes(a), trigrammes(b))) / 2;
 }
 
 /** En dessous : noms trop éloignés pour être proposés. */
@@ -365,6 +410,10 @@ export interface ProduitExterne {
   /** Produit de FlaiX Expert ; null : pas encore rapproché. */
   produitId: string | null;
   ignore: boolean;
+  /** Relié sans demander, d'après le même nom (§15.152) : à vérifier, modifiable. */
+  automatique: boolean;
+  /** Pas encore rapproché : produit de FlaiX Expert au nom le plus proche, à confirmer. */
+  suggestion: SuggestionCorrespondance | null;
 }
 
 export interface PointDeVenteExterne {
@@ -372,6 +421,16 @@ export interface PointDeVenteExterne {
   ventes: number;
   montant: Centimes;
   standId: string | null;
+  automatique: boolean;
+  /** Pas encore rapproché : stand au nom le plus proche, à confirmer. */
+  suggestion: SuggestionCorrespondance | null;
+}
+
+/** Produit ou stand de FlaiX Expert proposé ; `memeNom` : même nom, majuscules, accents et espaces près. */
+export interface SuggestionCorrespondance {
+  id: string;
+  nom: string;
+  memeNom: boolean;
 }
 
 export interface LigneSynthese {

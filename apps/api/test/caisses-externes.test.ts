@@ -160,4 +160,53 @@ describe("caisses connectées", () => {
     const produits = await serveur.inject({ method: "GET", url: `/api/caisses-externes/${caisse}/produits`, headers: { cookie: sienne } });
     expect(produits.statusCode).toBe(404);
   });
+
+  it("correspondances automatiques (§15.152) : même nom relié à l'import, nom proche proposé, tout accepter ; « aucun » choisi à la main respecté", async () => {
+    const id = (await appel<CaisseExterne[]>("POST", "/api/caisses-externes", { nom: "Weezevent", systeme: "weezevent" })).corps.find((c) => c.nom === "Weezevent")!.id;
+    const sud = (await appel<Stand[]>("POST", "/api/stands", { nom: "BAR SUD" })).corps.find((s) => s.nom === "BAR SUD")!;
+    const frites = (await appel<Produit[]>("POST", "/api/produits", { nom: "frites", prixTtc: 350, tauxTva: 1000, coutMatiere: 80, standIds: [stand.id] })).corps.find((p) => p.nom === "frites")!;
+    const eau = (await appel<Produit[]>("POST", "/api/produits", { nom: "Eau minérale 50 cl", prixTtc: 200, tauxTva: 550, coutMatiere: 30, standIds: [stand.id] })).corps.find(
+      (p) => p.nom === "Eau minérale 50 cl",
+    )!;
+    const fichier = [
+      "N° ticket;Date;Bar;Article;Qté;Montant TTC",
+      "W-1;07/10/2026 20:00;Bar Sud;FRITES;1;3,50",
+      "W-1;07/10/2026 20:00;Bar Sud;Eau 50cl;1;2,00",
+      "W-2;07/10/2026 20:10;Bar Nord;Bière 50 cl;2;14,00",
+      "W-3;07/10/2026 20:20;Bar Nord;Chips;1;2,00",
+    ].join("\n");
+    const r = await appel<{ relies: { produits: number; pointsDeVente: number } }>("POST", `/api/caisses-externes/${id}/import`, { fichier: "weez.csv", contenu: fichier });
+    expect(r.corps.relies).toEqual({ produits: 1, pointsDeVente: 1 });
+    const { rows: jet } = await proprietaire.pool.query("SELECT details FROM journal_technique WHERE lieu_id = $1 AND type = 'caisse_externe_import' ORDER BY numero DESC LIMIT 1", [lieu.lieuId]);
+    expect(jet[0].details.reliesAutomatiquement).toEqual({ produits: 1, pointsDeVente: 1 });
+
+    let produits = (await appel<ProduitExterne[]>("GET", `/api/caisses-externes/${id}/produits`)).corps;
+    const de = (cle: string) => produits.find((p) => p.cle === cle)!;
+    expect(de("FRITES")).toMatchObject({ produitId: frites.id, automatique: true, suggestion: null });
+    expect(de("Eau 50cl")).toMatchObject({ produitId: null, automatique: false, suggestion: { id: eau.id, nom: "Eau minérale 50 cl", memeNom: false } });
+    expect(de("Bière 50 cl").suggestion).toMatchObject({ id: biere.id, nom: "Bière" });
+    expect(de("Chips").suggestion).toBeNull();
+    let pdv = (await appel<PointDeVenteExterne[]>("GET", `/api/caisses-externes/${id}/points-de-vente`)).corps;
+    expect(pdv.find((p) => p.nom === "Bar Sud")).toMatchObject({ standId: sud.id, automatique: true, suggestion: null });
+    // « Bar Nord » : jamais « BAR SUD » ; « Buvette Nord » proposé.
+    expect(pdv.find((p) => p.nom === "Bar Nord")).toMatchObject({ standId: null, suggestion: { id: stand.id, nom: "Buvette Nord" } });
+
+    // Le directeur retire le lien des frites et refuse la bière (« aucun ») : plus de suggestion, plus de liaison automatique.
+    await appel("PUT", `/api/caisses-externes/${id}/produits`, { cle: "FRITES", produitId: null, ignore: false });
+    produits = (await appel<ProduitExterne[]>("PUT", `/api/caisses-externes/${id}/produits`, { cle: "Bière 50 cl", produitId: null, ignore: false })).corps;
+    expect(de("FRITES")).toMatchObject({ produitId: null, automatique: false, suggestion: null });
+    expect(de("Bière 50 cl").suggestion).toBeNull();
+    const encore = await appel<{ relies: { produits: number } }>("POST", `/api/caisses-externes/${id}/import`, { fichier: "weez.csv", contenu: fichier });
+    expect(encore.corps.relies.produits).toBe(0);
+
+    // Tout accepter : l'eau seulement, choix du directeur (pas « automatique »), inscrit au journal.
+    produits = (await appel<ProduitExterne[]>("POST", `/api/caisses-externes/${id}/produits/suggestions`)).corps;
+    expect(de("Eau 50cl")).toMatchObject({ produitId: eau.id, automatique: false, suggestion: null });
+    expect(de("Bière 50 cl").produitId).toBeNull();
+    expect(de("FRITES").produitId).toBeNull();
+    pdv = (await appel<PointDeVenteExterne[]>("POST", `/api/caisses-externes/${id}/points-de-vente/suggestions`)).corps;
+    expect(pdv.find((p) => p.nom === "Bar Nord")).toMatchObject({ standId: stand.id, automatique: false });
+    const { rows } = await proprietaire.pool.query("SELECT count(*)::int AS n FROM journal_technique WHERE lieu_id = $1 AND type = 'correspondances_suggerees_acceptees'", [lieu.lieuId]);
+    expect(rows[0].n).toBe(2);
+  });
 });

@@ -133,7 +133,12 @@ describe("correspondances suggérées (§15.152)", () => {
   it("nom proche : proposé ; contenances différentes jamais confondues ; nom sans rapport : rien", () => {
     expect(suggererCorrespondance("Biere pression 50", produits.slice(1))?.id).toBe("p3");
     expect(suggererCorrespondance("Coca", produits)?.id).toBe("p4");
+    expect(suggererCorrespondance("Eau 50cl", [{ id: "e", nom: "Eau minérale 50 cl" }])?.id).toBe("e");
     expect(ressemblance("Bière 33 cl", "Bière 50 cl")).toBe(0);
+    expect(ressemblance("Bar Nord", "BAR SUD")).toBe(0);
+    expect(ressemblance("Vin rouge", "Vin blanc")).toBe(0);
+    expect(ressemblance("Petite frite", "Grande frite")).toBe(0);
+    expect(suggererCorrespondance("Bar Nord", [{ id: "s", nom: "Bar Sud" }, { id: "n", nom: "Buvette Nord" }])?.id).toBe("n");
     expect(suggererCorrespondance("BIERE 25CL", produits)).toBeNull();
     expect(suggererCorrespondance("Frites", produits)).toBeNull();
     expect(suggererCorrespondance("Bière 50 cl", [])).toBeNull();

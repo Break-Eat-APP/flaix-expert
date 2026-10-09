@@ -117,6 +117,7 @@ export const TYPES_JET = {
   caisse_externe_modifiee: "Caisse connectée renommée",
   caisse_externe_import: "Ventes d'une caisse connectée importées",
   correspondance_externe_modifiee: "Caisse connectée : correspondance d'un produit ou d'un point de vente modifiée",
+  correspondances_suggerees_acceptees: "Caisse connectée : correspondances suggérées acceptées",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;
