@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useState, type ComponentType } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChartLine, FileText, Heart, KeyRound, Lock, LogOut, Menu, Package, Receipt, SlidersHorizontal, Sparkles, Users, X } from "lucide-react";
+import { Cable, ChartLine, FileText, Heart, KeyRound, Lock, LogOut, Menu, Package, Receipt, SlidersHorizontal, Sparkles, Users, X } from "lucide-react";
 import type { OptionLieu, OptionsLieu, SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
 import { useDeconnexion, useOptions } from "../session.tsx";
@@ -25,6 +25,7 @@ const MENU: Entree[] = [
   { id: "resultats", libelle: "Résultats", icone: ChartLine, route: "/" },
   { id: "assistant", libelle: "Assistant", icone: Sparkles, route: "/assistant", option: "assistant" },
   { id: "caisses", libelle: "Caisses", icone: Receipt, route: "/caisses" },
+  { id: "caisses-connectees", libelle: "Caisses connectées", icone: Cable, route: "/caisses-connectees", option: "caisses_connectees" },
   { id: "stock", libelle: "Stock", icone: Package, route: "/stock", option: "stock" },
   { id: "equipe", libelle: "Équipe", icone: Users, route: "/equipe" },
   { id: "clotures", libelle: "Clôtures", icone: Lock, route: "/clotures" },

@@ -38,6 +38,7 @@ const Assistant = lazy(() => import("./pages/Assistant.tsx").then((m) => ({ defa
 const SupportFlaix = lazy(() => import("./pages/parametres/SupportFlaix.tsx").then((m) => ({ default: m.SupportFlaix })));
 const Notifications = lazy(() => import("./pages/parametres/Notifications.tsx").then((m) => ({ default: m.Notifications })));
 const Objectifs = lazy(() => import("./pages/parametres/Objectifs.tsx").then((m) => ({ default: m.Objectifs })));
+const CaissesConnectees = lazy(() => import("./pages/caisses-connectees/CaissesConnectees.tsx").then((m) => ({ default: m.CaissesConnectees })));
 const RapportSoiree = lazy(() => import("./pages/resultats/RapportSoiree.tsx").then((m) => ({ default: m.RapportSoiree })));
 const EspaceEditeur = lazy(() => import("./pages/editeur/EspaceEditeur.tsx").then((m) => ({ default: m.EspaceEditeur })));
 const PageCarte = lazy(() => import("./pages/carte/PageCarte.tsx").then((m) => ({ default: m.PageCarte })));
@@ -102,6 +103,7 @@ function AppLieu() {
           <Route path="equipe" element={<Equipe />} />
           <Route path="clotures" element={<Clotures />} />
           <Route path="fidelite" element={<Fidelite />} />
+          <Route path="caisses-connectees" element={<CaissesConnectees />} />
           <Route path="factures" element={<Factures />} />
           <Route path="parametres" element={<Parametres />} />
           <Route path="parametres/lieu" element={<Identite />} />
