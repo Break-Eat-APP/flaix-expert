@@ -4922,3 +4922,30 @@ comparables, pics par stand), coûts par buvette, prix fournisseurs, alertes. **
 date « à minuit » et heure à part), serveur 11 (dont Résultats, prévision, stock alimentés par les ventes déposées,
 produit non rapproché sans marge, clôtures fiscales intactes), écran 6 (dont classeurs .xlsx et .xls fabriqués, feuille
 choisie, fichier abîmé) ; tous les tests des modules branchés repassés sans changement.
+
+### 15.152 Caisses connectées : correspondances automatiques et suggérées (2026-10-09)
+
+**Demande de Rémi** : *« comment tu fais pour qu'il comprenne le bon produit ? »* — la correspondance (code du produit dans
+la caisse, sinon son libellé exact). Proposition acceptée (« ok fais le ») : relier sans demander ce qui porte le même nom,
+proposer ce qui porte un nom proche, même principe pour les bars et les stands.
+
+**Décisions** :
+- **Même nom** aux majuscules, accents, espaces et ponctuation près (« BIERE 50CL » = « Bière 50 cl ») qu'**un seul**
+  produit (ou stand) actif de FlaiX Expert : relié à l'import, dans la même transaction, marqué « auto » à l'écran et dans
+  la base (migration 0042, colonne `automatique`) ; nombre de liens inscrit au journal de l'import. Deux homonymes : aucun
+  lien, une suggestion.
+- **Nom proche** : proposé (« Suggestion : X — Accepter »), jamais relié sans le directeur. Ressemblance = moyenne des mots
+  communs (chiffres et lettres séparés, unités cl, ml, l… écartées) et des groupes de trois lettres communs ; seuil 0,4.
+  **Jamais proposé** : contenances différentes (33 cl / 50 cl), variantes opposées (nord / sud, haut / bas, rouge / blanc /
+  rosé, blonde / brune, petite / grande).
+- **« Accepter les N suggestions »** : toutes celles affichées, d'un coup, comme un choix du directeur (pas « auto ») ;
+  inscrit au journal technique (nouveau type « correspondances suggérées acceptées », avec la liste).
+- **Choix à la main** : jamais « auto ». Retirer un lien (« — à rapprocher — ») est retenu comme une décision : plus de
+  liaison automatique à l'import suivant, plus de suggestion pour ce produit (il reste choisissable dans la liste).
+
+**Réalisé le 2026-10-09** : moteur (`normaliserNom`, `ressemblance`, `suggererCorrespondance`, `correspondanceExacte`),
+serveur (liaison à l'import, suggestions dans les listes, deux routes « tout accepter »), écran Correspondances (étiquette
+« auto », suggestion acceptable, bouton tout accepter, message d'import « reliés automatiquement »). **Tests** : moteur 2
+(même nom, homonymes, nom proche, contenances et variantes opposées), serveur 1 (liaison à l'import et journal, suggestions,
+« aucun » respecté au réimport, tout accepter produits et points de vente), écran 2 (étiquette, suggestion acceptée seule
+ou toutes ensemble).

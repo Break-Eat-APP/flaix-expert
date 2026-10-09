@@ -5,6 +5,36 @@
 
 ## 2026-10-09
 
+### [`b79db0d`](https://github.com/Break-Eat-APP/flaix-expert/commit/b79db0d8ee72df223a72a2996de0776cf1998a00) — Caisses connectées : correspondances automatiques et suggérées (dossier §15.152) *(phase 53)*
+
+- modifié : `apps/api/src/routes/caisses-externes.ts`
+- modifié : `apps/api/test/caisses-externes.test.ts`
+- modifié : `apps/web/src/pages/caisses-connectees/CaissesConnectees.test.tsx`
+- modifié : `apps/web/src/pages/caisses-connectees/CaissesConnectees.tsx`
+- modifié : `apps/web/src/styles.css`
+- créé : `db/migrations/0042_correspondances_automatiques.sql`
+- modifié : `packages/domain/src/caisses-externes.test.ts`
+- modifié : `packages/domain/src/caisses-externes.ts`
+- modifié : `packages/domain/src/journal-technique.ts`
+
+### [`62e44ae`](https://github.com/Break-Eat-APP/flaix-expert/commit/62e44ae95730c7e766844572f67a1910fb80d5af) — Avancement : correspondances suggérées en cours
+
+- modifié : `docs/avancement.md`
+
+### [`50d818b`](https://github.com/Break-Eat-APP/flaix-expert/commit/50d818b8b67023979d5615ffbe6cc60dd0cae6f2) — Caisses connectées : moteur des correspondances suggérées (même nom, nom proche) *(phase 53)*
+
+- modifié : `packages/domain/src/caisses-externes.test.ts`
+- modifié : `packages/domain/src/caisses-externes.ts`
+
+### [`9f0b1f0`](https://github.com/Break-Eat-APP/flaix-expert/commit/9f0b1f0931f1338caafa150955d4b9c7f9a0fe16) — Ventes déposées et fichiers Excel : dossier §15.151, avancement, journal des phases (phase 52)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`944717e`](https://github.com/Break-Eat-APP/flaix-expert/commit/944717ecf8426656dc270a9c29e8c93f2b991839) — Ventes déposées dans tout FlaiX Expert ; fichiers Excel (dossier §15.151) *(phase 52)*
 
 - modifié : `apps/api/src/routes/alertes.ts`

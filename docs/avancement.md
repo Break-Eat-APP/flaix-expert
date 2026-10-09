@@ -2,9 +2,9 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
-## EN COURS (2026-10-09) : correspondances suggérées (§15.152)
+## 2026-10-09 : correspondances automatiques et suggérées (§15.152)
 
-Fait : moteur (`normaliserNom`, `ressemblance`, `suggererCorrespondance`, `correspondanceExacte`, commit 50d818b). Reste : migration 0042 (colonne `automatique` sur les deux tables de correspondance) ; serveur (liaison automatique à l'import, suggestions dans les GET produits et points de vente, routes « accepter toutes les suggestions » et « relier les mêmes noms », PUT manuel → automatique = false) ; écran (badge auto, « Suggestion : X [Accepter] », bouton tout accepter) ; tests ; dossier ; déploiement.
+Caisses connectées : un produit ou point de vente de la caisse au même nom (majuscules, accents, espaces près) qu'un seul produit ou stand de FlaiX Expert est relié à l'import (étiquette « auto ») ; un nom proche est proposé, accepté un à un ou tout d'un coup. Contenances et variantes opposées jamais confondues. Migration 0042.
 
 ## 2026-10-09 : ventes déposées dans tout FlaiX Expert, fichiers Excel (§15.151)
 
