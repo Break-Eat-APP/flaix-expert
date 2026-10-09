@@ -99,7 +99,7 @@ export function Coquille({ session }: { session: SessionInfo }) {
             );
           })}
           <div className="plus-tard">
-            <b>Plus tard</b>Campagnes · Wallet
+            <b>Plus tard</b>Campagnes
           </div>
         </nav>
 
