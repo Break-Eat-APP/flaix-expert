@@ -59,6 +59,7 @@
 | 51 | [Caisses connectées : ventes d'une caisse externe importées](#phase-51) | §15.150 | [`77558bd`](https://github.com/Break-Eat-APP/flaix-expert/commit/77558bd28a81154bc1b4544160dea01271c53497) [`1d5db67`](https://github.com/Break-Eat-APP/flaix-expert/commit/1d5db67cea273c4e9af132ea8b73da8764ef5019) [`3f9b046`](https://github.com/Break-Eat-APP/flaix-expert/commit/3f9b0460764cd42cb2b79bd589fcb94b0c7e278e) | livrée |
 | 52 | [Ventes déposées dans tout FlaiX Expert ; fichiers Excel](#phase-52) | §15.151 | [`944717e`](https://github.com/Break-Eat-APP/flaix-expert/commit/944717ecf8426656dc270a9c29e8c93f2b991839) | livrée |
 | 53 | [Caisses connectées : correspondances automatiques et suggérées](#phase-53) | §15.152 | [`50d818b`](https://github.com/Break-Eat-APP/flaix-expert/commit/50d818b8b67023979d5615ffbe6cc60dd0cae6f2) [`b79db0d`](https://github.com/Break-Eat-APP/flaix-expert/commit/b79db0d8ee72df223a72a2996de0776cf1998a00) | livrée |
+| 54 | [Nouveau style : arrondi, épuré, toujours clair](#phase-54) | §15.153 | [`56df8e0`](https://github.com/Break-Eat-APP/flaix-expert/commit/56df8e0d5c2079aa0899deebd9dc6118904c82cf) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -2033,6 +2034,19 @@
   - [`apps/api/test/caisses-externes.test.ts`](../../apps/api/test/caisses-externes.test.ts) — modifié
   - [`packages/domain/src/caisses-externes.test.ts`](../../packages/domain/src/caisses-externes.test.ts) — modifié
 
+<a id="phase-54"></a>
+## Phase 54 — Nouveau style : arrondi, épuré, toujours clair
+
+- **Dates** : 2026-10-10
+- **Décision et raisonnement** : dossier projet §15.153
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`56df8e0`](https://github.com/Break-Eat-APP/flaix-expert/commit/56df8e0d5c2079aa0899deebd9dc6118904c82cf) 2026-10-10 — Nouveau style : arrondi, épuré, toujours clair (dossier §15.153)
+- **Écrans (apps/web)** :
+  - [`apps/web/src/composants/Logo.tsx`](../../apps/web/src/composants/Logo.tsx) — modifié
+  - [`apps/web/src/resultats.css`](../../apps/web/src/resultats.css) — modifié
+  - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -2067,3 +2081,4 @@
 - [`86a44bc`](https://github.com/Break-Eat-APP/flaix-expert/commit/86a44bc1c9c76face424287b5696f88fc972f811) 2026-10-09 — Menu : le wallet n'est plus « plus tard » (fait le 2026-10-05)
 - [`9f0b1f0`](https://github.com/Break-Eat-APP/flaix-expert/commit/9f0b1f0931f1338caafa150955d4b9c7f9a0fe16) 2026-10-09 — Ventes déposées et fichiers Excel : dossier §15.151, avancement, journal des phases (phase 52)
 - [`62e44ae`](https://github.com/Break-Eat-APP/flaix-expert/commit/62e44ae95730c7e766844572f67a1910fb80d5af) 2026-10-09 — Avancement : correspondances suggérées en cours
+- [`c22ee6c`](https://github.com/Break-Eat-APP/flaix-expert/commit/c22ee6cfbb07bdc3da62576e8df6170cf67ba7d1) 2026-10-09 — Correspondances suggérées : dossier §15.152, avancement, journal des phases (phase 53)

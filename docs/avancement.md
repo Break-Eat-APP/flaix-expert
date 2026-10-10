@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-10 : nouveau style arrondi, toujours clair (§15.153)
+
+Maquette validée par Rémi (« super comme ça ») ; appliquée à tout le logiciel : cartes arrondies, boutons et onglets en pilule, menu flottant, chiffre d'affaires en carte violette. Thème sombre retiré.
+
 ## 2026-10-09 : correspondances automatiques et suggérées (§15.152)
 
 Caisses connectées : un produit ou point de vente de la caisse au même nom (majuscules, accents, espaces près) qu'un seul produit ou stand de FlaiX Expert est relié à l'import (étiquette « auto ») ; un nom proche est proposé, accepté un à un ou tout d'un coup. Contenances et variantes opposées jamais confondues. Migration 0042.

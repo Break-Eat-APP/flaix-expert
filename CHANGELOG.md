@@ -3,7 +3,24 @@
 > Généré par `node infra/outils/journal-developpement.cjs` à partir de Git. Ne pas modifier à la main.
 > Chaque entrée : date, commit (lien GitHub), message, fichiers créés ou modifiés. Le plus récent en premier. Phases : [docs/developpement/JOURNAL_DES_PHASES.md](docs/developpement/JOURNAL_DES_PHASES.md).
 
+## 2026-10-10
+
+### [`56df8e0`](https://github.com/Break-Eat-APP/flaix-expert/commit/56df8e0d5c2079aa0899deebd9dc6118904c82cf) — Nouveau style : arrondi, épuré, toujours clair (dossier §15.153) *(phase 54)*
+
+- modifié : `apps/web/src/composants/Logo.tsx`
+- modifié : `apps/web/src/resultats.css`
+- modifié : `apps/web/src/styles.css`
+
 ## 2026-10-09
+
+### [`c22ee6c`](https://github.com/Break-Eat-APP/flaix-expert/commit/c22ee6cfbb07bdc3da62576e8df6170cf67ba7d1) — Correspondances suggérées : dossier §15.152, avancement, journal des phases (phase 53)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/phases.cjs`
 
 ### [`b79db0d`](https://github.com/Break-Eat-APP/flaix-expert/commit/b79db0d8ee72df223a72a2996de0776cf1998a00) — Caisses connectées : correspondances automatiques et suggérées (dossier §15.152) *(phase 53)*
 
