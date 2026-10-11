@@ -100,6 +100,21 @@ a { color: var(--violet); }
   font-size: 10.5px; font-weight: 700; color: var(--violet); background: var(--violet-soft);
   border-radius: 999px; padding: 1px 8px; white-space: nowrap; cursor: help;
 }
+/* Hygiène et HACCP (§15.156) */
+.hygiene-groupe + .hygiene-groupe { margin-top: 16px; }
+.hygiene-groupe h3 { margin: 0 0 2px; font-size: 13.5px; color: var(--muted); }
+.hygiene-releves { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.hygiene-saisie { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.hygiene-saisie .message { width: 100%; margin: 0; }
+.hygiene-historique { margin: 12px 0 0; padding-left: 18px; font-size: 13px; display: grid; gap: 4px; }
+.frais-ligne.inactive { opacity: 0.55; }
+.texte-rouge { color: #b4262b; font-weight: 700; }
+@media print {
+  .registre-hygiene, .registre-hygiene * { visibility: visible; }
+  .registre-hygiene { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 0; }
+  .registre-hygiene .tableau td { white-space: normal; }
+}
+
 /* Conditionnement d'un produit (§15.155) */
 .conditionnement { display: grid; gap: 8px; }
 

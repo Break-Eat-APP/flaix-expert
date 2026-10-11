@@ -39,6 +39,7 @@ const SupportFlaix = lazy(() => import("./pages/parametres/SupportFlaix.tsx").th
 const Notifications = lazy(() => import("./pages/parametres/Notifications.tsx").then((m) => ({ default: m.Notifications })));
 const Objectifs = lazy(() => import("./pages/parametres/Objectifs.tsx").then((m) => ({ default: m.Objectifs })));
 const MesFrais = lazy(() => import("./pages/parametres/MesFrais.tsx").then((m) => ({ default: m.MesFrais })));
+const Hygiene = lazy(() => import("./pages/hygiene/Hygiene.tsx").then((m) => ({ default: m.Hygiene })));
 const CaissesConnectees = lazy(() => import("./pages/caisses-connectees/CaissesConnectees.tsx").then((m) => ({ default: m.CaissesConnectees })));
 const RapportSoiree = lazy(() => import("./pages/resultats/RapportSoiree.tsx").then((m) => ({ default: m.RapportSoiree })));
 const EspaceEditeur = lazy(() => import("./pages/editeur/EspaceEditeur.tsx").then((m) => ({ default: m.EspaceEditeur })));
@@ -101,6 +102,7 @@ function AppLieu() {
           <Route path="caisses" element={<MesCaisses />} />
           <Route path="caisses/:caisseId" element={<EcranCaisse />} />
           <Route path="stock" element={<Stock />} />
+          <Route path="hygiene" element={<Hygiene />} />
           <Route path="equipe" element={<Equipe />} />
           <Route path="clotures" element={<Clotures />} />
           <Route path="fidelite" element={<Fidelite />} />
