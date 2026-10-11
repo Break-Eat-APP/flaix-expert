@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Printer, ShieldCheck, ShieldAlert } from "lucide-react";
-import { formaterMontant, formaterPourcentage, libelleTauxTva, type Ecart, type LigneCascade, type BriefSoiree, type RapportSoireeFige } from "@flaix/domain";
+import { formaterMontant, formaterPourcentage, libelleTauxTva, LIBELLE_RESTE, type Ecart, type LigneCascade, type BriefSoiree, type RapportSoireeFige } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Chargement, MessageErreur } from "../../composants/communs.tsx";
 
@@ -78,7 +78,7 @@ function Document({ lu }: { lu: Lu }) {
         <Chiffre libelle="Tickets" valeur={nombre(v.tickets)} sous={v.panierMoyen !== null ? `panier moyen ${formaterMontant(v.panierMoyen)}` : undefined} />
         <Chiffre libelle="Par spectateur" valeur={v.caParSpectateur !== null ? formaterMontant(v.caParSpectateur) : "—"} sous={v.caParSpectateur === null ? "affluence non saisie" : "encaissé TTC"} />
         <Chiffre
-          libelle="Marge nette de la soirée"
+          libelle={r.cascade.at(-1)?.libelle ?? "Marge nette de la soirée"}
           valeur={r.margeNette !== null ? formaterMontant(r.margeNette) : "non calculable"}
           sous={
             r.margeNette === null
@@ -92,7 +92,7 @@ function Document({ lu }: { lu: Lu }) {
         />
       </section>
 
-      <Section titre="Résultat de la soirée" description="Du montant encaissé à ce qui reste une fois payés la TVA, la marchandise vendue, le personnel et les dépenses de la soirée.">
+      <Section titre="Résultat de la soirée" description="Du montant encaissé à ce qui reste une fois payés la TVA, la marchandise vendue, le personnel, les frais de la soirée et sa part des frais du mois.">
         <Cascade lignes={r.cascade} caHt={v.caHt} />
         {r.depenses && r.depenses.length > 0 && (
           <p className="rapport-note">
@@ -107,7 +107,13 @@ function Document({ lu }: { lu: Lu }) {
           </p>
         )}
         <p className="rapport-avertissement">
-          La marge nette de la soirée <strong>n'est pas le bénéfice du lieu</strong> : le loyer, les salaires permanents, l'assurance, les amortissements et l'impôt n'y sont pas déduits.
+          {r.cascade.at(-1)?.libelle === LIBELLE_RESTE ? (
+            <>Les frais du mois renseignés dans Mes frais (loyer, abonnements, salaires hors soirée…) y sont répartis au prorata du CA HT des soirées du mois ; l'impôt sur les bénéfices n'est pas déduit.</>
+          ) : (
+            <>
+              La marge nette de la soirée <strong>n'est pas le bénéfice du lieu</strong> : le loyer, les salaires permanents, l'assurance, les amortissements et l'impôt n'y sont pas déduits.
+            </>
+          )}
           {r.depenses === undefined && " Rapport établi avant la saisie des dépenses de la soirée : elles n'y figurent pas."}
           {r.personnel.affectations === 0 && " Aucune personne n'était affectée à cet événement dans Équipe : le personnel compte pour 0 €."}
           {r.personnel.tauxManquants > 0 && ` ${r.personnel.tauxManquants} affectation${r.personnel.tauxManquants > 1 ? "s" : ""} sans taux horaire dans Équipe.`}

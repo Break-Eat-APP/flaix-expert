@@ -1,7 +1,7 @@
 import type { ComponentType } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BellRing, Building2, CalendarDays, GraduationCap, LayoutGrid, LifeBuoy, ShieldCheck, ShoppingBag, Tags, Target, UserCog, Wallet } from "lucide-react";
+import { BellRing, Building2, CalendarDays, GraduationCap, LayoutGrid, LifeBuoy, PiggyBank, ShieldCheck, ShoppingBag, Tags, Target, UserCog, Wallet } from "lucide-react";
 import type { EtatFormation, Evenement, Lieu, Produit, Stand } from "@flaix/domain";
 import { api } from "../../api.ts";
 import { EntetePage } from "../../composants/communs.tsx";
@@ -84,6 +84,7 @@ export function Parametres() {
         : undefined,
     },
     { titre: "Click & Collect", texte: "Prix sur l'application, points de retrait", icone: ShoppingBag, route: "/parametres/click-collect", etat: "Prix app conseillés" },
+    { titre: "Mes frais", texte: "Tous les frais, de la commission du club au loyer, pour savoir ce qu'il te reste", icone: PiggyBank, route: "/parametres/frais", etat: "Ce qu'il te reste" },
     { titre: "Coûts par buvette", texte: "Frais de chaque stand, coûts du mois par stand", icone: Wallet, route: "/parametres/couts" },
     { titre: "Objectifs de marge", texte: "Cible de marge nette de la soirée, cibles par catégorie, postes de dépense", icone: Target, route: "/parametres/objectifs", etat: "Cibles et dépenses" },
     { titre: "Notifications", texte: "Ruptures en direct et brief de fin de soirée sur ton téléphone", icone: BellRing, route: "/parametres/notifications", etat: "Stock en direct, brief" },

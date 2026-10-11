@@ -247,24 +247,27 @@ export interface EtapeCascade {
   aide: string;
 }
 
-/** Cascade : les totaux en violet, ce qui est retiré en gris, reliés par un pointillé. */
+/** Cascade : les totaux en violet (en rouge sous zéro), ce qui est retiré en gris, reliés par un pointillé. */
 export function Cascade({ etapes }: { etapes: EtapeCascade[] }) {
   const [survol, setSurvol] = useState<number | null>(null);
   const L = 760, H = 300, g = { x0: 64, x1: 748, y0: 244, y1: 30 };
-  const { max, ticks } = axe(Math.max(...etapes.map((e) => Math.abs(e.v)), 1));
-  const y = (v: number) => g.y0 - (v / max) * (g.y0 - g.y1);
   const bande = (g.x1 - g.x0) / etapes.length, lb = Math.min(48, bande * 0.55);
   let cumul = 0;
   const barres = etapes.map((e, i) => {
-    const haut = e.total ? e.v : cumul, bas = e.total ? 0 : cumul + e.v;
+    const debut = e.total ? 0 : cumul, fin = e.total ? e.v : cumul + e.v;
     const x = g.x0 + bande * i + (bande - lb) / 2;
     const avant = cumul;
-    cumul = e.total ? e.v : cumul + e.v;
-    return { e, x, haut, bas, avant };
+    cumul = fin;
+    return { e, x, haut: Math.max(debut, fin), bas: Math.min(debut, fin), avant };
   });
+  // Échelle de la valeur la plus basse (0, ou un résultat négatif) à la plus haute.
+  const { max, ticks } = axe(Math.max(...barres.map((b) => b.haut), 1));
+  const min = Math.min(0, ...barres.map((b) => b.bas));
+  const y = (v: number) => g.y0 - ((v - min) / (max - min)) * (g.y0 - g.y1);
   return (
     <div className="graphe">
       <svg viewBox={`0 0 ${L} ${H}`} role="img" aria-label={etapes.map((e) => `${e.l1} ${e.l2 ?? ""} ${euros(e.v)}`).join(", ")}>
+        {min < 0 && <line x1={g.x0} x2={g.x1} y1={y(0)} y2={y(0)} stroke="var(--muted)" strokeWidth={1} />}
         {ticks.map((t) => (
           <g key={t}>
             <line x1={g.x0} x2={g.x1} y1={y(t)} y2={y(t)} stroke="var(--border)" strokeWidth={1} />
@@ -277,7 +280,7 @@ export function Cascade({ etapes }: { etapes: EtapeCascade[] }) {
           <g key={i} onPointerEnter={() => setSurvol(i)} onPointerLeave={() => setSurvol(null)}>
             {i > 0 && <line x1={barres[i - 1]!.x + lb} x2={x} y1={y(avant)} y2={y(avant)} stroke="var(--gris-graph)" strokeWidth={1} strokeDasharray="3 3" />}
             <rect x={x - 8} y={g.y1} width={lb + 16} height={g.y0 - g.y1} fill="transparent" />
-            <rect x={x} y={y(haut)} width={lb} height={Math.max(2, y(bas) - y(haut))} rx={4} fill={e.total ? "var(--violet)" : "var(--gris-graph)"} />
+            <rect x={x} y={y(haut)} width={lb} height={Math.max(2, y(bas) - y(haut))} rx={4} fill={e.total ? (e.v < 0 ? "var(--red)" : "var(--violet)") : "var(--gris-graph)"} />
             <text x={x + lb / 2} y={y(haut) - 8} fontSize={11.5} textAnchor="middle" fontWeight={e.total ? 700 : 400} fill={e.total ? "var(--ink)" : "var(--muted)"}>
               {eurosEtiquette(e.v)}
             </text>

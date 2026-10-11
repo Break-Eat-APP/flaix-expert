@@ -24,8 +24,12 @@ function finances(depense: { mode: "euros" | "pourcent"; valeur: number } | null
     coutMatiere: 510,
     produitsSansCout: [],
     personnel: { reel: 0, affectations: 0, tauxManquants: 0 },
-    depenses: [{ posteId: "secu", nom: "Sécurité", actif: true, mode: depense?.mode ?? null, valeur: depense?.valeur ?? null, montant, saisiPar: null, saisiLe: null }],
+    depenses: [{ posteId: "secu", nom: "Sécurité", actif: true, mode: depense?.mode ?? null, valeur: depense?.valeur ?? null, habituel: false, montant, saisiPar: null, saisiLe: null }],
     totalDepenses: montant,
+    ecartStock: null,
+    fraisMois: [],
+    totalFraisMois: 0,
+    fraisAVerifier: 0,
     margeBrute: c.margeBrute,
     margeNette: c.margeNette,
     cascade: c.lignes,
@@ -39,6 +43,17 @@ let serveur: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   serveur = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === "/api/finances?evenementId=rouen") return reponse(200, finances(null, 9_000));
+    if (url === "/api/finances?evenementId=gap") {
+      const c = cascadeSoiree({ encaisseTtc: 2_700, tva: 405, coutMatiere: 510, personnel: 0, depenses: 0, fraisMois: 7_500 });
+      return reponse(200, {
+        ...finances(null, null),
+        fraisMois: [{ mois: "2026-11", fraisDuMois: 30_000, caHtDuMois: 9_180, part: 7_500, sansSoiree: false }],
+        totalFraisMois: 7_500,
+        fraisAVerifier: 3,
+        margeNette: c.margeNette,
+        cascade: c.lignes,
+      });
+    }
     if (url === "/api/finances?du=2026-09-01&au=2026-09-30") {
       const f = finances({ mode: "euros", valeur: 300 }, null);
       return reponse(200, { ...f, evenement: { ...f.evenement, id: "periode:2026-09-01:2026-09-30", libelle: "du 1er au 30 septembre 2026" }, depenses: [{ ...f.depenses[0], mode: null, valeur: null }], periode: { du: "2026-09-01", au: "2026-09-30", soirees: [{ id: "gap", libelle: "Gap", debut: "2026-09-05T18:00:00Z", encaisseTtc: 1_200, caHt: 1_000, margeBrute: 700, margeNette: 600, etatCible: null }, { id: "rouen", libelle: "Rouen", debut: "2026-09-20T18:00:00Z", encaisseTtc: 1_500, caHt: 1_295, margeBrute: 1_085, margeNette: 885, etatCible: null }] } });
@@ -69,7 +84,26 @@ describe("gestion financière de la soirée à l'écran", () => {
     monter();
     await screen.findByText(/Tout cet écran porte sur la seule soirée/);
     expect(screen.getAllByText(/sous la cible/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/n'est pas le bénéfice du lieu/)).toBeTruthy();
+    expect(screen.getByText("Ce qu'il te reste")).toBeTruthy();
+    expect(screen.getByText(/L'impôt sur les bénéfices n'est pas déduit/)).toBeTruthy();
+    expect(screen.queryByText(/frais encore à vérifier/)).toBeNull();
+  });
+
+  it("part des frais du mois déduite (§15.154) ; frais encore à vérifier signalés ; soirée à perte en rouge", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter>
+          <VueFinances evenementId="gap" s={stats} />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText(/3 frais encore à vérifier/)).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Vérifier mes frais" }).getAttribute("href")).toBe("/parametres/frais");
+    expect(screen.getByText("Novembre 2026")).toBeTruthy();
+    expect(screen.getByText("75,00 €", { selector: "strong" })).toBeTruthy();
+    expect(screen.getAllByRole("img")[0]!.getAttribute("aria-label")).toMatch(/Frais du mois -75,00\s€/);
+    expect(document.querySelector('rect[fill="var(--red)"]')).toBeTruthy();
   });
 
   it("une dépense de 10 % du CA HT part au serveur en points de base, et la marge nette se recalcule", async () => {
@@ -103,7 +137,7 @@ describe("gestion financière de la soirée à l'écran", () => {
     );
     await screen.findByText(/Tout cet écran porte sur la période/);
     expect(screen.getByText("Soirée par soirée")).toBeTruthy();
-    expect(screen.getByText("Dépenses de la période")).toBeTruthy();
+    expect(screen.getByText("Frais des soirées de la période")).toBeTruthy();
     expect(screen.queryByLabelText("Montant Sécurité")).toBeNull();
     expect(screen.getByText(/n'est jugée que si chaque soirée a une cible/)).toBeTruthy();
   });

@@ -83,8 +83,8 @@ describe("rapport de soirée à l'écran", () => {
   it("cascade ligne à ligne, résultat dit pour ce qu'il est, comparaison avec l'événement précédent, document figé et intègre", async () => {
     monter();
     await screen.findByText("Spartiates – Rouen");
-    expect(screen.getByText("= Marge nette de la soirée")).toBeTruthy();
-    expect(screen.getByText(/n'est pas le bénéfice du lieu/)).toBeTruthy();
+    expect(screen.getByText("= Ce qu'il te reste (avant impôt)")).toBeTruthy();
+    expect(screen.getByText(/l'impôt sur les bénéfices n'est pas déduit/)).toBeTruthy();
     expect(screen.getByText(/Gap, /)).toBeTruthy();
     expect(screen.getByText("+92,9 %")).toBeTruthy();
     expect(screen.getByText(/Établi à la clôture de l'événement/)).toBeTruthy();

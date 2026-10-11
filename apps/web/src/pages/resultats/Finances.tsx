@@ -1,7 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { formaterPourcentage, libellePeriode, libelleTauxTva, type Periode, lireMontant, lirePourcentage, montantPourSaisie, type FinancesSoiree, type LigneDepense, type ModeDepense, type StatsMatch } from "@flaix/domain";
+import {
+  formaterPourcentage,
+  libelleMois,
+  libellePeriode,
+  libelleTauxTva,
+  type Periode,
+  lireMontant,
+  lirePourcentage,
+  montantPourSaisie,
+  UNITES_DEPENSE,
+  type FinancesSoiree,
+  type LigneDepense,
+  type ModeDepense,
+  type StatsMatch,
+} from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, MessageErreur } from "../../composants/communs.tsx";
 import { Cascade, Empile, euros, type EtapeCascade } from "./graphiques.tsx";
@@ -13,6 +27,7 @@ const signe = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${euros(Math.ab
 /**
  * Gestion financière de la soirée (module 11 ; dossier §14 module 11, §15.79, §15.132) : ce qui est entré,
  * ce qui est sorti, ce qu'il reste. Les chiffres calculés se lisent ; seules les dépenses se saisissent.
+ * « Ce qu'il te reste » (§15.154) : tous les frais déduits, dont la part des frais du mois (Mes frais).
  */
 export function VueFinances({ evenementId, periode, s }: { evenementId?: string; periode?: Periode; s: StatsMatch }) {
   const cle = evenementId ?? `${periode!.du}:${periode!.au}`;
@@ -34,9 +49,11 @@ export function VueFinances({ evenementId, periode, s }: { evenementId?: string;
     etapes.push({ l1: "Coût", l2: "matière", v: -f.coutMatiere, total: false, aide: "Quantités vendues × coût de la fiche produit" });
     etapes.push({ l1: "Marge", l2: "brute", v: f.margeBrute, total: true, aide: pct(f.margeBrute, f.caHt) ? `${pct(f.margeBrute, f.caHt)} du CA HT` : "" });
     if (f.personnel.reel !== null) {
+      if (f.ecartStock) etapes.push({ l1: "Écarts", l2: "de stock", v: f.ecartStock, total: false, aide: "Restes comptés en fin de soirée : casse, pertes" });
       etapes.push({ l1: "Personnel", l2: "planning", v: -f.personnel.reel, total: false, aide: `${f.personnel.affectations} affectation${f.personnel.affectations > 1 ? "s" : ""}, heures réelles × taux` });
-      etapes.push({ l1: "Dépenses", l2: "soirée", v: -f.totalDepenses, total: false, aide: `${f.depenses.filter((d) => d.mode !== null).length} poste(s) saisi(s)` });
-      etapes.push({ l1: "Marge", l2: "nette", v: f.margeNette!, total: true, aide: pct(f.margeNette, f.caHt) ? `${pct(f.margeNette, f.caHt)} du CA HT` : "" });
+      etapes.push({ l1: "Frais", l2: f.periode ? "des soirées" : "de la soirée", v: -f.totalDepenses, total: false, aide: `${f.depenses.filter((d) => d.mode !== null).length} frais` });
+      if (f.totalFraisMois) etapes.push({ l1: "Frais", l2: "du mois", v: -f.totalFraisMois, total: false, aide: "Loyer, abonnements, salaires hors soirée… au prorata du CA HT" });
+      etapes.push({ l1: "Il te", l2: "reste", v: f.margeNette!, total: true, aide: pct(f.margeNette, f.caHt) ? `${pct(f.margeNette, f.caHt)} du CA HT` : "" });
     }
   }
   const c = f.etatCible;
@@ -57,11 +74,9 @@ export function VueFinances({ evenementId, periode, s }: { evenementId?: string;
         )}
       </p>
       <div className="chiffres">
-        <Chiffre etiquette="Encaissé TTC" valeur={euros(f.encaisseTtc)} detail={par(f.encaisseTtc)} misEnAvant />
-        <Chiffre etiquette="Chiffre d'affaires HT" valeur={euros(f.caHt)} detail={`TVA collectée ${euros(f.tva)}`} />
-        <Chiffre etiquette="Marge brute" valeur={f.margeBrute === null ? "Coût manquant" : euros(f.margeBrute)} detail={f.margeBrute === null ? null : `${pct(f.margeBrute, f.caHt) ?? "—"} du CA HT`} />
         <Chiffre
-          etiquette={f.periode ? "Marge nette de la période" : "Marge nette de la soirée"}
+          misEnAvant
+          etiquette="Ce qu'il te reste"
           valeur={f.margeNette === null ? (f.margeBrute === null ? "Coût manquant" : "Taux manquant") : euros(f.margeNette)}
           detail={
             c && c.ecart !== null ? (
@@ -69,14 +84,25 @@ export function VueFinances({ evenementId, periode, s }: { evenementId?: string;
                 {c.tenue ? "cible tenue" : "sous la cible"} ({formaterPourcentage(c.ciblePb)}) : {signe(c.ecart)}
               </span>
             ) : f.margeNette !== null ? (
-              `${pct(f.margeNette, f.caHt) ?? "—"} du CA HT · aucune cible`
+              `${pct(f.margeNette, f.caHt) ?? "—"} du CA HT · tout déduit, avant impôt`
             ) : null
           }
         />
+        <Chiffre etiquette="Encaissé TTC" valeur={euros(f.encaisseTtc)} detail={par(f.encaisseTtc)} />
+        <Chiffre etiquette="Chiffre d'affaires HT" valeur={euros(f.caHt)} detail={`TVA collectée ${euros(f.tva)}`} />
+        <Chiffre etiquette="Marge brute" valeur={f.margeBrute === null ? "Coût manquant" : euros(f.margeBrute)} detail={f.margeBrute === null ? null : `${pct(f.margeBrute, f.caHt) ?? "—"} du CA HT`} />
       </div>
+      {f.fraisAVerifier > 0 && (
+        <div className="message message-alerte">
+          <strong>
+            {f.fraisAVerifier} frais encore à vérifier
+          </strong>{" "}
+          dans Mes frais : tant qu'ils ne sont ni renseignés ni « pas concerné », ce qu'il te reste peut être trop beau. <Link to="/parametres/frais">Vérifier mes frais</Link>
+        </div>
+      )}
 
       <Carte
-        titre={f.periode ? "De l'encaissé à la marge nette de la période" : "De l'encaissé à la marge nette de la soirée"}
+        titre={f.periode ? "De l'encaissé à ce qu'il te reste, sur la période" : "De l'encaissé à ce qu'il te reste"}
         actions={
           <div className="leg-inline">
             <span>
@@ -100,14 +126,16 @@ export function VueFinances({ evenementId, periode, s }: { evenementId?: string;
         )}
         {f.margeBrute !== null && f.personnel.reel === null && (
           <div className="message message-alerte">
-            <strong>Taux manquant</strong> sur {f.personnel.tauxManquants} affectation{f.personnel.tauxManquants > 1 ? "s" : ""} du planning : la marge nette n'est pas calculée. <Link to="/equipe">Compléter les fiches</Link>
+            <strong>Taux manquant</strong> sur {f.personnel.tauxManquants} affectation{f.personnel.tauxManquants > 1 ? "s" : ""} du planning : ce qu'il te reste n'est pas calculé. <Link to="/equipe">Compléter les fiches</Link>
           </div>
         )}
         <p className="note">
           {f.personnel.affectations === 0 ? "Aucun planning saisi pour cet événement : le personnel compte pour 0 € (Équipe → Planning). " : ""}
-          La marge nette de la soirée <strong>n'est pas le bénéfice du lieu</strong> : loyer, salaires permanents, assurance, amortissements et impôt n'y sont pas déduits.
+          Les frais du mois (loyer, abonnements, salaires hors soirée, assurance…) sont répartis sur les soirées du mois au prorata de leur CA HT. L'impôt sur les bénéfices n'est pas déduit.
         </p>
       </Carte>
+
+      <FraisDuMois f={f} />
 
       <div className="deux egal">
         <Depenses f={f} />
@@ -170,14 +198,62 @@ function Chiffre({ etiquette, valeur, detail, misEnAvant }: { etiquette: string;
   );
 }
 
-/** Dépenses de la soirée : les calculées se lisent, les autres se saisissent poste par poste, en € ou en % du CA HT. */
+/** Part des frais du mois portée par la soirée ou la période (§15.154). */
+function FraisDuMois({ f }: { f: FinancesSoiree }) {
+  return (
+    <Carte
+      titre="Frais du mois"
+      description={f.periode ? "Ce que portent les soirées de la période ; un mois entier sans match compte ses frais en entier." : "Ce que porte cette soirée : les frais du mois × son CA HT ÷ le CA HT de toutes les soirées du mois."}
+      actions={<Link to="/parametres/frais" className="btn btn-fantome">Mes frais</Link>}
+    >
+      {f.fraisMois.length === 0 ? (
+        <p className="note" style={{ margin: 0 }}>
+          Aucun frais du mois renseigné : loyer, abonnements, assurance, salaires hors soirée… se saisissent dans <Link to="/parametres/frais">Mes frais</Link>.
+        </p>
+      ) : (
+        <div className="scroll-x">
+          <table className="tableau">
+            <thead>
+              <tr>
+                <th>Mois</th>
+                <th className="d">Frais du mois</th>
+                <th className="d">CA HT du mois</th>
+                <th className="d">{f.periode ? "Porté par la période" : "Porté par la soirée"}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {f.fraisMois.map((m) => (
+                <tr key={m.mois}>
+                  <td>
+                    {libelleMois(m.mois)} {m.sansSoiree && <span className="puce puce-ambre">sans match</span>}
+                  </td>
+                  <td className="d chiffre">{euros(m.fraisDuMois)}</td>
+                  <td className="d chiffre">{m.sansSoiree ? "—" : euros(m.caHtDuMois)}</td>
+                  <td className="d chiffre">
+                    <strong>{euros(m.part)}</strong> {!m.sansSoiree && m.fraisDuMois > 0 && <span className="discret">({pct(m.part, m.fraisDuMois)})</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Carte>
+  );
+}
+
+/** Frais de la soirée : les calculés se lisent, les autres se saisissent frais par frais (ou prennent leur montant habituel). */
 function Depenses({ f }: { f: FinancesSoiree }) {
   const lignes = f.depenses;
   return (
     <Carte
-      titre={f.periode ? "Dépenses de la période" : "Dépenses de la soirée"}
-      description={f.periode ? "Somme des dépenses saisies sur chaque soirée. Elles se saisissent soirée par soirée : choisis « Un événement »." : "Les postes se nomment dans Paramètres → Objectifs de marge. Une dépense en % porte sur le CA HT de cette soirée."}
-      actions={<Link to="/parametres/objectifs" className="btn btn-fantome">Gérer les postes</Link>}
+      titre={f.periode ? "Frais des soirées de la période" : "Frais de la soirée"}
+      description={
+        f.periode
+          ? "Somme des frais de chaque soirée. Ils se saisissent soirée par soirée : choisis « Un événement »."
+          : "Un frais avec un montant habituel (Mes frais) s'applique tout seul ; une saisie ici le remplace pour cette soirée."
+      }
+      actions={<Link to="/parametres/frais" className="btn btn-fantome">Mes frais</Link>}
     >
       <div className="scroll-x">
         <table className="tableau">
@@ -201,6 +277,15 @@ function Depenses({ f }: { f: FinancesSoiree }) {
               </td>
               <td className="d chiffre">{f.personnel.reel === null ? "taux manquant" : euros(f.personnel.reel)}</td>
             </tr>
+            {f.ecartStock !== null && (
+              <tr>
+                <td>Écarts de stock <span className="puce">calculé</span></td>
+                <td className="discret">
+                  <Link to="/stock">Restes comptés</Link>
+                </td>
+                <td className="d chiffre">{euros(f.ecartStock)}</td>
+              </tr>
+            )}
             {lignes.map((d) =>
               f.periode ? (
                 <tr key={d.posteId}>
@@ -214,7 +299,7 @@ function Depenses({ f }: { f: FinancesSoiree }) {
             )}
             <tr>
               <td colSpan={2}>
-                <strong>Total des dépenses saisies</strong>
+                <strong>Total des frais de {f.periode ? "la période" : "la soirée"}</strong>
               </td>
               <td className="d chiffre">
                 <strong>{euros(f.totalDepenses)}</strong>
@@ -225,7 +310,7 @@ function Depenses({ f }: { f: FinancesSoiree }) {
       </div>
       {lignes.length === 0 && !f.periode && (
         <p className="note">
-          Aucun poste de dépense : ajoute-en (gobelets, sécurité, nettoyage, frais bancaires…) dans <Link to="/parametres/objectifs">Paramètres → Objectifs de marge</Link>.
+          Aucun frais de soirée : ajoute-en (commission du club, frais de carte, sécurité…) dans <Link to="/parametres/frais">Mes frais</Link>.
         </p>
       )}
     </Carte>
@@ -234,13 +319,15 @@ function Depenses({ f }: { f: FinancesSoiree }) {
 
 function LigneSaisie({ evenementId, d }: { evenementId: string; d: LigneDepense }) {
   const client = useQueryClient();
-  const versTexte = (mode: ModeDepense | null, valeur: number | null) => (valeur === null ? "" : mode === "pourcent" ? (valeur / 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 }) : montantPourSaisie(valeur));
+  const versTexte = (mode: ModeDepense | null, valeur: number | null) => (valeur === null ? "" : mode !== "euros" ? (valeur / 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 }) : montantPourSaisie(valeur));
+  // Montant habituel : affiché en indication, le champ reste vide (une saisie le remplace pour cette soirée).
+  const propre = d.habituel ? { mode: null, valeur: null } : { mode: d.mode, valeur: d.valeur };
   const [mode, setMode] = useState<ModeDepense>(d.mode ?? "euros");
-  const [texte, setTexte] = useState(versTexte(d.mode, d.valeur));
+  const [texte, setTexte] = useState(versTexte(propre.mode, propre.valeur));
   useEffect(() => {
     setMode(d.mode ?? "euros");
-    setTexte(versTexte(d.mode, d.valeur));
-  }, [d.mode, d.valeur]);
+    setTexte(d.habituel ? "" : versTexte(d.mode, d.valeur));
+  }, [d.mode, d.valeur, d.habituel]);
   const enregistrer = useMutation({
     mutationFn: (corps: { mode: ModeDepense; valeur: number | null }) => api.put<FinancesSoiree>(`/finances/${evenementId}/depenses/${d.posteId}`, corps),
     onSuccess: (f) => {
@@ -250,18 +337,18 @@ function LigneSaisie({ evenementId, d }: { evenementId: string; d: LigneDepense 
   });
   const valeur = texte.trim() === "" ? null : mode === "euros" ? lireMontant(texte) : lirePourcentage(texte);
   const invalide = texte.trim() !== "" && valeur === null;
-  const change = valeur !== d.valeur || (valeur !== null && mode !== d.mode);
+  const change = valeur !== propre.valeur || (valeur !== null && mode !== propre.mode);
   const valider = (m = mode) => {
     const v = texte.trim() === "" ? null : m === "euros" ? lireMontant(texte) : lirePourcentage(texte);
     if (texte.trim() !== "" && v === null) return;
-    if (v === d.valeur && (v === null || m === d.mode)) return;
+    if (v === propre.valeur && (v === null || m === propre.mode)) return;
     enregistrer.mutate({ mode: m, valeur: v });
   };
 
   return (
     <tr>
       <td>
-        {d.nom} {!d.actif && <span className="puce">désactivé</span>}
+        {d.nom} {!d.actif && <span className="puce">désactivé</span>} {d.habituel && <span className="puce puce-violet">habituel</span>}
         {enregistrer.error && <div className="message message-erreur">{(enregistrer.error as Error).message}</div>}
       </td>
       <td>
@@ -271,7 +358,7 @@ function LigneSaisie({ evenementId, d }: { evenementId: string; d: LigneDepense 
             inputMode="decimal"
             aria-label={`Montant ${d.nom}`}
             value={texte}
-            placeholder="—"
+            placeholder={d.habituel ? versTexte(d.mode, d.valeur) : "—"}
             onChange={(e) => setTexte(e.target.value)}
             onBlur={() => valider()}
             onKeyDown={(e) => e.key === "Enter" && valider()}
@@ -288,8 +375,11 @@ function LigneSaisie({ evenementId, d }: { evenementId: string; d: LigneDepense 
             }}
             style={{ width: "auto" }}
           >
-            <option value="euros">€</option>
-            <option value="pourcent">% du CA HT</option>
+            {UNITES_DEPENSE.map((u) => (
+              <option key={u.mode} value={u.mode}>
+                {u.libelle}
+              </option>
+            ))}
           </select>
           {change && !invalide && enregistrer.isPending && <span className="discret">…</span>}
         </span>
@@ -300,11 +390,11 @@ function LigneSaisie({ evenementId, d }: { evenementId: string; d: LigneDepense 
   );
 }
 
-/** Bilan d'une période : chaque soirée, sa marge nette et sa cible. */
+/** Bilan d'une période : chaque soirée, ce qu'il en reste et sa cible. */
 function SoireesDeLaPeriode({ f }: { f: FinancesSoiree }) {
   const c = f.etatCible;
   return (
-    <Carte titre="Soirée par soirée" description="Marge nette de chaque soirée de la période, comparée à sa cible.">
+    <Carte titre="Soirée par soirée" description="Ce qu'il reste de chaque soirée de la période, comparé à sa cible.">
       {f.periode!.soirees.length === 0 ? (
         <p className="note" style={{ margin: 0 }}>Aucun événement dans cette période.</p>
       ) : (
@@ -314,7 +404,7 @@ function SoireesDeLaPeriode({ f }: { f: FinancesSoiree }) {
               <tr>
                 <th>Soirée</th>
                 <th className="d">Encaissé TTC</th>
-                <th className="d">Marge nette</th>
+                <th className="d">Il te reste</th>
                 <th>Cible</th>
               </tr>
             </thead>
@@ -352,7 +442,7 @@ function SoireesDeLaPeriode({ f }: { f: FinancesSoiree }) {
   );
 }
 
-/** Cible de marge nette de la soirée : celle du lieu par défaut, ajustable pour cet événement. */
+/** Cible de ce qu'il doit rester de la soirée : celle du lieu par défaut, ajustable pour cet événement. */
 function CibleSoiree({ f }: { f: FinancesSoiree }) {
   const client = useQueryClient();
   const [texte, setTexte] = useState(f.cible.evenement !== null ? String(f.cible.evenement / 100).replace(".", ",") : "");
@@ -366,12 +456,12 @@ function CibleSoiree({ f }: { f: FinancesSoiree }) {
   const valeur = lirePourcentage(texte, { min: -100 });
   const c = f.etatCible;
   return (
-    <Carte titre="Cible de marge nette" description="En % du CA HT de la soirée, tous frais de la soirée compris.">
+    <Carte titre="Cible : ce qu'il doit te rester" description="En % du CA HT de la soirée, tous frais compris (frais du mois inclus).">
       {c ? (
         <div className="message" style={{ marginTop: 0 }}>
           Cible {f.cible.evenement !== null ? "de cette soirée" : "du lieu"} : <strong>{formaterPourcentage(c.ciblePb)}</strong> du CA HT, soit <strong>{euros(c.cible)}</strong>.{" "}
           {c.ecart === null ? (
-            "La marge nette n'est pas encore calculable."
+            "Ce qu'il te reste n'est pas encore calculable."
           ) : (
             <>
               Réalisé : <strong>{euros(f.margeNette!)}</strong>
@@ -385,7 +475,7 @@ function CibleSoiree({ f }: { f: FinancesSoiree }) {
         </div>
       ) : (
         <p className="note" style={{ marginTop: 0 }}>
-          Aucune cible : la marge nette s'affiche sans être jugée. Règle la cible du lieu dans <Link to="/parametres/objectifs">Paramètres → Objectifs de marge</Link>, ou une cible pour cette soirée ci-dessous.
+          Aucune cible : ce qu'il te reste s'affiche sans être jugé. Règle la cible du lieu dans <Link to="/parametres/objectifs">Paramètres → Objectifs de marge</Link>, ou une cible pour cette soirée ci-dessous.
         </p>
       )}
       <form
