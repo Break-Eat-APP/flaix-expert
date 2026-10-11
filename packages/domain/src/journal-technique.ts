@@ -125,6 +125,7 @@ export const TYPES_JET = {
   emballage_modifie: "Conditionnement : emballage modifié (nom ou prix)",
   emballage_supprime: "Conditionnement : emballage supprimé",
   conditionnement_produit_modifie: "Conditionnement d'un produit modifié",
+  hygiene_reglage: "Hygiène : équipement ou tâche ajouté ou modifié",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

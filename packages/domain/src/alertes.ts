@@ -32,7 +32,8 @@ export type TypeAlerte =
   | "marge_configuree"
   | "variation_fournisseur"
   | "mercuriale"
-  | "frais_a_verifier";
+  | "frais_a_verifier"
+  | "hygiene";
 
 export interface AlerteCentre {
   /** Clé stable (type et objet de l'alerte). */

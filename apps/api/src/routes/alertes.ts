@@ -29,6 +29,7 @@ import { exigerDirecteur } from "../auth/contexte.ts";
 import { introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { fraisAVerifier } from "./frais.ts";
+import { evenementEnCours, nonConformesRecents } from "./hygiene.ts";
 import { lireOptions } from "../options.ts";
 import { etatClickCollect } from "./click-collect.ts";
 import { listerEvenements } from "./evenements.ts";
@@ -207,6 +208,43 @@ export async function centreAlertes(c: Client, lieuId: string): Promise<CentreAl
   for (const l of mercuriale) {
     const a = alerteMercuriale(l, l.type === "produit" ? (ventes.get(l.id) ?? null) : null);
     if (a) alertes.push(a);
+  }
+
+  // Hygiène et HACCP (§15.156) : non-conformités de la semaine, températures d'ouverture oubliées pendant un match.
+  if ((await lireOptions(c, lieuId)).hygiene) {
+    const nc = await nonConformesRecents(c, lieuId);
+    if (nc > 0)
+      alertes.push({
+        id: "hygiene:non_conformes",
+        type: "hygiene",
+        source: "lue",
+        niveau: "forte",
+        titre: `Hygiène : ${nc} non-conformité${nc > 1 ? "s" : ""} en 7 jours`,
+        detail: "Températures hors limite, réception refusée ou huile à changer : vérifie que l'action corrective a bien été faite.",
+        impact: null,
+        lien: "/hygiene",
+      });
+    const ev = await evenementEnCours(c, lieuId);
+    if (ev) {
+      const { rows: oublies } = await c.query<{ nom: string }>(
+        `SELECT e.nom FROM hygiene_equipement e
+          WHERE e.lieu_id = $1 AND e.actif AND e.sorte <> 'friteuse'
+            AND NOT EXISTS (SELECT 1 FROM hygiene_releve r WHERE r.lieu_id = e.lieu_id AND r.equipement_id = e.id AND r.moment = 'ouverture' AND r.evenement_id = $2)
+          ORDER BY lower(e.nom)`,
+        [lieuId, ev.id],
+      );
+      if (oublies.length)
+        alertes.push({
+          id: "hygiene:ouverture",
+          type: "hygiene",
+          source: "en_direct",
+          niveau: "normale",
+          titre: `Hygiène : températures d'ouverture à relever (${oublies.length})`,
+          detail: `${ev.libelle} — ${oublies.map((o) => o.nom).join(", ")}.`,
+          impact: null,
+          lien: "/hygiene",
+        });
+    }
   }
 
   // Mes frais (§15.154) : tant qu'un frais proposé n'est ni renseigné ni « pas concerné », ce qu'il reste peut en manquer.
