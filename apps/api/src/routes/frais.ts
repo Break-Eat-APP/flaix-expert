@@ -104,8 +104,10 @@ export async function mesFrais(c: Client, lieuId: string, mois = moisCourant()):
   const lignes: LigneMesFrais[] = FRAIS_SUGGERES.map((s) => {
     const base = { ...vide, cle: s.cle, libelle: s.libelle, frequence: s.frequence, aide: s.aide, parStand: s.parStand ?? null, modeSuggere: s.mode ?? null };
     if (s.parStand) {
-      const montant = parPoste(s.parStand);
-      return { ...base, montantMois: montant, statut: montant > 0 ? "renseigne" : pas.has(s.cle) ? "pas_concerne" : "a_verifier" };
+      // Saisi stand par stand (Coûts par buvette), ou pour tout le lieu quand ce module n'est pas activé.
+      const f = mensuels.find((x) => x.cle === s.cle);
+      const montant = parPoste(s.parStand) + (f?.montant ?? 0);
+      return { ...base, fraisId: f?.id ?? null, montantMois: montant, statut: montant > 0 || f ? "renseigne" : pas.has(s.cle) ? "pas_concerne" : "a_verifier" };
     }
     if (s.frequence === "soiree") {
       const p = postes.find((x) => x.cle === s.cle && x.actif);
@@ -246,7 +248,7 @@ export async function routesFrais(app: FastifyInstance, { base }: { base: Base }
     const auth = await exigerDirecteur(req, base);
     const d = corps(NouveauMois, req);
     const s = d.cle ? fraisSuggere(d.cle) : undefined;
-    if (d.cle && (!s || s.frequence !== "mois" || s.parStand)) throw new ErreurMetier(400, "Ce frais ne se saisit pas ici.");
+    if (d.cle && (!s || s.frequence !== "mois")) throw new ErreurMetier(400, "Ce frais ne se compte pas chaque mois.");
     const nom = d.nom ?? s?.libelle;
     if (!nom) throw new ErreurMetier(400, "Le nom du frais est obligatoire.");
     const r = await base.transaction(contexte(auth), async (c) => {
