@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChefHat, ChevronDown, ChevronRight, CupSoda, Plus, Search, Tags } from "lucide-react";
+import { ChefHat, ChevronDown, ChevronRight, CupSoda, Plus, Search, Tags, Wheat } from "lucide-react";
 import {
   TAUX_TVA,
   formaterMontant,
@@ -24,6 +24,7 @@ import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 import { GestionIngredients, RecetteProduit } from "./Recettes.tsx";
 import { ConditionnementProduit, GestionEmballages } from "./Conditionnement.tsx";
+import { AllergenesProduit, TableauAllergenes } from "./Allergenes.tsx";
 import { EtatCibleMarge } from "../../composants/cibles.tsx";
 
 const COLONNES = "minmax(150px, 2fr) minmax(80px, 1fr) minmax(130px, 2fr) minmax(70px, 0.8fr) minmax(50px, 0.6fr) minmax(80px, 0.9fr) minmax(100px, 1.2fr) 24px";
@@ -81,6 +82,7 @@ export function Produits() {
   const [gererCategories, setGererCategories] = useState(false);
   const [gererIngredients, setGererIngredients] = useState(false);
   const [gererEmballages, setGererEmballages] = useState(false);
+  const [voirAllergenes, setVoirAllergenes] = useState(false);
 
   const majProduits = (liste: Produit[]) => client.setQueryData(["produits"], liste);
 
@@ -118,6 +120,9 @@ export function Produits() {
             <button className="btn btn-fantome" onClick={() => setGererEmballages(!gererEmballages)}>
               <CupSoda size={15} /> Emballages
             </button>
+            <button className="btn btn-fantome" onClick={() => setVoirAllergenes(!voirAllergenes)}>
+              <Wheat size={15} /> Allergènes
+            </button>
             <button className="btn" onClick={() => setCreation(!creation)}>
               <Plus size={16} /> Ajouter un produit
             </button>
@@ -128,6 +133,7 @@ export function Produits() {
       {gererCategories && <GestionCategories categories={categories.data!} />}
       {gererIngredients && <GestionIngredients />}
       {gererEmballages && <GestionEmballages />}
+      {voirAllergenes && <TableauAllergenes produits={produits.data!} />}
       {creation && (
         <FormulaireCreation
           stands={listeStands}
@@ -468,6 +474,10 @@ function DetailProduit({ produit, stands, categories, majProduits }: { produit: 
       <h3 style={{ marginTop: 22, marginBottom: 8 }}>Conditionnement</h3>
       <p className="discret" style={{ margin: "0 0 8px" }}>Les emballages d'une portion (gobelet, barquette, serviette…) : leur prix s'ajoute au coût matière dans les marges.</p>
       <ConditionnementProduit produit={produit} majProduits={majProduits} />
+
+      <h3 style={{ marginTop: 22, marginBottom: 8 }}>Allergènes</h3>
+      <p className="discret" style={{ margin: "0 0 8px" }}>Ceux que contient le produit (information obligatoire pour ce qui est servi sans emballage).</p>
+      <AllergenesProduit produit={produit} majProduits={majProduits} />
 
       <h3 style={{ marginTop: 22, marginBottom: 8 }}>Vendu dans</h3>
       <CasesStands stands={stands} coches={standIds} onChange={setStandIds} />

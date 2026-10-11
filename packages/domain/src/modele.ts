@@ -105,6 +105,8 @@ export interface Produit {
   /** Emballages d'une portion (§15.155) et leur coût total, en millièmes d'euro. */
   emballages: import("./emballages.ts").EmballageDuProduit[];
   conditionnementMillimes: number;
+  /** Allergènes déclarés (§15.157), codes dans l'ordre réglementaire. */
+  allergenes: import("./allergenes.ts").Allergene[];
   /** Tarif en vigueur maintenant ; null seulement si le seul tarif saisi prend effet plus tard. */
   tarifEnVigueur: Tarif | null;
   /** Prochain tarif déjà programmé, s'il y en a un. */

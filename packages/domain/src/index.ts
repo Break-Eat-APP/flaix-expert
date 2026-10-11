@@ -39,3 +39,4 @@ export * from "./caisses-externes.ts";
 export * from "./frais.ts";
 export * from "./emballages.ts";
 export * from "./hygiene.ts";
+export * from "./allergenes.ts";

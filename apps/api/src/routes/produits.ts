@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { conditionnementMillimes, estTauxTva, formaterMontant, libelleTauxTva, type Categorie, type Produit, type Tarif, type TauxTvaPb } from "@flaix/domain";
+import { conditionnementMillimes, estAllergene, libelleAllergenes, trierAllergenes, estTauxTva, formaterMontant, libelleTauxTva, type Categorie, type Produit, type Tarif, type TauxTvaPb } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
@@ -71,8 +71,9 @@ export async function listerProduits(c: Client, lieuId: string): Promise<Produit
     stand_ids: string[];
     a_recette: boolean;
     cible_marge_pb: number | null;
+    allergenes: string[];
   }>(
-    `SELECT p.id, p.nom, p.categorie_id, p.cout_matiere_centimes, p.actif, p.cible_marge_pb,
+    `SELECT p.id, p.nom, p.categorie_id, p.cout_matiere_centimes, p.actif, p.cible_marge_pb, p.allergenes,
             EXISTS (SELECT 1 FROM recette_ligne r WHERE r.lieu_id = p.lieu_id AND r.produit_id = p.id) AS a_recette,
             coalesce(array_agg(ps.stand_id) FILTER (WHERE ps.stand_id IS NOT NULL), '{}') AS stand_ids
        FROM produit p
@@ -116,6 +117,7 @@ export async function listerProduits(c: Client, lieuId: string): Promise<Produit
       standIds: p.stand_ids,
       emballages,
       conditionnementMillimes: conditionnementMillimes(emballages),
+      allergenes: trierAllergenes(p.allergenes),
       tarifEnVigueur: vigueur.get(p.id) ?? null,
       tarifAVenir: futur.get(p.id) ?? null,
     };
@@ -270,6 +272,24 @@ export async function routesProduits(app: FastifyInstance, { base }: { base: Bas
     });
     rep.code(201);
     return produits;
+  });
+
+  // Allergènes d'un produit (§15.157) : la liste remplace la précédente.
+  app.put("/api/produits/:id/allergenes", async (req) => {
+    const auth = await exigerDirecteur(req, base);
+    const { id } = ParamId.parse(req.params);
+    const { allergenes } = corps(z.object({ allergenes: z.array(z.string().refine(estAllergene, "Allergène inconnu.")).max(14) }), req);
+    return base.transaction(contexte(auth), async (c) => {
+      const p = await lireProduit(c, auth.lieuId, id);
+      const { rows } = await c.query<{ allergenes: string[] }>("SELECT allergenes FROM produit WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id]);
+      const avant = trierAllergenes(rows[0]!.allergenes);
+      const apres = trierAllergenes(allergenes);
+      if (avant.join() !== apres.join()) {
+        await c.query("UPDATE produit SET allergenes = $3 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id, apres]);
+        await inscrireJet(c, { lieuId: auth.lieuId, type: "allergenes_modifies", utilisateurId: auth.utilisateurId, details: { produit: p.nom, avant: libelleAllergenes(avant), apres: libelleAllergenes(apres) } });
+      }
+      return listerProduits(c, auth.lieuId);
+    });
   });
 
   app.patch("/api/produits/:id", async (req) => {

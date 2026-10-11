@@ -100,6 +100,18 @@ a { color: var(--violet); }
   font-size: 10.5px; font-weight: 700; color: var(--violet); background: var(--violet-soft);
   border-radius: 999px; padding: 1px 8px; white-space: nowrap; cursor: help;
 }
+/* Allergènes (§15.157) */
+.allergenes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; }
+.allergene-colonne { text-align: center; font-size: 11.5px; }
+th.allergene-colonne { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; padding: 8px 4px; }
+td.allergene-colonne { color: var(--violet); font-size: 16px; }
+.seulement-impression { display: none; }
+@media print {
+  .tableau-allergenes, .tableau-allergenes * { visibility: visible; }
+  .tableau-allergenes { position: absolute; left: 0; top: 0; width: 100%; }
+  .tableau-allergenes .seulement-impression { display: block; margin: 0 0 10px; }
+}
+
 /* Hygiène et HACCP (§15.156) */
 .hygiene-groupe + .hygiene-groupe { margin-top: 16px; }
 .hygiene-groupe h3 { margin: 0 0 2px; font-size: 13.5px; color: var(--muted); }
