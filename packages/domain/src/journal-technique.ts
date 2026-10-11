@@ -128,6 +128,8 @@ export const TYPES_JET = {
   hygiene_reglage: "Hygiène : équipement ou tâche ajouté ou modifié",
   allergenes_modifies: "Allergènes d'un produit modifiés",
   emballage_stock: "Emballages : comptage ou livraison",
+  evenement_prive: "Événement privé : créé, modifié, clôturé ou réglé",
+  facture_vente_emise: "Facture de vente émise",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

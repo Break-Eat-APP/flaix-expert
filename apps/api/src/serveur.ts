@@ -22,6 +22,7 @@ import { routesFinances } from "./routes/finances.ts";
 import { routesFrais } from "./routes/frais.ts";
 import { routesEmballages } from "./routes/emballages.ts";
 import { routesHygiene } from "./routes/hygiene.ts";
+import { routesEvenementsPrives } from "./routes/evenements-prives.ts";
 import { routesNotifications } from "./routes/notifications.ts";
 import { routesAssistant } from "./routes/assistant.ts";
 import { routesPlanning } from "./routes/planning.ts";
@@ -160,6 +161,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesFrais, { base });
   await app.register(routesEmballages, { base });
   await app.register(routesHygiene, { base });
+  await app.register(routesEvenementsPrives, { base });
   await app.register(routesNotifications, { base });
   await app.register(routesAssistant, { base });
   await app.register(routesPlanning, { base });

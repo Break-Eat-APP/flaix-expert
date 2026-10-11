@@ -149,7 +149,7 @@ export function alertesLieuParc(l: LieuParc, maintenant: number): string[] {
 // résultats, paramètres, formation) est toujours là ; une option absente des réglages est active.
 // ---------------------------------------------------------------------------
 
-export type OptionLieu = "stock" | "equipe" | "fidelite" | "click_collect" | "factures" | "couts_buvette" | "assistant" | "caisses_connectees" | "hygiene";
+export type OptionLieu = "stock" | "equipe" | "fidelite" | "click_collect" | "factures" | "couts_buvette" | "assistant" | "caisses_connectees" | "hygiene" | "evenements_prives";
 export type OptionsLieu = Record<OptionLieu, boolean>;
 
 export const OPTIONS_LIEU: { cle: OptionLieu; libelle: string; aide: string }[] = [
@@ -162,10 +162,11 @@ export const OPTIONS_LIEU: { cle: OptionLieu; libelle: string; aide: string }[] 
   { cle: "assistant", libelle: "Assistant IA", aide: "Questions en langage courant et brief reformulé par l'IA, hébergée par OVHcloud (payant à l'usage, désactivé par défaut)" },
   { cle: "caisses_connectees", libelle: "Caisses connectées", aide: "Ventes d'une autre caisse (Digifood, Weezevent, L'Addition…) importées pour la gestion (désactivé par défaut)" },
   { cle: "hygiene", libelle: "Hygiène & HACCP", aide: "Températures, nettoyage, réceptions, huile de friture, registre pour les contrôles" },
+  { cle: "evenements_prives", libelle: "Événements privés", aide: "Salons et privatisations au budget : consommations, frais, bilan, facture" },
 ];
 
 /** Toutes les options sont actives sans réglage, sauf l'assistant IA : chaque question coûte (§15.136). */
-export const OPTIONS_PAR_DEFAUT: OptionsLieu = { stock: true, equipe: true, fidelite: true, click_collect: true, factures: true, couts_buvette: true, assistant: false, caisses_connectees: false, hygiene: true };
+export const OPTIONS_PAR_DEFAUT: OptionsLieu = { stock: true, equipe: true, fidelite: true, click_collect: true, factures: true, couts_buvette: true, assistant: false, caisses_connectees: false, hygiene: true, evenements_prives: true };
 
 /** Option dont dépend une adresse du serveur (null : la base, toujours ouverte). */
 export function optionDeLaRoute(url: string): OptionLieu | null {
@@ -180,5 +181,6 @@ export function optionDeLaRoute(url: string): OptionLieu | null {
   if (/^\/api\/assistant(\/|$)/.test(url)) return "assistant";
   if (/^\/api\/caisses-externes(\/|$)/.test(url)) return "caisses_connectees";
   if (/^\/api\/hygiene(\/|$)/.test(url)) return "hygiene";
+  if (/^\/api\/(evenements-prives|factures-vente)(\/|$)/.test(url)) return "evenements_prives";
   return null;
 }
