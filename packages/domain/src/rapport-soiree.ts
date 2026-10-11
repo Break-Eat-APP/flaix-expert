@@ -38,6 +38,8 @@ export interface EntreeCascade {
   personnel: Centimes | null;
   /** Dépenses de la soirée saisies dans Gestion financière (0 s'il n'y en a pas). */
   depenses: Centimes;
+  /** Conditionnement des portions vendues (gobelets, barquettes… §15.155) ; absent ou 0 : aucun. */
+  conditionnement?: Centimes;
   /** Écarts de stock valorisés (négatif : perte) ; absent ou null si le stock n'était pas suivi. */
   ecartStock?: Centimes | null;
   /** Part des frais du mois portée par la soirée (0 ou absent : aucun frais du mois). */
@@ -48,7 +50,8 @@ export const LIBELLE_RESTE = "Ce qu'il te reste (avant impôt)";
 
 export function cascadeSoiree(e: EntreeCascade): { lignes: LigneCascade[]; caHt: Centimes; margeBrute: Centimes | null; margeNette: Centimes | null } {
   const caHt = e.encaisseTtc - e.tva;
-  const margeBrute = e.coutMatiere === null ? null : caHt - e.coutMatiere;
+  const conditionnement = e.conditionnement ?? 0;
+  const margeBrute = e.coutMatiere === null ? null : caHt - e.coutMatiere - conditionnement;
   const ecartStock = e.ecartStock ?? 0;
   const fraisMois = e.fraisMois ?? 0;
   const margeNette = margeBrute === null || e.personnel === null ? null : margeBrute + ecartStock - e.personnel - e.depenses - fraisMois;
@@ -57,8 +60,9 @@ export function cascadeSoiree(e: EntreeCascade): { lignes: LigneCascade[]; caHt:
     { libelle: "TVA collectée (reversée à l'État)", montant: e.tva, sorte: "retire" },
     { libelle: "Chiffre d'affaires HT", montant: caHt, sorte: "total" },
     { libelle: "Coût matière (prix d'achat de ce qui a été vendu)", montant: e.coutMatiere, sorte: "retire", note: e.coutMatiere === null ? "coût manquant sur au moins un produit" : undefined },
-    { libelle: "Marge brute", montant: margeBrute, sorte: "total" },
   ];
+  if (conditionnement) lignes.push({ libelle: "Conditionnement (gobelets, barquettes, serviettes…)", montant: conditionnement, sorte: "retire" });
+  lignes.push({ libelle: "Marge brute", montant: margeBrute, sorte: "total" });
   // Écart compté : une perte se retire, un surplus s'ajoute (montant négatif d'une ligne « retire »).
   if (e.ecartStock) lignes.push({ libelle: "Écarts de stock comptés (casse, pertes)", montant: -e.ecartStock, sorte: "retire" });
   lignes.push(

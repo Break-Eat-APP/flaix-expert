@@ -102,6 +102,9 @@ export interface Produit {
   cibleMarge: number | null;
   actif: boolean;
   standIds: string[];
+  /** Emballages d'une portion (§15.155) et leur coût total, en millièmes d'euro. */
+  emballages: import("./emballages.ts").EmballageDuProduit[];
+  conditionnementMillimes: number;
   /** Tarif en vigueur maintenant ; null seulement si le seul tarif saisi prend effet plus tard. */
   tarifEnVigueur: Tarif | null;
   /** Prochain tarif déjà programmé, s'il y en a un. */
@@ -439,7 +442,9 @@ export interface ProduitVendu {
   caHt: Centimes;
   /** Coût matière HT par portion saisi sur la fiche produit ; null = coût manquant. */
   coutUnitaire: Centimes | null;
-  /** caHt − quantité × coût ; null si le coût manque. */
+  /** Conditionnement d'une portion, en millièmes d'euro (§15.155). */
+  conditionnementMillimes?: number;
+  /** caHt − quantité × (coût + conditionnement) ; null si le coût manque. */
   marge: Centimes | null;
   /** Cible de marge effective (produit, sinon catégorie), en points de base ; null : aucune. */
   cibleMarge?: number | null;
@@ -465,6 +470,8 @@ export interface StatsMatch {
   produits: ProduitVendu[];
   /** null dès qu'un produit vendu n'a pas de coût. */
   coutMatiere: Centimes | null;
+  /** Conditionnement des portions vendues (§15.155). */
+  coutConditionnement?: Centimes;
   margeBrute: Centimes | null;
   produitsSansCout: string[];
   caHtSansCout: Centimes;

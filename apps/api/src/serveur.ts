@@ -20,6 +20,7 @@ import { routesResultats } from "./routes/resultats.ts";
 import { routesRapportSoiree } from "./routes/rapport-soiree.ts";
 import { routesFinances } from "./routes/finances.ts";
 import { routesFrais } from "./routes/frais.ts";
+import { routesEmballages } from "./routes/emballages.ts";
 import { routesNotifications } from "./routes/notifications.ts";
 import { routesAssistant } from "./routes/assistant.ts";
 import { routesPlanning } from "./routes/planning.ts";
@@ -48,7 +49,7 @@ import { optionDeLaRoute } from "@flaix/domain";
 
 const METHODES_MODIFIANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 /** Routes de configuration, en lecture seule en mode formation. */
-const CONFIGURATION = [/^\/api\/(stands|categories|produits|lieu|equipe|appareils|click-collect|couts-buvette|fidelite|ingredients|alertes|support|emails|wallet|caisses-externes)(\/|$)/, /^\/api\/caisses\/:id(\/appareil)?$/];
+const CONFIGURATION = [/^\/api\/(stands|categories|produits|lieu|equipe|appareils|click-collect|couts-buvette|fidelite|ingredients|alertes|support|emails|wallet|caisses-externes|mes-frais|emballages)(\/|$)/, /^\/api\/caisses\/:id(\/appareil)?$/];
 
 export async function construireServeur(base: Base, options: { journaliser?: boolean } = {}): Promise<FastifyInstance> {
   // Derrière le relais https du serveur (Caddy), l'adresse du visiteur est celle transmise par le
@@ -156,6 +157,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesRapportSoiree, { base });
   await app.register(routesFinances, { base });
   await app.register(routesFrais, { base });
+  await app.register(routesEmballages, { base });
   await app.register(routesNotifications, { base });
   await app.register(routesAssistant, { base });
   await app.register(routesPlanning, { base });

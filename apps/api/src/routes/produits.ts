@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { estTauxTva, formaterMontant, libelleTauxTva, type Categorie, type Produit, type Tarif, type TauxTvaPb } from "@flaix/domain";
+import { conditionnementMillimes, estTauxTva, formaterMontant, libelleTauxTva, type Categorie, type Produit, type Tarif, type TauxTvaPb } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
@@ -93,21 +93,33 @@ export async function listerProduits(c: Client, lieuId: string): Promise<Produit
       ORDER BY t.produit_id, t.valide_du ASC`,
     [lieuId],
   );
+  const { rows: emb } = await c.query<{ produit_id: string; emballage_id: string; nom: string; quantite: number; prix_millimes: number }>(
+    `SELECT pe.produit_id, pe.emballage_id, e.nom, pe.quantite, e.prix_millimes
+       FROM produit_emballage pe JOIN emballage e ON e.lieu_id = pe.lieu_id AND e.id = pe.emballage_id
+      WHERE pe.lieu_id = $1 ORDER BY lower(e.nom)`,
+    [lieuId],
+  );
+  const emballagesDe = (id: string) => emb.filter((e) => e.produit_id === id).map((e) => ({ emballageId: e.emballage_id, nom: e.nom, quantite: e.quantite, prixMillimes: e.prix_millimes }));
   const parProduit = (lignes: LigneTarif[]) => new Map(lignes.map((t) => [t.produit_id, versTarif(t)]));
   const vigueur = parProduit(enVigueur.rows);
   const futur = parProduit(aVenir.rows);
-  return produits.rows.map((p) => ({
-    id: p.id,
-    nom: p.nom,
-    categorieId: p.categorie_id,
-    coutMatiere: p.cout_matiere_centimes,
-    aRecette: p.a_recette,
-    cibleMarge: p.cible_marge_pb,
-    actif: p.actif,
-    standIds: p.stand_ids,
-    tarifEnVigueur: vigueur.get(p.id) ?? null,
-    tarifAVenir: futur.get(p.id) ?? null,
-  }));
+  return produits.rows.map((p) => {
+    const emballages = emballagesDe(p.id);
+    return {
+      id: p.id,
+      nom: p.nom,
+      categorieId: p.categorie_id,
+      coutMatiere: p.cout_matiere_centimes,
+      aRecette: p.a_recette,
+      cibleMarge: p.cible_marge_pb,
+      actif: p.actif,
+      standIds: p.stand_ids,
+      emballages,
+      conditionnementMillimes: conditionnementMillimes(emballages),
+      tarifEnVigueur: vigueur.get(p.id) ?? null,
+      tarifAVenir: futur.get(p.id) ?? null,
+    };
+  });
 }
 
 export async function listerCategories(c: Client, lieuId: string): Promise<Categorie[]> {

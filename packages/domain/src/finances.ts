@@ -144,6 +144,8 @@ export interface FinancesSoiree {
   caHt: Centimes;
   tickets: number;
   coutMatiere: Centimes | null;
+  /** Conditionnement des portions vendues (§15.155). */
+  conditionnement: Centimes;
   produitsSansCout: string[];
   personnel: { reel: Centimes | null; affectations: number; tauxManquants: number };
   depenses: LigneDepense[];

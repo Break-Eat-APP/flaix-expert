@@ -56,13 +56,14 @@ async function couts(c: Client, lieuId: string, demande: string | undefined): Pr
   );
   const ids = matchs.map((m) => m.id);
   // Lignes des annulations en négatif : sommes nettes, comme dans Résultats.
-  const { rows: ventes } = await c.query<{ stand_id: string; nom: string; cout: number | null; quantite: number; ht: number }>(
-    `SELECT j.stand_id, p.nom, p.cout_matiere_centimes AS cout, sum(l.quantite)::int AS quantite, sum(l.ht_centimes)::int AS ht
+  const { rows: ventes } = await c.query<{ stand_id: string; nom: string; cout: number | null; cond: number | null; quantite: number; ht: number }>(
+    `SELECT j.stand_id, p.nom, p.cout_matiere_centimes AS cout, pc.millimes AS cond, sum(l.quantite)::int AS quantite, sum(l.ht_centimes)::int AS ht
        FROM ligne_gestion l
        JOIN vente_gestion j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
        JOIN produit p ON p.lieu_id = l.lieu_id AND p.id = l.produit_id
+       LEFT JOIN produit_conditionnement pc ON pc.lieu_id = p.lieu_id AND pc.produit_id = p.id
       WHERE l.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[])
-      GROUP BY j.stand_id, p.id, p.nom, p.cout_matiere_centimes`,
+      GROUP BY j.stand_id, p.id, p.nom, p.cout_matiere_centimes, pc.millimes`,
     [lieuId, ids],
   );
   const { rows: affectations } = await c.query<{ stand_id: string | null; debut: string; fin: string; taux: number | null }>(
@@ -80,7 +81,8 @@ async function couts(c: Client, lieuId: string, demande: string | undefined): Pr
       actif: s.actif,
       caHt: v.reduce((t, x) => t + x.ht, 0),
       frais: fraisDuMois(frais, s.id, cle),
-      coutMatiere: v.reduce((t, x) => t + (x.cout ?? 0) * x.quantite, 0),
+      // Coût matière et conditionnement des portions vendues (§15.155).
+      coutMatiere: Math.round(v.reduce((t, x) => t + ((x.cout ?? 0) + (x.cond ?? 0) / 10) * x.quantite, 0)),
       produitsSansCout: v.filter((x) => x.cout === null && x.quantite > 0).map((x) => x.nom),
       masseSalariale: a.reduce((t, x) => t + (coutPlage(x.debut, x.fin, x.taux) ?? 0), 0),
       affectationsSansTaux: a.filter((x) => x.taux === null).length,

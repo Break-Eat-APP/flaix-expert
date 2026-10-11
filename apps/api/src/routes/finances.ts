@@ -152,7 +152,8 @@ export async function financesSoiree(c: Client, lieuId: string, e: Evenement, av
   const ecartStock = await ecartStockDe(c, lieuId, e);
   const fraisMois = await fraisDuMoisDe(c, lieuId, e);
   const totalFraisMois = fraisMois.reduce((t, f) => t + f.part, 0);
-  const cascade = cascadeSoiree({ encaisseTtc: s.caTtc, tva: s.tva, coutMatiere: s.coutMatiere, personnel: s.personnel.reel, depenses: totalDepenses, ecartStock, fraisMois: totalFraisMois });
+  const conditionnement = s.coutConditionnement ?? 0;
+  const cascade = cascadeSoiree({ encaisseTtc: s.caTtc, tva: s.tva, coutMatiere: s.coutMatiere, conditionnement, personnel: s.personnel.reel, depenses: totalDepenses, ecartStock, fraisMois: totalFraisMois });
   const cible = await ciblesDe(c, lieuId, e.id);
   return {
     evenement: { id: e.id, libelle: e.libelle, debut: e.debut, etat: e.etat, spectateurs: e.spectateurs },
@@ -161,6 +162,7 @@ export async function financesSoiree(c: Client, lieuId: string, e: Evenement, av
     caHt: cascade.caHt,
     tickets: s.tickets,
     coutMatiere: s.coutMatiere,
+    conditionnement,
     produitsSansCout: s.produitsSansCout,
     personnel: s.personnel,
     depenses,
@@ -192,6 +194,7 @@ export async function financesPeriode(c: Client, lieuId: string, p: Periode): Pr
   const encaisseTtc = somme((s) => s.encaisseTtc);
   const tva = somme((s) => s.tva);
   const coutMatiere = tous((s) => s.coutMatiere);
+  const conditionnement = somme((s) => s.conditionnement);
   const personnel = { reel: tous((s) => s.personnel.reel), affectations: somme((s) => s.personnel.affectations), tauxManquants: somme((s) => s.personnel.tauxManquants) };
   const parPoste = new Map<string, LigneDepense>();
   for (const d of soirees.flatMap((s) => s.depenses)) {
@@ -218,7 +221,7 @@ export async function financesPeriode(c: Client, lieuId: string, p: Periode): Pr
   }
   const fraisMois = [...parMois.values()].sort((a, b) => a.mois.localeCompare(b.mois));
   const totalFraisMois = fraisMois.reduce((t, f) => t + f.part, 0);
-  const cascade = cascadeSoiree({ encaisseTtc, tva, coutMatiere, personnel: personnel.reel, depenses: totalDepenses, ecartStock, fraisMois: totalFraisMois });
+  const cascade = cascadeSoiree({ encaisseTtc, tva, coutMatiere, conditionnement, personnel: personnel.reel, depenses: totalDepenses, ecartStock, fraisMois: totalFraisMois });
   const { rows } = await c.query<{ cible: number | null }>("SELECT cible_marge_nette_pb AS cible FROM lieu WHERE id = $1", [lieuId]);
 
   let etatCible: FinancesSoiree["etatCible"] = null;
@@ -243,6 +246,7 @@ export async function financesPeriode(c: Client, lieuId: string, p: Periode): Pr
     caHt: cascade.caHt,
     tickets: somme((s) => s.tickets),
     coutMatiere,
+    conditionnement,
     produitsSansCout: [...new Set(soirees.flatMap((s) => s.produitsSansCout))],
     personnel,
     depenses,

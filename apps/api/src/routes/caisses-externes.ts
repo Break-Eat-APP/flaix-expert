@@ -454,13 +454,14 @@ export async function routesCaissesExternes(app: FastifyInstance, { base }: { ba
       // Lignes des ventes non annulées, avec le produit rapproché (coût matière) et le stand du point de vente.
       const LIGNES = `
         SELECT v.id_externe, v.caisse_externe_id, v.horodatage, l.cle, l.libelle, l.quantite, l.montant_centimes AS montant,
-               m.produit_id, p.nom AS produit, p.cout_matiere_centimes AS cout_unitaire,
+               m.produit_id, p.nom AS produit, p.cout_matiere_centimes + coalesce(pc.millimes, 0) / 10.0 AS cout_unitaire,
                coalesce(s.nom, v.point_de_vente, 'Sans point de vente') AS stand,
                coalesce(e.libelle, 'Hors événement') AS evenement, e.id AS evenement_id
           FROM vente_externe v
           JOIN ligne_vente_externe l ON l.lieu_id = v.lieu_id AND l.caisse_externe_id = v.caisse_externe_id AND l.id_externe = v.id_externe
           LEFT JOIN correspondance_produit_externe m ON m.lieu_id = l.lieu_id AND m.caisse_externe_id = l.caisse_externe_id AND m.cle = l.cle
           LEFT JOIN produit p ON p.lieu_id = v.lieu_id AND p.id = m.produit_id
+          LEFT JOIN produit_conditionnement pc ON pc.lieu_id = p.lieu_id AND pc.produit_id = p.id
           LEFT JOIN correspondance_point_de_vente cp ON cp.lieu_id = v.lieu_id AND cp.caisse_externe_id = v.caisse_externe_id AND cp.nom = v.point_de_vente
           LEFT JOIN stand s ON s.lieu_id = v.lieu_id AND s.id = cp.stand_id
           LEFT JOIN evenement e ON e.lieu_id = v.lieu_id AND e.id = v.evenement_id

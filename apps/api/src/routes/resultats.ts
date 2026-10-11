@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { dansPeriode, estJour, etatCible, formaterMontant, idPeriode, libellePeriode, periodePrecedente, rangHeure, tauxMargePb, type Periode, type AlerteResultat, type Evenement, type MatchResume, type ProduitVendu, type Resultats, type StatsMatch, type TauxTvaPb } from "@flaix/domain";
+import { conditionnementVendu, dansPeriode, estJour, etatCible, formaterMontant, idPeriode, libellePeriode, periodePrecedente, rangHeure, tauxMargePb, type Periode, type AlerteResultat, type Evenement, type MatchResume, type ProduitVendu, type Resultats, type StatsMatch, type TauxTvaPb } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { listerEvenements } from "./evenements.ts";
@@ -79,17 +79,18 @@ export async function statsEvenements(c: Client, lieuId: string, evs: readonly E
     p,
   );
   // Les lignes des annulations portent des quantités et montants négatifs : les sommes sont nettes.
-  const { rows: lignes } = await c.query<{ produit_id: string; nom: string; categorie: string | null; cout: number | null; cible: number | null; quantite: number; ttc: number; ht: number }>(
+  const { rows: lignes } = await c.query<{ produit_id: string; nom: string; categorie: string | null; cout: number | null; cond: number | null; cible: number | null; quantite: number; ttc: number; ht: number }>(
     // Produit d'une caisse connectée pas encore rapproché (§15.151) : vendu sans coût connu, comme un produit sans coût.
     `SELECT coalesce(l.produit_id::text, 'externe:' || l.libelle) AS produit_id, coalesce(p.nom, l.libelle) AS nom, cat.nom AS categorie,
-            p.cout_matiere_centimes AS cout, coalesce(p.cible_marge_pb, cat.cible_marge_pb) AS cible,
+            p.cout_matiere_centimes AS cout, pc.millimes AS cond, coalesce(p.cible_marge_pb, cat.cible_marge_pb) AS cible,
             sum(l.quantite)::int AS quantite, sum(l.net_ttc_centimes)::int AS ttc, coalesce(sum(l.ht_centimes), 0)::int AS ht
        FROM ligne_gestion l
        JOIN vente_gestion j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
        LEFT JOIN produit p ON p.lieu_id = l.lieu_id AND p.id = l.produit_id
        LEFT JOIN categorie cat ON cat.lieu_id = p.lieu_id AND cat.id = p.categorie_id
+       LEFT JOIN produit_conditionnement pc ON pc.lieu_id = p.lieu_id AND pc.produit_id = p.id
       WHERE l.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[])
-      GROUP BY 1, 2, cat.nom, p.cout_matiere_centimes, p.cible_marge_pb, cat.cible_marge_pb
+      GROUP BY 1, 2, cat.nom, p.cout_matiere_centimes, pc.millimes, p.cible_marge_pb, cat.cible_marge_pb
       ORDER BY 6 DESC`,
     p,
   );
@@ -122,11 +123,14 @@ export async function statsEvenements(c: Client, lieuId: string, evs: readonly E
       caTtc: l.ttc,
       caHt: l.ht,
       coutUnitaire: l.cout,
-      marge: l.cout === null ? null : l.ht - l.quantite * l.cout,
+      conditionnementMillimes: l.cond ?? 0,
+      // Marge après conditionnement (§15.155), calculée au millième puis arrondie au centime.
+      marge: l.cout === null ? null : Math.round(l.ht - l.quantite * (l.cout + (l.cond ?? 0) / 10)),
       cibleMarge: l.cible,
     }));
   const sansCout = produits.filter((x) => x.coutUnitaire === null && x.quantite > 0);
   const coutMatiere = sansCout.length ? null : produits.reduce((s, x) => s + x.quantite * (x.coutUnitaire ?? 0), 0);
+  const coutConditionnement = conditionnementVendu(produits);
   const caHt = taux.reduce((s, x) => s + x.ht, 0);
   const categories = new Map<string, number>();
   for (const x of produits) categories.set(x.categorie ?? "Sans catégorie", (categories.get(x.categorie ?? "Sans catégorie") ?? 0) + x.caTtc);
@@ -148,7 +152,8 @@ export async function statsEvenements(c: Client, lieuId: string, evs: readonly E
     parTaux: taux.map((x) => ({ tauxTva: x.taux, ht: x.ht, tva: x.tva, ttc: x.ttc })),
     produits,
     coutMatiere,
-    margeBrute: coutMatiere === null ? null : caHt - coutMatiere,
+    coutConditionnement,
+    margeBrute: coutMatiere === null ? null : caHt - coutMatiere - coutConditionnement,
     produitsSansCout: sansCout.map((x) => x.nom),
     caHtSansCout: sansCout.reduce((s, x) => s + x.caHt, 0),
     personnel,

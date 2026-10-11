@@ -167,9 +167,11 @@ export async function centreAlertes(c: Client, lieuId: string): Promise<CentreAl
   }
 
   // 3. Calculées ici (module 18) : marge configurée sous la cible, au prix et au coût actuels.
+  // Coût de revient : coût matière + conditionnement d'une portion (§15.155).
   const { rows: produits } = await c.query<{ id: string; nom: string; prix: number; tva: TauxTvaPb; cout: number | null; cible: number | null }>(
-    `SELECT p.id, p.nom, t.prix_ttc_centimes AS prix, t.taux_tva_pb AS tva, p.cout_matiere_centimes AS cout, coalesce(p.cible_marge_pb, cat.cible_marge_pb) AS cible
+    `SELECT p.id, p.nom, t.prix_ttc_centimes AS prix, t.taux_tva_pb AS tva, (p.cout_matiere_centimes + coalesce(pc.millimes, 0) / 10.0)::float8 AS cout, coalesce(p.cible_marge_pb, cat.cible_marge_pb) AS cible
        FROM produit p LEFT JOIN categorie cat ON cat.lieu_id = p.lieu_id AND cat.id = p.categorie_id
+       LEFT JOIN produit_conditionnement pc ON pc.lieu_id = p.lieu_id AND pc.produit_id = p.id
        JOIN LATERAL (SELECT prix_ttc_centimes, taux_tva_pb FROM produit_tarif WHERE lieu_id = p.lieu_id AND produit_id = p.id AND valide_du <= now() ORDER BY valide_du DESC LIMIT 1) t ON true
       WHERE p.lieu_id = $1 AND p.actif`,
     [lieuId],

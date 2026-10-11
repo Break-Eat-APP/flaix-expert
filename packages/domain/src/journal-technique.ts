@@ -121,6 +121,10 @@ export const TYPES_JET = {
   frais_mensuel_cree: "Mes frais : frais du mois ajouté",
   frais_mensuel_modifie: "Mes frais : montant d'un frais du mois modifié",
   frais_pas_concerne: "Mes frais : frais proposé déclaré « pas concerné » (ou remis à vérifier)",
+  emballage_cree: "Conditionnement : emballage ajouté",
+  emballage_modifie: "Conditionnement : emballage modifié (nom ou prix)",
+  emballage_supprime: "Conditionnement : emballage supprimé",
+  conditionnement_produit_modifie: "Conditionnement d'un produit modifié",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;
