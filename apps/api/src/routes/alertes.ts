@@ -23,12 +23,15 @@ import {
   type TauxTvaPb,
   type UniteIngredient,
   evenementTermine,
+  matchsCouverts,
+  stockBas,
 } from "@flaix/domain";
 import { verrouiller, type Base, type Client, type Contexte } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { fraisAVerifier } from "./frais.ts";
+import { listerEmballages } from "./emballages.ts";
 import { evenementEnCours, nonConformesRecents } from "./hygiene.ts";
 import { lireOptions } from "../options.ts";
 import { etatClickCollect } from "./click-collect.ts";
@@ -245,6 +248,21 @@ export async function centreAlertes(c: Client, lieuId: string): Promise<CentreAl
           lien: "/hygiene",
         });
     }
+  }
+
+  // Stock des emballages (§15.158) : sous le seuil, ou pas de quoi tenir un match de plus.
+  for (const e of (await listerEmballages(c, lieuId)).filter(stockBas)) {
+    const n = matchsCouverts(e.stock!);
+    alertes.push({
+      id: `stock_emballage:${e.id}`,
+      type: "stock_emballage",
+      source: "calculee",
+      niveau: e.stock!.estime <= 0 || n === 0 ? "forte" : "normale",
+      titre: `Stock bas : ${e.nom}`,
+      detail: `Il en resterait ${Math.max(e.stock!.estime, 0).toLocaleString("fr-FR")}${e.stock!.parMatch ? ` pour environ ${e.stock!.parMatch.toLocaleString("fr-FR")} par match` : ""}${e.seuil !== null ? ` (seuil ${e.seuil.toLocaleString("fr-FR")})` : ""}. À commander, ou à recompter.`,
+      impact: null,
+      lien: "/parametres/produits",
+    });
   }
 
   // Mes frais (§15.154) : tant qu'un frais proposé n'est ni renseigné ni « pas concerné », ce qu'il reste peut en manquer.

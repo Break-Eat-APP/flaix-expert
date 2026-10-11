@@ -17,7 +17,30 @@ export interface Emballage {
   prixMillimes: Millimes;
   /** Produits qui l'utilisent. */
   produits: number;
+  /** Seuil d'alerte du stock (§15.158) ; null : aucun. */
+  seuil: number | null;
+  /** Stock suivi depuis un premier comptage ; null : pas suivi. */
+  stock: StockEmballage | null;
 }
+
+/** Stock d'un emballage (§15.158) : dernier comptage + livraisons depuis − consommé depuis. */
+export interface StockEmballage {
+  estime: number;
+  dernierComptage: { quantite: number; le: string };
+  livreDepuis: number;
+  consommeDepuis: number;
+  /** Consommation moyenne d'un match (les 3 derniers joués) ; null sans vente. */
+  parMatch: number | null;
+}
+
+/** Stock estimé ; négatif, il signale un comptage à refaire (ventes sans emballage sorti, casse non comptée…). */
+export const stockEstime = (comptage: number, livre: number, consomme: number): number => comptage + livre - consomme;
+
+/** Matchs que couvre le stock, arrondis vers le bas ; null sans consommation connue. */
+export const matchsCouverts = (s: StockEmballage): number | null => (s.parMatch && s.parMatch > 0 ? Math.max(0, Math.floor(s.estime / s.parMatch)) : null);
+
+/** Stock bas : sous le seuil, ou pas de quoi tenir un match de plus. */
+export const stockBas = (e: Emballage): boolean => !!e.stock && ((e.seuil !== null && e.stock.estime <= e.seuil) || (e.stock.parMatch !== null && e.stock.estime < e.stock.parMatch));
 
 export interface EmballageDuProduit {
   emballageId: string;

@@ -10,8 +10,8 @@ import { ConditionnementProduit, GestionEmballages } from "./Conditionnement.tsx
 
 const reponse = (statut: number, corps: unknown) => new Response(JSON.stringify(corps), { status: statut, headers: { "content-type": "application/json" } });
 const EMBALLAGES: Emballage[] = [
-  { id: "gob", nom: "Gobelet 50 cl", prixMillimes: 120, produits: 1 },
-  { id: "ser", nom: "Serviette", prixMillimes: 8, produits: 0 },
+  { id: "gob", nom: "Gobelet 50 cl", prixMillimes: 120, produits: 1, seuil: 200, stock: { estime: 148, dernierComptage: { quantite: 100, le: "2026-10-11T12:00:00Z" }, livreDepuis: 50, consommeDepuis: 2, parMatch: 50 } },
+  { id: "ser", nom: "Serviette", prixMillimes: 8, produits: 0, seuil: null, stock: null },
 ];
 const BIERE = {
   id: "biere",
@@ -25,7 +25,8 @@ const envois = (url: string) => serveur.mock.calls.filter(([u, i]) => u === url 
 
 beforeEach(() => {
   serveur = vi.fn(async (url: string, init?: RequestInit) => {
-    if (url === "/api/emballages") return reponse(200, init?.method === "POST" ? [...EMBALLAGES, { id: "pai", nom: "Paille", prixMillimes: 15, produits: 0 }] : EMBALLAGES);
+    if (url === "/api/emballages") return reponse(200, init?.method === "POST" ? [...EMBALLAGES, { id: "pai", nom: "Paille", prixMillimes: 15, produits: 0, seuil: null, stock: null }] : EMBALLAGES);
+    if (url.startsWith("/api/emballages/")) return reponse(200, EMBALLAGES);
     if (url === "/api/produits/biere/emballages") return reponse(200, [BIERE]);
     return reponse(404, { erreur: "Inconnu" });
   });
@@ -53,6 +54,20 @@ describe("conditionnement à l'écran", () => {
     fireEvent.change(prix, { target: { value: "0,015" } });
     fireEvent.click(screen.getByRole("button", { name: /Ajouter/ }));
     await waitFor(() => expect(envois("/api/emballages")).toEqual([{ nom: "Paille", prixMillimes: 15 }]));
+  });
+
+  it("stock (§15.158) : estimé, matchs couverts, stock bas ; livraison envoyée ; suivi démarré par un comptage", async () => {
+    monter(<GestionEmballages />);
+    expect(await screen.findByText("148")).toBeTruthy();
+    expect(screen.getByText(/≈ 2 matchs/)).toBeTruthy();
+    expect(screen.getByText("stock bas")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Livraison : Gobelet 50 cl"), { target: { value: "500" } });
+    fireEvent.click(screen.getByRole("button", { name: "Livraison reçue" }));
+    await waitFor(() => expect(envois("/api/emballages/gob/livraison")).toEqual([{ quantite: 500 }]));
+    fireEvent.click(screen.getByRole("button", { name: "Suivre le stock" }));
+    fireEvent.change(screen.getByLabelText("Combien de Serviette as-tu ?"), { target: { value: "2000" } });
+    fireEvent.click(screen.getByRole("button", { name: "Démarrer le suivi" }));
+    await waitFor(() => expect(envois("/api/emballages/ser/comptage")).toEqual([{ quantite: 2000 }]));
   });
 
   it("emballages d'une bière : coût de revient, ajout, quantité, retrait", async () => {

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { formaterMillimes, type Emballage, type Produit } from "@flaix/domain";
+import { formaterMillimes, stockEstime, type Emballage, type Produit, type StockEmballage } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
@@ -16,7 +16,8 @@ import { ParamId, Uuid, contexte, corps, texte } from "./outils.ts";
 
 const Prix = z.number().int().min(0, "Prix négatif.").max(100_000, "Prix au-delà de 100 €.");
 const NouvelEmballage = z.object({ nom: texte(60, "Le nom de l'emballage"), prixMillimes: Prix });
-const ModifEmballage = z.object({ nom: texte(60, "Le nom de l'emballage").optional(), prixMillimes: Prix.optional() });
+const ModifEmballage = z.object({ nom: texte(60, "Le nom de l'emballage").optional(), prixMillimes: Prix.optional(), seuil: z.number().int().min(0).max(10_000_000).nullable().optional() });
+const Quantite = z.object({ quantite: z.number().int().min(0, "Quantité négative.").max(10_000_000) });
 const DuProduit = z.object({
   emballages: z
     .array(z.object({ emballageId: Uuid, quantite: z.number().int().min(1, "Au moins 1.").max(50, "50 au plus.") }))
@@ -24,17 +25,62 @@ const DuProduit = z.object({
     .refine((l) => new Set(l.map((e) => e.emballageId)).size === l.length, "Un emballage est en double."),
 });
 
+/**
+ * Stock de chaque emballage suivi (§15.158) : dernier comptage + livraisons depuis − portions vendues depuis (ventes
+ * de gestion : caisse et caisses connectées) × emballages du produit ; consommation moyenne des 3 derniers matchs.
+ */
+async function stocks(c: Client, lieuId: string): Promise<Map<string, StockEmballage>> {
+  const { rows } = await c.query<{ emballage_id: string; quantite: number; le: Date; livre: number; consomme: number }>(
+    `WITH dernier AS (
+       SELECT DISTINCT ON (m.emballage_id) m.emballage_id, m.quantite, m.saisi_le
+         FROM emballage_mouvement m WHERE m.lieu_id = $1 AND m.sorte = 'comptage'
+        ORDER BY m.emballage_id, m.saisi_le DESC)
+     SELECT d.emballage_id, d.quantite, d.saisi_le AS le,
+            coalesce((SELECT sum(x.quantite) FROM emballage_mouvement x
+                       WHERE x.lieu_id = $1 AND x.emballage_id = d.emballage_id AND x.sorte = 'livraison' AND x.saisi_le > d.saisi_le), 0)::int AS livre,
+            coalesce((SELECT sum(l.quantite * pe.quantite) FROM ligne_gestion l
+                        JOIN vente_gestion j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
+                        JOIN produit_emballage pe ON pe.lieu_id = l.lieu_id AND pe.produit_id = l.produit_id AND pe.emballage_id = d.emballage_id
+                       WHERE l.lieu_id = $1 AND j.horodatage > d.saisi_le), 0)::int AS consomme
+       FROM dernier d`,
+    [lieuId],
+  );
+  const { rows: parMatch } = await c.query<{ emballage_id: string; n: number }>(
+    `SELECT pe.emballage_id, j.evenement_id, max(e.debut) AS debut, sum(l.quantite * pe.quantite)::int AS n
+       FROM ligne_gestion l
+       JOIN vente_gestion j ON j.lieu_id = l.lieu_id AND j.id = l.journal_id
+       JOIN evenement e ON e.lieu_id = j.lieu_id AND e.id = j.evenement_id
+       JOIN produit_emballage pe ON pe.lieu_id = l.lieu_id AND pe.produit_id = l.produit_id
+      WHERE l.lieu_id = $1 AND e.debut > now() - interval '365 days'
+      GROUP BY pe.emballage_id, j.evenement_id
+     HAVING sum(l.quantite * pe.quantite) > 0
+      ORDER BY pe.emballage_id, max(e.debut) DESC`,
+    [lieuId],
+  );
+  const moyenne = (id: string) => {
+    const n = parMatch.filter((x) => x.emballage_id === id).slice(0, 3);
+    return n.length ? Math.round(n.reduce((t, x) => t + x.n, 0) / n.length) : null;
+  };
+  return new Map(
+    rows.map((r) => [
+      r.emballage_id,
+      { estime: stockEstime(r.quantite, r.livre, r.consomme), dernierComptage: { quantite: r.quantite, le: r.le.toISOString() }, livreDepuis: r.livre, consommeDepuis: r.consomme, parMatch: moyenne(r.emballage_id) },
+    ]),
+  );
+}
+
 export async function listerEmballages(c: Client, lieuId: string): Promise<Emballage[]> {
-  const { rows } = await c.query<{ id: string; nom: string; prix_millimes: number; produits: number }>(
-    `SELECT e.id, e.nom, e.prix_millimes, (SELECT count(*)::int FROM produit_emballage pe WHERE pe.lieu_id = e.lieu_id AND pe.emballage_id = e.id) AS produits
+  const { rows } = await c.query<{ id: string; nom: string; prix_millimes: number; produits: number; seuil: number | null }>(
+    `SELECT e.id, e.nom, e.prix_millimes, e.seuil, (SELECT count(*)::int FROM produit_emballage pe WHERE pe.lieu_id = e.lieu_id AND pe.emballage_id = e.id) AS produits
        FROM emballage e WHERE e.lieu_id = $1 ORDER BY lower(e.nom)`,
     [lieuId],
   );
-  return rows.map((r) => ({ id: r.id, nom: r.nom, prixMillimes: r.prix_millimes, produits: r.produits }));
+  const s = await stocks(c, lieuId);
+  return rows.map((r) => ({ id: r.id, nom: r.nom, prixMillimes: r.prix_millimes, produits: r.produits, seuil: r.seuil, stock: s.get(r.id) ?? null }));
 }
 
-async function exigerEmballage(c: Client, lieuId: string, id: string): Promise<{ nom: string; prix_millimes: number }> {
-  const { rows } = await c.query<{ nom: string; prix_millimes: number }>("SELECT nom, prix_millimes FROM emballage WHERE lieu_id = $1 AND id = $2 FOR UPDATE", [lieuId, id]);
+async function exigerEmballage(c: Client, lieuId: string, id: string): Promise<{ nom: string; prix_millimes: number; seuil: number | null }> {
+  const { rows } = await c.query<{ nom: string; prix_millimes: number; seuil: number | null }>("SELECT nom, prix_millimes, seuil FROM emballage WHERE lieu_id = $1 AND id = $2 FOR UPDATE", [lieuId, id]);
   if (!rows[0]) throw introuvable("Emballage");
   return rows[0];
 }
@@ -68,12 +114,13 @@ export async function routesEmballages(app: FastifyInstance, { base }: { base: B
       const avant = await exigerEmballage(c, auth.lieuId, id);
       const nom = d.nom ?? avant.nom;
       const prix = d.prixMillimes ?? avant.prix_millimes;
-      if (nom === avant.nom && prix === avant.prix_millimes) return listerEmballages(c, auth.lieuId);
+      const seuil = d.seuil === undefined ? avant.seuil : d.seuil;
+      if (nom === avant.nom && prix === avant.prix_millimes && seuil === avant.seuil) return listerEmballages(c, auth.lieuId);
       if (nom.toLowerCase() !== avant.nom.toLowerCase()) {
         const { rows } = await c.query("SELECT 1 FROM emballage WHERE lieu_id = $1 AND lower(nom) = lower($2) AND id <> $3", [auth.lieuId, nom, id]);
         if (rows[0]) throw new ErreurMetier(409, `Un emballage s'appelle déjà « ${nom} ».`);
       }
-      await c.query("UPDATE emballage SET nom = $3, prix_millimes = $4 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id, nom, prix]);
+      await c.query("UPDATE emballage SET nom = $3, prix_millimes = $4, seuil = $5 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id, nom, prix, seuil]);
       await inscrireJet(c, {
         lieuId: auth.lieuId,
         type: "emballage_modifie",
@@ -82,6 +129,7 @@ export async function routesEmballages(app: FastifyInstance, { base }: { base: B
           emballage: avant.nom,
           ...(nom !== avant.nom ? { nom: { avant: avant.nom, apres: nom } } : {}),
           ...(prix !== avant.prix_millimes ? { prix: { avant: formaterMillimes(avant.prix_millimes), apres: formaterMillimes(prix) } } : {}),
+          ...(seuil !== avant.seuil ? { seuil: { avant: avant.seuil ?? "aucun", apres: seuil ?? "aucun" } } : {}),
         },
       });
       return listerEmballages(c, auth.lieuId);
@@ -94,11 +142,32 @@ export async function routesEmballages(app: FastifyInstance, { base }: { base: B
     return base.transaction(contexte(auth), async (c) => {
       const avant = await exigerEmballage(c, auth.lieuId, id);
       const liens = await c.query("DELETE FROM produit_emballage WHERE lieu_id = $1 AND emballage_id = $2", [auth.lieuId, id]);
+      await c.query("DELETE FROM emballage_mouvement WHERE lieu_id = $1 AND emballage_id = $2", [auth.lieuId, id]);
       await c.query("DELETE FROM emballage WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id]);
       await inscrireJet(c, { lieuId: auth.lieuId, type: "emballage_supprime", utilisateurId: auth.utilisateurId, details: { nom: avant.nom, produits: liens.rowCount ?? 0 } });
       return listerEmballages(c, auth.lieuId);
     });
   });
+
+  // Stock (§15.158) : comptage (démarre ou recale le suivi) et livraison reçue.
+  for (const sorte of ["comptage", "livraison"] as const) {
+    app.post(`/api/emballages/:id/${sorte}`, async (req): Promise<Emballage[]> => {
+      const auth = await exigerDirecteur(req, base);
+      const { id } = ParamId.parse(req.params);
+      const { quantite } = corps(Quantite, req);
+      if (sorte === "livraison" && quantite === 0) throw new ErreurMetier(400, "Une livraison compte au moins une unité.");
+      return base.transaction(contexte(auth), async (c) => {
+        const e = await exigerEmballage(c, auth.lieuId, id);
+        if (sorte === "livraison") {
+          const { rows } = await c.query("SELECT 1 FROM emballage_mouvement WHERE lieu_id = $1 AND emballage_id = $2 AND sorte = 'comptage'", [auth.lieuId, id]);
+          if (!rows[0]) throw new ErreurMetier(409, `Compte d'abord le stock de « ${e.nom} » : le suivi part d'un comptage.`);
+        }
+        await c.query("INSERT INTO emballage_mouvement (lieu_id, emballage_id, sorte, quantite, saisi_par) VALUES ($1, $2, $3, $4, $5)", [auth.lieuId, id, sorte, quantite, auth.utilisateurId]);
+        await inscrireJet(c, { lieuId: auth.lieuId, type: "emballage_stock", utilisateurId: auth.utilisateurId, details: { emballage: e.nom, [sorte]: quantite } });
+        return listerEmballages(c, auth.lieuId);
+      });
+    });
+  }
 
   // Emballages d'une portion du produit : la liste remplace la précédente.
   app.put("/api/produits/:id/emballages", async (req): Promise<Produit[]> => {

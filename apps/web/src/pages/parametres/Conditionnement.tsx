@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
-import { formaterMillimes, lireMillimes, millimesPourSaisie, type Emballage, type EmballageDuProduit, type Produit } from "@flaix/domain";
+import { formaterMillimes, lireMillimes, matchsCouverts, millimesPourSaisie, stockBas, type Emballage, type EmballageDuProduit, type Produit } from "@flaix/domain";
+import { formaterDateHeure } from "../../api.ts";
 import { api } from "../../api.ts";
 import { Carte, Chargement, MessageErreur } from "../../composants/communs.tsx";
 
@@ -119,7 +120,89 @@ function LigneEmballage({ e, apres }: { e: Emballage; apres: (l: Emballage[]) =>
           </button>
         )}
       </div>
+      <StockEmballage e={e} apres={apres} />
       <MessageErreur erreur={modifier.error ?? supprimer.error} />
+    </div>
+  );
+}
+
+const nombre = (n: number) => n.toLocaleString("fr-FR");
+const lireQuantite = (t: string) => (/^\d{1,8}$/.test(t.trim()) ? Number(t.trim()) : null);
+
+/** Stock d'un emballage (§15.158) : comptage de départ, livraisons, seuil d'alerte ; les ventes se déduisent seules. */
+function StockEmballage({ e, apres }: { e: Emballage; apres: (l: Emballage[]) => void }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [livre, setLivre] = useState("");
+  const [compte, setCompte] = useState("");
+  const [seuil, setSeuil] = useState(e.seuil !== null ? String(e.seuil) : "");
+  const mouvement = useMutation({
+    mutationFn: ({ sorte, quantite }: { sorte: "comptage" | "livraison"; quantite: number }) => api.post<Emballage[]>(`/emballages/${e.id}/${sorte}`, { quantite }),
+    onSuccess: (l) => {
+      apres(l);
+      setLivre("");
+      setCompte("");
+    },
+  });
+  const changerSeuil = useMutation({ mutationFn: (v: number | null) => api.patch<Emballage[]>(`/emballages/${e.id}`, { seuil: v }), onSuccess: apres });
+  const s = e.stock;
+  if (!s)
+    return (
+      <div className="emballage-stock">
+        {ouvert ? (
+          <span className="en-ligne" style={{ gap: 6 }}>
+            <input type="text" inputMode="numeric" aria-label={`Combien de ${e.nom} as-tu ?`} placeholder="Combien en as-tu ?" value={compte} onChange={(ev) => setCompte(ev.target.value)} style={{ width: 170 }} />
+            <button className="btn" disabled={lireQuantite(compte) === null || mouvement.isPending} onClick={() => mouvement.mutate({ sorte: "comptage", quantite: lireQuantite(compte)! })}>
+              Démarrer le suivi
+            </button>
+          </span>
+        ) : (
+          <button className="btn-lien" onClick={() => setOuvert(true)}>
+            Suivre le stock
+          </button>
+        )}
+        <MessageErreur erreur={mouvement.error} />
+      </div>
+    );
+  const n = matchsCouverts(s);
+  return (
+    <div className="emballage-stock">
+      <span>
+        Stock estimé : <strong className="chiffre">{nombre(s.estime)}</strong>
+        {n !== null && <span className="discret"> (≈ {n} match{n > 1 ? "s" : ""})</span>}{" "}
+        {stockBas(e) && <span className="puce puce-rouge">stock bas</span>}
+        <small className="discret">
+          {" "}
+          · compté {nombre(s.dernierComptage.quantite)} le {formaterDateHeure(s.dernierComptage.le)}
+          {s.livreDepuis ? `, +${nombre(s.livreDepuis)} livrés` : ""}
+          {s.consommeDepuis ? `, −${nombre(s.consommeDepuis)} vendus` : ""}
+        </small>
+      </span>
+      <span className="en-ligne" style={{ gap: 6 }}>
+        <input type="text" inputMode="numeric" aria-label={`Livraison : ${e.nom}`} placeholder="Reçus" value={livre} onChange={(ev) => setLivre(ev.target.value)} style={{ width: 90 }} />
+        <button className="btn btn-fantome" disabled={!lireQuantite(livre) || mouvement.isPending} onClick={() => mouvement.mutate({ sorte: "livraison", quantite: lireQuantite(livre)! })}>
+          Livraison reçue
+        </button>
+        <input type="text" inputMode="numeric" aria-label={`Comptage : ${e.nom}`} placeholder="Comptés" value={compte} onChange={(ev) => setCompte(ev.target.value)} style={{ width: 90 }} />
+        <button className="btn btn-fantome" disabled={lireQuantite(compte) === null || mouvement.isPending} onClick={() => mouvement.mutate({ sorte: "comptage", quantite: lireQuantite(compte)! })}>
+          Recompter
+        </button>
+        <label className="en-ligne" style={{ gap: 6 }}>
+          <span className="discret">Alerte sous</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            aria-label={`Seuil d'alerte : ${e.nom}`}
+            value={seuil}
+            onChange={(ev) => setSeuil(ev.target.value)}
+            onBlur={() => {
+              const v = seuil.trim() === "" ? null : lireQuantite(seuil);
+              if ((seuil.trim() === "" || v !== null) && v !== e.seuil) changerSeuil.mutate(v);
+            }}
+            style={{ width: 80 }}
+          />
+        </label>
+      </span>
+      <MessageErreur erreur={mouvement.error ?? changerSeuil.error} />
     </div>
   );
 }

@@ -33,7 +33,8 @@ export type TypeAlerte =
   | "variation_fournisseur"
   | "mercuriale"
   | "frais_a_verifier"
-  | "hygiene";
+  | "hygiene"
+  | "stock_emballage";
 
 export interface AlerteCentre {
   /** Clé stable (type et objet de l'alerte). */

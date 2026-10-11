@@ -5,11 +5,11 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
-import type { Emballage, EntreeJournalTechnique, Evenement, FinancesSoiree, Produit, RepriseCaisse, Resultats, Stand } from "@flaix/domain";
+import type { CentreAlertes, Emballage, EntreeJournalTechnique, Evenement, FinancesSoiree, Produit, RepriseCaisse, Resultats, Stand } from "@flaix/domain";
 import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { MOT_DE_PASSE_TEST, basesDeTest, creerLieuDeTest } from "./aide.ts";
-import { envoyer, ligne, tablette, vendreHorsLigne } from "./tablette.ts";
+import { envoyer, ligne, tablette, vendreHorsLigne, type Tablette } from "./tablette.ts";
 
 let proprietaire: Base;
 let app: Base;
@@ -19,6 +19,7 @@ let biere: Produit;
 let match: Evenement;
 let gobelet: Emballage;
 let serviette: Emballage;
+let t: Tablette;
 
 const EN_TETES = { "content-type": "application/json", origin: "http://localhost:5173" };
 function appel<T = unknown>(method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", url: string, payload?: unknown) {
@@ -40,7 +41,7 @@ beforeAll(async () => {
   biere = (await appel<Produit[]>("POST", "/api/produits", { nom: "Bière", prixTtc: 700, tauxTva: 2000, coutMatiere: 120, standIds: [stand.id] })).corps[0]!;
   match = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Rouen", debut: new Date().toISOString() })).corps[0]!;
   await appel("POST", `/api/evenements/${match.id}/ouverture`);
-  const t = tablette(caisse, (await appel<RepriseCaisse>("POST", `/api/caisses/${caisse}/ouverture`, {})).corps);
+  t = tablette(caisse, (await appel<RepriseCaisse>("POST", `/api/caisses/${caisse}/ouverture`, {})).corps);
   vendreHorsLigne(t, [ligne(biere, 3)]);
   expect((await envoyer(appel, t)).statut).toBe(200);
 });
@@ -90,5 +91,21 @@ describe("conditionnement", () => {
     expect((await finances()).conditionnement).toBe(45);
     const types = (await appel<EntreeJournalTechnique[]>("GET", "/api/journal-technique?limite=50")).corps.map((e) => e.type);
     expect(types).toEqual(expect.arrayContaining(["emballage_cree", "emballage_modifie", "emballage_supprime", "conditionnement_produit_modifie"]));
+  });
+
+  it("stock des gobelets (§15.158) : comptage, ventes déduites, livraison, seuil et alerte", async () => {
+    expect((await appel("POST", `/api/emballages/${gobelet.id}/livraison`, { quantite: 50 })).statut).toBe(409);
+    let g = (await appel<Emballage[]>("POST", `/api/emballages/${gobelet.id}/comptage`, { quantite: 100 })).corps.find((e) => e.id === gobelet.id)!;
+    // Les 3 bières du match font 3 gobelets par match ; elles sont avant le comptage : pas déduites.
+    expect(g.stock).toMatchObject({ estime: 100, consommeDepuis: 0, parMatch: 3 });
+    vendreHorsLigne(t, [ligne(biere, 2)]);
+    expect((await envoyer(appel, t)).statut).toBe(200);
+    g = (await appel<Emballage[]>("POST", `/api/emballages/${gobelet.id}/livraison`, { quantite: 50 })).corps.find((e) => e.id === gobelet.id)!;
+    expect(g.stock).toMatchObject({ estime: 148, livreDepuis: 50, consommeDepuis: 2, parMatch: 5 });
+    expect((await appel<CentreAlertes>("GET", "/api/alertes")).corps.alertes.some((a) => a.type === "stock_emballage")).toBe(false);
+    await appel("PATCH", `/api/emballages/${gobelet.id}`, { seuil: 200 });
+    const alerte = (await appel<CentreAlertes>("GET", "/api/alertes")).corps.alertes.find((a) => a.type === "stock_emballage")!;
+    expect(alerte).toMatchObject({ titre: "Stock bas : Gobelet 50 cl", niveau: "normale" });
+    expect(alerte.detail).toContain("148");
   });
 });
