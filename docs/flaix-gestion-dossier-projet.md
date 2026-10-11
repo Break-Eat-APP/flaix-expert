@@ -5063,3 +5063,46 @@ d'inspection). Proposition : un module à part, simple, pensé pour une buvette 
 période, alertes, option) ; écran à cinq onglets. **Tests** : moteur 2, serveur 6 (relevé conforme rattaché au match,
 hors limite refusé sans action, friteuse, tâche, réception, huile, registre, écriture seule, alertes, option fermée),
 écran 2 ; vérifié dans le navigateur (frigo ajouté d'un clic, relevé 3,5 °C).
+
+### 15.157 Allergènes de chaque produit (2026-10-11)
+
+**Demande de Rémi** (2026-10-11), sur la liste « pas encore fait » : *« fait »* (= à faire).
+
+**Décisions** : les 14 allergènes réglementaires (règlement INCO n° 1169/2011, annexe II) se cochent dans la fiche de
+chaque produit (aucun par défaut ; liste rangée dans l'ordre réglementaire ; chaque changement journalisé). Produits &
+prix → **Allergènes** : tableau des produits en vente × 14 allergènes, à imprimer pour l'affichage à la buvette, avec un
+avertissement pour les produits sans aucun allergène déclaré. Plus tard : allergènes hérités des ingrédients d'une
+recette, affichage sur la caisse et au Click & Collect. Migration 0046. Tests : serveur 1, écran 2.
+
+### 15.158 Stock des emballages (2026-10-11)
+
+**Demande** : « le stock de gobelets ». **Décisions** : un emballage se suit en stock à partir d'un premier comptage ;
+**stock estimé = dernier comptage + livraisons depuis − portions vendues depuis × emballages de chaque produit** (ventes
+de la caisse et des caisses connectées). Consommation moyenne des 3 derniers matchs → « ≈ N matchs » couverts. Seuil
+d'alerte facultatif ; alerte « Stock bas » dans le centre d'alertes sous le seuil ou quand il ne reste pas de quoi tenir
+un match (forte à zéro). Livraison reçue, recompter, seuil : dans Produits & prix → Emballages ; journalisés. Un stock
+négatif signale un comptage à refaire. Migration 0047. Tests : serveur 1 (comptage, ventes déduites, livraison, seuil,
+alerte), écran 1.
+
+### 15.159 Hygiène sur la tablette des caissières ; photos d'étiquettes (2026-10-11)
+
+**Décisions** :
+- Sur le poste d'une caissière (tablette enregistrée comme caisse), un bouton **« Hygiène »** ouvre la journée :
+  relevés de température, tâches, contrôles à réception, huile de friture. **La caisse reste ouverte** derrière (le
+  ticket en cours n'est pas perdu) ; « Retour à la caisse ». Réglages et registre restent au directeur (refusés à la
+  caissière, refus journalisé). Le relevé porte le nom de la caissière.
+- **Photo de l'étiquette** (lot, date limite, estampille) jointe au contrôle à réception : prise à l'appareil photo du
+  téléphone ou de la tablette, réduite sur place (JPEG, 1 600 px au plus), contrôlée par le serveur (JPEG, 2 Mo au
+  plus), gardée en écriture seule comme le registre, visible depuis la liste des réceptions et signalée au registre.
+- Migration 0048. Tests : serveur 1 (caissière connectée par code sur sa tablette : relevé, réception avec photo,
+  photo relue, image non JPEG refusée, réglages et registre refusés), écran 1 (onglets de la caissière, photo envoyée).
+
+### Événements privés (salons, privatisations) — proposition en attente de l'accord de Rémi (2026-10-11)
+
+Réponses de Rémi : paiement **au budget** (consommation jusqu'au budget, réglée à la fin) ; facture au nom de la
+société **parfois** ; **pas d'acompte**. Proposition : un événement « privé » = un événement comme un match, avec une
+fiche (client, invités, budget, société facultative) ; une **note ouverte** à la caisse pendant la soirée (chaque
+commande datée, non modifiable), jauge du budget en direct (alertes 80 % et 100 %) ; en fin de soirée la note devient
+un ticket normal (carte, espèces, virement) ; facture numérotée au nom de la société si demandée. Note et facture
+touchent aux règles fiscales de la caisse : à construire avec les mêmes garanties que les tickets et à porter au dossier
+de conformité ; développement après accord de Rémi.

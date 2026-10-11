@@ -61,6 +61,9 @@ const PHASES = [
   { n: 55, titre: "Ce qu'il te reste et Mes frais", dossier: "§15.154", commits: ["8201e24", "b36b67d", "973fa42"] },
   { n: 56, titre: "Conditionnement de chaque produit", dossier: "§15.155", commits: ["64619cb", "23a2058"] },
   { n: 57, titre: "Hygiène et HACCP", dossier: "§15.156", commits: ["ca7116b", "e621cad"] },
+  { n: 58, titre: "Allergènes de chaque produit", dossier: "§15.157", commits: ["87e7fa5"] },
+  { n: 59, titre: "Stock des emballages", dossier: "§15.158", commits: ["32ee27d"] },
+  { n: 60, titre: "Hygiène sur la tablette des caissières ; photos d'étiquettes", dossier: "§15.159", commits: ["8e7298c"] },
 ];
 
 module.exports = { PHASES };

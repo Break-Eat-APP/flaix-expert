@@ -63,6 +63,9 @@
 | 55 | [Ce qu'il te reste et Mes frais](#phase-55) | §15.154 | [`8201e24`](https://github.com/Break-Eat-APP/flaix-expert/commit/8201e24f292722ce3747fe094e0bc041645dbdd8) [`b36b67d`](https://github.com/Break-Eat-APP/flaix-expert/commit/b36b67d1a15a486368af647761fdaf156625363e) [`973fa42`](https://github.com/Break-Eat-APP/flaix-expert/commit/973fa4209adba4b303273f5d4491b76bc4d67e32) | livrée |
 | 56 | [Conditionnement de chaque produit](#phase-56) | §15.155 | [`64619cb`](https://github.com/Break-Eat-APP/flaix-expert/commit/64619cb481da392672ec0e171ad9321428ae4c44) [`23a2058`](https://github.com/Break-Eat-APP/flaix-expert/commit/23a205809c1fbcea5971b797b1689575f0bf1e10) | livrée |
 | 57 | [Hygiène et HACCP](#phase-57) | §15.156 | [`ca7116b`](https://github.com/Break-Eat-APP/flaix-expert/commit/ca7116b4bf1cfab6b031f0acd156a05578026fdb) [`e621cad`](https://github.com/Break-Eat-APP/flaix-expert/commit/e621cadd9a6f115351c60323ed964d78d6d717e4) | livrée |
+| 58 | [Allergènes de chaque produit](#phase-58) | §15.157 | [`87e7fa5`](https://github.com/Break-Eat-APP/flaix-expert/commit/87e7fa596a0daa29f1e941594d128e4398c0cf0e) | livrée |
+| 59 | [Stock des emballages](#phase-59) | §15.158 | [`32ee27d`](https://github.com/Break-Eat-APP/flaix-expert/commit/32ee27da642829b3c21eae356a150d0e0ad03253) | livrée |
+| 60 | [Hygiène sur la tablette des caissières ; photos d'étiquettes](#phase-60) | §15.159 | [`8e7298c`](https://github.com/Break-Eat-APP/flaix-expert/commit/8e7298c915f658f84b2931da8847dee28c984ae8) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -2161,6 +2164,78 @@
   - [`apps/web/src/composants/Coquille.test.ts`](../../apps/web/src/composants/Coquille.test.ts) — modifié
   - [`packages/domain/src/hygiene.test.ts`](../../packages/domain/src/hygiene.test.ts) — créé
 
+<a id="phase-58"></a>
+## Phase 58 — Allergènes de chaque produit
+
+- **Dates** : 2026-10-11
+- **Décision et raisonnement** : dossier projet §15.157
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`87e7fa5`](https://github.com/Break-Eat-APP/flaix-expert/commit/87e7fa596a0daa29f1e941594d128e4398c0cf0e) 2026-10-11 — Allergènes de chaque produit (dossier §15.157)
+- **Migrations (base)** :
+  - [`db/migrations/0046_allergenes.sql`](../../db/migrations/0046_allergenes.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/allergenes.ts`](../../packages/domain/src/allergenes.ts) — créé
+  - [`packages/domain/src/index.ts`](../../packages/domain/src/index.ts) — modifié
+  - [`packages/domain/src/journal-technique.ts`](../../packages/domain/src/journal-technique.ts) — modifié
+  - [`packages/domain/src/modele.ts`](../../packages/domain/src/modele.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/produits.ts`](../../apps/api/src/routes/produits.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/parametres/Allergenes.test.tsx`](../../apps/web/src/pages/parametres/Allergenes.test.tsx) — créé
+  - [`apps/web/src/pages/parametres/Allergenes.tsx`](../../apps/web/src/pages/parametres/Allergenes.tsx) — créé
+  - [`apps/web/src/pages/parametres/Produits.tsx`](../../apps/web/src/pages/parametres/Produits.tsx) — modifié
+  - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
+- **Tests** :
+  - [`apps/api/test/allergenes.test.ts`](../../apps/api/test/allergenes.test.ts) — créé
+
+<a id="phase-59"></a>
+## Phase 59 — Stock des emballages
+
+- **Dates** : 2026-10-11
+- **Décision et raisonnement** : dossier projet §15.158
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`32ee27d`](https://github.com/Break-Eat-APP/flaix-expert/commit/32ee27da642829b3c21eae356a150d0e0ad03253) 2026-10-11 — Stock des emballages : gobelets et autres (dossier §15.158)
+- **Migrations (base)** :
+  - [`db/migrations/0047_stock_emballages.sql`](../../db/migrations/0047_stock_emballages.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/alertes.ts`](../../packages/domain/src/alertes.ts) — modifié
+  - [`packages/domain/src/emballages.ts`](../../packages/domain/src/emballages.ts) — modifié
+  - [`packages/domain/src/journal-technique.ts`](../../packages/domain/src/journal-technique.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/alertes.ts`](../../apps/api/src/routes/alertes.ts) — modifié
+  - [`apps/api/src/routes/emballages.ts`](../../apps/api/src/routes/emballages.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/parametres/Conditionnement.test.tsx`](../../apps/web/src/pages/parametres/Conditionnement.test.tsx) — modifié
+  - [`apps/web/src/pages/parametres/Conditionnement.tsx`](../../apps/web/src/pages/parametres/Conditionnement.tsx) — modifié
+  - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
+- **Tests** :
+  - [`apps/api/test/conditionnement.test.ts`](../../apps/api/test/conditionnement.test.ts) — modifié
+
+<a id="phase-60"></a>
+## Phase 60 — Hygiène sur la tablette des caissières ; photos d'étiquettes
+
+- **Dates** : 2026-10-11
+- **Décision et raisonnement** : dossier projet §15.159
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`8e7298c`](https://github.com/Break-Eat-APP/flaix-expert/commit/8e7298c915f658f84b2931da8847dee28c984ae8) 2026-10-11 — Hygiène sur la tablette des caissières et photos d'étiquettes (dossier §15.159)
+- **Migrations (base)** :
+  - [`db/migrations/0048_photos_hygiene.sql`](../../db/migrations/0048_photos_hygiene.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/hygiene.ts`](../../packages/domain/src/hygiene.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/hygiene.ts`](../../apps/api/src/routes/hygiene.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/caisse/PosteCaissiere.tsx`](../../apps/web/src/pages/caisse/PosteCaissiere.tsx) — modifié
+  - [`apps/web/src/pages/hygiene/Hygiene.test.tsx`](../../apps/web/src/pages/hygiene/Hygiene.test.tsx) — modifié
+  - [`apps/web/src/pages/hygiene/Hygiene.tsx`](../../apps/web/src/pages/hygiene/Hygiene.tsx) — modifié
+  - [`apps/web/src/pages/hygiene/photo.ts`](../../apps/web/src/pages/hygiene/photo.ts) — créé
+  - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
+- **Tests** :
+  - [`apps/api/test/hygiene.test.ts`](../../apps/api/test/hygiene.test.ts) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -2199,3 +2274,4 @@
 - [`0d20594`](https://github.com/Break-Eat-APP/flaix-expert/commit/0d20594a8577b9902f5650c874b9397cd1b9d22e) 2026-10-10 — Nouveau style : dossier §15.153, avancement, journal des phases (phase 54)
 - [`e4b50b7`](https://github.com/Break-Eat-APP/flaix-expert/commit/e4b50b724e012e2dfaf24ef43b66128df7f20863) 2026-10-11 — Ce qu'il te reste : dossier §15.154, avancement, journal des phases (phase 55)
 - [`9af348d`](https://github.com/Break-Eat-APP/flaix-expert/commit/9af348d76c968dd0be181877b1ccfeff6459b52a) 2026-10-11 — Conditionnement : dossier §15.155, avancement, journal des phases (phase 56)
+- [`41769fe`](https://github.com/Break-Eat-APP/flaix-expert/commit/41769fecfe2ac9b57c55d1cc71954cd053e1232e) 2026-10-11 — Hygiène et HACCP : dossier §15.156, avancement, journal des phases (phase 57)
