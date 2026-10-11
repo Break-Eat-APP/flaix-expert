@@ -5006,3 +5006,31 @@ vraiment de savoir ce que l'on gagne net »* ; *« on a dû oublier certaines ch
 cascade) ; serveur (Finances, Mes frais, alerte) ; écrans (accueil, Finances, Mes frais, cascade négative en rouge).
 **Tests** : moteur 4, serveur 6 (prorata, montant habituel, frais de carte, saisie propre, mois sans match, frais arrêté,
 refus), écran 3 ; vérifié dans le navigateur sur le lieu de démonstration (commission de 10 % appliquée seule).
+
+### 15.155 Conditionnement de chaque produit (2026-10-11)
+
+**Demande de Rémi** (2026-10-10) : *« ce que nous avons oublié… les prix du conditionnement pour chaque produit…
+le conditionnement, tu peux le mettre à chaque produit, je pense que c'est mieux »* ; le 2026-10-11 : *« fais le
+conditionnement aussi… enchaîne sans me demander »*.
+
+**Décisions** :
+- **Une liste d'emballages par lieu** (gobelet 25 cl, gobelet 50 cl, barquette, serviette, pique, sachet, paille,
+  couvercle… proposés d'un clic), chacun avec son **prix HT à l'unité au millième d'euro** (une serviette coûte souvent
+  moins d'un centime). **Chaque produit** dit les emballages d'une portion et leur nombre (1 gobelet + 2 serviettes).
+  Changer le prix d'un emballage met à jour tous les produits qui l'utilisent : une seule saisie.
+- **Coût de revient d'une portion** = coût matière + conditionnement. Il sert à la marge comptoir et à sa cible (fiche
+  produit, alertes de marge), aux marges par produit de Résultats, au coût par buvette et au résultat des caisses
+  connectées. Dans la cascade, **« Conditionnement »** est une ligne à part, retirée avant la marge brute, donc dans
+  « ce qu'il te reste ». Totaux calculés au millième, arrondis au centime.
+- Pas d'historique du prix d'un emballage (comme le coût matière : un nouveau prix vaut aussi pour les ventes passées).
+  Le stock des emballages (rupture de gobelets) n'est pas suivi : à voir plus tard.
+- Un emballage se supprime avec ses liens (confirmation à l'écran s'il sert à des produits). Mode formation : recopié.
+  Journal : 4 nouveaux types.
+
+**Réalisé le 2026-10-11** : migration 0044 (tables `emballage`, `produit_emballage`, vue `produit_conditionnement`) ;
+moteur (`conditionnementMillimes`, `coutDeRevient`, `conditionnementVendu`, lecture et affichage au millième) ; serveur
+(routes des emballages, conditionnement d'un produit, prise en compte dans Résultats, Finances, coûts par buvette,
+caisses connectées, alertes) ; écrans (Produits & prix → Emballages, conditionnement dans la fiche, marges, Finances).
+**Tests** : moteur 3, serveur 4 (prix au millième, 1 gobelet + 2 serviettes = 0,136 €, 0,41 € pour 3 bières, marge du
+produit 13,49 €, prix changé, emballage supprimé, refus), écran 2 ; vérifié dans le navigateur (frites : 1,40 € + 0,12 €
+de gobelet, marge 2,57 €).

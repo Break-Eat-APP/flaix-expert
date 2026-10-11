@@ -61,6 +61,7 @@
 | 53 | [Caisses connectées : correspondances automatiques et suggérées](#phase-53) | §15.152 | [`50d818b`](https://github.com/Break-Eat-APP/flaix-expert/commit/50d818b8b67023979d5615ffbe6cc60dd0cae6f2) [`b79db0d`](https://github.com/Break-Eat-APP/flaix-expert/commit/b79db0d8ee72df223a72a2996de0776cf1998a00) | livrée |
 | 54 | [Nouveau style : arrondi, épuré, toujours clair](#phase-54) | §15.153 | [`56df8e0`](https://github.com/Break-Eat-APP/flaix-expert/commit/56df8e0d5c2079aa0899deebd9dc6118904c82cf) | livrée |
 | 55 | [Ce qu'il te reste et Mes frais](#phase-55) | §15.154 | [`8201e24`](https://github.com/Break-Eat-APP/flaix-expert/commit/8201e24f292722ce3747fe094e0bc041645dbdd8) [`b36b67d`](https://github.com/Break-Eat-APP/flaix-expert/commit/b36b67d1a15a486368af647761fdaf156625363e) [`973fa42`](https://github.com/Break-Eat-APP/flaix-expert/commit/973fa4209adba4b303273f5d4491b76bc4d67e32) | livrée |
+| 56 | [Conditionnement de chaque produit](#phase-56) | §15.155 | [`64619cb`](https://github.com/Break-Eat-APP/flaix-expert/commit/64619cb481da392672ec0e171ad9321428ae4c44) [`23a2058`](https://github.com/Break-Eat-APP/flaix-expert/commit/23a205809c1fbcea5971b797b1689575f0bf1e10) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -2089,6 +2090,44 @@
   - [`apps/api/test/mes-frais.test.ts`](../../apps/api/test/mes-frais.test.ts) — créé
   - [`packages/domain/src/frais.test.ts`](../../packages/domain/src/frais.test.ts) — créé
 
+<a id="phase-56"></a>
+## Phase 56 — Conditionnement de chaque produit
+
+- **Dates** : 2026-10-11
+- **Décision et raisonnement** : dossier projet §15.155
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`64619cb`](https://github.com/Break-Eat-APP/flaix-expert/commit/64619cb481da392672ec0e171ad9321428ae4c44) 2026-10-11 — Conditionnement de chaque produit : moteur et serveur (dossier §15.155)
+  - [`23a2058`](https://github.com/Break-Eat-APP/flaix-expert/commit/23a205809c1fbcea5971b797b1689575f0bf1e10) 2026-10-11 — Conditionnement de chaque produit : écrans (dossier §15.155)
+- **Migrations (base)** :
+  - [`db/migrations/0044_conditionnement.sql`](../../db/migrations/0044_conditionnement.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/emballages.ts`](../../packages/domain/src/emballages.ts) — créé
+  - [`packages/domain/src/finances.ts`](../../packages/domain/src/finances.ts) — modifié
+  - [`packages/domain/src/index.ts`](../../packages/domain/src/index.ts) — modifié
+  - [`packages/domain/src/journal-technique.ts`](../../packages/domain/src/journal-technique.ts) — modifié
+  - [`packages/domain/src/modele.ts`](../../packages/domain/src/modele.ts) — modifié
+  - [`packages/domain/src/rapport-soiree.ts`](../../packages/domain/src/rapport-soiree.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/alertes.ts`](../../apps/api/src/routes/alertes.ts) — modifié
+  - [`apps/api/src/routes/caisses-externes.ts`](../../apps/api/src/routes/caisses-externes.ts) — modifié
+  - [`apps/api/src/routes/couts-buvette.ts`](../../apps/api/src/routes/couts-buvette.ts) — modifié
+  - [`apps/api/src/routes/emballages.ts`](../../apps/api/src/routes/emballages.ts) — créé
+  - [`apps/api/src/routes/finances.ts`](../../apps/api/src/routes/finances.ts) — modifié
+  - [`apps/api/src/routes/produits.ts`](../../apps/api/src/routes/produits.ts) — modifié
+  - [`apps/api/src/routes/resultats.ts`](../../apps/api/src/routes/resultats.ts) — modifié
+  - [`apps/api/src/serveur.ts`](../../apps/api/src/serveur.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/parametres/Conditionnement.test.tsx`](../../apps/web/src/pages/parametres/Conditionnement.test.tsx) — créé
+  - [`apps/web/src/pages/parametres/Conditionnement.tsx`](../../apps/web/src/pages/parametres/Conditionnement.tsx) — créé
+  - [`apps/web/src/pages/parametres/Produits.tsx`](../../apps/web/src/pages/parametres/Produits.tsx) — modifié
+  - [`apps/web/src/pages/resultats/Finances.test.tsx`](../../apps/web/src/pages/resultats/Finances.test.tsx) — modifié
+  - [`apps/web/src/pages/resultats/Finances.tsx`](../../apps/web/src/pages/resultats/Finances.tsx) — modifié
+  - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
+- **Tests** :
+  - [`apps/api/test/conditionnement.test.ts`](../../apps/api/test/conditionnement.test.ts) — créé
+  - [`packages/domain/src/emballages.test.ts`](../../packages/domain/src/emballages.test.ts) — créé
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -2125,3 +2164,4 @@
 - [`62e44ae`](https://github.com/Break-Eat-APP/flaix-expert/commit/62e44ae95730c7e766844572f67a1910fb80d5af) 2026-10-09 — Avancement : correspondances suggérées en cours
 - [`c22ee6c`](https://github.com/Break-Eat-APP/flaix-expert/commit/c22ee6cfbb07bdc3da62576e8df6170cf67ba7d1) 2026-10-09 — Correspondances suggérées : dossier §15.152, avancement, journal des phases (phase 53)
 - [`0d20594`](https://github.com/Break-Eat-APP/flaix-expert/commit/0d20594a8577b9902f5650c874b9397cd1b9d22e) 2026-10-10 — Nouveau style : dossier §15.153, avancement, journal des phases (phase 54)
+- [`e4b50b7`](https://github.com/Break-Eat-APP/flaix-expert/commit/e4b50b724e012e2dfaf24ef43b66128df7f20863) 2026-10-11 — Ce qu'il te reste : dossier §15.154, avancement, journal des phases (phase 55)

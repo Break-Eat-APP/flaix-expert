@@ -59,6 +59,7 @@ const PHASES = [
   { n: 53, titre: "Caisses connectées : correspondances automatiques et suggérées", dossier: "§15.152", commits: ["50d818b", "b79db0d"] },
   { n: 54, titre: "Nouveau style : arrondi, épuré, toujours clair", dossier: "§15.153", commits: ["56df8e0"] },
   { n: 55, titre: "Ce qu'il te reste et Mes frais", dossier: "§15.154", commits: ["8201e24", "b36b67d", "973fa42"] },
+  { n: 56, titre: "Conditionnement de chaque produit", dossier: "§15.155", commits: ["64619cb", "23a2058"] },
 ];
 
 module.exports = { PHASES };

@@ -5,6 +5,44 @@
 
 ## 2026-10-11
 
+### [`23a2058`](https://github.com/Break-Eat-APP/flaix-expert/commit/23a205809c1fbcea5971b797b1689575f0bf1e10) — Conditionnement de chaque produit : écrans (dossier §15.155) *(phase 56)*
+
+- créé : `apps/web/src/pages/parametres/Conditionnement.test.tsx`
+- créé : `apps/web/src/pages/parametres/Conditionnement.tsx`
+- modifié : `apps/web/src/pages/parametres/Produits.tsx`
+- modifié : `apps/web/src/pages/resultats/Finances.test.tsx`
+- modifié : `apps/web/src/pages/resultats/Finances.tsx`
+- modifié : `apps/web/src/styles.css`
+
+### [`64619cb`](https://github.com/Break-Eat-APP/flaix-expert/commit/64619cb481da392672ec0e171ad9321428ae4c44) — Conditionnement de chaque produit : moteur et serveur (dossier §15.155) *(phase 56)*
+
+- modifié : `apps/api/src/routes/alertes.ts`
+- modifié : `apps/api/src/routes/caisses-externes.ts`
+- modifié : `apps/api/src/routes/couts-buvette.ts`
+- créé : `apps/api/src/routes/emballages.ts`
+- modifié : `apps/api/src/routes/finances.ts`
+- modifié : `apps/api/src/routes/produits.ts`
+- modifié : `apps/api/src/routes/resultats.ts`
+- modifié : `apps/api/src/serveur.ts`
+- créé : `apps/api/test/conditionnement.test.ts`
+- créé : `db/migrations/0044_conditionnement.sql`
+- créé : `packages/domain/src/emballages.test.ts`
+- créé : `packages/domain/src/emballages.ts`
+- modifié : `packages/domain/src/finances.ts`
+- modifié : `packages/domain/src/index.ts`
+- modifié : `packages/domain/src/journal-technique.ts`
+- modifié : `packages/domain/src/modele.ts`
+- modifié : `packages/domain/src/rapport-soiree.ts`
+
+### [`e4b50b7`](https://github.com/Break-Eat-APP/flaix-expert/commit/e4b50b724e012e2dfaf24ef43b66128df7f20863) — Ce qu'il te reste : dossier §15.154, avancement, journal des phases (phase 55)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`973fa42`](https://github.com/Break-Eat-APP/flaix-expert/commit/973fa4209adba4b303273f5d4491b76bc4d67e32) — Mes frais : loyer, logiciels et TPE saisissables pour tout le lieu sans Coûts par buvette *(phase 55)*
 
 - modifié : `apps/api/src/routes/frais.ts`
