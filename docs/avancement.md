@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-11 : Hygiène et HACCP (§15.156)
+
+Nouveau module « Hygiène » : températures d'ouverture et de fermeture, nettoyage, réceptions, huile de friture, registre en écriture seule imprimable, rappels d'alertes. Action corrective exigée hors limite. Migration 0045. Les trois demandes du 2026-10-10 (ce qu'il te reste, conditionnement, HACCP) sont faites.
+
 ## 2026-10-11 : conditionnement de chaque produit (§15.155)
 
 Produits & prix → Emballages (prix au millième d'euro) ; chaque produit dit ses emballages ; le conditionnement s'ajoute au coût matière dans les marges et se retire avant la marge brute dans « ce qu'il te reste ». Migration 0044. Ensuite : module Hygiène et HACCP.

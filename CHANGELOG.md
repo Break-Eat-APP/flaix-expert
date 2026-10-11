@@ -5,6 +5,38 @@
 
 ## 2026-10-11
 
+### [`e621cad`](https://github.com/Break-Eat-APP/flaix-expert/commit/e621cadd9a6f115351c60323ed964d78d6d717e4) — Hygiène et HACCP : écrans (dossier §15.156) *(phase 57)*
+
+- modifié : `apps/web/src/App.tsx`
+- modifié : `apps/web/src/composants/Coquille.test.ts`
+- modifié : `apps/web/src/composants/Coquille.tsx`
+- créé : `apps/web/src/pages/hygiene/Hygiene.test.tsx`
+- créé : `apps/web/src/pages/hygiene/Hygiene.tsx`
+- modifié : `apps/web/src/styles.css`
+
+### [`ca7116b`](https://github.com/Break-Eat-APP/flaix-expert/commit/ca7116b4bf1cfab6b031f0acd156a05578026fdb) — Hygiène et HACCP : moteur et serveur (dossier §15.156) *(phase 57)*
+
+- modifié : `apps/api/src/routes/alertes.ts`
+- créé : `apps/api/src/routes/hygiene.ts`
+- modifié : `apps/api/src/serveur.ts`
+- créé : `apps/api/test/hygiene.test.ts`
+- créé : `db/migrations/0045_hygiene_haccp.sql`
+- modifié : `packages/domain/src/alertes.ts`
+- modifié : `packages/domain/src/editeur.ts`
+- créé : `packages/domain/src/hygiene.test.ts`
+- créé : `packages/domain/src/hygiene.ts`
+- modifié : `packages/domain/src/index.ts`
+- modifié : `packages/domain/src/journal-technique.ts`
+
+### [`9af348d`](https://github.com/Break-Eat-APP/flaix-expert/commit/9af348d76c968dd0be181877b1ccfeff6459b52a) — Conditionnement : dossier §15.155, avancement, journal des phases (phase 56)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`23a2058`](https://github.com/Break-Eat-APP/flaix-expert/commit/23a205809c1fbcea5971b797b1689575f0bf1e10) — Conditionnement de chaque produit : écrans (dossier §15.155) *(phase 56)*
 
 - créé : `apps/web/src/pages/parametres/Conditionnement.test.tsx`

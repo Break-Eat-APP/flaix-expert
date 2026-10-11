@@ -60,6 +60,7 @@ const PHASES = [
   { n: 54, titre: "Nouveau style : arrondi, épuré, toujours clair", dossier: "§15.153", commits: ["56df8e0"] },
   { n: 55, titre: "Ce qu'il te reste et Mes frais", dossier: "§15.154", commits: ["8201e24", "b36b67d", "973fa42"] },
   { n: 56, titre: "Conditionnement de chaque produit", dossier: "§15.155", commits: ["64619cb", "23a2058"] },
+  { n: 57, titre: "Hygiène et HACCP", dossier: "§15.156", commits: ["ca7116b", "e621cad"] },
 ];
 
 module.exports = { PHASES };

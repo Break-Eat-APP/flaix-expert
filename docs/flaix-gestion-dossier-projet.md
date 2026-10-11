@@ -5034,3 +5034,32 @@ caisses connectées, alertes) ; écrans (Produits & prix → Emballages, conditi
 **Tests** : moteur 3, serveur 4 (prix au millième, 1 gobelet + 2 serviettes = 0,136 €, 0,41 € pour 3 bières, marge du
 produit 13,49 €, prix changé, emballage supprimé, refus), écran 2 ; vérifié dans le navigateur (frites : 1,40 € + 0,12 €
 de gobelet, marge 2,57 €).
+
+### 15.156 Hygiène et HACCP (2026-10-11)
+
+**Demande de Rémi** (2026-10-10) : *« ce que nous avons oublié de mettre dans le logiciel : hygiène et HACCP… est-ce
+que ça va être un module ? »* ; idées du site O-Ven consultées (relevés horodatés, listes, alertes, dossier
+d'inspection). Proposition : un module à part, simple, pensé pour une buvette ; ordre validé le 2026-10-11.
+
+**Décisions** :
+- **Module optionnel « Hygiène & HACCP »** (actif par défaut, désactivable par FlaiX Expert), entrée « Hygiène » du menu.
+- **Réglages** : équipements suivis (froid ≤ 4 °C, surgelé ≤ −18 °C, maintien au chaud ≥ 63 °C, friteuse), limites
+  propres possibles, rattachés à un stand ou à tout le lieu ; tâches à l'ouverture, à la fermeture ou chaque semaine.
+  Idées d'un clic (frigo, congélateur, vitrine chaude, friteuse ; plans de travail, lave-mains, dates limites, tireuse,
+  poubelles, friteuse, dégivrage). Un équipement ou une tâche se désactive, jamais supprimé. Journalisés.
+- **Aujourd'hui** : températures d'ouverture et de fermeture de chaque équipement, tâches à cocher (« fait par … à … »).
+  Un relevé fait pendant un match y est rattaché.
+- **Réceptions** : fournisseur, produits, type (frais ≤ 4 °C, surgelés ≤ −15 °C, épicerie), dates limites, emballages.
+  **Huile de friture** : contrôle des composés polaires (au-delà de 25 %, à changer) ou huile changée.
+- **Conformité calculée par FlaiX Expert, jamais déclarée** ; hors limite, l'enregistrement exige l'action corrective.
+- **Registre en écriture seule** (ni modification ni effacement, même par l'application : vérifié par les droits de la
+  base) ; registre d'une période, imprimable ou en PDF pour un contrôle sanitaire.
+- **Rappels** dans le centre d'alertes : non-conformités des 7 derniers jours ; équipements sans relevé d'ouverture
+  pendant un match.
+- Plus tard : saisie depuis la tablette des caissières, photos (étiquettes, traçabilité), capteurs connectés,
+  allergènes sur chaque produit.
+
+**Réalisé le 2026-10-11** : migration 0045 ; moteur (limites, lectures, conformités) ; serveur (réglages, registre,
+période, alertes, option) ; écran à cinq onglets. **Tests** : moteur 2, serveur 6 (relevé conforme rattaché au match,
+hors limite refusé sans action, friteuse, tâche, réception, huile, registre, écriture seule, alertes, option fermée),
+écran 2 ; vérifié dans le navigateur (frigo ajouté d'un clic, relevé 3,5 °C).
