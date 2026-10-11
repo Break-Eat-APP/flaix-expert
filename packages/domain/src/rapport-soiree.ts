@@ -4,12 +4,13 @@
  * Il ne recalcule rien : chaque chiffre vient d'un module existant (ventes, clôtures, stock, équipe),
  * lu une fois l'événement clos, puis figé. Deux calculs seulement lui sont propres :
  *   - la cascade du résultat de la soirée, ligne à ligne :
- *       encaissé TTC − TVA collectée = CA HT ; − coût matière = marge brute ; − personnel − dépenses de la soirée = marge nette
+ *       encaissé TTC − TVA collectée = CA HT ; − coût matière = marge brute ; ± écarts de stock − personnel
+ *       − dépenses de la soirée − part des frais du mois = ce qu'il te reste (§15.154)
  *     (null dès qu'une donnée manque : jamais un chiffre estimé) ;
  *   - la comparaison avec l'événement joué juste avant (jamais une moyenne) :
  *       écart = actuel − précédent ; écart % = écart ÷ précédent × 100 (null sans événement précédent ou à 0).
- * La marge nette de la soirée n'est PAS le bénéfice du lieu (loyer, salaires permanents, assurance,
- * amortissements, impôt exclus) : le rapport l'écrit en toutes lettres.
+ * Depuis le §15.154, les frais du mois (loyer, salaires hors soirée, assurance…) y sont déduits au prorata du CA
+ * HT de la soirée, pour ceux que le lieu a renseignés ; l'impôt sur les bénéfices reste exclu.
  *
  * Figé : le rapport est établi une seule fois, à la clôture de l'événement (ou à la première lecture
  * pour un événement clos avant que le rapport existe), puis scellé par son empreinte.
@@ -37,27 +38,36 @@ export interface EntreeCascade {
   personnel: Centimes | null;
   /** Dépenses de la soirée saisies dans Gestion financière (0 s'il n'y en a pas). */
   depenses: Centimes;
+  /** Écarts de stock valorisés (négatif : perte) ; absent ou null si le stock n'était pas suivi. */
+  ecartStock?: Centimes | null;
+  /** Part des frais du mois portée par la soirée (0 ou absent : aucun frais du mois). */
+  fraisMois?: Centimes;
 }
+
+export const LIBELLE_RESTE = "Ce qu'il te reste (avant impôt)";
 
 export function cascadeSoiree(e: EntreeCascade): { lignes: LigneCascade[]; caHt: Centimes; margeBrute: Centimes | null; margeNette: Centimes | null } {
   const caHt = e.encaisseTtc - e.tva;
   const margeBrute = e.coutMatiere === null ? null : caHt - e.coutMatiere;
-  const margeNette = margeBrute === null || e.personnel === null ? null : margeBrute - e.personnel - e.depenses;
-  return {
-    caHt,
-    margeBrute,
-    margeNette,
-    lignes: [
-      { libelle: "Encaissé TTC", montant: e.encaisseTtc, sorte: "depart" },
-      { libelle: "TVA collectée (reversée à l'État)", montant: e.tva, sorte: "retire" },
-      { libelle: "Chiffre d'affaires HT", montant: caHt, sorte: "total" },
-      { libelle: "Coût matière (prix d'achat de ce qui a été vendu)", montant: e.coutMatiere, sorte: "retire", note: e.coutMatiere === null ? "coût manquant sur au moins un produit" : undefined },
-      { libelle: "Marge brute", montant: margeBrute, sorte: "total" },
-      { libelle: "Personnel de la soirée", montant: e.personnel, sorte: "retire", note: e.personnel === null ? "taux horaire manquant dans Équipe" : undefined },
-      { libelle: "Dépenses de la soirée", montant: e.depenses, sorte: "retire" },
-      { libelle: "Marge nette de la soirée", montant: margeNette, sorte: "total" },
-    ],
-  };
+  const ecartStock = e.ecartStock ?? 0;
+  const fraisMois = e.fraisMois ?? 0;
+  const margeNette = margeBrute === null || e.personnel === null ? null : margeBrute + ecartStock - e.personnel - e.depenses - fraisMois;
+  const lignes: LigneCascade[] = [
+    { libelle: "Encaissé TTC", montant: e.encaisseTtc, sorte: "depart" },
+    { libelle: "TVA collectée (reversée à l'État)", montant: e.tva, sorte: "retire" },
+    { libelle: "Chiffre d'affaires HT", montant: caHt, sorte: "total" },
+    { libelle: "Coût matière (prix d'achat de ce qui a été vendu)", montant: e.coutMatiere, sorte: "retire", note: e.coutMatiere === null ? "coût manquant sur au moins un produit" : undefined },
+    { libelle: "Marge brute", montant: margeBrute, sorte: "total" },
+  ];
+  // Écart compté : une perte se retire, un surplus s'ajoute (montant négatif d'une ligne « retire »).
+  if (e.ecartStock) lignes.push({ libelle: "Écarts de stock comptés (casse, pertes)", montant: -e.ecartStock, sorte: "retire" });
+  lignes.push(
+    { libelle: "Personnel de la soirée", montant: e.personnel, sorte: "retire", note: e.personnel === null ? "taux horaire manquant dans Équipe" : undefined },
+    { libelle: "Dépenses de la soirée", montant: e.depenses, sorte: "retire" },
+  );
+  if (fraisMois) lignes.push({ libelle: "Part des frais du mois (loyer, abonnements, salaires hors soirée…)", montant: fraisMois, sorte: "retire" });
+  lignes.push({ libelle: LIBELLE_RESTE, montant: margeNette, sorte: "total" });
+  return { caHt, margeBrute, margeNette, lignes };
 }
 
 export interface Ecart {

@@ -118,6 +118,9 @@ export const TYPES_JET = {
   caisse_externe_import: "Ventes d'une caisse connectée importées",
   correspondance_externe_modifiee: "Caisse connectée : correspondance d'un produit ou d'un point de vente modifiée",
   correspondances_suggerees_acceptees: "Caisse connectée : correspondances suggérées acceptées",
+  frais_mensuel_cree: "Mes frais : frais du mois ajouté",
+  frais_mensuel_modifie: "Mes frais : montant d'un frais du mois modifié",
+  frais_pas_concerne: "Mes frais : frais proposé déclaré « pas concerné » (ou remis à vérifier)",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

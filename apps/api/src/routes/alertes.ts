@@ -28,6 +28,7 @@ import { verrouiller, type Base, type Client, type Contexte } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
+import { fraisAVerifier } from "./frais.ts";
 import { lireOptions } from "../options.ts";
 import { etatClickCollect } from "./click-collect.ts";
 import { listerEvenements } from "./evenements.ts";
@@ -205,6 +206,20 @@ export async function centreAlertes(c: Client, lieuId: string): Promise<CentreAl
     const a = alerteMercuriale(l, l.type === "produit" ? (ventes.get(l.id) ?? null) : null);
     if (a) alertes.push(a);
   }
+
+  // Mes frais (§15.154) : tant qu'un frais proposé n'est ni renseigné ni « pas concerné », ce qu'il reste peut en manquer.
+  const aVerifier = await fraisAVerifier(c, lieuId);
+  if (aVerifier > 0)
+    alertes.push({
+      id: "frais_a_verifier",
+      type: "frais_a_verifier",
+      source: "calculee",
+      niveau: "normale",
+      titre: `Mes frais : ${aVerifier} frais à vérifier`,
+      detail: "Renseigne-les ou indique « pas concerné » : « ce qu'il te reste » n'est juste que si tous les frais y sont.",
+      impact: null,
+      lien: "/parametres/frais",
+    });
 
   return {
     evenementEnCours: enCours ? { id: enCours.id, libelle: enCours.libelle } : null,

@@ -8,8 +8,10 @@
  *   écart en points = taux − cible ; écart en € par vente = marge − cible × HT
  * Entre deux canaux de prix différents, on compare des euros par vente, jamais des taux (§14 module 5).
  *
- * Dépense de la soirée : montant en euros, ou pourcentage du CA HT de la soirée (arrondi au centime).
- *   marge nette de la soirée = marge brute − personnel − dépenses de la soirée
+ * Dépense de la soirée : montant en euros, pourcentage du CA HT de la soirée, ou pourcentage des paiements par carte
+ * (frais bancaires), arrondi au centime. Un poste peut avoir un montant habituel, appliqué à chaque soirée qui n'a
+ * pas de saisie propre (§15.154).
+ *   ce qu'il te reste = marge brute ± écarts de stock − personnel − dépenses de la soirée − part des frais du mois
  *   cible de marge nette (€) = cible × CA HT ; écart = marge nette − cible (€)
  */
 import type { Centimes } from "./argent.ts";
@@ -61,11 +63,19 @@ export function margeConfiguree(prixTtc: Centimes, tauxTva: TauxTvaPb, cout: Cen
   return { ht, marge, etat, ecartParVente: ciblePb === null ? null : marge - (ciblePb / 10_000) * ht };
 }
 
-export type ModeDepense = "euros" | "pourcent";
+export type ModeDepense = "euros" | "pourcent" | "pourcent_carte";
 
-/** Montant d'une dépense de la soirée : en euros tel quel, en pourcentage du CA HT (jamais négatif). */
-export function montantDepense(mode: ModeDepense, valeur: number, caHt: Centimes): Centimes {
-  return mode === "euros" ? valeur : Math.round((Math.max(caHt, 0) * valeur) / 10_000);
+export const UNITES_DEPENSE: { mode: ModeDepense; libelle: string }[] = [
+  { mode: "euros", libelle: "€" },
+  { mode: "pourcent", libelle: "% du CA HT" },
+  { mode: "pourcent_carte", libelle: "% des paiements par carte" },
+];
+
+/** Montant d'une dépense de la soirée : en euros tel quel, en % du CA HT, ou en % des paiements par carte TTC (jamais négatif). */
+export function montantDepense(mode: ModeDepense, valeur: number, caHt: Centimes, carteTtc: Centimes = 0): Centimes {
+  if (mode === "euros") return valeur;
+  const base = mode === "pourcent" ? caHt : carteTtc;
+  return Math.round((Math.max(base, 0) * valeur) / 10_000);
 }
 
 export interface EtatCibleSoiree {
@@ -105,15 +115,22 @@ export interface PosteDepense {
   id: string;
   nom: string;
   actif: boolean;
+  /** Frais proposé dans « Mes frais » dont ce poste est la réponse (§15.154). */
+  cle: string | null;
+  /** Montant habituel : appliqué à chaque soirée qui n'a pas de saisie propre ; null : saisi soirée par soirée. */
+  modeHabituel: ModeDepense | null;
+  valeurHabituelle: number | null;
 }
 
 export interface LigneDepense {
   posteId: string;
   nom: string;
   actif: boolean;
-  /** Saisie de la soirée ; null si rien n'a été saisi pour ce poste. */
+  /** Saisie de la soirée, ou le montant habituel du poste ; null si ni l'un ni l'autre. */
   mode: ModeDepense | null;
   valeur: number | null;
+  /** Montant habituel du poste, faute de saisie propre à la soirée. */
+  habituel: boolean;
   montant: Centimes;
   saisiPar: string | null;
   saisiLe: string | null;
@@ -131,6 +148,13 @@ export interface FinancesSoiree {
   personnel: { reel: Centimes | null; affectations: number; tauxManquants: number };
   depenses: LigneDepense[];
   totalDepenses: Centimes;
+  /** Écarts de stock comptés en fin de soirée, valorisés (négatif : marchandise perdue) ; null si le stock n'était pas suivi. */
+  ecartStock: Centimes | null;
+  /** Part des frais du mois portée par la soirée, ou par la période mois par mois (§15.154). */
+  fraisMois: import("./frais.ts").FraisDuMoisPorte[];
+  totalFraisMois: Centimes;
+  /** Frais proposés dans « Mes frais » encore à vérifier : le résultat peut en manquer. */
+  fraisAVerifier: number;
   margeBrute: Centimes | null;
   margeNette: Centimes | null;
   cascade: import("./rapport-soiree.ts").LigneCascade[];

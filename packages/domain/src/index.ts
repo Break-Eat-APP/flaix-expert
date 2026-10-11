@@ -36,3 +36,4 @@ export * from "./emails.ts";
 export * from "./wallet.ts";
 export * from "./csv.ts";
 export * from "./caisses-externes.ts";
+export * from "./frais.ts";
