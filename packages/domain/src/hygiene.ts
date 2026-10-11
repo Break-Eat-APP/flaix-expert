@@ -143,6 +143,8 @@ export interface ControleReception {
   emballageOk: boolean;
   conforme: boolean;
   actionCorrective: string | null;
+  /** Photo de l'étiquette jointe (§15.159) ; null : aucune. */
+  photoId: string | null;
   par: string;
   le: string;
 }

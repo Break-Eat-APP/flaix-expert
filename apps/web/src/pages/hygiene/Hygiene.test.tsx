@@ -8,6 +8,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Hygiene as Donnees, RegistreHygiene } from "@flaix/domain";
 import { Hygiene } from "./Hygiene.tsx";
 
+// La réduction de la photo passe par le canevas du navigateur, absent des tests.
+vi.mock("./photo.ts", () => ({ preparerPhoto: async () => "UEhPVE8=" }));
+
 const reponse = (statut: number, corps: unknown) => new Response(JSON.stringify(corps), { status: statut, headers: { "content-type": "application/json" } });
 const DONNEES: Donnees = {
   jour: "2026-10-11",
@@ -49,16 +52,31 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function monter() {
+function monter(equipe = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <Hygiene />
+      <Hygiene equipe={equipe} />
     </QueryClientProvider>,
   );
 }
 
 describe("hygiène à l'écran", () => {
+  it("sur la tablette d'une caisse (§15.159) : journée, réceptions et huile, sans réglages ni registre ; photo de l'étiquette envoyée", async () => {
+    monter(true);
+    fireEvent.click(await screen.findByRole("button", { name: "Réceptions" }));
+    expect(screen.queryByRole("button", { name: "Registre" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Réglages" })).toBeNull();
+    fireEvent.change(screen.getByLabelText("Fournisseur"), { target: { value: "Metro" } });
+    fireEvent.change(screen.getByLabelText("Produits reçus"), { target: { value: "Pain" } });
+    fireEvent.change(screen.getByLabelText("Type"), { target: { value: "sec" } });
+    fireEvent.change(screen.getByLabelText("Photo de l'étiquette"), { target: { files: [new File(["x"], "etiquette.jpg", { type: "image/jpeg" })] } });
+    expect(await screen.findByAltText("Étiquette photographiée")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer le contrôle" }));
+    await waitFor(() => expect(envois("/api/hygiene/receptions")[0]).toMatchObject({ type: "sec", temperatureDixiemes: null, photo: "UEhPVE8=" }));
+  });
+
+
   it("relevé hors limite : l'action corrective est exigée avant l'envoi ; tâche faite", async () => {
     monter();
     expect(await screen.findByText(/Match en cours/)).toBeTruthy();
@@ -82,7 +100,7 @@ describe("hygiène à l'écran", () => {
     expect(screen.getByText("conforme")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer le contrôle" }));
     await waitFor(() =>
-      expect(envois("/api/hygiene/receptions")).toEqual([{ fournisseur: "Metro", produits: "Saucisses", type: "frais", temperatureDixiemes: 30, dlcOk: true, emballageOk: true, actionCorrective: null }]),
+      expect(envois("/api/hygiene/receptions")).toEqual([{ fournisseur: "Metro", produits: "Saucisses", type: "frais", temperatureDixiemes: 30, dlcOk: true, emballageOk: true, actionCorrective: null, photo: null }]),
     );
     fireEvent.click(screen.getByRole("button", { name: "Registre" }));
     expect(await screen.findByText("HORS LIMITE — Produits jetés")).toBeTruthy();

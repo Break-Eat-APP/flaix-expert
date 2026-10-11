@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
   estJour,
@@ -19,7 +19,7 @@ import {
   type TacheHygiene,
 } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
-import { exigerDirecteur } from "../auth/contexte.ts";
+import { exigerDirecteur, exigerSession, refuserEcritureSupport, type Authentification } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { ParamId, Uuid, contexte, corps, texte } from "./outils.ts";
@@ -29,7 +29,26 @@ import { ParamId, Uuid, contexte, corps, texte } from "./outils.ts";
  * température, tâches faites, contrôles à réception, huile de friture). La conformité est calculée ici, jamais
  * déclarée ; une non-conformité exige son action corrective. Les réglages sont journalisés ; le registre est
  * lui-même la trace (qui, quand, quoi).
+ * La journée (relevés, tâches, réceptions avec photo, huile) se remplit aussi depuis la tablette d'une caisse, par la
+ * caissière connectée (§15.159) ; réglages et registre restent au directeur.
  */
+
+/** Directeur, ou caissière connectée sur une tablette enregistrée ; le support FlaiX Expert lit seulement. */
+async function exigerEquipe(req: FastifyRequest, base: Base): Promise<Authentification> {
+  const auth = exigerSession(req);
+  if (auth.role === "operateur" && auth.appareilId) return auth;
+  if (auth.role === "support" && req.method !== "GET") return refuserEcritureSupport(req, base, auth);
+  return exigerDirecteur(req, base);
+}
+
+/** Photo de l'étiquette : JPEG réduit par l'écran, 2 Mo au plus. */
+function lirePhoto(base64: string | null): Buffer | null {
+  if (base64 === null) return null;
+  const octets = Buffer.from(base64, "base64");
+  if (octets.length < 100 || octets.length > 2_000_000) throw new ErreurMetier(400, "Photo illisible ou trop lourde (2 Mo au plus).");
+  if (octets[0] !== 0xff || octets[1] !== 0xd8 || octets[2] !== 0xff) throw new ErreurMetier(400, "La photo doit être une image JPEG.");
+  return octets;
+}
 
 const Temperature = z.number().int().min(-500, "Température hors limites.").max(1500, "Température hors limites.");
 const Action = z.string().trim().min(3, "Décris l'action corrective (3 caractères au moins).").max(500).nullable().default(null);
@@ -59,6 +78,7 @@ const Reception = z.object({
   dlcOk: z.boolean(),
   emballageOk: z.boolean(),
   actionCorrective: Action,
+  photo: z.string().max(2_800_000).nullable().default(null),
 });
 const Huile = z.object({ equipementId: Uuid, action: z.enum(["controle", "changement"]), polairesDixiemes: z.number().int().min(0).max(1000).nullable().default(null), actionCorrective: Action });
 const Jour = z.string().refine(estJour, "Date invalide (AAAA-MM-JJ).");
@@ -104,8 +124,9 @@ async function tachesFaites(c: Client, lieuId: string, du: string, au: string): 
 }
 
 async function receptions(c: Client, lieuId: string, du: string, au: string, limite = 10_000): Promise<ControleReception[]> {
-  const { rows } = await c.query<{ id: string; fournisseur: string; produits: string; type: ControleReception["type"]; t: number | null; dlc_ok: boolean; emballage_ok: boolean; conforme: boolean; action: string | null; par: string; le: Date }>(
-    `SELECT r.id, r.fournisseur, r.produits, r.type, r.temperature_dixiemes AS t, r.dlc_ok, r.emballage_ok, r.conforme, r.action_corrective AS action, u.nom AS par, r.saisi_le AS le
+  const { rows } = await c.query<{ id: string; fournisseur: string; produits: string; type: ControleReception["type"]; t: number | null; dlc_ok: boolean; emballage_ok: boolean; conforme: boolean; action: string | null; photo_id: string | null; par: string; le: Date }>(
+    `SELECT r.id, r.fournisseur, r.produits, r.type, r.temperature_dixiemes AS t, r.dlc_ok, r.emballage_ok, r.conforme, r.action_corrective AS action,
+            (SELECT p.id FROM hygiene_photo p WHERE p.lieu_id = r.lieu_id AND p.reception_id = r.id LIMIT 1) AS photo_id, u.nom AS par, r.saisi_le AS le
        FROM hygiene_reception r JOIN utilisateur u ON u.id = r.saisi_par
       WHERE r.lieu_id = $1 AND ${ENTRE("r.saisi_le")} ORDER BY r.saisi_le DESC LIMIT ${limite}`,
     [lieuId, du, au],
@@ -120,6 +141,7 @@ async function receptions(c: Client, lieuId: string, du: string, au: string, lim
     emballageOk: r.emballage_ok,
     conforme: r.conforme,
     actionCorrective: r.action,
+    photoId: r.photo_id,
     par: r.par,
     le: r.le.toISOString(),
   }));
@@ -184,7 +206,7 @@ async function exigerStand(c: Client, lieuId: string, standId: string | null | u
 
 export async function routesHygiene(app: FastifyInstance, { base }: { base: Base }) {
   app.get("/api/hygiene", async (req): Promise<Hygiene> => {
-    const auth = await exigerDirecteur(req, base);
+    const auth = await exigerEquipe(req, base);
     return base.transaction(contexte(auth), (c) => hygiene(c, auth.lieuId));
   });
 
@@ -274,7 +296,7 @@ export async function routesHygiene(app: FastifyInstance, { base }: { base: Base
 
   // ---------- Registre (écriture seule) ----------
   app.post("/api/hygiene/releves", async (req, rep): Promise<Hygiene> => {
-    const auth = await exigerDirecteur(req, base);
+    const auth = await exigerEquipe(req, base);
     const d = corps(Releve, req);
     const r = await base.transaction(contexte(auth), async (c) => {
       const e = await exigerEquipement(c, auth.lieuId, d.equipementId);
@@ -296,7 +318,7 @@ export async function routesHygiene(app: FastifyInstance, { base }: { base: Base
   });
 
   app.post("/api/hygiene/taches/:id/fait", async (req, rep): Promise<Hygiene> => {
-    const auth = await exigerDirecteur(req, base);
+    const auth = await exigerEquipe(req, base);
     const { id } = ParamId.parse(req.params);
     const d = corps(Fait, req);
     const r = await base.transaction(contexte(auth), async (c) => {
@@ -311,16 +333,18 @@ export async function routesHygiene(app: FastifyInstance, { base }: { base: Base
     return r;
   });
 
-  app.post("/api/hygiene/receptions", async (req, rep): Promise<Hygiene> => {
-    const auth = await exigerDirecteur(req, base);
+  app.post("/api/hygiene/receptions", { bodyLimit: 3 * 1024 * 1024 }, async (req, rep): Promise<Hygiene> => {
+    const auth = await exigerEquipe(req, base);
     const d = corps(Reception, req);
+    const photo = lirePhoto(d.photo);
     const conforme = receptionConforme(d);
     if (!conforme && !d.actionCorrective) throw new ErreurMetier(400, "Réception non conforme : indique l'action corrective (livraison refusée, produit retourné…).");
     const r = await base.transaction(contexte(auth), async (c) => {
-      await c.query(
-        "INSERT INTO hygiene_reception (lieu_id, fournisseur, produits, type, temperature_dixiemes, dlc_ok, emballage_ok, conforme, action_corrective, saisi_par) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+      const { rows } = await c.query<{ id: string }>(
+        "INSERT INTO hygiene_reception (lieu_id, fournisseur, produits, type, temperature_dixiemes, dlc_ok, emballage_ok, conforme, action_corrective, saisi_par) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
         [auth.lieuId, d.fournisseur, d.produits, d.type, d.temperatureDixiemes, d.dlcOk, d.emballageOk, conforme, d.actionCorrective, auth.utilisateurId],
       );
+      if (photo) await c.query("INSERT INTO hygiene_photo (lieu_id, reception_id, contenu, saisi_par) VALUES ($1, $2, $3, $4)", [auth.lieuId, rows[0]!.id, photo, auth.utilisateurId]);
       return hygiene(c, auth.lieuId);
     });
     rep.code(201);
@@ -328,7 +352,7 @@ export async function routesHygiene(app: FastifyInstance, { base }: { base: Base
   });
 
   app.post("/api/hygiene/huiles", async (req, rep): Promise<Hygiene> => {
-    const auth = await exigerDirecteur(req, base);
+    const auth = await exigerEquipe(req, base);
     const d = corps(Huile, req);
     if (d.action === "controle" && d.polairesDixiemes === null) throw new ErreurMetier(400, "Indique le taux de composés polaires mesuré.");
     const conforme = huileConforme(d.action, d.polairesDixiemes);
@@ -349,6 +373,15 @@ export async function routesHygiene(app: FastifyInstance, { base }: { base: Base
     });
     rep.code(201);
     return r;
+  });
+
+  // Photo d'une étiquette (§15.159).
+  app.get("/api/hygiene/photos/:id", async (req, rep) => {
+    const auth = await exigerEquipe(req, base);
+    const { id } = ParamId.parse(req.params);
+    const { rows } = await base.transaction(contexte(auth), (c) => c.query<{ contenu: Buffer }>("SELECT contenu FROM hygiene_photo WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id]));
+    if (!rows[0]) throw introuvable("Photo");
+    return rep.header("cache-control", "private, max-age=86400").type("image/jpeg").send(rows[0].contenu);
   });
 
   // Registre d'une période (jours de Paris, bornes comprises), pour un contrôle sanitaire.

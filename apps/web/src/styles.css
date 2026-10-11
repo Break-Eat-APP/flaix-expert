@@ -118,6 +118,7 @@ td.allergene-colonne { color: var(--violet); font-size: 16px; }
 .hygiene-releves { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .hygiene-saisie { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .hygiene-saisie .message { width: 100%; margin: 0; }
+.hygiene-apercu { height: 44px; width: 44px; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); }
 .hygiene-historique { margin: 12px 0 0; padding-left: 18px; font-size: 13px; display: grid; gap: 4px; }
 .frais-ligne.inactive { opacity: 0.55; }
 .texte-rouge { color: #b4262b; font-weight: 700; }

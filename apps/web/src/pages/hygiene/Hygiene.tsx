@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Plus, Printer } from "lucide-react";
+import { Camera, Check, Plus, Printer } from "lucide-react";
 import {
   MOMENTS_TACHE,
   SORTES_EQUIPEMENT,
@@ -24,6 +24,7 @@ import {
 } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
+import { preparerPhoto } from "./photo.ts";
 
 type Onglet = "jour" | "receptions" | "huile" | "registre" | "reglages";
 const ONGLETS: [Onglet, string][] = [
@@ -34,6 +35,8 @@ const ONGLETS: [Onglet, string][] = [
   ["reglages", "Réglages"],
 ];
 const CLE = ["hygiene"];
+/** Sur la tablette d'une caisse, la caissière remplit la journée ; réglages et registre restent au directeur. */
+const ONGLETS_EQUIPE: Onglet[] = ["jour", "receptions", "huile"];
 const heure = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
 const pourcent = (d: number) => `${(d / 10).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
 
@@ -52,7 +55,7 @@ function useEnvoi<T>(chemin: (x: T) => string, corps: (x: T) => unknown = (x) =>
  * Hygiène et HACCP (dossier §15.156) : températures, nettoyage, réceptions, huile de friture et registre pour les
  * contrôles sanitaires. Le registre est en écriture seule ; une non-conformité exige son action corrective.
  */
-export function Hygiene() {
+export function Hygiene({ equipe = false }: { equipe?: boolean }) {
   const [onglet, setOnglet] = useState<Onglet>("jour");
   const q = useQuery({ queryKey: CLE, queryFn: () => api.get<Donnees>("/hygiene") });
   if (q.isPending) return <Chargement />;
@@ -60,9 +63,9 @@ export function Hygiene() {
   const d = q.data!;
   return (
     <>
-      <EntetePage titre="Hygiène & HACCP" description="Températures, nettoyage, réceptions et huile de friture : le registre est prêt pour un contrôle sanitaire." />
+      {!equipe && <EntetePage titre="Hygiène & HACCP" description="Températures, nettoyage, réceptions et huile de friture : le registre est prêt pour un contrôle sanitaire." />}
       <div className="onglets">
-        {ONGLETS.map(([id, libelle]) => (
+        {ONGLETS.filter(([id]) => !equipe || ONGLETS_EQUIPE.includes(id)).map(([id, libelle]) => (
           <button key={id} className={`onglet${onglet === id ? " actif" : ""}`} onClick={() => setOnglet(id)}>
             {libelle}
           </button>
@@ -73,9 +76,9 @@ export function Hygiene() {
           {d.nonConformes7j} non-conformité{d.nonConformes7j > 1 ? "s" : ""} ces 7 derniers jours : vérifie que l'action corrective a bien été faite (onglet Registre).
         </div>
       )}
-      {onglet === "jour" && <Aujourdhui d={d} reglages={() => setOnglet("reglages")} />}
+      {onglet === "jour" && <Aujourdhui d={d} reglages={() => !equipe && setOnglet("reglages")} />}
       {onglet === "receptions" && <Receptions d={d} />}
-      {onglet === "huile" && <Huile d={d} reglages={() => setOnglet("reglages")} />}
+      {onglet === "huile" && <Huile d={d} reglages={() => !equipe && setOnglet("reglages")} />}
       {onglet === "registre" && <Registre />}
       {onglet === "reglages" && <Reglages d={d} />}
       <Regles>
@@ -85,6 +88,7 @@ export function Hygiene() {
           <li><strong>Hors limite</strong> : la conformité est calculée par FlaiX Expert, jamais déclarée ; l'enregistrement exige l'action corrective (produits jetés, réglage, livraison refusée, huile changée…).</li>
           <li><strong>Registre en écriture seule</strong> : un relevé ne se modifie ni ne s'efface. Chaque ligne garde qui l'a saisie et quand ; un relevé fait pendant un match y est rattaché.</li>
           <li>Rappels dans le centre d'alertes : non-conformités des 7 derniers jours, températures d'ouverture pas encore relevées pendant un match.</li>
+          <li><strong>Sur la tablette de la caisse</strong>, la caissière connectée fait les relevés, coche les tâches et contrôle les réceptions (avec la photo de l'étiquette) ; réglages et registre restent au directeur.</li>
         </ul>
       </Regles>
     </>
@@ -236,6 +240,8 @@ function Receptions({ d }: { d: Donnees }) {
   const [dlcOk, setDlcOk] = useState(true);
   const [emballageOk, setEmballageOk] = useState(true);
   const [action, setAction] = useState("");
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [erreurPhoto, setErreurPhoto] = useState<string | null>(null);
   const envoi = useEnvoi(() => "/hygiene/receptions", (x: object) => x);
   const t = temp.trim() ? lireTemperature(temp) : null;
   const avecTemperature = type !== "sec";
@@ -249,12 +255,13 @@ function Receptions({ d }: { d: Donnees }) {
             ev.preventDefault();
             if (!pret) return;
             envoi.mutate(
-              { fournisseur: fournisseur.trim(), produits: produits.trim(), type, temperatureDixiemes: avecTemperature ? t : null, dlcOk, emballageOk, actionCorrective: conforme ? null : action.trim() },
+              { fournisseur: fournisseur.trim(), produits: produits.trim(), type, temperatureDixiemes: avecTemperature ? t : null, dlcOk, emballageOk, actionCorrective: conforme ? null : action.trim(), photo },
               {
                 onSuccess: () => {
                   setProduits("");
                   setTemp("");
                   setAction("");
+                  setPhoto(null);
                   setDlcOk(true);
                   setEmballageOk(true);
                 },
@@ -295,7 +302,30 @@ function Receptions({ d }: { d: Donnees }) {
             <label className="case">
               <input type="checkbox" checked={emballageOk} onChange={(ev) => setEmballageOk(ev.target.checked)} /> Emballages intacts
             </label>
+            <label className="btn btn-fantome" style={{ cursor: "pointer" }}>
+              <Camera size={15} /> {photo ? "Photo prise — changer" : "Photo de l'étiquette"}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                aria-label="Photo de l'étiquette"
+                style={{ display: "none" }}
+                onChange={async (ev) => {
+                  const f = ev.target.files?.[0];
+                  ev.target.value = "";
+                  if (!f) return;
+                  setErreurPhoto(null);
+                  try {
+                    setPhoto(await preparerPhoto(f));
+                  } catch (e) {
+                    setErreurPhoto(e instanceof Error ? e.message : "Photo illisible.");
+                  }
+                }}
+              />
+            </label>
+            {photo && <img className="hygiene-apercu" src={`data:image/jpeg;base64,${photo}`} alt="Étiquette photographiée" />}
           </div>
+          {erreurPhoto && <div className="message message-erreur">{erreurPhoto}</div>}
           {(!avecTemperature || t !== null) && !conforme && (
             <label className="champ" style={{ marginTop: 12 }}>
               <span>Non conforme : action corrective</span>
@@ -327,6 +357,13 @@ function Receptions({ d }: { d: Donnees }) {
                     <td>{r.temperatureDixiemes !== null ? formaterTemperature(r.temperatureDixiemes) : "—"}</td>
                     <td>
                       <span className={`puce ${r.conforme ? "puce-vert" : "puce-rouge"}`}>{r.conforme ? "conforme" : `non conforme : ${r.actionCorrective}`}</span>
+                    </td>
+                    <td>
+                      {r.photoId && (
+                        <a href={`/api/hygiene/photos/${r.photoId}`} target="_blank" rel="noreferrer" aria-label={`Photo de l'étiquette : ${r.fournisseur}`}>
+                          <Camera size={15} />
+                        </a>
+                      )}
                     </td>
                     <td className="discret">{r.par}</td>
                   </tr>
@@ -441,7 +478,7 @@ function Registre() {
           <TableRegistre
             titre="Réceptions"
             vide="Aucune réception"
-            lignes={q.data.receptions.map((r) => [formaterDateHeure(r.le), `${r.fournisseur} · ${r.produits}`, r.type, r.temperatureDixiemes !== null ? formaterTemperature(r.temperatureDixiemes) : "—", r.conforme ? "conforme" : `NON CONFORME — ${r.actionCorrective}`, r.par])}
+            lignes={q.data.receptions.map((r) => [formaterDateHeure(r.le), `${r.fournisseur} · ${r.produits}${r.photoId ? " · photo jointe" : ""}`, r.type, r.temperatureDixiemes !== null ? formaterTemperature(r.temperatureDixiemes) : "—", r.conforme ? "conforme" : `NON CONFORME — ${r.actionCorrective}`, r.par])}
           />
           <TableRegistre
             titre="Huile de friture"
