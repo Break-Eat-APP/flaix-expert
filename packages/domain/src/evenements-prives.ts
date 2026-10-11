@@ -172,7 +172,9 @@ export interface FactureVente {
 /** Numéro de facture : série des événements privés, continue par lieu et par année (« FP-2026-0001 »). */
 export const numeroFacture = (annee: number, sequence: number) => `FP-${annee}-${String(sequence).padStart(4, "0")}`;
 
-const jourPlus = (iso: string, jours: number) => new Date(Date.parse(iso) + jours * 86_400_000).toISOString().slice(0, 10);
+/** Jour de Paris d'un instant (AAAA-MM-JJ) : une facture émise à 1 h du matin est datée du jour de Paris. */
+const jourDeParis = (iso: string) => new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+const jourPlus = (iso: string, jours: number) => new Date(Date.parse(`${jourDeParis(iso)}T12:00:00Z`) + jours * 86_400_000).toISOString().slice(0, 10);
 
 export function construireFacture(x: {
   numero: string;

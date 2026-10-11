@@ -40,6 +40,9 @@ const Notifications = lazy(() => import("./pages/parametres/Notifications.tsx").
 const Objectifs = lazy(() => import("./pages/parametres/Objectifs.tsx").then((m) => ({ default: m.Objectifs })));
 const MesFrais = lazy(() => import("./pages/parametres/MesFrais.tsx").then((m) => ({ default: m.MesFrais })));
 const Hygiene = lazy(() => import("./pages/hygiene/Hygiene.tsx").then((m) => ({ default: m.Hygiene })));
+const EvenementsPrives = lazy(() => import("./pages/prives/EvenementsPrives.tsx").then((m) => ({ default: m.EvenementsPrives })));
+const EvenementPrive = lazy(() => import("./pages/prives/EvenementPrive.tsx").then((m) => ({ default: m.EvenementPrive })));
+const FactureVente = lazy(() => import("./pages/prives/FactureVente.tsx").then((m) => ({ default: m.FactureVente })));
 const CaissesConnectees = lazy(() => import("./pages/caisses-connectees/CaissesConnectees.tsx").then((m) => ({ default: m.CaissesConnectees })));
 const RapportSoiree = lazy(() => import("./pages/resultats/RapportSoiree.tsx").then((m) => ({ default: m.RapportSoiree })));
 const EspaceEditeur = lazy(() => import("./pages/editeur/EspaceEditeur.tsx").then((m) => ({ default: m.EspaceEditeur })));
@@ -92,6 +95,8 @@ function AppLieu() {
       <Routes>
         {/* Rapport de soirée : un document à part, sans menu, pour l'impression et le PDF (§15.131). */}
         <Route path="rapport-soiree/:evenementId" element={<Suspense fallback={<Chargement />}><RapportSoiree /></Suspense>} />
+        {/* Facture d'un événement privé (§15.160) : un document à part, sans menu, pour l'impression et le PDF. */}
+        <Route path="prives/facture/:id" element={<Suspense fallback={<Chargement />}><FactureVente /></Suspense>} />
         <Route element={<Coquille session={session.data} />}>
           {/* Organisation en 6 entrées (dossier §15.96) : Résultats, Caisses, Stock, Équipe, Clôtures, Paramètres. */}
           <Route index element={<Resultats session={session.data} />} />
@@ -103,6 +108,8 @@ function AppLieu() {
           <Route path="caisses/:caisseId" element={<EcranCaisse />} />
           <Route path="stock" element={<Stock />} />
           <Route path="hygiene" element={<Hygiene />} />
+          <Route path="prives" element={<EvenementsPrives />} />
+          <Route path="prives/:id" element={<EvenementPrive />} />
           <Route path="equipe" element={<Equipe />} />
           <Route path="clotures" element={<Clotures />} />
           <Route path="fidelite" element={<Fidelite />} />

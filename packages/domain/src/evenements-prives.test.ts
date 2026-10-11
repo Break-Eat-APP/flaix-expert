@@ -56,6 +56,8 @@ describe("événements privés (§15.160)", () => {
     const acquittee = construireFacture({ ...{ numero: "FP-2026-0002", emiseLe: "2026-10-12T09:00:00.000Z", vendeur, objet: "x", lignes: [] }, client: { nom: "Paul", contact: null, societe: null, adresse: null, siret: null, tvaIntracom: null }, reglement: { mode: "virement", le: "2026-10-12" } });
     expect(acquittee.client.professionnel).toBe(false);
     expect(acquittee.mentions).toEqual(["Pas d'escompte pour paiement anticipé.", "Facture acquittée le 12/10/2026 par virement."]);
+    // Émise à 1 h 22 du matin à Paris (23 h 22 la veille en temps universel) : l'échéance part du jour de Paris.
+    expect(construireFacture({ numero: "x", emiseLe: "2026-10-11T23:22:00.000Z", vendeur, client: { nom: "P", contact: null, societe: null, adresse: null, siret: null, tvaIntracom: null }, objet: "x", lignes: [], reglement: null }).echeance).toBe("2026-11-11");
     expect(empreinteFacture("id", f)).toMatch(/^[0-9a-f]{64}$/);
     expect(empreinteFacture("id", { ...f, totalTtc: 1 })).not.toBe(empreinteFacture("id", f));
   });

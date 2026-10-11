@@ -29,33 +29,45 @@ import { ParamId, Uuid, contexte, corps } from "./outils.ts";
  */
 
 const Texte = (max: number) => z.string().trim().min(1).max(max).nullable();
-const Fiche = z.object({
+/** Champs de la fiche, sans valeur par défaut : une modification ne touche que les champs envoyés. */
+const CHAMPS = {
   nom: z.string().trim().min(1, "Le nom est obligatoire.").max(120),
   debut: z.string().datetime({ offset: true, message: "Date et heure invalides." }),
-  salon: Texte(120).default(null),
-  invites: z.number().int().min(1).max(100_000).nullable().default(null),
-  budget: z.number().int().min(0).max(100_000_000).nullable().default(null),
-  clientNom: Texte(120).default(null),
-  clientContact: Texte(200).default(null),
-  societe: Texte(200).default(null),
-  adresse: Texte(300).default(null),
+  salon: Texte(120),
+  invites: z.number().int().min(1).max(100_000).nullable(),
+  budget: z.number().int().min(0).max(100_000_000).nullable(),
+  clientNom: Texte(120),
+  clientContact: Texte(200),
+  societe: Texte(200),
+  adresse: Texte(300),
   siret: z
     .string()
     .trim()
     .transform((v) => v.replace(/\s/g, ""))
     .refine((v) => /^\d{14}$/.test(v), "Le SIRET compte 14 chiffres.")
-    .nullable()
-    .default(null),
+    .nullable(),
   tvaIntracom: z
     .string()
     .trim()
     .transform((v) => v.replace(/\s/g, "").toUpperCase())
     .refine((v) => /^[A-Z]{2}[0-9A-Z]{2,13}$/.test(v), "N° de TVA intracommunautaire invalide (ex. FR12345678901).")
-    .nullable()
-    .default(null),
-  notes: z.string().max(2000).nullable().default(null),
+    .nullable(),
+  notes: z.string().max(2000).nullable(),
+};
+const Fiche = z.object({
+  ...CHAMPS,
+  salon: CHAMPS.salon.default(null),
+  invites: CHAMPS.invites.default(null),
+  budget: CHAMPS.budget.default(null),
+  clientNom: CHAMPS.clientNom.default(null),
+  clientContact: CHAMPS.clientContact.default(null),
+  societe: CHAMPS.societe.default(null),
+  adresse: CHAMPS.adresse.default(null),
+  siret: CHAMPS.siret.default(null),
+  tvaIntracom: CHAMPS.tvaIntracom.default(null),
+  notes: CHAMPS.notes.default(null),
 });
-const ModifFiche = Fiche.partial();
+const ModifFiche = z.object(CHAMPS).partial();
 const NouvelleLigne = z.union([
   z.object({ produitId: Uuid, quantite: z.number().int().min(1).max(100_000).default(1) }),
   z.object({
@@ -211,7 +223,11 @@ export async function routesEvenementsPrives(app: FastifyInstance, { base }: { b
     const { id } = ParamId.parse(req.params);
     const d = corps(ModifFiche, req);
     return base.transaction(contexte(auth), async (c) => {
-      const avant = await exigerPrevu(c, auth.lieuId, id);
+      const avant = await evenementPrive(c, auth.lieuId, id);
+      // Clôturé : les chiffres sont figés ; le client et les notes se complètent encore (pour la facture).
+      const CLIENT: (keyof typeof d)[] = ["clientNom", "clientContact", "societe", "adresse", "siret", "tvaIntracom", "notes"];
+      if (avant.etat === "cloture" && (Object.keys(d) as (keyof typeof d)[]).some((k) => d[k] !== undefined && !CLIENT.includes(k)))
+        throw new ErreurMetier(409, "Événement clôturé : seuls le client et les notes se modifient encore.");
       const colonnes: [keyof typeof d, string][] = [
         ["nom", "nom"],
         ["debut", "debut"],

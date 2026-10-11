@@ -94,6 +94,8 @@ describe("événements privés", () => {
     expect((await appel<EvenementPrive>("GET", `/api/evenements-prives/${soiree.id}`)).corps.bilan.reste).toBe(reste);
     expect((await appel("POST", `/api/evenements-prives/${soiree.id}/lignes`, { produitId: biere.id })).statut).toBe(409);
     expect((await appel("PATCH", `/api/evenements-prives/${soiree.id}`, { budget: 1 })).statut).toBe(409);
+    // Le client se complète encore après la clôture (pour la facture) ; les chiffres, non.
+    expect((await appel<EvenementPrive>("PATCH", `/api/evenements-prives/${soiree.id}`, { clientContact: "06 12 34 56 78" })).corps.client.contact).toBe("06 12 34 56 78");
     await expect(
       app.transaction({ lieuId: lieu.lieuId, utilisateurId: lieu.utilisateurId }, (c) => c.query("UPDATE evenement_prive_ligne SET quantite = 1 WHERE evenement_id = $1", [soiree.id])),
     ).rejects.toThrow(/clôturé/);
