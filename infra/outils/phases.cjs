@@ -58,6 +58,7 @@ const PHASES = [
   { n: 52, titre: "Ventes déposées dans tout FlaiX Expert ; fichiers Excel", dossier: "§15.151", commits: ["944717e"] },
   { n: 53, titre: "Caisses connectées : correspondances automatiques et suggérées", dossier: "§15.152", commits: ["50d818b", "b79db0d"] },
   { n: 54, titre: "Nouveau style : arrondi, épuré, toujours clair", dossier: "§15.153", commits: ["56df8e0"] },
+  { n: 55, titre: "Ce qu'il te reste et Mes frais", dossier: "§15.154", commits: ["8201e24", "b36b67d", "973fa42"] },
 ];
 
 module.exports = { PHASES };

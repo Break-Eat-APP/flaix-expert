@@ -4970,3 +4970,39 @@ proposée (Résultats et En direct), puis : *« je veux pas le sombre mais le cl
 **Réalisé le 2026-10-10** : feuilles de style communes (tous les modules changent d'un coup) ; vérifié dans le navigateur
 sur le lieu de démonstration local (Résultats, Caisses, Stock, Équipe, Clôtures, Fidélité, Paramètres ; ordinateur et
 téléphone, aucun débordement) ; 71 tests de l'écran passés.
+
+### 15.154 « Ce qu'il te reste » et « Mes frais » (2026-10-11)
+
+**Demande de Rémi** (2026-10-10) : *« ce que l'on veut savoir à la fin de la soirée, c'est ce qu'il te reste dans la
+poche une fois tous les frais déduits… masse salariale, coût du produit, abonnement… le but de mon logiciel, c'est
+vraiment de savoir ce que l'on gagne net »* ; *« on a dû oublier certaines choses »*. Proposition validée le
+2026-10-11 : *« ok prorata, commence par le 1 »*.
+
+**Décisions** :
+- **Un seul chiffre, « Ce qu'il te reste » (avant impôt)** = CA HT − marchandise vendue ± écarts de stock comptés en fin
+  de soirée − personnel (coût horaire chargé) − frais de la soirée − part des frais du mois. Il remplace la « marge nette
+  de la soirée » (la cible de marge nette porte désormais sur lui). Une donnée manquante le rend « pas encore
+  calculable », jamais estimé. Affiché en tête de l'accueil Résultats et en carte principale de Finances.
+- **Frais du mois** = frais de chaque stand (Coûts par buvette : loyer, logiciel, abonnement, TPE) + frais mensuels du
+  lieu (Mes frais), datés : un montant vaut à partir de son mois sans réécrire les mois passés ; un frais s'arrête par
+  un montant à 0. **Répartis au prorata du CA HT** des soirées du mois (choix de Rémi) : part = frais du mois × CA HT
+  du match ÷ CA HT de tous les matchs du mois. Un mois sans chiffre d'affaires ne se répartit sur aucun match : il
+  compte en entier dans le bilan d'une période qui le contient tout entier.
+- **Frais de soirée** (postes de dépense) : **montant habituel** facultatif, appliqué tout seul à chaque soirée jouée
+  sans saisie propre ; une saisie dans Finances le remplace pour la soirée. Nouvelle unité **« % des paiements par
+  carte »** (frais bancaires), à côté de l'euro et du « % du CA HT » (commission du club).
+- **Mes frais** (Paramètres) : 25 frais courants d'une buvette proposés (commission du club, frais de carte, cashless,
+  gobelets non rendus, glace et gaz, sécurité, nettoyage, location, transport ; loyer, logiciels dont FlaiX Expert,
+  TPE ; salaires hors soirée, assurance, énergie, téléphone, comptable, banque, hygiène, tenues, entretien, matériel
+  étalé, taxes, SACEM). Chacun est **renseigné**, **pas concerné**, ou **à vérifier** ; avancement affiché, rappel dans
+  le centre d'alertes et dans Finances tant qu'il en reste. Frais libres en plus. Loyer, logiciels et TPE : stand par
+  stand si Coûts par buvette est activé, sinon pour tout le lieu.
+- Rapport de soirée : les rapports déjà figés gardent leur contenu (« marge nette ») ; les nouveaux montrent « ce qu'il
+  te reste ». Mode formation : Mes frais recopiés dans le lieu d'entraînement. Tout est journalisé (3 nouveaux types).
+- Pas encore dans le calcul : la commission Click & Collect (avec l'import des ventes C&C), le conditionnement de chaque
+  produit (§15.155).
+
+**Réalisé le 2026-10-11** : migration 0043 ; moteur (`partDesFrais`, `montantDuMois`, `moisComplets`, frais proposés,
+cascade) ; serveur (Finances, Mes frais, alerte) ; écrans (accueil, Finances, Mes frais, cascade négative en rouge).
+**Tests** : moteur 4, serveur 6 (prorata, montant habituel, frais de carte, saisie propre, mois sans match, frais arrêté,
+refus), écran 3 ; vérifié dans le navigateur sur le lieu de démonstration (commission de 10 % appliquée seule).

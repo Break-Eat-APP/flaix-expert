@@ -3,7 +3,53 @@
 > Généré par `node infra/outils/journal-developpement.cjs` à partir de Git. Ne pas modifier à la main.
 > Chaque entrée : date, commit (lien GitHub), message, fichiers créés ou modifiés. Le plus récent en premier. Phases : [docs/developpement/JOURNAL_DES_PHASES.md](docs/developpement/JOURNAL_DES_PHASES.md).
 
+## 2026-10-11
+
+### [`973fa42`](https://github.com/Break-Eat-APP/flaix-expert/commit/973fa4209adba4b303273f5d4491b76bc4d67e32) — Mes frais : loyer, logiciels et TPE saisissables pour tout le lieu sans Coûts par buvette *(phase 55)*
+
+- modifié : `apps/api/src/routes/frais.ts`
+
+### [`b36b67d`](https://github.com/Break-Eat-APP/flaix-expert/commit/b36b67d1a15a486368af647761fdaf156625363e) — Ce qu'il te reste et Mes frais : écrans (dossier §15.154) *(phase 55)*
+
+- modifié : `apps/web/src/App.tsx`
+- créé : `apps/web/src/pages/parametres/MesFrais.test.tsx`
+- créé : `apps/web/src/pages/parametres/MesFrais.tsx`
+- modifié : `apps/web/src/pages/parametres/Parametres.tsx`
+- modifié : `apps/web/src/pages/resultats/Finances.test.tsx`
+- modifié : `apps/web/src/pages/resultats/Finances.tsx`
+- modifié : `apps/web/src/pages/resultats/RapportSoiree.test.tsx`
+- modifié : `apps/web/src/pages/resultats/RapportSoiree.tsx`
+- modifié : `apps/web/src/pages/resultats/Tableaux.tsx`
+- modifié : `apps/web/src/pages/resultats/graphiques.tsx`
+- modifié : `apps/web/src/resultats.css`
+- modifié : `apps/web/src/styles.css`
+
+### [`8201e24`](https://github.com/Break-Eat-APP/flaix-expert/commit/8201e24f292722ce3747fe094e0bc041645dbdd8) — Ce qu'il te reste et Mes frais : calcul et serveur (dossier §15.154) *(phase 55)*
+
+- modifié : `apps/api/src/routes/alertes.ts`
+- modifié : `apps/api/src/routes/finances.ts`
+- créé : `apps/api/src/routes/frais.ts`
+- modifié : `apps/api/src/serveur.ts`
+- créé : `apps/api/test/mes-frais.test.ts`
+- créé : `db/migrations/0043_ce_qu_il_te_reste.sql`
+- modifié : `packages/domain/src/alertes.ts`
+- modifié : `packages/domain/src/finances.ts`
+- créé : `packages/domain/src/frais.test.ts`
+- créé : `packages/domain/src/frais.ts`
+- modifié : `packages/domain/src/index.ts`
+- modifié : `packages/domain/src/journal-technique.ts`
+- modifié : `packages/domain/src/rapport-soiree.ts`
+
 ## 2026-10-10
+
+### [`0d20594`](https://github.com/Break-Eat-APP/flaix-expert/commit/0d20594a8577b9902f5650c874b9397cd1b9d22e) — Nouveau style : dossier §15.153, avancement, journal des phases (phase 54)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/phases.cjs`
 
 ### [`56df8e0`](https://github.com/Break-Eat-APP/flaix-expert/commit/56df8e0d5c2079aa0899deebd9dc6118904c82cf) — Nouveau style : arrondi, épuré, toujours clair (dossier §15.153) *(phase 54)*
 

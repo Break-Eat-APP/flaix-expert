@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-11 : « Ce qu'il te reste » et « Mes frais » (§15.154)
+
+Résultat de la soirée tout compris (marchandise, écarts de stock, personnel, frais de la soirée, part des frais du mois au prorata du CA HT), en tête de l'accueil. Paramètres → Mes frais : 25 frais courants proposés (renseigné, pas concerné, à vérifier), frais mensuels datés, montant habituel des frais de soirée, frais de carte en %. Migration 0043. Ensuite : conditionnement de chaque produit (§15.155), puis module Hygiène et HACCP.
+
 ## 2026-10-10 : nouveau style arrondi, toujours clair (§15.153)
 
 Maquette validée par Rémi (« super comme ça ») ; appliquée à tout le logiciel : cartes arrondies, boutons et onglets en pilule, menu flottant, chiffre d'affaires en carte violette. Thème sombre retiré.
