@@ -1,11 +1,13 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChefHat, ChevronDown, ChevronRight, Plus, Search, Tags } from "lucide-react";
+import { ChefHat, ChevronDown, ChevronRight, CupSoda, Plus, Search, Tags } from "lucide-react";
 import {
   TAUX_TVA,
   formaterMontant,
   libelleTauxTva,
   cibleEffective,
+  coutDeRevient,
+  formaterMillimes,
   formaterPourcentage,
   lireMontant,
   lirePourcentage,
@@ -21,18 +23,21 @@ import {
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 import { GestionIngredients, RecetteProduit } from "./Recettes.tsx";
+import { ConditionnementProduit, GestionEmballages } from "./Conditionnement.tsx";
 import { EtatCibleMarge } from "../../composants/cibles.tsx";
 
 const COLONNES = "minmax(150px, 2fr) minmax(80px, 1fr) minmax(130px, 2fr) minmax(70px, 0.8fr) minmax(50px, 0.6fr) minmax(80px, 0.9fr) minmax(100px, 1.2fr) 24px";
 
 function Marge({ produit, cibleCategorie }: { produit: Produit; cibleCategorie: number | null }) {
   const t = produit.tarifEnVigueur;
-  if (!t || produit.coutMatiere === null) return <span className="discret">—</span>;
-  const { marge, tauxMarge } = margeUnitaireComptoir(t.prixTtc, t.tauxTva, produit.coutMatiere);
-  const m = margeConfiguree(t.prixTtc, t.tauxTva, produit.coutMatiere, cibleEffective(produit.cibleMarge, cibleCategorie));
+  // Coût de revient : matière + conditionnement (§15.155).
+  const cout = coutDeRevient(produit.coutMatiere, produit.conditionnementMillimes);
+  if (!t || cout === null) return <span className="discret">—</span>;
+  const { marge, tauxMarge } = margeUnitaireComptoir(t.prixTtc, t.tauxTva, cout);
+  const m = margeConfiguree(t.prixTtc, t.tauxTva, cout, cibleEffective(produit.cibleMarge, cibleCategorie));
   return (
     <span className="chiffre">
-      {formaterMontant(marge)} {tauxMarge !== null && <span className="discret">· {tauxMarge.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %</span>}
+      {formaterMontant(Math.round(marge))} {tauxMarge !== null && <span className="discret">· {tauxMarge.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %</span>}
       {m && m.etat.statut === "sous" && (
         <>
           {" "}
@@ -75,6 +80,7 @@ export function Produits() {
   const [creation, setCreation] = useState(false);
   const [gererCategories, setGererCategories] = useState(false);
   const [gererIngredients, setGererIngredients] = useState(false);
+  const [gererEmballages, setGererEmballages] = useState(false);
 
   const majProduits = (liste: Produit[]) => client.setQueryData(["produits"], liste);
 
@@ -109,6 +115,9 @@ export function Produits() {
             <button className="btn btn-fantome" onClick={() => setGererIngredients(!gererIngredients)}>
               <ChefHat size={15} /> Ingrédients
             </button>
+            <button className="btn btn-fantome" onClick={() => setGererEmballages(!gererEmballages)}>
+              <CupSoda size={15} /> Emballages
+            </button>
             <button className="btn" onClick={() => setCreation(!creation)}>
               <Plus size={16} /> Ajouter un produit
             </button>
@@ -118,6 +127,7 @@ export function Produits() {
 
       {gererCategories && <GestionCategories categories={categories.data!} />}
       {gererIngredients && <GestionIngredients />}
+      {gererEmballages && <GestionEmballages />}
       {creation && (
         <FormulaireCreation
           stands={listeStands}
@@ -202,6 +212,7 @@ export function Produits() {
                       <span className="cellule-libelle">Coût matière</span>
                       {p.coutMatiere !== null ? formaterMontant(p.coutMatiere) : <span className="discret">—</span>}
                       {p.aRecette && <span className="puce" style={{ marginLeft: 4, fontSize: 10.5 }}>recette</span>}
+                      {p.conditionnementMillimes > 0 && <span className="discret"> + {formaterMillimes(p.conditionnementMillimes)} emb.</span>}
                     </span>
                     <span>
                       <span className="cellule-libelle">Marge comptoir</span>
@@ -223,7 +234,8 @@ export function Produits() {
           <li><strong>Le prix ne se modifie pas, il se remplace</strong> : chaque changement crée un nouveau tarif daté (prix TTC + taux de TVA + date d'effet), l'ancien reste consultable. Un ticket garde toujours le prix en vigueur au moment de la vente.</li>
           <li>Un tarif peut prendre effet tout de suite ou à une date future (ex. nouveau prix à partir du prochain événement), <strong>jamais dans le passé</strong>.</li>
           <li><strong>Le taux de TVA est choisi par toi</strong>, produit par produit ; le logiciel ne présélectionne rien. En cas de doute (boissons consommées sur place : 5,5 % ou 10 % ?), demande à ton expert-comptable.</li>
-          <li><strong>Marge comptoir</strong> = prix HT − coût matière HT, par vente. Prix HT = prix TTC ÷ (1 + taux de TVA). Taux de marge = marge ÷ prix HT. C'est une marge brute : ce qui reste avant salaires, loyer et charges — pas « ce que tu gagnes ».</li>
+          <li><strong>Conditionnement</strong> : chaque produit dit ses emballages (gobelet, barquette, serviette…) et leur nombre ; leur prix s'ajoute au coût matière dans les marges et dans « ce qu'il te reste ».</li>
+          <li><strong>Marge comptoir</strong> = prix HT − (coût matière HT + conditionnement), par vente. Prix HT = prix TTC ÷ (1 + taux de TVA). Taux de marge = marge ÷ prix HT. C'est une marge brute : ce qui reste avant salaires, loyer et charges — pas « ce que tu gagnes ».</li>
           <li>Exemple : 7,00 € TTC à 10 % de TVA = 6,36 € HT ; avec 1,90 € de coût matière, la marge est de 4,46 € par vente, soit 70,1 %.</li>
           <li>Le coût matière est facultatif. Pour un produit acheté tel quel (canette, bière…), il est recalculé à chaque livraison du Stock (coût moyen pondéré).</li>
           <li><strong>Recette</strong> (produit fabriqué) : tes ingrédients ont un prix HT au kilo, au litre ou à la pièce ; la recette en coche les quantités (en grammes, centilitres ou pièces). <strong>Coût de fabrication</strong> = Σ prix × quantité — ex. 100 g de tomates à 2,50 €/kg = 0,25 €. Il devient le coût matière du produit et se recalcule dès qu'un prix d'ingrédient change. Un produit avec recette ne se livre pas : ce sont ses ingrédients qui s'achètent.</li>
@@ -425,7 +437,7 @@ function DetailProduit({ produit, stands, categories, majProduits }: { produit: 
       <MargeAuPrix
         prixTtc={produit.tarifEnVigueur?.prixTtc ?? null}
         tauxTva={produit.tarifEnVigueur?.tauxTva ?? null}
-        cout={produit.aRecette ? produit.coutMatiere : cout.trim() ? coutCentimes : null}
+        cout={coutDeRevient(produit.aRecette ? produit.coutMatiere : cout.trim() ? coutCentimes : null, produit.conditionnementMillimes)}
         cible={cibleEffective(cible.trim() ? ciblePb : null, cibleCategorie)}
         nouveau={false}
       />
@@ -452,6 +464,10 @@ function DetailProduit({ produit, stands, categories, majProduits }: { produit: 
       <h3 style={{ marginTop: 22, marginBottom: 8 }}>Recette</h3>
       <p className="discret" style={{ margin: "0 0 8px" }}>Pour un produit fabriqué (burger, hot-dog…) : coche ses ingrédients et leur quantité ; le coût de fabrication devient son coût matière.</p>
       <RecetteProduit produit={produit} />
+
+      <h3 style={{ marginTop: 22, marginBottom: 8 }}>Conditionnement</h3>
+      <p className="discret" style={{ margin: "0 0 8px" }}>Les emballages d'une portion (gobelet, barquette, serviette…) : leur prix s'ajoute au coût matière dans les marges.</p>
+      <ConditionnementProduit produit={produit} majProduits={majProduits} />
 
       <h3 style={{ marginTop: 22, marginBottom: 8 }}>Vendu dans</h3>
       <CasesStands stands={stands} coches={standIds} onChange={setStandIds} />
@@ -497,7 +513,7 @@ function DetailProduit({ produit, stands, categories, majProduits }: { produit: 
           </div>
         </div>
         {prixCentimes !== null && tva !== "" && (
-          <MargeAuPrix prixTtc={prixCentimes} tauxTva={tva} cout={produit.coutMatiere} cible={cibleEffective(produit.cibleMarge, cibleCategorie)} nouveau />
+          <MargeAuPrix prixTtc={prixCentimes} tauxTva={tva} cout={coutDeRevient(produit.coutMatiere, produit.conditionnementMillimes)} cible={cibleEffective(produit.cibleMarge, cibleCategorie)} nouveau />
         )}
         <MessageErreur erreur={tarif.error} />
         <div className="ligne-actions">

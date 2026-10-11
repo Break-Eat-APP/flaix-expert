@@ -47,6 +47,7 @@ export function VueFinances({ evenementId, periode, s }: { evenementId?: string;
   ];
   if (f.coutMatiere !== null && f.margeBrute !== null) {
     etapes.push({ l1: "Coût", l2: "matière", v: -f.coutMatiere, total: false, aide: "Quantités vendues × coût de la fiche produit" });
+    if (f.conditionnement) etapes.push({ l1: "Condition-", l2: "nement", v: -f.conditionnement, total: false, aide: "Gobelets, barquettes, serviettes… des portions vendues" });
     etapes.push({ l1: "Marge", l2: "brute", v: f.margeBrute, total: true, aide: pct(f.margeBrute, f.caHt) ? `${pct(f.margeBrute, f.caHt)} du CA HT` : "" });
     if (f.personnel.reel !== null) {
       if (f.ecartStock) etapes.push({ l1: "Écarts", l2: "de stock", v: f.ecartStock, total: false, aide: "Restes comptés en fin de soirée : casse, pertes" });
@@ -277,6 +278,15 @@ function Depenses({ f }: { f: FinancesSoiree }) {
               </td>
               <td className="d chiffre">{f.personnel.reel === null ? "taux manquant" : euros(f.personnel.reel)}</td>
             </tr>
+            {f.conditionnement > 0 && (
+              <tr>
+                <td>Conditionnement <span className="puce">calculé</span></td>
+                <td className="discret">
+                  <Link to="/parametres/produits">Emballages des produits</Link>
+                </td>
+                <td className="d chiffre">{euros(f.conditionnement)}</td>
+              </tr>
+            )}
             {f.ecartStock !== null && (
               <tr>
                 <td>Écarts de stock <span className="puce">calculé</span></td>

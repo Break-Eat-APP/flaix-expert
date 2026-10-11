@@ -22,6 +22,7 @@ function finances(depense: { mode: "euros" | "pourcent"; valeur: number } | null
     caHt: 2_295,
     tickets: 2,
     coutMatiere: 510,
+    conditionnement: 0,
     produitsSansCout: [],
     personnel: { reel: 0, affectations: 0, tauxManquants: 0 },
     depenses: [{ posteId: "secu", nom: "Sécurité", actif: true, mode: depense?.mode ?? null, valeur: depense?.valeur ?? null, habituel: false, montant, saisiPar: null, saisiLe: null }],
