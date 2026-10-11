@@ -5106,3 +5106,43 @@ commande datée, non modifiable), jauge du budget en direct (alertes 80 % et 100
 un ticket normal (carte, espèces, virement) ; facture numérotée au nom de la société si demandée. Note et facture
 touchent aux règles fiscales de la caisse : à construire avec les mêmes garanties que les tickets et à porter au dossier
 de conformité ; développement après accord de Rémi.
+
+### 15.160 Événements privés (2026-10-12)
+
+**Demande de Rémi** (2026-10-11) : *« le directeur gère aussi des events ou des salons privés avec de la food et de
+l'alcool… le Bar clandestin vient à 15 personnes, boit et mange, ils ont un budget pour la soirée… pour le faire
+simple et ne pas compliquer ce que nous avons déjà développé »*. Réponses : paiement **au budget**, facture à la société
+**parfois**, **pas d'acompte**. Puis : *« go… pour les événements privés c'est que de la gestion, c'est le directeur qui
+gère lui directement et non la caissière »*.
+
+**Décisions** :
+- **Hors caisse** : rien ne passe par les tickets (Z, clôtures, TVA et rapport des buvettes intacts) ; ni note ouverte
+  ni accès caissière. Module à part, option « Événements privés » (active par défaut), entrée du menu.
+- **Fiche** : nom, date, salon, invités, budget TTC, client (personne, contact), société facultative (raison sociale,
+  adresse, SIRET, n° de TVA), notes (menu prévu).
+- **Consommations** notées par le directeur : produits du catalogue au prix en vigueur (le même produit au même prix
+  s'ajoute à sa ligne, +/−), ou lignes libres (location du salon, service, plateau ; coût d'achat facultatif — sans
+  coût, c'est un service). **Jauge du budget** : attention dès 80 %, dépassé au-delà de 100 % (à voir avec le client).
+- **Frais** : libres, et calcul du personnel (personnes × heures × taux horaire chargé).
+- **Ce qu'il te reste** = CA HT − marchandise (coût matière + conditionnement) − frais ; coût manquant → non calculé.
+  TVA ventilée ligne par ligne comme à la caisse (HT + TVA = TTC exactement).
+- **Clôture** (confirmée) : consommations, frais, coûts, budget et date sont figés — verrou dans la base (déclencheurs) ;
+  le client, les notes et le règlement se complètent encore.
+- **Règlement** : mode (virement, carte, espèces, chèque) et date.
+- **Facture** (si le client la demande) : seulement après clôture ; identité de l'exploitant exigée (adresse, SIRET,
+  n° de TVA) ; nom du client ou de sa société, adresse obligatoire pour une société ; **numérotation continue par lieu
+  et par année** (FP-2026-0001…), sans trou ni doublon (verrou de la base) ; une seule facture par événement ; contenu
+  figé, **scellé par son empreinte**, en écriture seule, relu avec un contrôle d'intégrité ; mentions : pas d'escompte,
+  pénalités et indemnité forfaitaire de 40 € pour un professionnel, « acquittée le … par … » si le règlement est noté,
+  sinon échéance à 30 jours (jour de Paris). Imprimable ou en PDF. Pas de facture en mode formation.
+- Pas dans ce module (plus tard si besoin) : sortie de stock des consommations, rattachement au planning d'Équipe,
+  bilans de période de Résultats, facture électronique (réforme : réception obligatoire depuis septembre 2026, émission
+  pour les petites entreprises à partir de septembre 2027 — à préparer avec l'expert-comptable).
+
+**Réalisé le 2026-10-12** : migrations 0049 et 0050 ; moteur (bilan, jauge, personnel, facture, empreinte) ; serveur
+(fiche, lignes, frais, clôture, règlement, facture, lecture contrôlée) ; écrans (liste, fiche, facture). **Tests** :
+moteur 3, serveur 6 (cumul d'un produit, jauge, ce qu'il te reste, clôture qui fige même en base, client complété après
+clôture, identité exigée, série FP-…-0001 puis 0002, contenu modifié détecté, aucune vente en caisse, facture
+indélébile), écran 2 ; essayé dans le navigateur (40 pressions sur 300 €, clôture, client complété, facture émise et
+relue « contenu intact »). Corrigés à l'essai : client non modifiable après clôture ; modification partielle de la fiche
+qui vidait les autres champs ; échéance calculée en temps universel.

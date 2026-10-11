@@ -3,7 +3,46 @@
 > Généré par `node infra/outils/journal-developpement.cjs` à partir de Git. Ne pas modifier à la main.
 > Chaque entrée : date, commit (lien GitHub), message, fichiers créés ou modifiés. Le plus récent en premier. Phases : [docs/developpement/JOURNAL_DES_PHASES.md](docs/developpement/JOURNAL_DES_PHASES.md).
 
+## 2026-10-12
+
+### [`f03bba1`](https://github.com/Break-Eat-APP/flaix-expert/commit/f03bba194965bff68ffbbdf9915154eeebea75ad) — Événements privés : écrans (dossier §15.160) *(phase 61)*
+
+- modifié : `apps/api/src/routes/evenements-prives.ts`
+- modifié : `apps/api/test/evenements-prives.test.ts`
+- modifié : `apps/web/src/App.tsx`
+- modifié : `apps/web/src/composants/Coquille.test.ts`
+- modifié : `apps/web/src/composants/Coquille.tsx`
+- créé : `apps/web/src/pages/prives/EvenementPrive.test.tsx`
+- créé : `apps/web/src/pages/prives/EvenementPrive.tsx`
+- créé : `apps/web/src/pages/prives/EvenementsPrives.tsx`
+- créé : `apps/web/src/pages/prives/FactureVente.tsx`
+- modifié : `apps/web/src/styles.css`
+- créé : `db/migrations/0050_prive_client_apres_cloture.sql`
+- modifié : `packages/domain/src/evenements-prives.test.ts`
+- modifié : `packages/domain/src/evenements-prives.ts`
+
 ## 2026-10-11
+
+### [`8fa7985`](https://github.com/Break-Eat-APP/flaix-expert/commit/8fa79850a868d8541d787e41ab4968e1edf55c95) — Événements privés : moteur et serveur (dossier §15.160) *(phase 61)*
+
+- créé : `apps/api/src/routes/evenements-prives.ts`
+- modifié : `apps/api/src/serveur.ts`
+- créé : `apps/api/test/evenements-prives.test.ts`
+- créé : `db/migrations/0049_evenements_prives.sql`
+- modifié : `packages/domain/src/editeur.ts`
+- créé : `packages/domain/src/evenements-prives.test.ts`
+- créé : `packages/domain/src/evenements-prives.ts`
+- modifié : `packages/domain/src/index.ts`
+- modifié : `packages/domain/src/journal-technique.ts`
+
+### [`f4a4412`](https://github.com/Break-Eat-APP/flaix-expert/commit/f4a441228324ff2f143486ca5d29691a4fb20bb5) — Allergènes, stock des emballages, hygiène sur tablette : dossier §15.157 à §15.159, phases 58 à 60
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/phases.cjs`
 
 ### [`8e7298c`](https://github.com/Break-Eat-APP/flaix-expert/commit/8e7298c915f658f84b2931da8847dee28c984ae8) — Hygiène sur la tablette des caissières et photos d'étiquettes (dossier §15.159) *(phase 60)*
 

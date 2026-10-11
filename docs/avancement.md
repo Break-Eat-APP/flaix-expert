@@ -2,11 +2,15 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-12 : événements privés (§15.160)
+
+Salons et privatisations au budget, tenus par le directeur, hors caisse : fiche, consommations, jauge du budget, frais, ce qu'il te reste, clôture qui fige, règlement, facture numérotée FP-année-numéro, scellée. Migrations 0049 et 0050.
+
 ## 2026-10-11 : allergènes, stock des emballages, hygiène sur la tablette, photos (§15.157 à §15.159)
 
 Allergènes cochés par produit et tableau à imprimer ; stock des gobelets et autres emballages (comptage, livraisons, ventes déduites, alerte) ; bouton Hygiène sur la tablette des caissières (la caisse reste ouverte) ; photo de l'étiquette jointe aux réceptions. Migrations 0046 à 0048.
 
-**En attente de Rémi** : son accord sur les événements privés (note ouverte au budget, facture à la société parfois, sans acompte) — touche à la conformité de la caisse.
+Événements privés : accord donné le 2026-10-11, en gestion seule (hors caisse) → fait au §15.160.
 
 ## 2026-10-11 : Hygiène et HACCP (§15.156)
 
