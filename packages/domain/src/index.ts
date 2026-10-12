@@ -41,3 +41,4 @@ export * from "./emballages.ts";
 export * from "./hygiene.ts";
 export * from "./allergenes.ts";
 export * from "./evenements-prives.ts";
+export * from "./plan-stade.ts";

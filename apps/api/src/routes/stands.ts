@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import type { Caisse, Stand } from "@flaix/domain";
+import type { Caisse, Stand, Tribune } from "@flaix/domain";
 import { verrouiller, type Base, type Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
@@ -15,6 +15,8 @@ const ModifStand = z.object({
   nom: texte(80, "Le nom du stand").optional(),
   pointRetraitCc: z.boolean().optional(),
   actif: z.boolean().optional(),
+  /** Tribune du stade en direct (§15.162) ; null : devinée du nom ou répartie. */
+  tribune: z.enum(["nord", "est", "sud", "ouest"]).nullable().optional(),
 });
 const NouvelleCaisse = z.object({
   nom: texteFacultatif(60),
@@ -34,6 +36,7 @@ interface LigneStand {
   nom: string;
   point_retrait_cc: boolean;
   actif: boolean;
+  tribune: Tribune | null;
 }
 interface LigneCaisse {
   id: string;
@@ -57,7 +60,7 @@ const versCaisse = (l: LigneCaisse): Caisse => ({
 
 export async function listerStands(c: Client, lieuId: string): Promise<Stand[]> {
   const stands = await c.query<LigneStand>(
-    "SELECT id, nom, point_retrait_cc, actif FROM stand WHERE lieu_id = $1 ORDER BY actif DESC, lower(nom)",
+    "SELECT id, nom, point_retrait_cc, actif, tribune FROM stand WHERE lieu_id = $1 ORDER BY actif DESC, lower(nom)",
     [lieuId],
   );
   const caisses = await c.query<LigneCaisse>(
@@ -69,13 +72,14 @@ export async function listerStands(c: Client, lieuId: string): Promise<Stand[]> 
     nom: s.nom,
     pointRetraitCc: s.point_retrait_cc,
     actif: s.actif,
+    tribune: s.tribune,
     caisses: caisses.rows.filter((k) => k.stand_id === s.id).map(versCaisse),
   }));
 }
 
 async function lireStand(c: Client, lieuId: string, id: string): Promise<LigneStand> {
   const { rows } = await c.query<LigneStand>(
-    "SELECT id, nom, point_retrait_cc, actif FROM stand WHERE lieu_id = $1 AND id = $2 FOR UPDATE",
+    "SELECT id, nom, point_retrait_cc, actif, tribune FROM stand WHERE lieu_id = $1 AND id = $2 FOR UPDATE",
     [lieuId, id],
   );
   if (!rows[0]) throw introuvable("Stand");
@@ -115,7 +119,7 @@ export async function routesStands(app: FastifyInstance, { base }: { base: Base 
     const demande = corps(ModifStand, req);
     return base.transaction(contexte(auth), async (c) => {
       const s = await lireStand(c, auth.lieuId, id);
-      const avant = { nom: s.nom, pointRetraitCc: s.point_retrait_cc, actif: s.actif };
+      const avant = { nom: s.nom, pointRetraitCc: s.point_retrait_cc, actif: s.actif, tribune: s.tribune };
       const modifications = differences(avant, demande);
       if (Object.keys(modifications).length === 0) return listerStands(c, auth.lieuId);
       if (demande.actif === false) {
@@ -128,12 +132,13 @@ export async function routesStands(app: FastifyInstance, { base }: { base: Base 
         }
       }
       const apres = { ...avant, ...Object.fromEntries(Object.entries(demande).filter(([, v]) => v !== undefined)) };
-      await c.query("UPDATE stand SET nom = $3, point_retrait_cc = $4, actif = $5 WHERE lieu_id = $1 AND id = $2", [
+      await c.query("UPDATE stand SET nom = $3, point_retrait_cc = $4, actif = $5, tribune = $6 WHERE lieu_id = $1 AND id = $2", [
         auth.lieuId,
         id,
         apres.nom,
         apres.pointRetraitCc,
         apres.actif,
+        apres.tribune,
       ]);
       await inscrireJet(c, {
         lieuId: auth.lieuId,

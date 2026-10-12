@@ -4,6 +4,7 @@ import { BellRing, CheckCircle2, Radio } from "lucide-react";
 import type { CentreAlertes, Evenement, Lieu, Produit, SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
 import { Carte, Chargement, EntetePage, MessageErreur } from "../composants/communs.tsx";
+import { PlanStade } from "./resultats/PlanStade.tsx";
 import { Tableaux } from "./resultats/Tableaux.tsx";
 
 /**
@@ -125,6 +126,8 @@ export function Resultats({ session }: { session: SessionInfo }) {
           </ol>
         </Carte>
       )}
+      {/* Le stade en direct (§15.162) : dès qu'il y a un stand. */}
+      {standsActifs.length > 0 && <PlanStade />}
       <Tableaux />
     </>
   );

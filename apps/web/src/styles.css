@@ -677,3 +677,47 @@ details.inventaire summary { cursor: pointer; font-size: 13px; }
 .assistant-sources { display: flex; gap: 6px; align-items: flex-start; font-size: 11.5px; color: var(--muted); }
 .assistant-saisie { display: flex; gap: 8px; align-items: flex-end; margin-top: 14px; }
 .assistant-saisie textarea { flex: 1; min-width: 0; resize: vertical; }
+
+/* Le stade en direct (§15.162) : la 3D à gauche, la liste ou la fiche du stand choisi à droite. */
+.stade { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; }
+.stade-scene { position: relative; border-radius: var(--rayon-moyen); overflow: hidden; background: radial-gradient(ellipse at 50% 42%, #ffffff 0%, var(--paper) 78%); border: 1px solid var(--border); }
+.stade-3d { position: relative; height: 470px; }
+.stade-3d canvas { display: block; touch-action: none; cursor: grab; }
+.stade-etiquettes { position: absolute; top: 0; left: 0; pointer-events: none; }
+.stade-etiquette { pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.95); border: 1px solid var(--border); box-shadow: var(--ombre); font: inherit; font-size: 12px; font-weight: 700; color: var(--text); cursor: pointer; white-space: nowrap; }
+.stade-etiquette:hover { border-color: var(--field-border); }
+.stade-etiquette.choisie { border-color: var(--violet); color: var(--violet); box-shadow: 0 0 0 3px var(--violet-soft); }
+.stade-tribune { pointer-events: none; font-size: 10.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); opacity: 0.85; }
+.stade-point { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.stade-aide { position: absolute; left: 12px; bottom: 10px; pointer-events: none; font-size: 11.5px; color: var(--muted); background: rgba(255, 255, 255, 0.85); padding: 3px 10px; border-radius: 999px; }
+.stade-chargement, .stade-indisponible { display: grid; place-items: center; color: var(--muted); font-size: 13px; text-align: center; padding: 20px; }
+.stade-indisponible { position: absolute; inset: 0; margin: 0; }
+.stade-legende { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+.stade-legende > span { display: inline-flex; align-items: center; gap: 6px; }
+.stade-legende strong { color: var(--text); }
+.stade-panneau { min-width: 0; max-height: 470px; overflow: auto; }
+.stade-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.stade-liste button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 14px; border: 1px solid var(--border); background: var(--childbg); font: inherit; color: var(--text); text-align: left; cursor: pointer; }
+.stade-liste button:hover { background: var(--violet-soft); border-color: var(--field-border); }
+.stade-liste strong, .stade-liste .discret { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stade-liste .discret { font-size: 12.5px; margin-top: 2px; }
+.stade-fiche h3 { margin: 0; font-size: 18px; }
+.stade-fiche h4 { margin: 16px 0 8px; font-size: 13px; }
+.stade-retour { padding: 5px 12px; font-size: 12.5px; margin-bottom: 12px; }
+.stade-fiche-titre { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.stade-chiffres { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.stade-chiffres > div { background: var(--field); border-radius: 12px; padding: 8px 11px; }
+.stade-chiffres span { display: block; font-size: 11.5px; color: var(--muted); }
+.stade-chiffres strong { font-size: 16px; font-variant-numeric: tabular-nums; }
+.stade-signaux { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.stade-signaux li { display: flex; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--amber-soft); }
+.stade-signaux li.rouge { background: var(--red-soft); }
+.stade-signaux p { margin: 2px 0 4px; font-size: 12.5px; color: var(--text); }
+.stade-signaux a { font-size: 12.5px; font-weight: 700; }
+.stade-rien { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--green); font-weight: 600; }
+@media (max-width: 900px) {
+  .stade { grid-template-columns: minmax(0, 1fr); }
+  .stade-3d { height: 340px; }
+  .stade-panneau { max-height: none; }
+  .stade-aide { display: none; }
+}

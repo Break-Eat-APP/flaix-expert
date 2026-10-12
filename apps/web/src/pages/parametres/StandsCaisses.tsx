@@ -1,13 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { formaterMontant, lireMontant, type Caisse, type Stand } from "@flaix/domain";
+import { TRIBUNES, formaterMontant, lireMontant, type Caisse, type Stand, type Tribune } from "@flaix/domain";
 import { api } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 
 type Action =
   | { type: "creer-stand"; nom: string; pointRetraitCc: boolean }
-  | { type: "modifier-stand"; id: string; modif: Partial<Pick<Stand, "nom" | "pointRetraitCc" | "actif">> }
+  | { type: "modifier-stand"; id: string; modif: Partial<Pick<Stand, "nom" | "pointRetraitCc" | "actif" | "tribune">> }
   | { type: "creer-caisse"; standId: string; nom: string | null; especesAutorisees: boolean }
   | { type: "modifier-caisse"; id: string; modif: Partial<Pick<Caisse, "nom" | "especesAutorisees" | "actif" | "standId" | "fondPrevu">> };
 
@@ -95,6 +95,7 @@ export function StandsCaisses() {
           <li><strong>Les caisses sont numérotées sur tout le lieu</strong> (1, 2, 3…), dans l'ordre de création, quel que soit leur stand. Un numéro n'est jamais réattribué. Chaque caisse numérotera ensuite ses propres tickets (ex. 2026-C3-000125), pour qu'une coupure de réseau sur une caisse ne crée jamais de trou ni de doublon.</li>
           <li><strong>Espèces</strong> : une caisse « carte uniquement » s'ouvrira sans fond de caisse et n'affichera pas le bouton Espèces. Attention : dès qu'une seule caisse du lieu accepte des espèces, tout le lieu relève de l'obligation de logiciel de caisse sécurisé (question posée à l'expert-comptable).</li>
           <li><strong>Fond prévu</strong> : pour une caisse qui accepte les espèces, le fond de caisse avec lequel elle s'ouvre toute seule sur la tablette de la caissière, le jour de l'événement. Sans fond prévu, la caissière le compte et le saisit à l'ouverture.</li>
+          <li><strong>Tribune</strong> : où le stand apparaît sur le stade en direct, dans Résultats. « Automatique » : d'après son nom (« Buvette Nord » va en tribune Nord), sinon sur la tribune la moins garnie.</li>
           <li><strong>Point de retrait Click & Collect</strong> : le stand sert de point de retrait des commandes passées sur l'application, et puise dans son propre stock.</li>
           <li>Chaque création ou modification est inscrite au journal technique avec son auteur et l'heure.</li>
         </ul>
@@ -150,6 +151,25 @@ function CarteStand({ stand, stands, occupe, agir }: { stand: Stand; stands: Sta
                   onChange={(e) => agir({ type: "modifier-stand", id: stand.id, modif: { pointRetraitCc: e.target.checked } })}
                 />
                 Retrait C&C
+              </label>
+            )}
+            {stand.actif && (
+              <label className="case" title="Où le stand apparaît sur le stade en direct (Résultats)">
+                Tribune
+                <select
+                  aria-label={`Tribune de ${stand.nom}`}
+                  value={stand.tribune ?? ""}
+                  disabled={occupe}
+                  onChange={(e) => agir({ type: "modifier-stand", id: stand.id, modif: { tribune: (e.target.value || null) as Tribune | null } })}
+                  style={{ width: "auto" }}
+                >
+                  <option value="">Automatique</option>
+                  {TRIBUNES.map((t) => (
+                    <option key={t.code} value={t.code}>
+                      {t.libelle.replace("Tribune ", "")}
+                    </option>
+                  ))}
+                </select>
               </label>
             )}
             {stand.actif ? (

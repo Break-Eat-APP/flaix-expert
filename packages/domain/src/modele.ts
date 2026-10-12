@@ -71,6 +71,8 @@ export interface Stand {
   nom: string;
   pointRetraitCc: boolean;
   actif: boolean;
+  /** Tribune du stade en direct (§15.162) ; null : devinée du nom ou répartie. */
+  tribune: import("./plan-stade.ts").Tribune | null;
   caisses: Caisse[];
 }
 
