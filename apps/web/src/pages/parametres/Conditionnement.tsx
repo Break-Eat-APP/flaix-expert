@@ -38,7 +38,15 @@ export function GestionEmballages() {
   const proposes = SUGGESTIONS.filter((s) => !liste.some((e) => e.nom.toLocaleLowerCase("fr") === s.toLocaleLowerCase("fr")));
 
   return (
-    <Carte titre="Emballages" description="Gobelets, barquettes, serviettes… avec leur prix HT à l'unité, au millième d'euro près (une serviette coûte souvent moins d'un centime). Un nouveau prix s'applique à tous les produits qui les utilisent.">
+    <Carte titre="Emballages" description="Facultatif : pour que le coût des gobelets, barquettes et serviettes compte dans tes marges, et suivre leur stock.">
+      <ol className="comment-faire">
+        <li>
+          <strong>Ici, la liste de tes emballages</strong> et leur prix HT à l'unité (au millième d'euro : une serviette coûte souvent moins d'un centime). Une idée ci-dessous remplit le nom ; il reste le prix, puis « Ajouter ».
+        </li>
+        <li>
+          <strong>Ensuite, dans la fiche de chaque produit</strong> (clique sur le produit dans la liste, rubrique « Conditionnement »), choisis ceux qu'il utilise : une bière = 1 gobelet 50 cl. Un nouveau prix d'emballage vaut pour tous les produits qui l'utilisent.
+        </li>
+      </ol>
       {liste.map((e) => (
         <LigneEmballage key={e.id} e={e} apres={apres} />
       ))}
@@ -64,7 +72,7 @@ export function GestionEmballages() {
       </form>
       {proposes.length > 0 && (
         <div className="en-ligne" style={{ marginTop: 10 }}>
-          <span className="discret">Idées :</span>
+          <span className="discret">Idées (remplit le nom) :</span>
           {proposes.map((s) => (
             <button key={s} type="button" className="puce-choix" onClick={() => setNom(s)}>
               {s}

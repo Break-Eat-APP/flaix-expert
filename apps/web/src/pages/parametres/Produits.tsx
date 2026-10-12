@@ -79,10 +79,13 @@ export function Produits() {
   const [filtreStand, setFiltreStand] = useState("");
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [creation, setCreation] = useState(false);
-  const [gererCategories, setGererCategories] = useState(false);
-  const [gererIngredients, setGererIngredients] = useState(false);
-  const [gererEmballages, setGererEmballages] = useState(false);
-  const [voirAllergenes, setVoirAllergenes] = useState(false);
+  // Un seul panneau ouvert à la fois ; son bouton reste en couleur (recliquer le ferme).
+  const [panneau, setPanneau] = useState<"categories" | "ingredients" | "emballages" | "allergenes" | null>(null);
+  const bouton = (id: NonNullable<typeof panneau>) => ({
+    className: `btn btn-fantome${panneau === id ? " actif" : ""}`,
+    "aria-pressed": panneau === id,
+    onClick: () => setPanneau(panneau === id ? null : id),
+  });
 
   const majProduits = (liste: Produit[]) => client.setQueryData(["produits"], liste);
 
@@ -108,19 +111,19 @@ export function Produits() {
         fil="Paramètres"
         filLien="/parametres"
         titre="Produits & prix"
-        description={`${actifs} produit${actifs > 1 ? "s" : ""} actif${actifs > 1 ? "s" : ""}. Une fiche par produit ; tu coches les stands qui le vendent.`}
+        description={`${actifs} produit${actifs > 1 ? "s" : ""} actif${actifs > 1 ? "s" : ""}. Une fiche par produit : clique sur un produit de la liste pour l'ouvrir (prix, coût, emballages, allergènes, stands).`}
         actions={
           <>
-            <button className="btn btn-fantome" onClick={() => setGererCategories(!gererCategories)}>
+            <button {...bouton("categories")}>
               <Tags size={15} /> Catégories
             </button>
-            <button className="btn btn-fantome" onClick={() => setGererIngredients(!gererIngredients)}>
+            <button {...bouton("ingredients")}>
               <ChefHat size={15} /> Ingrédients
             </button>
-            <button className="btn btn-fantome" onClick={() => setGererEmballages(!gererEmballages)}>
+            <button {...bouton("emballages")}>
               <CupSoda size={15} /> Emballages
             </button>
-            <button className="btn btn-fantome" onClick={() => setVoirAllergenes(!voirAllergenes)}>
+            <button {...bouton("allergenes")}>
               <Wheat size={15} /> Allergènes
             </button>
             <button className="btn" onClick={() => setCreation(!creation)}>
@@ -130,10 +133,10 @@ export function Produits() {
         }
       />
 
-      {gererCategories && <GestionCategories categories={categories.data!} />}
-      {gererIngredients && <GestionIngredients />}
-      {gererEmballages && <GestionEmballages />}
-      {voirAllergenes && <TableauAllergenes produits={produits.data!} />}
+      {panneau === "categories" && <GestionCategories categories={categories.data!} />}
+      {panneau === "ingredients" && <GestionIngredients />}
+      {panneau === "emballages" && <GestionEmballages />}
+      {panneau === "allergenes" && <TableauAllergenes produits={produits.data!} majProduits={majProduits} />}
       {creation && (
         <FormulaireCreation
           stands={listeStands}

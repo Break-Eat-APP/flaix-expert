@@ -125,8 +125,11 @@ a { color: var(--violet); }
 .allergene-colonne { text-align: center; font-size: 11.5px; }
 th.allergene-colonne { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; padding: 8px 4px; }
 td.allergene-colonne { color: var(--violet); font-size: 16px; }
+td.allergene-colonne input { width: 18px; height: 18px; accent-color: var(--violet); cursor: pointer; }
 .seulement-impression { display: none; }
 @media print {
+  .tableau-allergenes .seulement-ecran { display: none; }
+  .tableau-allergenes td .seulement-impression { display: inline; }
   .tableau-allergenes, .tableau-allergenes * { visibility: visible; }
   .tableau-allergenes { position: absolute; left: 0; top: 0; width: 100%; }
   .tableau-allergenes .seulement-impression { display: block; margin: 0 0 10px; }
@@ -216,6 +219,9 @@ td.allergene-colonne { color: var(--violet); font-size: 16px; }
 @media (max-width: 900px) { .design-carte { grid-template-columns: minmax(0, 1fr); } .design-carte-apercu { position: static; order: -1; } }
 .btn-fantome { background: var(--surface); color: var(--violet); border: 1px solid var(--field-border); font-size: 13px; padding: 9px 16px; }
 .btn-fantome:hover:not(:disabled) { background: var(--violet-soft); box-shadow: none; }
+/* Bouton d'un panneau ouvert : il reste en couleur. */
+.btn-fantome.actif { background: var(--violet-soft); border-color: var(--violet); color: var(--violet); font-weight: 800; }
+.comment-faire { margin: 0 0 16px; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; color: var(--text); }
 .btn-danger { background: var(--surface); color: var(--red); border: 1px solid var(--red-soft); font-size: 13px; padding: 9px 16px; }
 .btn-danger:hover:not(:disabled) { background: var(--red-soft); box-shadow: none; }
 .btn-lien { background: none; border: 0; color: var(--violet); font: inherit; font-weight: 700; cursor: pointer; padding: 0; }

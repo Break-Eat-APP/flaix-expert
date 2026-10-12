@@ -35,10 +35,20 @@ describe("allergènes à l'écran", () => {
     expect(JSON.parse((init as RequestInit).body as string)).toEqual({ allergenes: ["gluten", "lait"] });
   });
 
-  it("tableau : marques par produit, avertissement pour un produit sans allergène déclaré", () => {
-    monter(<TableauAllergenes produits={[EAU, BURGER]} />);
-    expect(screen.getByLabelText("Burger : Gluten oui").textContent).toBe("●");
-    expect(screen.getByLabelText("Eau : Gluten non").textContent).toBe("");
+  it("tableau : cases cochées par produit, cochables directement ; avertissement pour un produit sans allergène déclaré", async () => {
+    monter(<TableauAllergenes produits={[EAU, BURGER]} majProduits={() => undefined} />);
+    expect((screen.getByLabelText("Burger : Gluten") as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByLabelText("Eau : Gluten") as HTMLInputElement).checked).toBe(false);
     expect(screen.getByText(/1 produit sans aucun allergène déclaré/)).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("Eau : Sulfites"));
+    await waitFor(() => expect(serveur).toHaveBeenCalled());
+    const [url, init] = serveur.mock.calls[0]!;
+    expect(url).toBe("/api/produits/e/allergenes");
+    expect(JSON.parse((init as RequestInit).body as string)).toEqual({ allergenes: ["sulfites"] });
+  });
+
+  it("sans produit : le tableau explique quoi faire d'abord", () => {
+    monter(<TableauAllergenes produits={[]} majProduits={() => undefined} />);
+    expect(screen.getByText(/Ajoute d'abord tes produits/)).toBeTruthy();
   });
 });

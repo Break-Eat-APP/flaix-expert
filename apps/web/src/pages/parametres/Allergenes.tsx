@@ -27,14 +27,27 @@ export function AllergenesProduit({ produit, majProduits }: { produit: Produit; 
   );
 }
 
-/** Tableau des allergènes des produits en vente, à imprimer et afficher à la buvette. */
-export function TableauAllergenes({ produits }: { produits: Produit[] }) {
+/**
+ * Tableau des allergènes des produits en vente : chaque case se coche ici directement (ou dans la fiche du produit), puis
+ * le tableau s'imprime pour l'affichage à la buvette.
+ */
+export function TableauAllergenes({ produits, majProduits }: { produits: Produit[]; majProduits: (l: Produit[]) => void }) {
   const enVente = produits.filter((p) => p.actif).sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
   const sansDeclaration = enVente.filter((p) => p.allergenes.length === 0).length;
+  const enregistrer = useMutation({
+    mutationFn: ({ id, allergenes }: { id: string; allergenes: Allergene[] }) => api.put<Produit[]>(`/produits/${id}/allergenes`, { allergenes }),
+    onSuccess: majProduits,
+  });
+  if (enVente.length === 0)
+    return (
+      <Carte titre="Tableau des allergènes">
+        <p className="note" style={{ margin: 0 }}>Ajoute d'abord tes produits : leurs allergènes se cocheront ensuite ici, dans un tableau produit par produit.</p>
+      </Carte>
+    );
   return (
     <Carte
       titre="Tableau des allergènes"
-      description="À afficher à la buvette : pour ce qui est servi sans emballage, l'information sur les 14 allergènes est obligatoire. Coche-les dans la fiche de chaque produit."
+      description="Coche ce que contient chaque produit (case par case, enregistré aussitôt). Pour ce qui est servi sans emballage, l'information doit pouvoir être donnée au client : imprime ce tableau et affiche-le à la buvette."
       actions={
         <button className="btn btn-fantome" onClick={() => window.print()}>
           <Printer size={15} /> Imprimer
@@ -65,16 +78,28 @@ export function TableauAllergenes({ produits }: { produits: Produit[] }) {
                 <td>
                   <strong>{p.nom}</strong>
                 </td>
-                {ALLERGENES.map((a) => (
-                  <td key={a.code} className="allergene-colonne" aria-label={`${p.nom} : ${a.libelle} ${p.allergenes.includes(a.code) ? "oui" : "non"}`}>
-                    {p.allergenes.includes(a.code) ? "●" : ""}
-                  </td>
-                ))}
+                {ALLERGENES.map((a) => {
+                  const coche = p.allergenes.includes(a.code);
+                  return (
+                    <td key={a.code} className="allergene-colonne">
+                      <input
+                        type="checkbox"
+                        className="seulement-ecran"
+                        aria-label={`${p.nom} : ${a.libelle}`}
+                        checked={coche}
+                        disabled={enregistrer.isPending}
+                        onChange={() => enregistrer.mutate({ id: p.id, allergenes: coche ? p.allergenes.filter((x) => x !== a.code) : [...p.allergenes, a.code] })}
+                      />
+                      <span className="seulement-impression">{coche ? "●" : ""}</span>
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      <MessageErreur erreur={enregistrer.error} />
     </Carte>
   );
 }
