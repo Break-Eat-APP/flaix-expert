@@ -68,6 +68,7 @@
 | 60 | [Hygiène sur la tablette des caissières ; photos d'étiquettes](#phase-60) | §15.159 | [`8e7298c`](https://github.com/Break-Eat-APP/flaix-expert/commit/8e7298c915f658f84b2931da8847dee28c984ae8) | livrée |
 | 61 | [Événements privés](#phase-61) | §15.160 | [`8fa7985`](https://github.com/Break-Eat-APP/flaix-expert/commit/8fa79850a868d8541d787e41ab4968e1edf55c95) [`f03bba1`](https://github.com/Break-Eat-APP/flaix-expert/commit/f03bba194965bff68ffbbdf9915154eeebea75ad) | livrée |
 | 62 | [Produits & prix plus clair : section active, allergènes cochables, emballages expliqués](#phase-62) | §15.161 | [`1cbf91d`](https://github.com/Break-Eat-APP/flaix-expert/commit/1cbf91dd73f883979efcb3e6cb0f4f795c7d24c2) | livrée |
+| 63 | [Le stade en direct : stands en 3D, en couleur, alertes au clic](#phase-63) | §15.162 | [`8ff9104`](https://github.com/Break-Eat-APP/flaix-expert/commit/8ff9104a938807f869865dcc4579d59b4d0c88f3) [`3af785c`](https://github.com/Break-Eat-APP/flaix-expert/commit/3af785c695d739f8c33bfb6dd28e0aa4bd056c6d) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -2286,6 +2287,39 @@
   - [`apps/web/src/pages/parametres/Produits.tsx`](../../apps/web/src/pages/parametres/Produits.tsx) — modifié
   - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
 
+<a id="phase-63"></a>
+## Phase 63 — Le stade en direct : stands en 3D, en couleur, alertes au clic
+
+- **Dates** : 2026-10-12
+- **Décision et raisonnement** : dossier projet §15.162
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`8ff9104`](https://github.com/Break-Eat-APP/flaix-expert/commit/8ff9104a938807f869865dcc4579d59b4d0c88f3) 2026-10-12 — Le stade en direct : stands en 3D autour du stade, en couleur, alertes au clic
+  - [`3af785c`](https://github.com/Break-Eat-APP/flaix-expert/commit/3af785c695d739f8c33bfb6dd28e0aa4bd056c6d) 2026-10-12 — Stade en direct : cadrage adapté à l'écran, pastilles seules sur téléphone, noms des tribunes au bord du terrain
+- **Migrations (base)** :
+  - [`db/migrations/0051_stade_tribune.sql`](../../db/migrations/0051_stade_tribune.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/index.ts`](../../packages/domain/src/index.ts) — modifié
+  - [`packages/domain/src/modele.ts`](../../packages/domain/src/modele.ts) — modifié
+  - [`packages/domain/src/plan-stade.ts`](../../packages/domain/src/plan-stade.ts) — créé
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/plan-stade.ts`](../../apps/api/src/routes/plan-stade.ts) — créé
+  - [`apps/api/src/routes/stands.ts`](../../apps/api/src/routes/stands.ts) — modifié
+  - [`apps/api/src/serveur.ts`](../../apps/api/src/serveur.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/package.json`](../../apps/web/package.json) — modifié
+  - [`apps/web/src/pages/parametres/StandsCaisses.tsx`](../../apps/web/src/pages/parametres/StandsCaisses.tsx) — modifié
+  - [`apps/web/src/pages/Resultats.tsx`](../../apps/web/src/pages/Resultats.tsx) — modifié
+  - [`apps/web/src/pages/resultats/PlanStade.test.tsx`](../../apps/web/src/pages/resultats/PlanStade.test.tsx) — créé
+  - [`apps/web/src/pages/resultats/PlanStade.tsx`](../../apps/web/src/pages/resultats/PlanStade.tsx) — créé
+  - [`apps/web/src/pages/resultats/Stade3D.tsx`](../../apps/web/src/pages/resultats/Stade3D.tsx) — créé
+  - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
+- **Tests** :
+  - [`apps/api/test/plan-stade.test.ts`](../../apps/api/test/plan-stade.test.ts) — créé
+  - [`packages/domain/src/plan-stade.test.ts`](../../packages/domain/src/plan-stade.test.ts) — créé
+- **Autres** :
+  - [`pnpm-lock.yaml`](../../pnpm-lock.yaml) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -2327,3 +2361,4 @@
 - [`41769fe`](https://github.com/Break-Eat-APP/flaix-expert/commit/41769fecfe2ac9b57c55d1cc71954cd053e1232e) 2026-10-11 — Hygiène et HACCP : dossier §15.156, avancement, journal des phases (phase 57)
 - [`f4a4412`](https://github.com/Break-Eat-APP/flaix-expert/commit/f4a441228324ff2f143486ca5d29691a4fb20bb5) 2026-10-11 — Allergènes, stock des emballages, hygiène sur tablette : dossier §15.157 à §15.159, phases 58 à 60
 - [`4387e4a`](https://github.com/Break-Eat-APP/flaix-expert/commit/4387e4a433c3d2212cddd9595707d22c5f71f5c7) 2026-10-12 — Événements privés : dossier §15.160, avancement, journal des phases (phase 61)
+- [`50dd9d8`](https://github.com/Break-Eat-APP/flaix-expert/commit/50dd9d8a0c07fe272c37e68756ecb5636f59b4c1) 2026-10-12 — Dossier §15.161 : Produits & prix plus clair (phase 62)

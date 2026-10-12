@@ -66,6 +66,7 @@ const PHASES = [
   { n: 60, titre: "Hygiène sur la tablette des caissières ; photos d'étiquettes", dossier: "§15.159", commits: ["8e7298c"] },
   { n: 61, titre: "Événements privés", dossier: "§15.160", commits: ["8fa7985", "f03bba1"] },
   { n: 62, titre: "Produits & prix plus clair : section active, allergènes cochables, emballages expliqués", dossier: "§15.161", commits: ["1cbf91d"] },
+  { n: 63, titre: "Le stade en direct : stands en 3D, en couleur, alertes au clic", dossier: "§15.162", commits: ["8ff9104", "3af785c"] },
 ];
 
 module.exports = { PHASES };

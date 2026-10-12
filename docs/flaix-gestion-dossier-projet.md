@@ -5168,3 +5168,36 @@ en fait ? on a du mal à le comprendre dès le départ… je ne suis pas obligé
 **Réalisé le 2026-10-12** : écran seul, sans migration. **Tests** : écran (case du tableau envoyée aussitôt, tableau
 vide expliqué) ; suite web 85/85 ; essayé dans le navigateur (bouton en couleur, une seule section ouverte, case
 « Frites : Gluten » enregistrée puis retirée).
+
+### 15.162 Le stade en direct : les stands en 3D, en couleur, alertes au clic (2026-10-12)
+
+**Demande de Rémi** (2026-10-12) : *« je verrais un stade en 3D dans le module dashboard, avec les buvettes autour,
+en affichant le stand en couleur vert, orange ou rouge en fonction des capacités, stock, ou autre indice ; lorsque je
+clique sur le stand, cela affiche les alertes du stand »*.
+
+**Décisions** (choix recommandés, pris sans attendre) :
+- **Carte « Le stade en direct » dans Résultats** (le tableau de bord), dès qu'il y a un stand. Stade générique : terrain,
+  tribunes Nord et Sud le long du terrain, Est et Ouest derrière les buts ; chaque buvette derrière sa tribune, toit et
+  pastille à sa couleur ; on tourne et zoome au doigt ou à la souris. À côté, la liste des stands du plus urgent au
+  fermé ; un clic (dans la 3D ou la liste) ouvre la fiche du stand : CA, tickets, caisses ouvertes, file d'attente, et
+  ses alertes avec un lien « Y aller ». Sur téléphone, la 3D ne garde que les pastilles (le nom pour le stand choisi).
+- **Couleur** (rien de nouveau n'est mesuré, tout vient des modules existants) :
+  - **rouge** : rupture d'un produit au stand ; file d'attente sur 80 % des commandes ou plus ;
+  - **orange** : stock faible ; file sur 50 % ou plus ; tablette sans nouvelles depuis plus de 2 min ou tickets à
+    envoyer ; température hors limite d'un équipement du stand (7 jours) ; températures d'ouverture à relever ;
+  - **vert** : au moins une caisse ouverte, rien à signaler ; **gris** : aucune caisse ouverte.
+  - « Capacité » = la file d'attente, mesurée comme au §15.139 (part des commandes servies alors que le client suivant
+    attendait déjà), sur les 15 dernières minutes, dès 5 commandes mesurées.
+  - Hors événement, stock et file ne comptent pas : les stands sont gris (sauf hygiène).
+- **Place des stands** : tribune choisie dans Stands & caisses (« Automatique » par défaut) ; sinon devinée du nom
+  (« Buvette Nord » → Nord) ; sinon la tribune la moins garnie. Sur une tribune, par nom.
+- **3D** : three.js 0.186.1, chargé à part (142 Ko compressés) seulement à l'ouverture de Résultats ; si l'appareil n'a
+  pas la 3D, la liste reste là. Lecture seule : aucune donnée enregistrée en dehors de la tribune.
+
+**Réalisé le 2026-10-12** : migration 0051 (tribune du stand, suivie en mode formation) ; moteur (placement, couleur,
+signaux) ; serveur (GET /api/plan-stade ; tribune dans PATCH /api/stands/:id) ; écrans (carte de Résultats, scène 3D,
+choix de la tribune). **Tests** : moteur 4 (placement, couleurs, seuils de file, tablette, hygiène, hors événement),
+serveur 2 (tribune devinée puis choisie, valeur refusée ; rupture → rouge avec l'alerte, stand sans caisse ouverte
+gris), écran 2 ; formation, stands et conformité de la base relancés. Essayé dans le navigateur (simulation de 6 stands :
+couleurs, onde rouge, clic dans la 3D et dans la liste, téléphone et ordinateur). Corrigés à l'essai : caméra collée
+au terrain (ordre de calcul du cadrage), stands du bord hors cadre, étiquettes trop grandes sur téléphone.

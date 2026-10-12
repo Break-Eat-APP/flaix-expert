@@ -5,6 +5,40 @@
 
 ## 2026-10-12
 
+### [`3af785c`](https://github.com/Break-Eat-APP/flaix-expert/commit/3af785c695d739f8c33bfb6dd28e0aa4bd056c6d) — Stade en direct : cadrage adapté à l'écran, pastilles seules sur téléphone, noms des tribunes au bord du terrain *(phase 63)*
+
+- modifié : `apps/web/src/pages/resultats/Stade3D.tsx`
+- modifié : `apps/web/src/styles.css`
+
+### [`8ff9104`](https://github.com/Break-Eat-APP/flaix-expert/commit/8ff9104a938807f869865dcc4579d59b4d0c88f3) — Le stade en direct : stands en 3D autour du stade, en couleur, alertes au clic *(phase 63)*
+
+- créé : `apps/api/src/routes/plan-stade.ts`
+- modifié : `apps/api/src/routes/stands.ts`
+- modifié : `apps/api/src/serveur.ts`
+- créé : `apps/api/test/plan-stade.test.ts`
+- modifié : `apps/web/package.json`
+- modifié : `apps/web/src/pages/Resultats.tsx`
+- modifié : `apps/web/src/pages/parametres/StandsCaisses.tsx`
+- créé : `apps/web/src/pages/resultats/PlanStade.test.tsx`
+- créé : `apps/web/src/pages/resultats/PlanStade.tsx`
+- créé : `apps/web/src/pages/resultats/Stade3D.tsx`
+- modifié : `apps/web/src/styles.css`
+- créé : `db/migrations/0051_stade_tribune.sql`
+- modifié : `packages/domain/src/index.ts`
+- modifié : `packages/domain/src/modele.ts`
+- créé : `packages/domain/src/plan-stade.test.ts`
+- créé : `packages/domain/src/plan-stade.ts`
+- modifié : `pnpm-lock.yaml`
+
+### [`50dd9d8`](https://github.com/Break-Eat-APP/flaix-expert/commit/50dd9d8a0c07fe272c37e68756ecb5636f59b4c1) — Dossier §15.161 : Produits & prix plus clair (phase 62)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`1cbf91d`](https://github.com/Break-Eat-APP/flaix-expert/commit/1cbf91dd73f883979efcb3e6cb0f4f795c7d24c2) — Produits & prix : section active en couleur, allergènes cochables dans le tableau, emballages expliqués *(phase 62)*
 
 - modifié : `apps/web/src/pages/parametres/Allergenes.test.tsx`

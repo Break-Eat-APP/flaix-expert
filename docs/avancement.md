@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-12 : le stade en direct (§15.162)
+
+Dans Résultats, un stade en 3D avec les stands autour, en vert, orange, rouge ou gris (rupture, file d'attente, stock faible, tablette, hygiène) ; un clic montre les alertes du stand. Tribune de chaque stand dans Stands & caisses. Migration 0051.
+
 ## 2026-10-12 : Produits & prix plus clair (§15.161)
 
 Section ouverte en couleur (une seule à la fois), allergènes cochables directement dans le tableau, emballages expliqués en deux étapes et marqués facultatifs.
