@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-12 : Produits & prix plus clair (§15.161)
+
+Section ouverte en couleur (une seule à la fois), allergènes cochables directement dans le tableau, emballages expliqués en deux étapes et marqués facultatifs.
+
 ## 2026-10-12 : événements privés (§15.160)
 
 Salons et privatisations au budget, tenus par le directeur, hors caisse : fiche, consommations, jauge du budget, frais, ce qu'il te reste, clôture qui fige, règlement, facture numérotée FP-année-numéro, scellée. Migrations 0049 et 0050.

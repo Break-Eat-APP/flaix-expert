@@ -5,6 +5,23 @@
 
 ## 2026-10-12
 
+### [`1cbf91d`](https://github.com/Break-Eat-APP/flaix-expert/commit/1cbf91dd73f883979efcb3e6cb0f4f795c7d24c2) — Produits & prix : section active en couleur, allergènes cochables dans le tableau, emballages expliqués *(phase 62)*
+
+- modifié : `apps/web/src/pages/parametres/Allergenes.test.tsx`
+- modifié : `apps/web/src/pages/parametres/Allergenes.tsx`
+- modifié : `apps/web/src/pages/parametres/Conditionnement.tsx`
+- modifié : `apps/web/src/pages/parametres/Produits.tsx`
+- modifié : `apps/web/src/styles.css`
+
+### [`4387e4a`](https://github.com/Break-Eat-APP/flaix-expert/commit/4387e4a433c3d2212cddd9595707d22c5f71f5c7) — Événements privés : dossier §15.160, avancement, journal des phases (phase 61)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`f03bba1`](https://github.com/Break-Eat-APP/flaix-expert/commit/f03bba194965bff68ffbbdf9915154eeebea75ad) — Événements privés : écrans (dossier §15.160) *(phase 61)*
 
 - modifié : `apps/api/src/routes/evenements-prives.ts`

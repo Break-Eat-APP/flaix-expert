@@ -5146,3 +5146,25 @@ clôture, identité exigée, série FP-…-0001 puis 0002, contenu modifié dét
 indélébile), écran 2 ; essayé dans le navigateur (40 pressions sur 300 €, clôture, client complété, facture émise et
 relue « contenu intact »). Corrigés à l'essai : client non modifiable après clôture ; modification partielle de la fiche
 qui vidait les autres champs ; échéance calculée en temps universel.
+
+### 15.161 Produits & prix plus clair : section active, allergènes cochables, emballages expliqués (2026-10-12)
+
+**Retour de Rémi** (version d'essai, 0 produit) : *« comment fonctionnent les emballages et allergènes ? j'ai
+l'impression que je ne peux pas configurer manuellement mes allergènes… quand je clique sur une section, faudrait
+garder la section sélectionnée en bleu clair… les emballages : chaque idée que je clique ajoute la section au produit
+en fait ? on a du mal à le comprendre dès le départ… je ne suis pas obligé de mettre un emballage ou un allergène ? »*
+
+**Décisions** :
+- **Un seul panneau ouvert à la fois** (Catégories, Ingrédients, Emballages, Allergènes) ; le bouton de la section
+  ouverte reste en couleur (violet clair, `aria-pressed`) ; recliquer le referme.
+- **Allergènes cochables dans le tableau** : une case par produit et par allergène, enregistrée aussitôt (comme dans la
+  fiche du produit) ; à l'impression, les cases deviennent des ●. Sans produit : « Ajoute d'abord tes produits… ».
+- **Emballages expliqués** : « Facultatif » ; deux étapes — 1) ici, la liste des emballages et leur prix ; 2) dans la
+  fiche de chaque produit (rubrique « Conditionnement »), ceux qu'il utilise. Les idées indiquent « (remplit le nom) » :
+  elles ne touchent à aucun produit.
+- **Rien d'obligatoire** : sans emballage, la marge ne compte que la matière ; sans allergène coché, le tableau signale
+  le produit à vérifier (l'information reste due au client pour ce qui est servi sans emballage).
+
+**Réalisé le 2026-10-12** : écran seul, sans migration. **Tests** : écran (case du tableau envoyée aussitôt, tableau
+vide expliqué) ; suite web 85/85 ; essayé dans le navigateur (bouton en couleur, une seule section ouverte, case
+« Frites : Gluten » enregistrée puis retirée).
