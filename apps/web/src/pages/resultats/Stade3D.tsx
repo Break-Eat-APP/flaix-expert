@@ -33,6 +33,9 @@ const COTES: Record<Tribune, Cote> = {
   est: { nx: 1, nz: 0, longueur: TERRAIN.large + 4, pied: TERRAIN.long / 2 + RECUL },
   ouest: { nx: -1, nz: 0, longueur: TERRAIN.large + 4, pied: TERRAIN.long / 2 + RECUL },
 };
+// Demi-largeur et demi-profondeur apparentes du stade avec ses buvettes, pour le cadrage.
+const DEMI_LARGEUR = TERRAIN.long / 2 + RECUL + PROFONDEUR + ALLEE + 6;
+const DEMI_PROFONDEUR = 45;
 const NOMS_TRIBUNES: Record<Tribune, string> = { nord: "Nord", est: "Est", sud: "Sud", ouest: "Ouest" };
 
 /** Position d'une buvette : derrière sa tribune, les buvettes d'une même tribune réparties sur sa longueur. */
@@ -142,18 +145,34 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(34, largeur() / hauteur(), 1, 800);
-  camera.position.set(0, 112, 128);
+  camera.position.set(0, 86, 80);
   const controles = new OrbitControls(camera, rendu.domElement);
   controles.enablePan = false;
   controles.enableDamping = true;
   controles.dampingFactor = 0.08;
   controles.rotateSpeed = 0.6;
-  controles.minDistance = 70;
-  controles.maxDistance = 260;
   controles.minPolarAngle = 0.12 * Math.PI;
   controles.maxPolarAngle = 0.42 * Math.PI;
   controles.target.set(0, 0, 0);
-  controles.update();
+  /** Recule ou avance la caméra (même direction) pour que le stade et ses buvettes tiennent dans le cadre. */
+  function cadrer() {
+    const demiV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const demiH = demiV * camera.aspect;
+    // Cadre étroit (téléphone) : les étiquettes ne gardent que leur pastille (le nom pour la buvette choisie).
+    const etroit = largeur() < 560;
+    conteneur.classList.toggle("stade-etroit", etroit);
+    // Marge en pixels pour les étiquettes des buvettes du bord.
+    const utileH = 1 - Math.min(0.45, (etroit ? 30 : 150) / largeur());
+    const utileV = 1 - Math.min(0.3, 50 / hauteur());
+    const distance = Math.max(DEMI_LARGEUR / (demiH * utileH), DEMI_PROFONDEUR / (demiV * utileV));
+    // Zoom permis autour du cadrage : jusqu'à trois fois plus près, deux fois plus loin.
+    controles.minDistance = distance / 3;
+    controles.maxDistance = distance * 2;
+    const direction = camera.position.clone().sub(controles.target).setLength(distance);
+    camera.position.copy(controles.target).add(direction);
+    controles.update();
+  }
+  cadrer();
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0xd9d2ee, 2.1));
   const soleil = new THREE.DirectionalLight(0xffffff, 2.2);
@@ -197,7 +216,8 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
     nom.textContent = `Tribune ${NOMS_TRIBUNES[code]}`;
     const objet = new CSS2DObject(nom);
     const c = COTES[code];
-    objet.position.set(c.nx * (c.pied + PROFONDEUR / 2), 10.5, c.nz * (c.pied + PROFONDEUR / 2));
+    // Au bord du terrain, au pied de la tribune : les étiquettes des buvettes restent dégagées.
+    objet.position.set(c.nx * (c.pied - 1.6), 0.4, c.nz * (c.pied - 1.6));
     scene.add(objet);
   }
 
@@ -236,6 +256,7 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
     for (const s of stands) {
       const groupe = new THREE.Group();
       groupe.position.copy(positionBuvette(s));
+      groupe.userData.echelle = 1.35;
       const c = COTES[s.tribune];
       // Le comptoir regarde la tribune.
       groupe.rotation.y = Math.atan2(-c.nx, -c.nz);
@@ -293,7 +314,10 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
       const point = document.createElement("span");
       point.className = "stade-point";
       point.style.background = COULEURS_STADE[s.couleur];
-      b.etiquette.append(point, document.createTextNode(s.nom));
+      const nom = document.createElement("span");
+      nom.className = "stade-nom";
+      nom.textContent = s.nom;
+      b.etiquette.append(point, nom);
       b.etiquette.setAttribute("aria-label", `${s.nom} : ${s.resume}`);
     }
     majSelection(selection);
@@ -304,7 +328,7 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
     for (const [sid, b] of buvettes) {
       const choisie = sid === id;
       b.socle.visible = choisie;
-      b.groupe.scale.setScalar(choisie ? 1.18 : 1);
+      b.groupe.scale.setScalar((b.groupe.userData.echelle as number) * (choisie ? 1.18 : 1));
       b.etiquette.classList.toggle("choisie", choisie);
     }
   }
@@ -336,13 +360,14 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
     camera.updateProjectionMatrix();
     rendu.setSize(largeur(), hauteur());
     etiquettes.setSize(largeur(), hauteur());
+    cadrer();
   });
   redimension.observe(conteneur);
 
   // Les stands en rouge battent doucement : une onde au sol et la pastille qui respire.
-  const horloge = new THREE.Clock();
+  const depart = performance.now();
   rendu.setAnimationLoop(() => {
-    const t = horloge.getElapsedTime();
+    const t = (performance.now() - depart) / 1000;
     for (const b of buvettes.values()) {
       const rouge = b.couleur === "rouge";
       const phase = (t % 1.6) / 1.6;

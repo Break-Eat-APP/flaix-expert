@@ -687,6 +687,9 @@ details.inventaire summary { cursor: pointer; font-size: 13px; }
 .stade-etiquette { pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.95); border: 1px solid var(--border); box-shadow: var(--ombre); font: inherit; font-size: 12px; font-weight: 700; color: var(--text); cursor: pointer; white-space: nowrap; }
 .stade-etiquette:hover { border-color: var(--field-border); }
 .stade-etiquette.choisie { border-color: var(--violet); color: var(--violet); box-shadow: 0 0 0 3px var(--violet-soft); }
+.stade-etroit .stade-etiquette { padding: 5px; }
+.stade-etroit .stade-etiquette:not(.choisie) .stade-nom { display: none; }
+.stade-etroit .stade-etiquette .stade-point { width: 12px; height: 12px; }
 .stade-tribune { pointer-events: none; font-size: 10.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); opacity: 0.85; }
 .stade-point { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; }
 .stade-aide { position: absolute; left: 12px; bottom: 10px; pointer-events: none; font-size: 11.5px; color: var(--muted); background: rgba(255, 255, 255, 0.85); padding: 3px 10px; border-radius: 999px; }
@@ -695,12 +698,12 @@ details.inventaire summary { cursor: pointer; font-size: 13px; }
 .stade-legende { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
 .stade-legende > span { display: inline-flex; align-items: center; gap: 6px; }
 .stade-legende strong { color: var(--text); }
-.stade-panneau { min-width: 0; max-height: 470px; overflow: auto; }
+.stade-panneau { min-width: 0; max-height: 470px; overflow-y: auto; overflow-x: hidden; }
 .stade-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .stade-liste button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 14px; border: 1px solid var(--border); background: var(--childbg); font: inherit; color: var(--text); text-align: left; cursor: pointer; }
 .stade-liste button:hover { background: var(--violet-soft); border-color: var(--field-border); }
-.stade-liste strong, .stade-liste .discret { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.stade-liste .discret { font-size: 12.5px; margin-top: 2px; }
+.stade-liste strong, .stade-liste .discret { display: block; overflow-wrap: anywhere; }
+.stade-liste .discret { font-size: 12.5px; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .stade-fiche h3 { margin: 0; font-size: 18px; }
 .stade-fiche h4 { margin: 16px 0 8px; font-size: 13px; }
 .stade-retour { padding: 5px 12px; font-size: 12.5px; margin-bottom: 12px; }
@@ -717,7 +720,8 @@ details.inventaire summary { cursor: pointer; font-size: 13px; }
 .stade-rien { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--green); font-weight: 600; }
 @media (max-width: 900px) {
   .stade { grid-template-columns: minmax(0, 1fr); }
-  .stade-3d { height: 340px; }
+  .stade-3d { height: 320px; }
+  .stade-tribune { font-size: 9px; }
   .stade-panneau { max-height: none; }
   .stade-aide { display: none; }
 }
