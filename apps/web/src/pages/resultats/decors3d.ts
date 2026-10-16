@@ -261,7 +261,7 @@ function arene(): THREE.Group {
 function salle(): THREE.Group {
   const g = new THREE.Group();
   const S = SALLE;
-  g.add(sol(S.long, S.large, standard(0xe6e2f1, { roughness: 1 }), 0.03));
+  g.add(sol(S.long, S.large, standard(0xd6cfe8, { roughness: 1 }), 0.03));
   const devant = -S.large / 2;
   // Scène, écran et enceintes au nord.
   const scene = maillage(new THREE.BoxGeometry(S.long - 8, 1.6, S.scene), standard(0x2b2540, { roughness: 0.7 }));

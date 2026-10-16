@@ -44,7 +44,7 @@ const surCote = (cote: Tribune, distance: Record<Tribune, number>): PositionPlan
 const stadeAllee = { nord: STADE.large / 2 + STADE.recul + STADE.profondeur + STADE.allee, sud: STADE.large / 2 + STADE.recul + STADE.profondeur + STADE.allee, est: STADE.long / 2 + STADE.recul + STADE.profondeur + STADE.allee, ouest: STADE.long / 2 + STADE.recul + STADE.profondeur + STADE.allee };
 const patinoireAllee = { nord: PATINOIRE.large / 2 + PATINOIRE.couloir + PATINOIRE.profondeur + PATINOIRE.allee, sud: PATINOIRE.large / 2 + PATINOIRE.couloir + PATINOIRE.profondeur + PATINOIRE.allee, est: PATINOIRE.long / 2 + PATINOIRE.couloir + PATINOIRE.profondeur + PATINOIRE.allee, ouest: PATINOIRE.long / 2 + PATINOIRE.couloir + PATINOIRE.profondeur + PATINOIRE.allee };
 const areneAllee = ARENE.rayon + ARENE.couloir + ARENE.profondeur + ARENE.allee;
-const salleAllee = { nord: SALLE.large / 2 + SALLE.scene + SALLE.allee, sud: SALLE.large / 2 + SALLE.recul + SALLE.profondeur + SALLE.allee, est: SALLE.long / 2 + SALLE.recul + SALLE.profondeur + SALLE.allee, ouest: SALLE.long / 2 + SALLE.recul + SALLE.profondeur + SALLE.allee };
+const salleAllee = { nord: SALLE.large / 2 + SALLE.scene + SALLE.allee + 7, sud: SALLE.large / 2 + SALLE.recul + SALLE.profondeur + SALLE.allee, est: SALLE.long / 2 + SALLE.recul + SALLE.profondeur + SALLE.allee, ouest: SALLE.long / 2 + SALLE.recul + SALLE.profondeur + SALLE.allee };
 
 export const GEOMETRIES: Record<ModeleLieu, GeometriePlan> = {
   stade: {
@@ -66,16 +66,18 @@ export const GEOMETRIES: Record<ModeleLieu, GeometriePlan> = {
     demiProfondeur: 44,
     cotes: NOMS,
     etiquetteCote: (c) => surCote(c, { nord: ARENE.rayon - 3, sud: ARENE.rayon - 3, est: ARENE.rayon - 4, ouest: ARENE.rayon - 4 }),
-    // Sur le cercle de l'allée, réparties sur un quart de tour autour de leur côté.
+    // Sur le cercle de l'allée, réparties sur un quart de tour autour de leur côté ; dans le même sens qu'au stade
+    // (d'ouest en est au nord et au sud, du nord au sud à l'est et à l'ouest).
     placeAuto: (cote, rang, sur) => {
-      const ecart = Math.min(Math.PI / 9, (Math.PI / 2.4) / Math.max(1, sur));
-      const a = ANGLE[cote] + (rang - (sur - 1) / 2) * ecart;
+      const ecart = Math.min(Math.PI / 6, (Math.PI / 2.2) / Math.max(1, sur));
+      const sens = cote === "nord" || cote === "est" ? 1 : -1;
+      const a = ANGLE[cote] + sens * (rang - (sur - 1) / 2) * ecart;
       return { x: Math.cos(a) * areneAllee, z: Math.sin(a) * areneAllee };
     },
   },
   salle: {
     demiLargeur: salleAllee.est + 6,
-    demiProfondeur: 42,
+    demiProfondeur: 46,
     cotes: { nord: "Scène", est: "Gradins Est", sud: "Gradins Sud", ouest: "Gradins Ouest" },
     etiquetteCote: (c) => (c === "nord" ? { x: 0, z: -(SALLE.large / 2 + SALLE.scene / 2) } : surCote(c, { nord: 0, sud: SALLE.large / 2 - 1.6, est: SALLE.long / 2 - 1.6, ouest: SALLE.long / 2 - 1.6 })),
     placeAuto: cotesDroits(salleAllee, { nord: SALLE.long - 8, sud: SALLE.long - 4, est: SALLE.large - 4, ouest: SALLE.large - 4 }),

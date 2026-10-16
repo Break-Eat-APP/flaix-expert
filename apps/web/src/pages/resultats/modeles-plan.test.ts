@@ -44,3 +44,15 @@ describe("décors du lieu", () => {
     expect(borner({ x: 10, z: 10 })).toEqual({ x: 10, z: 10 });
   });
 });
+
+describe("ordre des buvettes sur un côté", () => {
+  it("de gauche à droite vu du sud, comme au stade : au nord et au sud d'ouest en est ; à l'est et à l'ouest du nord au sud", () => {
+    for (const modele of ["stade", "patinoire", "arene", "salle"] as const) {
+      const g = GEOMETRIES[modele];
+      expect(g.placeAuto("nord", 0, 2).x, modele).toBeLessThan(g.placeAuto("nord", 1, 2).x);
+      expect(g.placeAuto("sud", 0, 2).x, modele).toBeLessThan(g.placeAuto("sud", 1, 2).x);
+      expect(g.placeAuto("est", 0, 2).z, modele).toBeLessThan(g.placeAuto("est", 1, 2).z);
+      expect(g.placeAuto("ouest", 0, 2).z, modele).toBeLessThan(g.placeAuto("ouest", 1, 2).z);
+    }
+  });
+});
