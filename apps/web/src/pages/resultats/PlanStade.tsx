@@ -15,6 +15,11 @@ const PUCE: Record<CouleurStand, string> = { rouge: "puce-rouge", orange: "puce-
 const ORDRE: CouleurStand[] = ["rouge", "orange", "vert", "gris"];
 const heure = new Intl.DateTimeFormat("fr-FR", { timeStyle: "medium", timeZone: "Europe/Paris" });
 const nomTribune = (s: EtatStand) => TRIBUNES.find((t) => t.code === s.tribune)!.libelle;
+/** « à l'instant », « il y a 4 min », « il y a 1 h 05 ». */
+function ilYa(iso: string): string {
+  const min = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60_000));
+  return min < 1 ? "à l'instant" : min < 60 ? `il y a ${min} min` : `il y a ${Math.floor(min / 60)} h ${String(min % 60).padStart(2, "0")}`;
+}
 
 /**
  * Le stade en direct (dossier §15.162) : les stands autour d'un stade en 3D, en vert, orange ou rouge ; un clic sur un
@@ -121,8 +126,8 @@ function FicheStand({ stand: s, retour }: { stand: EtatStand; retour: () => void
           </strong>
         </div>
         <div>
-          <span>File d'attente</span>
-          <strong>{c.filePct === null ? "—" : `${c.filePct} %`}</strong>
+          <span>Dernière vente</span>
+          <strong>{c.derniereVente ? ilYa(c.derniereVente) : "—"}</strong>
         </div>
       </div>
       <h4>{s.signaux.length ? `Alertes du stand (${s.signaux.length})` : "Alertes du stand"}</h4>

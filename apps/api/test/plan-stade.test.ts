@@ -10,7 +10,7 @@ import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { travauxTermines } from "../src/arriere-plan.ts";
 import { MOT_DE_PASSE_TEST, basesDeTest, creerLieuDeTest } from "./aide.ts";
-import { envoyer, ligne, tablette, vendreHorsLigne } from "./tablette.ts";
+import { annulerHorsLigne, envoyer, ligne, tablette, vendreHorsLigne, type Tablette } from "./tablette.ts";
 
 let proprietaire: Base;
 let app: Base;
@@ -20,6 +20,7 @@ let nord: Stand;
 let comptoir: Stand;
 let caisse = "";
 let frites: Produit;
+let t: Tablette;
 
 const EN_TETES = { "content-type": "application/json", origin: "http://localhost:5173" };
 function appel<T = unknown>(method: "GET" | "POST" | "PUT" | "PATCH", url: string, payload?: unknown) {
@@ -71,7 +72,7 @@ describe("le stade en direct", () => {
     expect((await appel("PUT", "/api/stock/mise-en-place", { evenementId: ev.id, standId: nord.id, produitId: frites.id, quantite: 10 })).statut).toBe(200);
     await appel("POST", `/api/evenements/${ev.id}/ouverture`);
     const o = await appel<RepriseCaisse>("POST", `/api/caisses/${caisse}/ouverture`, { fond: null });
-    const t = tablette(caisse, o.corps);
+    t = tablette(caisse, o.corps);
     for (let i = 0; i < 10; i++) vendreHorsLigne(t, [ligne(frites)]);
     expect((await envoyer(appel, t)).statut).toBe(200);
     await travauxTermines();
@@ -83,5 +84,16 @@ describe("le stade en direct", () => {
     expect(n.signaux[0]).toMatchObject({ couleur: "rouge", titre: "Rupture : Frites", lien: "/direct" });
     expect(n.signaux[0]!.detail).toContain("Reste 0 sur 10 · vendu 10");
     expect(du(p, comptoir)).toMatchObject({ couleur: "gris", resume: "Fermé : aucune caisse ouverte" });
+    expect(n.chiffres.derniereVente).not.toBeNull();
+  });
+
+  it("ventes à vérifier : un prix différent du tarif, 5 annulations sur 16 ventes → alertes de la caisse", async () => {
+    vendreHorsLigne(t, [{ ...ligne(frites), prixUnitaire: 450 }]); // la tablette avait encore l'ancien prix
+    for (const v of Array.from({ length: 5 }, () => vendreHorsLigne(t, [ligne(frites)]))) annulerHorsLigne(t, v, "Erreur de saisie");
+    expect((await envoyer(appel, t)).statut).toBe(200);
+    await travauxTermines();
+    const titres = du(await plan(), nord).signaux.map((s) => s.titre);
+    expect(titres).toContain("Caisse 1 : 1 vente à un prix différent du tarif");
+    expect(titres).toContain("Caisse 1 : 5 annulations ce soir");
   });
 });

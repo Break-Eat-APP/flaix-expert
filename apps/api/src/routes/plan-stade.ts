@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { SEUILS_STADE, clotureADistance, planStade, tempsDeService, type DonneesStand, type PlanStade, type Tribune } from "@flaix/domain";
+import { SEUILS_STADE, clotureADistance, planStade, type DonneesStand, type PlanStade, type Tribune } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { lireOptions } from "../options.ts";
@@ -8,8 +8,9 @@ import { stockDuMatch } from "./stock.ts";
 import { contexte } from "./outils.ts";
 
 /**
- * Le stade en direct (dossier §15.162) : pour chaque stand actif, ce que lisent déjà Caisses, Stock, Hygiène et le
- * temps de prise de commande ; la couleur se calcule dans le moteur (planStade). Lecture seule.
+ * Le stade en direct (dossier §15.162, revu au §15.163) : pour chaque stand actif, ce que lisent déjà Caisses, Stock et
+ * Hygiène, plus le rythme de vente des 15 dernières minutes ; la couleur se calcule dans le moteur (planStade).
+ * Lecture seule.
  */
 export async function lirePlanStade(c: Client, lieuId: string, maintenant = new Date()): Promise<PlanStade> {
   const options = await lireOptions(c, lieuId);
@@ -20,25 +21,32 @@ export async function lirePlanStade(c: Client, lieuId: string, maintenant = new 
     [lieuId],
   );
   const donnees = new Map<string, DonneesStand>(
-    stands.map((s) => [s.id, { ...s, caisses: [], stock: [], file: { enFile: 0, mesurables: 0 }, hygiene: { nonConformes: 0, ouvertureARelever: [] } }]),
+    stands.map((s) => [s.id, { ...s, caisses: [], stock: [], hygiene: { nonConformes: 0, ouvertureARelever: [] } }]),
   );
 
-  // Caisses actives : ouverte ou non, nouvelles de la tablette, CA et tickets de l'événement ouvert (même calcul que Caisses).
+  // Caisses actives : ouverte ou non, nouvelles de la tablette ; pendant l'événement ouvert, CA et tickets (même calcul
+  // que Caisses), annulations, ventes à un prix différent du tarif (contrôle à la réception) et dernière vente.
   const { rows: caisses } = await c.query<{
     stand_id: string;
     numero: number;
-    ouverte: boolean;
+    ouverte_le: Date | null;
     vue_le: Date | null;
     tablette_sequence: number | null;
     tablette_attente: number | null;
     sequence_serveur: number;
     ca: number;
     tickets: number;
+    annulations: number;
+    hors_tarif: number;
+    derniere: Date | null;
   }>(
-    `SELECT k.stand_id, k.numero, so.ouverte_le IS NOT NULL AS ouverte, so.tablette_vue_le AS vue_le, so.tablette_sequence, so.tablette_attente,
+    `SELECT k.stand_id, k.numero, so.ouverte_le, so.tablette_vue_le AS vue_le, so.tablette_sequence, so.tablette_attente,
             (SELECT coalesce(max(jc.sequence), 0) FROM journal_caisse jc WHERE jc.caisse_id = k.id)::int AS sequence_serveur,
             coalesce(sum(j.total_ttc_centimes), 0)::int AS ca,
-            (count(j.id) FILTER (WHERE j.type = 'vente') - count(j.id) FILTER (WHERE j.type = 'annulation'))::int AS tickets
+            (count(j.id) FILTER (WHERE j.type = 'vente') - count(j.id) FILTER (WHERE j.type = 'annulation'))::int AS tickets,
+            count(j.id) FILTER (WHERE j.type = 'annulation')::int AS annulations,
+            count(j.id) FILTER (WHERE j.type = 'vente' AND j.controle ? 'ecartTarif')::int AS hors_tarif,
+            max(j.horodatage) FILTER (WHERE j.type = 'vente') AS derniere
        FROM caisse k
        LEFT JOIN session_caisse so ON so.caisse_id = k.id AND so.fermee_le IS NULL
        LEFT JOIN journal_caisse j ON j.caisse_id = k.id AND j.evenement_id = $2::uuid AND j.type IN ('vente', 'annulation')
@@ -50,28 +58,45 @@ export async function lirePlanStade(c: Client, lieuId: string, maintenant = new 
   for (const k of caisses) {
     const vueLe = k.vue_le?.toISOString() ?? null;
     const distance = clotureADistance({ vueLe, sequence: k.tablette_sequence, attente: k.tablette_attente }, k.sequence_serveur, maintenant);
-    donnees.get(k.stand_id)?.caisses.push({ numero: k.numero, ouverte: k.ouverte, vueLe, aEnvoyer: distance.aEnvoyer, caNet: k.ca, tickets: k.tickets });
+    donnees.get(k.stand_id)?.caisses.push({
+      numero: k.numero,
+      ouverte: k.ouverte_le !== null,
+      ouverteLe: k.ouverte_le?.toISOString() ?? null,
+      vueLe,
+      aEnvoyer: distance.aEnvoyer,
+      caNet: k.ca,
+      tickets: k.tickets,
+      annulations: k.annulations,
+      horsTarif: k.hors_tarif,
+      derniereVente: k.derniere?.toISOString() ?? null,
+    });
   }
 
-  if (enCours) {
-    // Ruptures et stock faible du stand (Stock, même règle).
-    if (options.stock)
-      for (const st of (await stockDuMatch(c, lieuId, enCours)).stands)
-        donnees.get(st.standId)?.stock.push(
-          ...st.lignes.filter((l) => l.alerte).map((l) => ({ nom: l.nom, alerte: l.alerte, restant: l.restant, sur: l.depart + l.reassort, vendu: l.vendu })),
-        );
-    // File d'attente des 15 dernières minutes (temps de prise de commande, §15.139).
-    const { rows: mesures } = await c.query<{ numero: number; stand_id: string; debut: Date | null; fin: Date }>(
-      `SELECT k.numero, j.stand_id, m.debut_saisie AS debut, j.horodatage AS fin
-         FROM journal_caisse j JOIN caisse k ON k.lieu_id = j.lieu_id AND k.id = j.caisse_id
-         LEFT JOIN mesure_ticket m ON m.lieu_id = j.lieu_id AND m.journal_id = j.id
-        WHERE j.lieu_id = $1 AND j.evenement_id = $2 AND j.type = 'vente' AND j.horodatage > $3`,
-      [lieuId, enCours.id, new Date(maintenant.getTime() - SEUILS_STADE.fenetreMinutes * 60_000)],
+  if (enCours && options.stock) {
+    // Produits suivis au stand (Stock, même règle), avec ce qui s'en est vendu ces 15 dernières minutes et la réserve.
+    const { rows: recents } = await c.query<{ stand_id: string; produit_id: string; n: number }>(
+      `SELECT j.stand_id, l.produit_id, sum(l.quantite)::int AS n
+         FROM journal_caisse j JOIN ligne_ticket l ON l.lieu_id = j.lieu_id AND l.journal_id = j.id
+        WHERE j.lieu_id = $1 AND j.evenement_id = $2 AND j.type = 'vente' AND j.horodatage > $3
+        GROUP BY j.stand_id, l.produit_id`,
+      [lieuId, enCours.id, new Date(maintenant.getTime() - SEUILS_STADE.rythmeMinutes * 60_000)],
     );
-    for (const s of tempsDeService(mesures.map((m) => ({ caisse: m.numero, stand: m.stand_id, debut: m.debut?.getTime() ?? null, fin: m.fin.getTime() }))).parStand) {
-      const d = donnees.get(s.libelle);
-      if (d) d.file = { enFile: s.enFile, mesurables: s.mesurables };
-    }
+    const recent = new Map(recents.map((r) => [`${r.stand_id}:${r.produit_id}`, r.n]));
+    const stock = await stockDuMatch(c, lieuId, enCours);
+    for (const st of stock.stands)
+      donnees.get(st.standId)?.stock.push(
+        ...st.lignes
+          .filter((l) => l.depart + l.reassort > 0)
+          .map((l) => ({
+            nom: l.nom,
+            alerte: l.alerte,
+            restant: l.restant,
+            sur: l.depart + l.reassort,
+            vendu: l.vendu,
+            venduRecent: recent.get(`${st.standId}:${l.produitId}`) ?? 0,
+            reserve: stock.reserve[l.produitId] ?? null,
+          })),
+      );
   }
 
   // Hygiène des équipements rattachés au stand (§15.156).

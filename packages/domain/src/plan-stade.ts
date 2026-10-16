@@ -1,17 +1,19 @@
 /**
- * Le stade en direct (dossier §15.162) : chaque stand placé autour d'un stade en 3D, en couleur selon son état du
- * moment ; un clic montre ses alertes. Seule la couleur se calcule ici : les chiffres viennent de Caisses, Stock,
- * Hygiène et du temps de prise de commande (§15.139).
+ * Le stade en direct (dossier §15.162, revu au §15.163) : chaque stand placé autour d'un stade en 3D, en couleur selon
+ * ce qu'il faut savoir pendant les ventes ; un clic montre ses alertes. Seule la couleur se calcule ici : les chiffres
+ * viennent de Caisses, Stock et Hygiène. Pas de file d'attente (décision de Rémi du 2026-10-12 : rien ne la mesure).
  *
- *   rouge  = rupture d'un produit · file d'attente sur 80 % des commandes ou plus (15 dernières minutes)
- *   orange = stock faible · file sur 50 % des commandes ou plus · tablette sans nouvelles depuis plus de 2 min ou
- *            tickets encore à envoyer · température hors limite d'un équipement du stand (7 jours) ·
- *            températures d'ouverture à relever pendant l'événement
- *   vert   = au moins une caisse ouverte, rien à signaler
- *   gris   = aucune caisse ouverte, rien à signaler
- *
- * La file : part des commandes servies alors que le client suivant attendait déjà (même mesure qu'au §15.139),
- * à partir de 5 commandes mesurées sur la fenêtre.
+ * Pendant l'événement ouvert :
+ *   stock    rupture → rouge ; stock faible → orange ; rupture prévue dans 15 min ou moins au rythme des 15 dernières
+ *            minutes → orange ; la réserve, quand elle en a, est rappelée (réassort possible)
+ *   réseau   tablette sans nouvelles depuis plus de 2 min ou tickets à envoyer → orange ; plus de 15 min → rouge
+ *   caisses  caisse ouverte sans vente depuis 15 min alors que le stade vend (une vente ailleurs dans les 5 dernières
+ *            minutes) → orange ; ventes à un prix différent du tarif → orange ; 5 annulations ou plus et 5 % des
+ *            tickets de la caisse ou plus → orange
+ * Toujours :
+ *   hygiène  température hors limite d'un équipement du stand (7 jours) → orange ; pendant l'événement, températures
+ *            d'ouverture à relever → orange
+ *   vert = au moins une caisse ouverte, rien à signaler ; gris = aucune caisse ouverte, rien à signaler
  */
 import { formaterMontant, type Centimes } from "./argent.ts";
 import { DELAI_NOUVELLES_TABLETTE_MS } from "./caisse-auto.ts";
@@ -27,10 +29,18 @@ export const TRIBUNES: readonly { code: Tribune; libelle: string }[] = [
 ];
 
 export const SEUILS_STADE = {
-  fenetreMinutes: 15,
-  fileOrangePct: 50,
-  fileRougePct: 80,
-  fileMinCommandes: 5,
+  /** Rythme de vente d'un produit : les 15 dernières minutes. */
+  rythmeMinutes: 15,
+  /** Rupture prévue dans 15 minutes ou moins à ce rythme. */
+  rupturePrevueMinutes: 15,
+  /** Tablette sans nouvelles : orange au-delà de 2 min, rouge au-delà de 15. */
+  silenceRougeMinutes: 15,
+  /** Caisse ouverte sans vente depuis 15 min, alors que le stade vend (une vente ailleurs dans les 5 dernières minutes). */
+  sansVenteMinutes: 15,
+  stadeVendMinutes: 5,
+  /** Annulations : 5 au moins, et au moins 5 % des tickets de la caisse. */
+  annulationsMin: 5,
+  annulationsPct: 5,
 } as const;
 
 export type CouleurStand = "rouge" | "orange" | "vert" | "gris";
@@ -50,17 +60,21 @@ export interface DonneesStand {
   caisses: {
     numero: number;
     ouverte: boolean;
+    /** Ouverture de la session en cours. */
+    ouverteLe: string | null;
     /** Dernières nouvelles de la tablette d'une caisse ouverte. */
     vueLe: string | null;
     /** Tickets que la tablette a encore à envoyer ; null : inconnu. */
     aEnvoyer: number | null;
+    /** Pendant l'événement ouvert : CA net, tickets nets (ventes − annulations), annulations, ventes hors tarif, dernière vente. */
     caNet: Centimes;
     tickets: number;
+    annulations: number;
+    horsTarif: number;
+    derniereVente: string | null;
   }[];
-  /** Lignes de stock du stand pendant l'événement ouvert (vide sans suivi). */
-  stock: { nom: string; alerte: AlerteStock; restant: number; sur: number; vendu: number }[];
-  /** File d'attente sur la fenêtre (15 dernières minutes). */
-  file: { enFile: number; mesurables: number };
+  /** Produits suivis en stock au stand pendant l'événement ouvert (vide sans suivi). */
+  stock: { nom: string; alerte: AlerteStock; restant: number; sur: number; vendu: number; venduRecent: number; reserve: number | null }[];
   hygiene: { nonConformes: number; ouvertureARelever: string[] };
 }
 
@@ -75,7 +89,7 @@ export interface EtatStand {
   couleur: CouleurStand;
   resume: string;
   signaux: SignalStand[];
-  chiffres: { caNet: Centimes; tickets: number; caissesOuvertes: number; caisses: number; filePct: number | null };
+  chiffres: { caNet: Centimes; tickets: number; caissesOuvertes: number; caisses: number; derniereVente: string | null };
 }
 
 /** Réponse de GET /api/plan-stade. */
@@ -119,44 +133,88 @@ export function placerStands<T extends { id: string; nom: string; tribune: Tribu
 
 const pluriel = (n: number, mot: string) => `${n} ${mot}${n > 1 ? "s" : ""}`;
 
-/** Part des commandes servies avec une file, en % ; null sous 5 commandes mesurées. */
-export function partEnFile(file: { enFile: number; mesurables: number }): number | null {
-  return file.mesurables >= SEUILS_STADE.fileMinCommandes ? Math.round((file.enFile / file.mesurables) * 100) : null;
+/** Minutes avant la rupture au rythme des 15 dernières minutes ; null sans vente récente ou déjà en rupture. */
+export function minutesAvantRupture(restant: number, venduRecent: number): number | null {
+  if (restant <= 0 || venduRecent <= 0) return null;
+  return Math.max(1, Math.round(restant / (venduRecent / SEUILS_STADE.rythmeMinutes)));
 }
 
-/** Signaux d'un stand, les rouges d'abord. `enDirect` : un événement est ouvert. */
-export function signauxStand(d: DonneesStand, enDirect: boolean, maintenant: number): SignalStand[] {
+/**
+ * Signaux d'un stand, les rouges d'abord. `enDirect` : un événement est ouvert ; `stadeVend` : une vente a eu lieu
+ * ailleurs dans les 5 dernières minutes.
+ */
+export function signauxStand(d: DonneesStand, contexte: { enDirect: boolean; stadeVend: boolean }, maintenant: number): SignalStand[] {
+  const S = SEUILS_STADE;
+  const depuis = (iso: string) => Math.max(0, Math.round((maintenant - Date.parse(iso)) / 60_000));
   const signaux: SignalStand[] = [];
-  if (enDirect) {
-    for (const l of d.stock.filter((x) => x.alerte === "rupture"))
-      signaux.push({ couleur: "rouge", titre: `Rupture : ${l.nom}`, detail: `Reste ${Math.max(0, l.restant)} sur ${l.sur} · vendu ${l.vendu}. Réassort en deux gestes depuis « En direct ».`, lien: "/direct" });
-    const pct = partEnFile(d.file);
-    if (pct !== null && pct >= SEUILS_STADE.fileOrangePct) {
-      const sature = pct >= SEUILS_STADE.fileRougePct;
-      signaux.push({
-        couleur: sature ? "rouge" : "orange",
-        titre: `${sature ? "Saturé" : "Affluence"} : file d'attente sur ${pct} % des commandes`,
-        detail: `Sur les ${SEUILS_STADE.fenetreMinutes} dernières minutes, ${d.file.enFile} commandes sur ${d.file.mesurables} servies avec un client qui attendait déjà.${sature ? " Ouvre une caisse de plus ou renforce le stand." : ""}`,
-        lien: "/equipe",
-      });
+
+  if (contexte.enDirect) {
+    // Stock du stand.
+    for (const l of d.stock) {
+      const reserve = l.reserve !== null && l.reserve > 0 ? ` ${l.reserve} en réserve : réassort en deux gestes depuis « En direct ».` : "";
+      if (l.alerte === "rupture") {
+        signaux.push({ couleur: "rouge", titre: `Rupture : ${l.nom}`, detail: `Reste 0 sur ${l.sur} · vendu ${l.vendu}.${reserve || " Réassort en deux gestes depuis « En direct »."}`, lien: "/direct" });
+        continue;
+      }
+      const dans = minutesAvantRupture(l.restant, l.venduRecent);
+      const prevue = dans !== null && dans <= S.rupturePrevueMinutes;
+      if (l.alerte === "faible")
+        signaux.push({ couleur: "orange", titre: `Stock faible : ${l.nom}`, detail: `Reste ${l.restant} sur ${l.sur} · vendu ${l.vendu}.${prevue ? ` Au rythme actuel, rupture dans ${dans} min environ.` : ""}${reserve}`, lien: "/direct" });
+      else if (prevue)
+        signaux.push({ couleur: "orange", titre: `Rupture prévue : ${l.nom} dans ${dans} min environ`, detail: `Reste ${l.restant}, ${l.venduRecent} vendus ces ${S.rythmeMinutes} dernières minutes.${reserve}`, lien: "/direct" });
     }
-    for (const l of d.stock.filter((x) => x.alerte === "faible"))
-      signaux.push({ couleur: "orange", titre: `Stock faible : ${l.nom}`, detail: `Reste ${l.restant} sur ${l.sur} · vendu ${l.vendu}.`, lien: "/direct" });
   }
+
+  // Réseau des tablettes, et caisse ouverte qui ne vend plus.
   for (const k of d.caisses.filter((x) => x.ouverte)) {
     if (k.aEnvoyer !== null && k.aEnvoyer > 0) {
       signaux.push({ couleur: "orange", titre: `Caisse ${k.numero} : ${pluriel(k.aEnvoyer, "ticket")} à envoyer`, detail: "La tablette n'a pas encore tout envoyé : vérifie son réseau (wifi ou 4G).", lien: "/caisses" });
       continue;
     }
     const silence = k.vueLe ? maintenant - Date.parse(k.vueLe) : null;
-    if (silence === null || silence > DELAI_NOUVELLES_TABLETTE_MS)
+    if (silence === null || silence > DELAI_NOUVELLES_TABLETTE_MS) {
+      const minutes = silence === null ? null : Math.round(silence / 60_000);
       signaux.push({
-        couleur: "orange",
-        titre: `Caisse ${k.numero} : ${silence === null ? "aucune nouvelle de la tablette" : `pas de nouvelles de la tablette depuis ${Math.round(silence / 60_000)} min`}`,
-        detail: "Les ventes faites sans réseau arriveront à son retour : vérifie qu'elle est allumée, avec du réseau.",
+        couleur: minutes !== null && minutes > S.silenceRougeMinutes ? "rouge" : "orange",
+        titre: `Caisse ${k.numero} : ${minutes === null ? "aucune nouvelle de la tablette" : `pas de nouvelles de la tablette depuis ${minutes} min`}`,
+        detail: "Les ventes faites sans réseau arriveront à son retour : vérifie qu'elle est allumée, chargée, avec du réseau.",
         lien: "/caisses",
       });
+      continue;
+    }
+    if (contexte.enDirect && contexte.stadeVend && k.ouverteLe && depuis(k.ouverteLe) >= S.sansVenteMinutes) {
+      const calme = k.derniereVente ? depuis(k.derniereVente) : null;
+      if (calme === null || calme >= S.sansVenteMinutes)
+        signaux.push({
+          couleur: "orange",
+          titre: `Caisse ${k.numero} : ${calme === null ? `aucune vente depuis l'ouverture (${depuis(k.ouverteLe)} min)` : `aucune vente depuis ${calme} min`}`,
+          detail: "Le reste du stade vend : terminal de paiement, caissière absente ou stand bloqué ? Un coup d'œil s'impose.",
+          lien: "/caisses",
+        });
+    }
   }
+
+  // Ventes à vérifier pendant l'événement.
+  if (contexte.enDirect)
+    for (const k of d.caisses) {
+      if (k.horsTarif > 0)
+        signaux.push({
+          couleur: "orange",
+          titre: `Caisse ${k.numero} : ${pluriel(k.horsTarif, "vente")} à un prix différent du tarif`,
+          detail: "La tablette n'a sans doute pas les derniers prix : relance-la avec du réseau. Le détail est dans le journal des tickets.",
+          lien: "/caisses",
+        });
+      const total = k.tickets + k.annulations; // ventes enregistrées = tickets nets + ventes annulées
+      if (k.annulations >= S.annulationsMin && k.annulations * 100 >= S.annulationsPct * total)
+        signaux.push({
+          couleur: "orange",
+          titre: `Caisse ${k.numero} : ${k.annulations} annulations ce soir`,
+          detail: `${Math.round((k.annulations * 100) / total)} % des tickets de la caisse : erreurs de saisie ou ventes à vérifier dans le journal des tickets.`,
+          lien: "/caisses",
+        });
+    }
+
+  // Hygiène des équipements du stand.
   if (d.hygiene.nonConformes > 0)
     signaux.push({
       couleur: "orange",
@@ -164,20 +222,27 @@ export function signauxStand(d: DonneesStand, enDirect: boolean, maintenant: num
       detail: "Un équipement du stand est sorti de ses limites : vérifie que l'action corrective a bien été faite.",
       lien: "/hygiene",
     });
-  if (enDirect && d.hygiene.ouvertureARelever.length)
+  if (contexte.enDirect && d.hygiene.ouvertureARelever.length)
     signaux.push({ couleur: "orange", titre: `Hygiène : températures d'ouverture à relever (${d.hygiene.ouvertureARelever.length})`, detail: d.hygiene.ouvertureARelever.join(", ") + ".", lien: "/hygiene" });
+
   return signaux.sort((a, b) => (a.couleur === b.couleur ? 0 : a.couleur === "rouge" ? -1 : 1));
 }
 
-/** Couleur et état du stade, stand par stand. */
-export function planStade(donnees: readonly DonneesStand[], evenement: { id: string; libelle: string } | null, maintenant: number): PlanStade {
+/** Couleur et état du stade, stand par stand. `stadeVend` : une vente dans les 5 dernières minutes, tous stands confondus. */
+export function planStade(
+  donnees: readonly DonneesStand[],
+  evenement: { id: string; libelle: string } | null,
+  maintenant: number,
+  stadeVend = donnees.some((d) => d.caisses.some((k) => k.derniereVente && maintenant - Date.parse(k.derniereVente) <= SEUILS_STADE.stadeVendMinutes * 60_000)),
+): PlanStade {
   const places = placerStands(donnees);
   const stands = donnees.map((d): EtatStand => {
-    const signaux = signauxStand(d, evenement !== null, maintenant);
+    const signaux = signauxStand(d, { enDirect: evenement !== null, stadeVend }, maintenant);
     const ouvertes = d.caisses.filter((k) => k.ouverte).length;
     const couleur: CouleurStand = signaux.some((s) => s.couleur === "rouge") ? "rouge" : signaux.length ? "orange" : ouvertes > 0 ? "vert" : "gris";
     const caNet = d.caisses.reduce((s, k) => s + k.caNet, 0);
     const tickets = d.caisses.reduce((s, k) => s + k.tickets, 0);
+    const derniereVente = d.caisses.map((k) => k.derniereVente).filter((x): x is string => x !== null).sort().at(-1) ?? null;
     const p = places.get(d.id)!;
     return {
       id: d.id,
@@ -194,7 +259,7 @@ export function planStade(donnees: readonly DonneesStand[], evenement: { id: str
             ? evenement ? `Tout va bien · ${formaterMontant(caNet)}` : "Caisse ouverte, rien à signaler"
             : evenement ? "Fermé : aucune caisse ouverte" : "Hors événement",
       signaux,
-      chiffres: { caNet, tickets, caissesOuvertes: ouvertes, caisses: d.caisses.length, filePct: evenement ? partEnFile(d.file) : null },
+      chiffres: { caNet, tickets, caissesOuvertes: ouvertes, caisses: d.caisses.length, derniereVente: evenement ? derniereVente : null },
     };
   });
   const ordre = TRIBUNES.map((t) => t.code);

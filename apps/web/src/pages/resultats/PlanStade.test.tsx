@@ -27,18 +27,18 @@ const etat = (x: Partial<EtatStand>): EtatStand => ({
   couleur: "vert",
   resume: "Tout va bien",
   signaux: [],
-  chiffres: { caNet: 0, tickets: 0, caissesOuvertes: 1, caisses: 1, filePct: null },
+  chiffres: { caNet: 0, tickets: 0, caissesOuvertes: 1, caisses: 1, derniereVente: null },
   ...x,
 });
 const plan: Plan = {
   evenement: { id: "e", libelle: "Rouen – Caen" },
   stands: [
-    etat({ id: "n", nom: "Buvette Nord", tribuneChoisie: false, couleur: "rouge", resume: "Rupture : Frites (+1)", chiffres: { caNet: 152_000, tickets: 230, caissesOuvertes: 2, caisses: 2, filePct: 85 }, signaux: [
+    etat({ id: "n", nom: "Buvette Nord", tribuneChoisie: false, couleur: "rouge", resume: "Rupture : Frites (+1)", chiffres: { caNet: 152_000, tickets: 230, caissesOuvertes: 2, caisses: 2, derniereVente: new Date(Date.now() - 4 * 60_000).toISOString() }, signaux: [
       { couleur: "rouge", titre: "Rupture : Frites", detail: "Reste 0 sur 120 · vendu 120.", lien: "/direct" },
       { couleur: "orange", titre: "Stock faible : Bière", detail: "Reste 12 sur 200 · vendu 188.", lien: "/direct" },
     ] }),
     etat({ id: "s", nom: "Buvette Sud", tribune: "sud", couleur: "vert", resume: "Tout va bien · 900,00 €" }),
-    etat({ id: "o", nom: "Kiosque Ouest", tribune: "ouest", couleur: "gris", resume: "Fermé : aucune caisse ouverte", chiffres: { caNet: 0, tickets: 0, caissesOuvertes: 0, caisses: 1, filePct: null } }),
+    etat({ id: "o", nom: "Kiosque Ouest", tribune: "ouest", couleur: "gris", resume: "Fermé : aucune caisse ouverte", chiffres: { caNet: 0, tickets: 0, caissesOuvertes: 0, caisses: 1, derniereVente: null } }),
   ],
   seuils: SEUILS_STADE,
 };
@@ -71,7 +71,7 @@ describe("le stade en direct à l'écran", () => {
     expect(screen.getByRole("heading", { name: "Buvette Nord" })).toBeTruthy();
     expect(screen.getByText("Urgent", { selector: ".puce" })).toBeTruthy();
     expect(screen.getByText(/placée d'après le nom/)).toBeTruthy();
-    expect(screen.getByText("85 %")).toBeTruthy();
+    expect(screen.getByText("il y a 4 min")).toBeTruthy();
     expect(screen.getByText("2 / 2")).toBeTruthy();
     expect(screen.getByText("Alertes du stand (2)")).toBeTruthy();
     const alertes = screen.getAllByRole("listitem");
