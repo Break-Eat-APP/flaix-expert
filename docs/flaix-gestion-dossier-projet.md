@@ -5201,3 +5201,31 @@ serveur 2 (tribune devinée puis choisie, valeur refusée ; rupture → rouge av
 gris), écran 2 ; formation, stands et conformité de la base relancés. Essayé dans le navigateur (simulation de 6 stands :
 couleurs, onde rouge, clic dans la 3D et dans la liste, téléphone et ordinateur). Corrigés à l'essai : caméra collée
 au terrain (ordre de calcul du cadrage), stands du bord hors cadre, étiquettes trop grandes sur téléphone.
+
+### 15.163 Le stade en direct, sans file d'attente : les alertes utiles pendant les ventes (2026-10-16)
+
+**Question de Rémi** (2026-10-12) : *« comment tu fais pour savoir que les gens attendent ? c'est pas calculable, il n'y
+a pas de calculateur de queue »*. Réponse : la « file » du §15.162 n'était qu'une déduction (commande suivante commencée
+moins de 20 s après l'encaissement) — elle dit que la caisse enchaîne, pas combien de personnes attendent. Puis : *« on
+s'en fout pour l'instant de la queue, juste parle d'alerte stock, connexion, ou autres infos à savoir durant les ventes
+qui pourraient alerter le directeur F&B »*.
+
+**Décisions** :
+- **File d'attente retirée** du stade (couleur, fiche, seuils). Le temps de prise de commande (§15.139) reste dans
+  Résultats, inchangé. Dans la fiche du stand, « Dernière vente » la remplace.
+- **Alertes pendant l'événement ouvert**, toutes lues dans ce qui existe déjà :
+  - **stock** : rupture → rouge ; stock faible → orange ; **rupture prévue** dans 15 min ou moins au rythme des
+    15 dernières minutes → orange (« Rupture prévue : Frites dans 10 min environ ») ; la **réserve** est rappelée
+    quand elle en a (« 48 en réserve : réassort en deux gestes ») ;
+  - **réseau** : tablette sans nouvelles depuis plus de 2 min ou tickets à envoyer → orange ; **plus de 15 min → rouge** ;
+  - **caisses** : caisse ouverte **sans vente depuis 15 min alors que le stade vend** (une vente ailleurs dans les
+    5 dernières minutes : pas d'alerte à la mi-temps ni en fin de match) → orange ; **ventes à un prix différent du
+    tarif** (contrôle déjà fait à la réception des tickets : la tablette n'a pas les derniers prix) → orange ;
+    **annulations nombreuses** (5 au moins et 5 % des ventes de la caisse au moins) → orange ;
+  - **hygiène** : inchangée (§15.162).
+- Pas d'alerte « espèces dans le tiroir » : sans prélèvement de caisse dans l'application, elle ne dirait pas quoi faire.
+
+**Réalisé le 2026-10-16** : moteur et serveur revus, sans migration. **Tests** : moteur 5 (placement, couleurs, rupture
+prévue et réserve, caisse sans vente seulement si le stade vend, prix hors tarif, annulations au-delà de 5 %, tablette
+rouge après 15 min, hors événement), serveur 3 (dont un prix ancien et 5 annulations sur 16 ventes, vrais tickets de
+tablette), écran 2.

@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-16 : le stade en direct sans file d'attente (§15.163)
+
+File d'attente retirée (rien ne la mesure). À la place : rupture prévue au rythme de vente, réserve rappelée, tablette muette en rouge après 15 min, caisse sans vente alors que le stade vend, ventes hors tarif, annulations nombreuses.
+
 ## 2026-10-12 : le stade en direct (§15.162)
 
 Dans Résultats, un stade en 3D avec les stands autour, en vert, orange, rouge ou gris (rupture, file d'attente, stock faible, tablette, hygiène) ; un clic montre les alertes du stand. Tribune de chaque stand dans Stands & caisses. Migration 0051.

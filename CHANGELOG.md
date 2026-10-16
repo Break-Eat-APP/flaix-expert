@@ -3,7 +3,27 @@
 > Généré par `node infra/outils/journal-developpement.cjs` à partir de Git. Ne pas modifier à la main.
 > Chaque entrée : date, commit (lien GitHub), message, fichiers créés ou modifiés. Le plus récent en premier. Phases : [docs/developpement/JOURNAL_DES_PHASES.md](docs/developpement/JOURNAL_DES_PHASES.md).
 
+## 2026-10-16
+
+### [`af99274`](https://github.com/Break-Eat-APP/flaix-expert/commit/af99274982ae73f30fb39365fafb0e429ba960dc) — Stade en direct : sans file d'attente ; alertes de vente (rupture prévue, réserve, caisse sans vente, prix hors tarif, annulations) *(phase 64)*
+
+- modifié : `apps/api/src/routes/plan-stade.ts`
+- modifié : `apps/api/test/plan-stade.test.ts`
+- modifié : `apps/web/src/pages/resultats/PlanStade.test.tsx`
+- modifié : `apps/web/src/pages/resultats/PlanStade.tsx`
+- modifié : `packages/domain/src/plan-stade.test.ts`
+- modifié : `packages/domain/src/plan-stade.ts`
+
 ## 2026-10-12
+
+### [`a3a959a`](https://github.com/Break-Eat-APP/flaix-expert/commit/a3a959a4abc5febb89d7a311b51138274f711d84) — Dossier §15.162 : le stade en direct (phase 63)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/phases.cjs`
 
 ### [`3af785c`](https://github.com/Break-Eat-APP/flaix-expert/commit/3af785c695d739f8c33bfb6dd28e0aa4bd056c6d) — Stade en direct : cadrage adapté à l'écran, pastilles seules sur téléphone, noms des tribunes au bord du terrain *(phase 63)*
 
