@@ -127,7 +127,7 @@ export function Resultats({ session }: { session: SessionInfo }) {
         </Carte>
       )}
       {/* Le stade en direct (§15.162) : dès qu'il y a un stand. */}
-      {standsActifs.length > 0 && <PlanStade />}
+      {standsActifs.length > 0 && <PlanStade modifiable={!session.support && !session.formation} />}
       <Tableaux />
     </>
   );

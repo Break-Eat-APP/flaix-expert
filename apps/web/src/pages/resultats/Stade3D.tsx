@@ -2,113 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { CSS2DObject, CSS2DRenderer } from "three/addons/renderers/CSS2DRenderer.js";
-import type { CouleurStand, EtatStand, Tribune } from "@flaix/domain";
+import type { CouleurStand, EtatStand, ModeleLieu, PositionPlan, Tribune } from "@flaix/domain";
+import { construireDecor } from "./decors3d.ts";
+import { GEOMETRIES, borner, placeStand, versLeCentre } from "./modeles-plan.ts";
 
 /**
- * Le stade en 3D (dossier §15.162) : terrain, quatre tribunes et, derrière chacune, ses buvettes, toit et pastille à la
- * couleur de leur état. On tourne et zoome au doigt ou à la souris ; un clic sur une buvette (ou son nom) la choisit.
+ * Le lieu en 3D (dossier §15.162, §15.164) : le décor choisi (stade, patinoire, arène, salle) et ses buvettes, toit et
+ * pastille à la couleur de leur état. On tourne et zoome au doigt ou à la souris ; un clic sur une buvette (ou son nom)
+ * la choisit. En mode « Placer les stands », on attrape une buvette et on la pose où l'on veut sur l'esplanade.
  * Chargé à part (three.js) : la page s'affiche avant lui.
  */
 
 export const COULEURS_STADE: Record<CouleurStand, string> = { vert: "#0ba678", orange: "#f59f00", rouge: "#e5484d", gris: "#b8b3c7" };
-
-// Terrain 60 × 40 au centre ; tribunes Nord et Sud le long du terrain, Est et Ouest derrière les buts.
-const TERRAIN = { long: 60, large: 40 };
-const RECUL = 3; // entre le terrain et la première marche
-const PROFONDEUR = 13; // trois rangs de gradins
-const ALLEE = 7; // entre le haut de la tribune et les buvettes
-
-interface Cote {
-  /** Direction vers l'extérieur. */
-  nx: number;
-  nz: number;
-  /** Longueur de la tribune. */
-  longueur: number;
-  /** Distance du centre au pied de la tribune. */
-  pied: number;
-}
-const COTES: Record<Tribune, Cote> = {
-  nord: { nx: 0, nz: -1, longueur: TERRAIN.long + 4, pied: TERRAIN.large / 2 + RECUL },
-  sud: { nx: 0, nz: 1, longueur: TERRAIN.long + 4, pied: TERRAIN.large / 2 + RECUL },
-  est: { nx: 1, nz: 0, longueur: TERRAIN.large + 4, pied: TERRAIN.long / 2 + RECUL },
-  ouest: { nx: -1, nz: 0, longueur: TERRAIN.large + 4, pied: TERRAIN.long / 2 + RECUL },
-};
-// Demi-largeur et demi-profondeur apparentes du stade avec ses buvettes, pour le cadrage.
-const DEMI_LARGEUR = TERRAIN.long / 2 + RECUL + PROFONDEUR + ALLEE + 6;
-const DEMI_PROFONDEUR = 45;
-const NOMS_TRIBUNES: Record<Tribune, string> = { nord: "Nord", est: "Est", sud: "Sud", ouest: "Ouest" };
-
-/** Position d'une buvette : derrière sa tribune, les buvettes d'une même tribune réparties sur sa longueur. */
-function positionBuvette(s: EtatStand): THREE.Vector3 {
-  const c = COTES[s.tribune];
-  const distance = c.pied + PROFONDEUR + ALLEE;
-  const utile = c.longueur - 8;
-  const le_long = -utile / 2 + ((s.rang + 0.5) * utile) / Math.max(1, s.surTribune);
-  // Le long de la tribune : x pour Nord/Sud, z pour Est/Ouest.
-  return c.nz !== 0 ? new THREE.Vector3(le_long, 0, c.nz * distance) : new THREE.Vector3(c.nx * distance, 0, le_long);
-}
-
-function textureTerrain(): THREE.CanvasTexture {
-  const l = 1200;
-  const h = 800;
-  const toile = document.createElement("canvas");
-  toile.width = l;
-  toile.height = h;
-  const g = toile.getContext("2d")!;
-  for (let i = 0; i < 12; i++) {
-    g.fillStyle = i % 2 ? "#4fae6c" : "#58b875";
-    g.fillRect((i * l) / 12, 0, l / 12, h);
-  }
-  g.strokeStyle = "rgba(255,255,255,0.92)";
-  g.lineWidth = 6;
-  const m = 30;
-  g.strokeRect(m, m, l - 2 * m, h - 2 * m);
-  g.beginPath();
-  g.moveTo(l / 2, m);
-  g.lineTo(l / 2, h - m);
-  g.stroke();
-  g.beginPath();
-  g.arc(l / 2, h / 2, 90, 0, Math.PI * 2);
-  g.stroke();
-  for (const cote of [0, 1]) {
-    const x = cote ? l - m : m;
-    const sens = cote ? -1 : 1;
-    g.strokeRect(Math.min(x, x + sens * 180), h / 2 - 220, 180, 440);
-    g.strokeRect(Math.min(x, x + sens * 60), h / 2 - 100, 60, 200);
-  }
-  const t = new THREE.CanvasTexture(toile);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 4;
-  return t;
-}
-
-/** Trois rangs de gradins, du terrain vers l'extérieur, plus un toit léger. */
-function tribune(code: Tribune, matieres: { gradin: THREE.Material; siege: THREE.Material; toit: THREE.Material }): THREE.Group {
-  const c = COTES[code];
-  const groupe = new THREE.Group();
-  const rang = PROFONDEUR / 3;
-  for (let i = 0; i < 3; i++) {
-    const hauteur = 1.4 + i * 1.6;
-    const boite = new THREE.Mesh(new THREE.BoxGeometry(c.longueur - i * 1.5, hauteur, rang), i % 2 ? matieres.siege : matieres.gradin);
-    boite.position.set(0, hauteur / 2, c.pied + rang * (i + 0.5));
-    boite.castShadow = true;
-    boite.receiveShadow = true;
-    groupe.add(boite);
-  }
-  const toit = new THREE.Mesh(new THREE.BoxGeometry(c.longueur - 2, 0.35, PROFONDEUR * 0.75), matieres.toit);
-  toit.position.set(0, 8.2, c.pied + PROFONDEUR * 0.62);
-  toit.rotation.x = -0.12;
-  toit.castShadow = true;
-  groupe.add(toit);
-  for (const x of [-c.longueur / 2 + 3, 0, c.longueur / 2 - 3]) {
-    const pilier = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 8, 8), matieres.gradin);
-    pilier.position.set(x, 4, c.pied + PROFONDEUR - 0.6);
-    groupe.add(pilier);
-  }
-  // Construit côté « +z », puis tourné vers son côté.
-  groupe.rotation.y = Math.atan2(c.nx, c.nz);
-  return groupe;
-}
 
 interface Buvette {
   groupe: THREE.Group;
@@ -122,13 +27,20 @@ interface Buvette {
   couleur: CouleurStand;
 }
 
+interface Rappels {
+  choisir(id: string): void;
+  deplacer(id: string, p: PositionPlan): void;
+}
+
 interface Monde {
+  majModele(modele: ModeleLieu): void;
   majStands(stands: readonly EtatStand[]): void;
   majSelection(id: string | null): void;
+  majEdition(edition: boolean): void;
   detruire(): void;
 }
 
-function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): Monde {
+function creerMonde(conteneur: HTMLDivElement, rappels: Rappels): Monde {
   const largeur = () => Math.max(1, conteneur.clientWidth);
   const hauteur = () => Math.max(1, conteneur.clientHeight);
   const rendu = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -144,7 +56,7 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
   conteneur.appendChild(etiquettes.domElement);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(34, largeur() / hauteur(), 1, 800);
+  const camera = new THREE.PerspectiveCamera(34, largeur() / hauteur(), 1, 900);
   camera.position.set(0, 86, 80);
   const controles = new OrbitControls(camera, rendu.domElement);
   controles.enablePan = false;
@@ -154,8 +66,11 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
   controles.minPolarAngle = 0.12 * Math.PI;
   controles.maxPolarAngle = 0.42 * Math.PI;
   controles.target.set(0, 0, 0);
-  /** Recule ou avance la caméra (même direction) pour que le stade et ses buvettes tiennent dans le cadre. */
+
+  let modele: ModeleLieu = "stade";
+  /** Recule ou avance la caméra (même direction) pour que le lieu et ses buvettes tiennent dans le cadre. */
   function cadrer() {
+    const g = GEOMETRIES[modele];
     const demiV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     const demiH = demiV * camera.aspect;
     // Cadre étroit (téléphone) : les étiquettes ne gardent que leur pastille (le nom pour la buvette choisie).
@@ -164,7 +79,7 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
     // Marge en pixels pour les étiquettes des buvettes du bord.
     const utileH = 1 - Math.min(0.45, (etroit ? 30 : 150) / largeur());
     const utileV = 1 - Math.min(0.3, 50 / hauteur());
-    const distance = Math.max(DEMI_LARGEUR / (demiH * utileH), DEMI_PROFONDEUR / (demiV * utileV));
+    const distance = Math.max(g.demiLargeur / (demiH * utileH), g.demiProfondeur / (demiV * utileV));
     // Zoom permis autour du cadrage : jusqu'à trois fois plus près, deux fois plus loin.
     controles.minDistance = distance / 3;
     controles.maxDistance = distance * 2;
@@ -172,56 +87,56 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
     camera.position.copy(controles.target).add(direction);
     controles.update();
   }
-  cadrer();
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0xd9d2ee, 2.1));
   const soleil = new THREE.DirectionalLight(0xffffff, 2.2);
   soleil.position.set(-60, 120, 70);
   soleil.castShadow = true;
   soleil.shadow.mapSize.set(2048, 2048);
-  Object.assign(soleil.shadow.camera, { left: -110, right: 110, top: 110, bottom: -110, near: 10, far: 400 });
+  Object.assign(soleil.shadow.camera, { left: -115, right: 115, top: 115, bottom: -115, near: 10, far: 400 });
   soleil.shadow.bias = -0.0005;
   scene.add(soleil);
 
   const aJeter: { dispose(): void }[] = [];
   const matiere = <M extends THREE.Material>(m: M) => (aJeter.push(m), m);
 
-  // Esplanade claire, bord du terrain, terrain.
+  // Esplanade claire commune à tous les décors.
   const esplanade = new THREE.Mesh(new THREE.CircleGeometry(118, 96), matiere(new THREE.MeshStandardMaterial({ color: 0xece8f6, roughness: 1 })));
   esplanade.rotation.x = -Math.PI / 2;
   esplanade.receiveShadow = true;
   scene.add(esplanade);
-  const bord = new THREE.Mesh(new THREE.PlaneGeometry(TERRAIN.long + 2 * RECUL, TERRAIN.large + 2 * RECUL), matiere(new THREE.MeshStandardMaterial({ color: 0x3f9a5c, roughness: 1 })));
-  bord.rotation.x = -Math.PI / 2;
-  bord.position.y = 0.02;
-  bord.receiveShadow = true;
-  scene.add(bord);
-  const texture = textureTerrain();
-  aJeter.push(texture);
-  const terrain = new THREE.Mesh(new THREE.PlaneGeometry(TERRAIN.long, TERRAIN.large), matiere(new THREE.MeshStandardMaterial({ map: texture, roughness: 1 })));
-  terrain.rotation.x = -Math.PI / 2;
-  terrain.position.y = 0.04;
-  terrain.receiveShadow = true;
-  scene.add(terrain);
 
-  const matieres = {
-    gradin: matiere(new THREE.MeshStandardMaterial({ color: 0xf7f5fc, roughness: 0.9 })),
-    siege: matiere(new THREE.MeshStandardMaterial({ color: 0xd9cefb, roughness: 0.9 })),
-    toit: matiere(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6, transparent: true, opacity: 0.82 })),
-  };
-  for (const code of Object.keys(COTES) as Tribune[]) {
-    scene.add(tribune(code, matieres));
-    const nom = document.createElement("div");
-    nom.className = "stade-tribune";
-    nom.textContent = `Tribune ${NOMS_TRIBUNES[code]}`;
-    const objet = new CSS2DObject(nom);
-    const c = COTES[code];
-    // Au bord du terrain, au pied de la tribune : les étiquettes des buvettes restent dégagées.
-    objet.position.set(c.nx * (c.pied - 1.6), 0.4, c.nz * (c.pied - 1.6));
-    scene.add(objet);
+  // Décor : rebâti quand le lieu change de type ; noms des côtés au bord de l'aire de jeu.
+  let decor: { groupe: THREE.Group; jeter(): void } | null = null;
+  const nomsCotes: CSS2DObject[] = [];
+  function majModele(m: ModeleLieu) {
+    if (decor && m === modele) return;
+    modele = m;
+    if (decor) {
+      scene.remove(decor.groupe);
+      decor.jeter();
+    }
+    decor = construireDecor(m);
+    scene.add(decor.groupe);
+    for (const o of nomsCotes.splice(0)) {
+      scene.remove(o);
+      o.element.remove();
+    }
+    for (const cote of ["nord", "est", "sud", "ouest"] as Tribune[]) {
+      const nom = document.createElement("div");
+      nom.className = "stade-tribune";
+      nom.textContent = GEOMETRIES[m].cotes[cote];
+      const objet = new CSS2DObject(nom);
+      const p = GEOMETRIES[m].etiquetteCote(cote);
+      objet.position.set(p.x, 0.4, p.z);
+      scene.add(objet);
+      nomsCotes.push(objet);
+    }
+    cadrer();
+    if (derniers) placer(derniers);
   }
 
-  // Buvettes : rebâties quand la liste ou les places changent, recolorées à chaque mise à jour.
+  // Buvettes : rebâties quand la liste change, replacées et recolorées à chaque mise à jour.
   const geo = {
     corps: new THREE.BoxGeometry(6, 3.2, 4.4),
     toit: new THREE.BoxGeometry(7.2, 0.7, 5.6),
@@ -237,6 +152,10 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
   const buvettes = new Map<string, Buvette>();
   let empreinte = "";
   let selection: string | null = null;
+  let edition = false;
+  let derniers: readonly EtatStand[] | null = null;
+  /** Buvette en train d'être déplacée : sa position suit le doigt, la mise à jour des données ne la replace pas. */
+  let saisie: { id: string; depart: { x: number; y: number }; bouge: boolean } | null = null;
 
   function viderBuvettes() {
     for (const b of buvettes.values()) {
@@ -255,11 +174,7 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
     viderBuvettes();
     for (const s of stands) {
       const groupe = new THREE.Group();
-      groupe.position.copy(positionBuvette(s));
       groupe.userData.echelle = 1.35;
-      const c = COTES[s.tribune];
-      // Le comptoir regarde la tribune.
-      groupe.rotation.y = Math.atan2(-c.nx, -c.nz);
       const corps = new THREE.Mesh(geo.corps, blanc);
       corps.position.y = 1.6;
       const toitMatiere = new THREE.MeshStandardMaterial({ color: COULEURS_STADE[s.couleur], roughness: 0.55 });
@@ -289,7 +204,10 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
       const etiquette = document.createElement("button");
       etiquette.type = "button";
       etiquette.className = "stade-etiquette";
-      etiquette.addEventListener("click", () => choisir(s.id));
+      etiquette.addEventListener("pointerdown", (e) => saisir(s.id, e));
+      etiquette.addEventListener("click", () => {
+        if (!edition) rappels.choisir(s.id);
+      });
       const objet = new CSS2DObject(etiquette);
       objet.position.set(0, 10.2, 0);
       groupe.add(objet);
@@ -298,12 +216,24 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
     }
   }
 
+  function poser(b: Buvette, p: PositionPlan) {
+    b.groupe.position.set(p.x, 0, p.z);
+    // Le comptoir regarde le centre du lieu.
+    b.groupe.rotation.y = versLeCentre(p);
+  }
+
+  function placer(stands: readonly EtatStand[]) {
+    for (const s of stands) if (saisie?.id !== s.id) poser(buvettes.get(s.id)!, placeStand(modele, s));
+  }
+
   function majStands(stands: readonly EtatStand[]) {
-    const e = stands.map((s) => `${s.id}:${s.tribune}:${s.rang}:${s.surTribune}`).join("|");
+    derniers = stands;
+    const e = stands.map((s) => s.id).join("|");
     if (e !== empreinte) {
       empreinte = e;
       batir(stands);
     }
+    placer(stands);
     for (const s of stands) {
       const b = buvettes.get(s.id)!;
       b.couleur = s.couleur;
@@ -333,25 +263,79 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
     }
   }
 
-  // Un clic (sans glisser) sur une buvette la choisit.
+  function majEdition(e: boolean) {
+    edition = e;
+    conteneur.classList.toggle("stade-edition", e);
+    rendu.domElement.style.cursor = e ? "grab" : "";
+  }
+
+  // ── Pointeur : un clic choisit une buvette ; en mode édition, un glisser la déplace sur l'esplanade. ──
   const rayon = new THREE.Raycaster();
-  let appui: { x: number; y: number } | null = null;
-  const surAppui = (e: PointerEvent) => (appui = { x: e.clientX, y: e.clientY });
-  const surRelache = (e: PointerEvent) => {
-    if (!appui || Math.hypot(e.clientX - appui.x, e.clientY - appui.y) > 6) return;
+  const solPlan = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  function viser(e: PointerEvent) {
     const r = rendu.domElement.getBoundingClientRect();
     rayon.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+  }
+  function buvetteSous(e: PointerEvent): string | null {
+    viser(e);
     const touche = rayon.intersectObjects([...buvettes.values()].map((b) => b.groupe), true).find((i) => i.object.userData.standId);
-    if (touche) choisir(touche.object.userData.standId as string);
+    return touche ? (touche.object.userData.standId as string) : null;
+  }
+  function pointAuSol(e: PointerEvent): PositionPlan | null {
+    viser(e);
+    const p = rayon.ray.intersectPlane(solPlan, new THREE.Vector3());
+    return p ? borner({ x: p.x, z: p.z }) : null;
+  }
+
+  function saisir(id: string, e: PointerEvent) {
+    if (!edition) return;
+    e.preventDefault();
+    saisie = { id, depart: { x: e.clientX, y: e.clientY }, bouge: false };
+    controles.enabled = false;
+    window.addEventListener("pointermove", glisser);
+    window.addEventListener("pointerup", lacher);
+    window.addEventListener("pointercancel", lacher);
+  }
+  function glisser(e: PointerEvent) {
+    if (!saisie) return;
+    if (!saisie.bouge && Math.hypot(e.clientX - saisie.depart.x, e.clientY - saisie.depart.y) < 5) return;
+    saisie.bouge = true;
+    rendu.domElement.style.cursor = "grabbing";
+    const p = pointAuSol(e);
+    if (p) poser(buvettes.get(saisie.id)!, p);
+  }
+  function lacher(e: PointerEvent) {
+    window.removeEventListener("pointermove", glisser);
+    window.removeEventListener("pointerup", lacher);
+    window.removeEventListener("pointercancel", lacher);
+    controles.enabled = true;
+    rendu.domElement.style.cursor = edition ? "grab" : "";
+    const s = saisie;
+    saisie = null;
+    if (!s) return;
+    if (!s.bouge) return rappels.choisir(s.id);
+    const p = pointAuSol(e);
+    const g = buvettes.get(s.id)?.groupe;
+    rappels.deplacer(s.id, p ?? { x: g?.position.x ?? 0, z: g?.position.z ?? 0 });
+  }
+
+  let appui: { x: number; y: number } | null = null;
+  const surAppui = (e: PointerEvent) => {
+    appui = { x: e.clientX, y: e.clientY };
+    const id = edition ? buvetteSous(e) : null;
+    if (id) saisir(id, e);
+  };
+  const surRelache = (e: PointerEvent) => {
+    if (edition || !appui || Math.hypot(e.clientX - appui.x, e.clientY - appui.y) > 6) return;
+    const id = buvetteSous(e);
+    if (id) rappels.choisir(id);
   };
   const surSurvol = (e: PointerEvent) => {
-    if (e.buttons) return;
-    const r = rendu.domElement.getBoundingClientRect();
-    rayon.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
-    const touche = rayon.intersectObjects([...buvettes.values()].map((b) => b.groupe), true).some((i) => i.object.userData.standId);
-    rendu.domElement.style.cursor = touche ? "pointer" : "grab";
+    if (e.buttons || saisie) return;
+    rendu.domElement.style.cursor = buvetteSous(e) ? (edition ? "grab" : "pointer") : edition ? "default" : "grab";
   };
-  rendu.domElement.addEventListener("pointerdown", surAppui);
+  // En capture : la saisie d'une buvette passe avant la rotation de la caméra.
+  rendu.domElement.addEventListener("pointerdown", surAppui, { capture: true });
   rendu.domElement.addEventListener("pointerup", surRelache);
   rendu.domElement.addEventListener("pointermove", surSurvol);
 
@@ -384,19 +368,23 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
   });
 
   return {
+    majModele,
     majStands,
     majSelection,
+    majEdition,
     detruire() {
       rendu.setAnimationLoop(null);
       redimension.disconnect();
-      rendu.domElement.removeEventListener("pointerdown", surAppui);
+      window.removeEventListener("pointermove", glisser);
+      window.removeEventListener("pointerup", lacher);
+      window.removeEventListener("pointercancel", lacher);
+      rendu.domElement.removeEventListener("pointerdown", surAppui, { capture: true });
       rendu.domElement.removeEventListener("pointerup", surRelache);
       rendu.domElement.removeEventListener("pointermove", surSurvol);
       controles.dispose();
       viderBuvettes();
-      scene.traverse((o) => {
-        if (o instanceof THREE.Mesh) o.geometry.dispose();
-      });
+      decor?.jeter();
+      esplanade.geometry.dispose();
       for (const x of aJeter) x.dispose();
       rendu.dispose();
       rendu.domElement.remove();
@@ -405,16 +393,30 @@ function creerMonde(conteneur: HTMLDivElement, choisir: (id: string) => void): M
   };
 }
 
-export function Stade3D({ stands, selection, onChoisir }: { stands: readonly EtatStand[]; selection: string | null; onChoisir: (id: string) => void }) {
+export function Stade3D({
+  modele,
+  stands,
+  selection,
+  edition = false,
+  onChoisir,
+  onDeplacer,
+}: {
+  modele: ModeleLieu;
+  stands: readonly EtatStand[];
+  selection: string | null;
+  edition?: boolean;
+  onChoisir: (id: string) => void;
+  onDeplacer?: (id: string, p: PositionPlan) => void;
+}) {
   const conteneur = useRef<HTMLDivElement>(null);
   const monde = useRef<Monde | null>(null);
-  const choisir = useRef(onChoisir);
-  choisir.current = onChoisir;
+  const rappels = useRef<Rappels>({ choisir: onChoisir, deplacer: () => undefined });
+  rappels.current = { choisir: onChoisir, deplacer: onDeplacer ?? (() => undefined) };
   const [indisponible, setIndisponible] = useState(false);
 
   useEffect(() => {
     try {
-      monde.current = creerMonde(conteneur.current!, (id) => choisir.current(id));
+      monde.current = creerMonde(conteneur.current!, { choisir: (id) => rappels.current.choisir(id), deplacer: (id, p) => rappels.current.deplacer(id, p) });
     } catch {
       setIndisponible(true);
     }
@@ -423,8 +425,10 @@ export function Stade3D({ stands, selection, onChoisir }: { stands: readonly Eta
       monde.current = null;
     };
   }, []);
+  useEffect(() => monde.current?.majModele(modele), [modele]);
   useEffect(() => monde.current?.majStands(stands), [stands]);
   useEffect(() => monde.current?.majSelection(selection), [selection]);
+  useEffect(() => monde.current?.majEdition(edition), [edition]);
 
   return (
     <div ref={conteneur} className="stade-3d">

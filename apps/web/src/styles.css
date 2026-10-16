@@ -725,3 +725,22 @@ details.inventaire summary { cursor: pointer; font-size: 13px; }
   .stade-panneau { max-height: none; }
   .stade-aide { display: none; }
 }
+
+/* Placer les stands (§15.164) : type de lieu, place de chaque stand, enregistrer. */
+.stade-edition .stade-etiquette { cursor: grab; touch-action: none; border-color: var(--field-border); }
+.stade-edition .stade-etiquette:active { cursor: grabbing; }
+.stade-placement h4 { margin: 0 0 8px; font-size: 13px; }
+.stade-placement h4:not(:first-child) { margin-top: 16px; }
+.stade-modeles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.stade-modeles button { display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--border); background: var(--childbg); font: inherit; color: var(--text); cursor: pointer; }
+.stade-modeles button span { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+.stade-modeles button:hover { border-color: var(--field-border); }
+.stade-modeles button.actif { background: var(--violet-soft); border-color: var(--violet); }
+.stade-modeles button.actif strong { color: var(--violet); }
+.stade-places { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.stade-places li { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); }
+.stade-places li.choisi { border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-soft); }
+.stade-places strong, .stade-places .discret { display: block; }
+.stade-places .discret { font-size: 12px; }
+.stade-places .btn { padding: 5px 9px; }
+.stade-placement-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; position: sticky; bottom: 0; background: var(--surface); padding-top: 8px; }
