@@ -70,6 +70,7 @@
 | 62 | [Produits & prix plus clair : section active, allergènes cochables, emballages expliqués](#phase-62) | §15.161 | [`1cbf91d`](https://github.com/Break-Eat-APP/flaix-expert/commit/1cbf91dd73f883979efcb3e6cb0f4f795c7d24c2) | livrée |
 | 63 | [Le stade en direct : stands en 3D, en couleur, alertes au clic](#phase-63) | §15.162 | [`8ff9104`](https://github.com/Break-Eat-APP/flaix-expert/commit/8ff9104a938807f869865dcc4579d59b4d0c88f3) [`3af785c`](https://github.com/Break-Eat-APP/flaix-expert/commit/3af785c695d739f8c33bfb6dd28e0aa4bd056c6d) | livrée |
 | 64 | [Le stade en direct sans file d'attente : alertes utiles pendant les ventes](#phase-64) | §15.163 | [`af99274`](https://github.com/Break-Eat-APP/flaix-expert/commit/af99274982ae73f30fb39365fafb0e429ba960dc) | livrée |
+| 65 | [Le lieu en 3D : quatre décors, stands posés à la main](#phase-65) | §15.164 | [`2bcf514`](https://github.com/Break-Eat-APP/flaix-expert/commit/2bcf5147ff8c71bc4b2043c05ff9050b1ac30ee5) [`284297b`](https://github.com/Break-Eat-APP/flaix-expert/commit/284297bec857e094f0e40459c102f2b8a2b564c4) [`69daccc`](https://github.com/Break-Eat-APP/flaix-expert/commit/69dacccb4d5c16bcd19da326cbec79bee1288efa) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -2340,6 +2341,37 @@
   - [`apps/api/test/plan-stade.test.ts`](../../apps/api/test/plan-stade.test.ts) — modifié
   - [`packages/domain/src/plan-stade.test.ts`](../../packages/domain/src/plan-stade.test.ts) — modifié
 
+<a id="phase-65"></a>
+## Phase 65 — Le lieu en 3D : quatre décors, stands posés à la main
+
+- **Dates** : 2026-10-16
+- **Décision et raisonnement** : dossier projet §15.164
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`2bcf514`](https://github.com/Break-Eat-APP/flaix-expert/commit/2bcf5147ff8c71bc4b2043c05ff9050b1ac30ee5) 2026-10-16 — Plan du lieu : décor (stade, patinoire, arène, salle) et stands posés à la main — base, moteur, serveur
+  - [`284297b`](https://github.com/Break-Eat-APP/flaix-expert/commit/284297bec857e094f0e40459c102f2b8a2b564c4) 2026-10-16 — Plan du lieu : quatre décors 3D (stade, patinoire, arène ronde, salle de spectacle) et mode « Placer les stands »
+  - [`69daccc`](https://github.com/Break-Eat-APP/flaix-expert/commit/69dacccb4d5c16bcd19da326cbec79bee1288efa) 2026-10-16 — Plan du lieu : ordre et écart des buvettes de l'arène, buvettes nord de la salle derrière l'écran, fosse plus visible
+- **Migrations (base)** :
+  - [`db/migrations/0052_plan_lieu.sql`](../../db/migrations/0052_plan_lieu.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/journal-technique.ts`](../../packages/domain/src/journal-technique.ts) — modifié
+  - [`packages/domain/src/plan-stade.ts`](../../packages/domain/src/plan-stade.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/plan-stade.ts`](../../apps/api/src/routes/plan-stade.ts) — modifié
+  - [`apps/api/src/serveur.ts`](../../apps/api/src/serveur.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/Resultats.tsx`](../../apps/web/src/pages/Resultats.tsx) — modifié
+  - [`apps/web/src/pages/resultats/decors3d.ts`](../../apps/web/src/pages/resultats/decors3d.ts) — créé
+  - [`apps/web/src/pages/resultats/modeles-plan.ts`](../../apps/web/src/pages/resultats/modeles-plan.ts) — créé
+  - [`apps/web/src/pages/resultats/PlanStade.test.tsx`](../../apps/web/src/pages/resultats/PlanStade.test.tsx) — modifié
+  - [`apps/web/src/pages/resultats/PlanStade.tsx`](../../apps/web/src/pages/resultats/PlanStade.tsx) — modifié
+  - [`apps/web/src/pages/resultats/Stade3D.tsx`](../../apps/web/src/pages/resultats/Stade3D.tsx) — modifié
+  - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
+- **Tests** :
+  - [`apps/api/test/plan-stade.test.ts`](../../apps/api/test/plan-stade.test.ts) — modifié
+  - [`apps/web/src/pages/resultats/modeles-plan.test.ts`](../../apps/web/src/pages/resultats/modeles-plan.test.ts) — créé
+  - [`packages/domain/src/plan-stade.test.ts`](../../packages/domain/src/plan-stade.test.ts) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -2383,3 +2415,4 @@
 - [`4387e4a`](https://github.com/Break-Eat-APP/flaix-expert/commit/4387e4a433c3d2212cddd9595707d22c5f71f5c7) 2026-10-12 — Événements privés : dossier §15.160, avancement, journal des phases (phase 61)
 - [`50dd9d8`](https://github.com/Break-Eat-APP/flaix-expert/commit/50dd9d8a0c07fe272c37e68756ecb5636f59b4c1) 2026-10-12 — Dossier §15.161 : Produits & prix plus clair (phase 62)
 - [`a3a959a`](https://github.com/Break-Eat-APP/flaix-expert/commit/a3a959a4abc5febb89d7a311b51138274f711d84) 2026-10-12 — Dossier §15.162 : le stade en direct (phase 63)
+- [`01704d9`](https://github.com/Break-Eat-APP/flaix-expert/commit/01704d9c200e516658e883a6e819baab88ba7bfe) 2026-10-16 — Dossier §15.163 : le stade en direct sans file d'attente (phase 64)

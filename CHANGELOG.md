@@ -5,6 +5,42 @@
 
 ## 2026-10-16
 
+### [`69daccc`](https://github.com/Break-Eat-APP/flaix-expert/commit/69dacccb4d5c16bcd19da326cbec79bee1288efa) — Plan du lieu : ordre et écart des buvettes de l'arène, buvettes nord de la salle derrière l'écran, fosse plus visible *(phase 65)*
+
+- modifié : `apps/web/src/pages/resultats/decors3d.ts`
+- modifié : `apps/web/src/pages/resultats/modeles-plan.test.ts`
+- modifié : `apps/web/src/pages/resultats/modeles-plan.ts`
+
+### [`284297b`](https://github.com/Break-Eat-APP/flaix-expert/commit/284297bec857e094f0e40459c102f2b8a2b564c4) — Plan du lieu : quatre décors 3D (stade, patinoire, arène ronde, salle de spectacle) et mode « Placer les stands » *(phase 65)*
+
+- modifié : `apps/web/src/pages/Resultats.tsx`
+- modifié : `apps/web/src/pages/resultats/PlanStade.test.tsx`
+- modifié : `apps/web/src/pages/resultats/PlanStade.tsx`
+- modifié : `apps/web/src/pages/resultats/Stade3D.tsx`
+- créé : `apps/web/src/pages/resultats/decors3d.ts`
+- créé : `apps/web/src/pages/resultats/modeles-plan.test.ts`
+- créé : `apps/web/src/pages/resultats/modeles-plan.ts`
+- modifié : `apps/web/src/styles.css`
+
+### [`2bcf514`](https://github.com/Break-Eat-APP/flaix-expert/commit/2bcf5147ff8c71bc4b2043c05ff9050b1ac30ee5) — Plan du lieu : décor (stade, patinoire, arène, salle) et stands posés à la main — base, moteur, serveur *(phase 65)*
+
+- modifié : `apps/api/src/routes/plan-stade.ts`
+- modifié : `apps/api/src/serveur.ts`
+- modifié : `apps/api/test/plan-stade.test.ts`
+- créé : `db/migrations/0052_plan_lieu.sql`
+- modifié : `packages/domain/src/journal-technique.ts`
+- modifié : `packages/domain/src/plan-stade.test.ts`
+- modifié : `packages/domain/src/plan-stade.ts`
+
+### [`01704d9`](https://github.com/Break-Eat-APP/flaix-expert/commit/01704d9c200e516658e883a6e819baab88ba7bfe) — Dossier §15.163 : le stade en direct sans file d'attente (phase 64)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`af99274`](https://github.com/Break-Eat-APP/flaix-expert/commit/af99274982ae73f30fb39365fafb0e429ba960dc) — Stade en direct : sans file d'attente ; alertes de vente (rupture prévue, réserve, caisse sans vente, prix hors tarif, annulations) *(phase 64)*
 
 - modifié : `apps/api/src/routes/plan-stade.ts`

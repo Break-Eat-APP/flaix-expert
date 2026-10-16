@@ -68,6 +68,7 @@ const PHASES = [
   { n: 62, titre: "Produits & prix plus clair : section active, allergènes cochables, emballages expliqués", dossier: "§15.161", commits: ["1cbf91d"] },
   { n: 63, titre: "Le stade en direct : stands en 3D, en couleur, alertes au clic", dossier: "§15.162", commits: ["8ff9104", "3af785c"] },
   { n: 64, titre: "Le stade en direct sans file d'attente : alertes utiles pendant les ventes", dossier: "§15.163", commits: ["af99274"] },
+  { n: 65, titre: "Le lieu en 3D : quatre décors, stands posés à la main", dossier: "§15.164", commits: ["2bcf514", "284297b", "69daccc"] },
 ];
 
 module.exports = { PHASES };

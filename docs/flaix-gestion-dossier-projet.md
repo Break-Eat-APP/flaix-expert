@@ -5229,3 +5229,34 @@ qui pourraient alerter le directeur F&B »*.
 prévue et réserve, caisse sans vente seulement si le stade vend, prix hors tarif, annulations au-delà de 5 %, tablette
 rouge après 15 min, hors événement), serveur 3 (dont un prix ancien et 5 annulations sur 16 ventes, vrais tickets de
 tablette), écran 2.
+
+### 15.164 Le lieu en 3D : quatre décors, stands posés à la main (2026-10-16)
+
+**Demande de Rémi** (2026-10-16) : *« j'ai vu que tu plaçais automatiquement les stands autour du stade. Est-ce qu'il
+est possible de les placer moi-même ? … Tu as mis un stade carré, mais il peut y avoir aussi une arène ronde, un stade
+de hockey sur glace ou autre type de stadium. Est-ce que tu peux me créer un effet 3D comme tu l'as fait, de plusieurs
+templates ? »*
+
+**Décisions** (choix recommandés) :
+- **Quatre décors** dessinés en 3D, au choix du directeur pour son lieu : **stade** (foot, rugby : terrain, quatre
+  tribunes avec toit), **patinoire** (glace aux lignes de hockey, bandes, vitres, buts, gradins arrondis tout autour),
+  **arène ronde** (parquet avec terrain de basket aux couleurs de l'application, gradins circulaires, tableau
+  d'affichage suspendu), **salle de spectacle** (scène, écran, enceintes, fosse, gradins à l'est, au sud, à l'ouest).
+  Le titre de la carte suit le décor (« La patinoire en direct »…).
+- **Mode « Placer les stands »** (directeur seulement ; ni le support, ni le mode formation) : choix du décor, puis on
+  attrape une buvette (souris ou doigt) et on la pose où l'on veut sur l'esplanade ; elle se tourne vers le centre.
+  Chaque stand se remet en automatique d'un geste (ou « Tout en automatique ») ; rien n'est enregistré avant
+  « Enregistrer », « Annuler » abandonne tout.
+- **Sans position posée**, un stand reste placé tout seul sur sa tribune (§15.162), dans le décor choisi (même ordre de
+  gauche à droite partout). Changer de décor garde les places posées à la main.
+- Positions en unités de la scène, centre du lieu en 0,0, bornées à 120 (la buvette reste sur l'esplanade) ; écriture
+  au journal technique (`plan_stade_modifie` : décor avant/après, stands déplacés).
+
+**Réalisé le 2026-10-16** : migration 0052 (décor du lieu, position des stands, suivis en mode formation) ; serveur
+(PUT /api/plan-stade) ; écran (décors, glisser-déposer, panneau de placement). **Tests** : serveur 4 (dont décor et
+place enregistrés, valeurs hors limites refusées, stand inconnu, retour en automatique), moteur 5, décors 4 (place
+automatique dans chaque décor, ordre gauche-droite, place posée, comptoir vers le centre, bornage), écran 3 (dont mode
+placement : décor choisi, stand glissé, remis en automatique, enregistré). Essayé dans le navigateur : les quatre décors
+avec 6 stands simulés, puis sur le compte de démonstration : patinoire choisie, Buvette Nord glissée au sud-est,
+enregistrée et relue. Corrigés à l'essai : buvettes de l'arène trop serrées et ordre inversé au sud, buvettes nord de la
+salle cachées par l'écran, fosse peu visible.
