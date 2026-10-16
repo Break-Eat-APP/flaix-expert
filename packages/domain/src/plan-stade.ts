@@ -28,6 +28,25 @@ export const TRIBUNES: readonly { code: Tribune; libelle: string }[] = [
   { code: "ouest", libelle: "Tribune Ouest" },
 ];
 
+/** Décor du lieu en 3D (§15.164). */
+export type ModeleLieu = "stade" | "patinoire" | "arene" | "salle";
+
+export const MODELES_LIEU: readonly { code: ModeleLieu; libelle: string; detail: string }[] = [
+  { code: "stade", libelle: "Stade", detail: "Football, rugby : terrain et quatre tribunes" },
+  { code: "patinoire", libelle: "Patinoire", detail: "Hockey sur glace : piste, bandes et gradins" },
+  { code: "arene", libelle: "Arène ronde", detail: "Basket, hand, volley, spectacles : gradins tout autour" },
+  { code: "salle", libelle: "Salle de spectacle", detail: "Concert, festival : scène, fosse et gradins" },
+];
+
+/** Position d'un stand posé à la main sur le plan (unités de la scène, centre du lieu en 0,0). */
+export interface PositionPlan {
+  x: number;
+  z: number;
+}
+
+/** Une position posée à la main reste dans ce rayon autour du centre. */
+export const RAYON_PLAN = 120;
+
 export const SEUILS_STADE = {
   /** Rythme de vente d'un produit : les 15 dernières minutes. */
   rythmeMinutes: 15,
@@ -57,6 +76,8 @@ export interface DonneesStand {
   id: string;
   nom: string;
   tribune: Tribune | null;
+  /** Posé à la main ; null : placé tout seul sur sa tribune. */
+  position: PositionPlan | null;
   caisses: {
     numero: number;
     ouverte: boolean;
@@ -86,6 +107,8 @@ export interface EtatStand {
   tribuneChoisie: boolean;
   rang: number;
   surTribune: number;
+  /** Posé à la main ; null : placé tout seul (tribune et rang). */
+  position: PositionPlan | null;
   couleur: CouleurStand;
   resume: string;
   signaux: SignalStand[];
@@ -94,6 +117,7 @@ export interface EtatStand {
 
 /** Réponse de GET /api/plan-stade. */
 export interface PlanStade {
+  modele: ModeleLieu;
   evenement: { id: string; libelle: string } | null;
   stands: EtatStand[];
   seuils: typeof SEUILS_STADE;
@@ -230,6 +254,7 @@ export function signauxStand(d: DonneesStand, contexte: { enDirect: boolean; sta
 
 /** Couleur et état du stade, stand par stand. `stadeVend` : une vente dans les 5 dernières minutes, tous stands confondus. */
 export function planStade(
+  modele: ModeleLieu,
   donnees: readonly DonneesStand[],
   evenement: { id: string; libelle: string } | null,
   maintenant: number,
@@ -251,6 +276,7 @@ export function planStade(
       tribuneChoisie: p.choisie,
       rang: p.rang,
       surTribune: p.surTribune,
+      position: d.position,
       couleur,
       resume:
         couleur === "rouge" || couleur === "orange"
@@ -264,5 +290,5 @@ export function planStade(
   });
   const ordre = TRIBUNES.map((t) => t.code);
   stands.sort((a, b) => ordre.indexOf(a.tribune) - ordre.indexOf(b.tribune) || a.rang - b.rang);
-  return { evenement, stands, seuils: SEUILS_STADE };
+  return { modele, evenement, stands, seuils: SEUILS_STADE };
 }

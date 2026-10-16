@@ -67,6 +67,23 @@ describe("le stade en direct", () => {
     expect((await appel("PATCH", `/api/stands/${comptoir.id}`, { tribune: "centre" })).statut).toBe(400);
   });
 
+  it("décor et place des stands : patinoire, Comptoir posé à la main puis remis en automatique ; valeurs hors limites refusées", async () => {
+    let r = await appel<PlanStade>("PUT", "/api/plan-stade", { modele: "patinoire", positions: [{ standId: comptoir.id, position: { x: 12.34, z: -48.06 } }] });
+    expect(r.statut).toBe(200);
+    expect(r.corps.modele).toBe("patinoire");
+    expect(du(r.corps, comptoir).position).toEqual({ x: 12.3, z: -48.1 });
+    expect(du(r.corps, nord).position).toBeNull();
+    expect((await plan()).modele).toBe("patinoire");
+
+    expect((await appel("PUT", "/api/plan-stade", { modele: "velodrome" })).statut).toBe(400);
+    expect((await appel("PUT", "/api/plan-stade", { positions: [{ standId: comptoir.id, position: { x: 500, z: 0 } }] })).statut).toBe(400);
+    expect((await appel("PUT", "/api/plan-stade", { positions: [{ standId: "00000000-0000-4000-8000-000000000000", position: null }] })).statut).toBe(404);
+
+    r = await appel<PlanStade>("PUT", "/api/plan-stade", { modele: "stade", positions: [{ standId: comptoir.id, position: null }] });
+    expect(r.corps.modele).toBe("stade");
+    expect(du(r.corps, comptoir).position).toBeNull();
+  });
+
   it("pendant l'événement : rupture des frites → Buvette Nord en rouge avec l'alerte ; le Comptoir sans caisse ouverte reste gris", async () => {
     const ev = (await appel<Evenement[]>("POST", "/api/evenements", { libelle: "Rouen – Caen", debut: new Date().toISOString() })).corps[0]!;
     expect((await appel("PUT", "/api/stock/mise-en-place", { evenementId: ev.id, standId: nord.id, produitId: frites.id, quantite: 10 })).statut).toBe(200);

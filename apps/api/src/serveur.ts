@@ -52,7 +52,7 @@ import { optionDeLaRoute } from "@flaix/domain";
 
 const METHODES_MODIFIANTES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 /** Routes de configuration, en lecture seule en mode formation. */
-const CONFIGURATION = [/^\/api\/(stands|categories|produits|lieu|equipe|appareils|click-collect|couts-buvette|fidelite|ingredients|alertes|support|emails|wallet|caisses-externes|mes-frais|emballages)(\/|$)/, /^\/api\/caisses\/:id(\/appareil)?$/];
+const CONFIGURATION = [/^\/api\/(stands|categories|produits|lieu|equipe|appareils|click-collect|couts-buvette|fidelite|ingredients|alertes|support|emails|wallet|caisses-externes|mes-frais|emballages|plan-stade)(\/|$)/, /^\/api\/caisses\/:id(\/appareil)?$/];
 
 export async function construireServeur(base: Base, options: { journaliser?: boolean } = {}): Promise<FastifyInstance> {
   // Derrière le relais https du serveur (Caddy), l'adresse du visiteur est celle transmise par le

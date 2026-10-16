@@ -1,11 +1,24 @@
 import type { FastifyInstance } from "fastify";
-import { SEUILS_STADE, clotureADistance, planStade, type DonneesStand, type PlanStade, type Tribune } from "@flaix/domain";
-import type { Base, Client } from "../base.ts";
+import { z } from "zod";
+import { RAYON_PLAN, SEUILS_STADE, clotureADistance, planStade, type DonneesStand, type ModeleLieu, type PlanStade, type Tribune } from "@flaix/domain";
+import { verrouiller, type Base, type Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
+import { introuvable } from "../erreurs.ts";
+import { inscrireJet } from "../journal-technique.ts";
 import { lireOptions } from "../options.ts";
 import { listerEvenements } from "./evenements.ts";
 import { stockDuMatch } from "./stock.ts";
-import { contexte } from "./outils.ts";
+import { Uuid, contexte, corps } from "./outils.ts";
+
+const Coordonnee = z.number().finite().min(-RAYON_PLAN).max(RAYON_PLAN);
+/** Ce que le directeur enregistre en sortant du mode « Placer les stands » : le décor, et les stands déplacés ou remis en automatique (null). */
+const ModifPlan = z.object({
+  modele: z.enum(["stade", "patinoire", "arene", "salle"]).optional(),
+  positions: z
+    .array(z.object({ standId: Uuid, position: z.object({ x: Coordonnee, z: Coordonnee }).nullable() }))
+    .max(200)
+    .default([]),
+});
 
 /**
  * Le stade en direct (dossier §15.162, revu au §15.163) : pour chaque stand actif, ce que lisent déjà Caisses, Stock et
@@ -16,12 +29,16 @@ export async function lirePlanStade(c: Client, lieuId: string, maintenant = new 
   const options = await lireOptions(c, lieuId);
   const enCours = (await listerEvenements(c, lieuId)).find((e) => e.etat === "ouvert") ?? null;
 
-  const { rows: stands } = await c.query<{ id: string; nom: string; tribune: Tribune | null }>(
-    "SELECT id, nom, tribune FROM stand WHERE lieu_id = $1 AND actif ORDER BY lower(nom)",
+  const { rows: lieu } = await c.query<{ plan_modele: ModeleLieu }>("SELECT plan_modele FROM lieu WHERE id = $1", [lieuId]);
+  const { rows: stands } = await c.query<{ id: string; nom: string; tribune: Tribune | null; x: number | null; z: number | null }>(
+    "SELECT id, nom, tribune, plan_x AS x, plan_z AS z FROM stand WHERE lieu_id = $1 AND actif ORDER BY lower(nom)",
     [lieuId],
   );
   const donnees = new Map<string, DonneesStand>(
-    stands.map((s) => [s.id, { ...s, caisses: [], stock: [], hygiene: { nonConformes: 0, ouvertureARelever: [] } }]),
+    stands.map((s) => [
+      s.id,
+      { id: s.id, nom: s.nom, tribune: s.tribune, position: s.x === null || s.z === null ? null : { x: s.x, z: s.z }, caisses: [], stock: [], hygiene: { nonConformes: 0, ouvertureARelever: [] } },
+    ]),
   );
 
   // Caisses actives : ouverte ou non, nouvelles de la tablette ; pendant l'événement ouvert, CA et tickets (même calcul
@@ -124,12 +141,41 @@ export async function lirePlanStade(c: Client, lieuId: string, maintenant = new 
     }
   }
 
-  return planStade([...donnees.values()], enCours ? { id: enCours.id, libelle: enCours.libelle } : null, maintenant.getTime());
+  return planStade(lieu[0]!.plan_modele, [...donnees.values()], enCours ? { id: enCours.id, libelle: enCours.libelle } : null, maintenant.getTime());
 }
 
 export async function routesPlanStade(app: FastifyInstance, { base }: { base: Base }) {
   app.get("/api/plan-stade", async (req): Promise<PlanStade> => {
     const auth = await exigerDirecteur(req, base);
     return base.transaction(contexte(auth), (c) => lirePlanStade(c, auth.lieuId));
+  });
+
+  // Décor du lieu et place des stands (§15.164), enregistrés d'un coup en sortant du mode « Placer les stands ».
+  app.put("/api/plan-stade", async (req): Promise<PlanStade> => {
+    const auth = await exigerDirecteur(req, base);
+    const demande = corps(ModifPlan, req);
+    return base.transaction(contexte(auth), async (c) => {
+      await verrouiller(c, `plan-stade:${auth.lieuId}`);
+      const { rows: lieu } = await c.query<{ plan_modele: ModeleLieu }>("SELECT plan_modele FROM lieu WHERE id = $1", [auth.lieuId]);
+      const details: { modele?: { avant: ModeleLieu; apres: ModeleLieu }; stands?: { stand: string; position: { x: number; z: number } | null }[] } = {};
+      if (demande.modele && demande.modele !== lieu[0]!.plan_modele) {
+        await c.query("UPDATE lieu SET plan_modele = $2 WHERE id = $1", [auth.lieuId, demande.modele]);
+        details.modele = { avant: lieu[0]!.plan_modele, apres: demande.modele };
+      }
+      for (const p of demande.positions) {
+        const arrondi = p.position && { x: Math.round(p.position.x * 10) / 10, z: Math.round(p.position.z * 10) / 10 };
+        const { rows } = await c.query<{ nom: string }>("UPDATE stand SET plan_x = $3, plan_z = $4 WHERE lieu_id = $1 AND id = $2 RETURNING nom", [
+          auth.lieuId,
+          p.standId,
+          arrondi?.x ?? null,
+          arrondi?.z ?? null,
+        ]);
+        if (!rows[0]) throw introuvable("Stand");
+        (details.stands ??= []).push({ stand: rows[0].nom, position: arrondi });
+      }
+      if (details.modele || details.stands)
+        await inscrireJet(c, { lieuId: auth.lieuId, type: "plan_stade_modifie", utilisateurId: auth.utilisateurId, details });
+      return lirePlanStade(c, auth.lieuId);
+    });
   });
 }

@@ -7,6 +7,7 @@ const stand = (x: Partial<DonneesStand>): DonneesStand => ({
   id: "a",
   nom: "Buvette",
   tribune: null,
+  position: null,
   caisses: [{ numero: 1, ouverte: true, ouverteLe: ilYa(30), vueLe: ilYa(0), aEnvoyer: 0, caNet: 12_000, tickets: 20, annulations: 0, horsTarif: 0, derniereVente: ilYa(1) }],
   stock: [],
   hygiene: { nonConformes: 0, ouvertureARelever: [] },
@@ -37,6 +38,7 @@ describe("le stade en direct (§15.162)", () => {
 
   it("couleurs : rupture → rouge ; stock faible → orange ; ouvert sans souci → vert ; fermé → gris", () => {
     const plan = planStade(
+      "stade",
       [
         stand({ id: "r", nom: "Buvette Nord", stock: [{ nom: "Frites", alerte: "rupture", restant: -2, sur: 120, vendu: 122, venduRecent: 30, reserve: 48 }, { nom: "Bière", alerte: "faible", restant: 10, sur: 200, vendu: 190, venduRecent: 0, reserve: null }] }),
         stand({ id: "o", nom: "Buvette Est", stock: [{ nom: "Bière", alerte: "faible", restant: 10, sur: 200, vendu: 190, venduRecent: 0, reserve: null }] }),
@@ -59,7 +61,7 @@ describe("le stade en direct (§15.162)", () => {
 
   it("stock : rupture prévue au rythme des 15 dernières minutes, réserve rappelée ; rien sans vente récente", () => {
     const etat = (l: Partial<DonneesStand["stock"][number]>) =>
-      planStade([stand({ stock: [{ nom: "Frites", alerte: null, restant: 30, sur: 200, vendu: 170, venduRecent: 0, reserve: null, ...l }] })], EV, MAINTENANT).stands[0]!;
+      planStade("stade", [stand({ stock: [{ nom: "Frites", alerte: null, restant: 30, sur: 200, vendu: 170, venduRecent: 0, reserve: null, ...l }] })], EV, MAINTENANT).stands[0]!;
     expect(minutesAvantRupture(30, 45)).toBe(10);
     expect(minutesAvantRupture(0, 45)).toBeNull();
     expect(etat({ venduRecent: 0 }).couleur).toBe("vert");
@@ -74,28 +76,29 @@ describe("le stade en direct (§15.162)", () => {
   it("caisses : aucune vente depuis 15 min alors que le stade vend ; ventes hors tarif ; annulations nombreuses", () => {
     const caisse = (x: Partial<DonneesStand["caisses"][number]>) => ({ numero: 2, ouverte: true, ouverteLe: ilYa(60), vueLe: ilYa(0), aEnvoyer: 0, caNet: 0, tickets: 0, annulations: 0, horsTarif: 0, derniereVente: null, ...x });
     const autre = stand({ id: "b", nom: "Bar", caisses: [caisse({ numero: 9, derniereVente: ilYa(1) })] });
-    const calme = planStade([stand({ caisses: [caisse({ derniereVente: ilYa(18) })] }), autre], EV, MAINTENANT).stands.find((s) => s.id === "a")!;
+    const calme = planStade("stade", [stand({ caisses: [caisse({ derniereVente: ilYa(18) })] }), autre], EV, MAINTENANT).stands.find((s) => s.id === "a")!;
     expect(calme).toMatchObject({ couleur: "orange", resume: "Caisse 2 : aucune vente depuis 18 min" });
     // Tout le stade est calme (mi-temps finie, fin de match) : pas d'alerte.
-    expect(planStade([stand({ caisses: [caisse({ derniereVente: ilYa(18) })] })], EV, MAINTENANT).stands[0]!.couleur).toBe("vert");
-    expect(planStade([stand({ caisses: [caisse({ ouverteLe: ilYa(40), derniereVente: null })] }), autre], EV, MAINTENANT).stands.find((s) => s.id === "a")!.resume).toBe("Caisse 2 : aucune vente depuis l'ouverture (40 min)");
-    const ventes = planStade([stand({ caisses: [caisse({ derniereVente: ilYa(1), tickets: 90, annulations: 6, horsTarif: 3 })] })], EV, MAINTENANT).stands[0]!;
+    expect(planStade("stade", [stand({ caisses: [caisse({ derniereVente: ilYa(18) })] })], EV, MAINTENANT).stands[0]!.couleur).toBe("vert");
+    expect(planStade("stade", [stand({ caisses: [caisse({ ouverteLe: ilYa(40), derniereVente: null })] }), autre], EV, MAINTENANT).stands.find((s) => s.id === "a")!.resume).toBe("Caisse 2 : aucune vente depuis l'ouverture (40 min)");
+    const ventes = planStade("stade", [stand({ caisses: [caisse({ derniereVente: ilYa(1), tickets: 90, annulations: 6, horsTarif: 3 })] })], EV, MAINTENANT).stands[0]!;
     expect(ventes.signaux.map((x) => x.titre)).toEqual(["Caisse 2 : 3 ventes à un prix différent du tarif", "Caisse 2 : 6 annulations ce soir"]);
     expect(ventes.signaux[1]!.detail).toMatch(/^6 % des tickets/);
     // 5 annulations sur 200 ventes : 2,5 %, normal.
-    expect(planStade([stand({ caisses: [caisse({ derniereVente: ilYa(1), tickets: 195, annulations: 5 })] })], EV, MAINTENANT).stands[0]!.couleur).toBe("vert");
+    expect(planStade("stade", [stand({ caisses: [caisse({ derniereVente: ilYa(1), tickets: 195, annulations: 5 })] })], EV, MAINTENANT).stands[0]!.couleur).toBe("vert");
   });
 
   it("tablette muette (rouge après 15 min) ou tickets à envoyer, hygiène du stand → orange ; hors événement, le stock ne compte pas", () => {
     const k = { numero: 3, ouverte: true, ouverteLe: ilYa(60), aEnvoyer: 0, caNet: 0, tickets: 0, annulations: 0, horsTarif: 0, derniereVente: ilYa(1) };
-    const muette = planStade([stand({ caisses: [{ ...k, vueLe: ilYa(6) }] })], EV, MAINTENANT).stands[0]!;
+    const muette = planStade("stade", [stand({ caisses: [{ ...k, vueLe: ilYa(6) }] })], EV, MAINTENANT).stands[0]!;
     expect(muette).toMatchObject({ couleur: "orange", resume: "Caisse 3 : pas de nouvelles de la tablette depuis 6 min" });
-    expect(planStade([stand({ caisses: [{ ...k, vueLe: ilYa(22) }] })], EV, MAINTENANT).stands[0]!).toMatchObject({ couleur: "rouge", resume: "Caisse 3 : pas de nouvelles de la tablette depuis 22 min" });
-    const enAttente = planStade([stand({ caisses: [{ ...k, vueLe: ilYa(0), aEnvoyer: 4 }] })], EV, MAINTENANT).stands[0]!;
+    expect(planStade("stade", [stand({ caisses: [{ ...k, vueLe: ilYa(22) }] })], EV, MAINTENANT).stands[0]!).toMatchObject({ couleur: "rouge", resume: "Caisse 3 : pas de nouvelles de la tablette depuis 22 min" });
+    const enAttente = planStade("stade", [stand({ caisses: [{ ...k, vueLe: ilYa(0), aEnvoyer: 4 }] })], EV, MAINTENANT).stands[0]!;
     expect(enAttente.resume).toBe("Caisse 3 : 4 tickets à envoyer");
-    const hygiene = planStade([stand({ hygiene: { nonConformes: 2, ouvertureARelever: ["Frigo bar"] } })], EV, MAINTENANT).stands[0]!;
+    const hygiene = planStade("stade", [stand({ hygiene: { nonConformes: 2, ouvertureARelever: ["Frigo bar"] } })], EV, MAINTENANT).stands[0]!;
     expect(hygiene.signaux.map((s) => s.titre)).toEqual(["Hygiène : 2 températures hors limite en 7 jours", "Hygiène : températures d'ouverture à relever (1)"]);
     const horsEvenement = planStade(
+      "stade",
       [stand({ caisses: [], stock: [{ nom: "Frites", alerte: "rupture", restant: 0, sur: 1, vendu: 1, venduRecent: 1, reserve: null }], hygiene: { nonConformes: 0, ouvertureARelever: ["Frigo"] } })],
       null,
       MAINTENANT,
