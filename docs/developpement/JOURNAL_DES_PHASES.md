@@ -71,7 +71,7 @@
 | 63 | [Le stade en direct : stands en 3D, en couleur, alertes au clic](#phase-63) | §15.162 | [`8ff9104`](https://github.com/Break-Eat-APP/flaix-expert/commit/8ff9104a938807f869865dcc4579d59b4d0c88f3) [`3af785c`](https://github.com/Break-Eat-APP/flaix-expert/commit/3af785c695d739f8c33bfb6dd28e0aa4bd056c6d) | livrée |
 | 64 | [Le stade en direct sans file d'attente : alertes utiles pendant les ventes](#phase-64) | §15.163 | [`af99274`](https://github.com/Break-Eat-APP/flaix-expert/commit/af99274982ae73f30fb39365fafb0e429ba960dc) | livrée |
 | 65 | [Le lieu en 3D : quatre décors, stands posés à la main](#phase-65) | §15.164 | [`2bcf514`](https://github.com/Break-Eat-APP/flaix-expert/commit/2bcf5147ff8c71bc4b2043c05ff9050b1ac30ee5) [`284297b`](https://github.com/Break-Eat-APP/flaix-expert/commit/284297bec857e094f0e40459c102f2b8a2b564c4) [`69daccc`](https://github.com/Break-Eat-APP/flaix-expert/commit/69dacccb4d5c16bcd19da326cbec79bee1288efa) | livrée |
-| 66 | [Remettre le stock à zéro ; supprimer un événement à venir](#phase-66) | §15.165 | [`f4e5aa8`](https://github.com/Break-Eat-APP/flaix-expert/commit/f4e5aa88b6979734a6be3d1f9b21989be6bc01e2) [`325a75d`](https://github.com/Break-Eat-APP/flaix-expert/commit/325a75dbd36aec91527e5803d0c9cbd564793dae) | livrée |
+| 66 | [Remettre le stock à zéro ; supprimer un événement à venir](#phase-66) | §15.165 | [`f4e5aa8`](https://github.com/Break-Eat-APP/flaix-expert/commit/f4e5aa88b6979734a6be3d1f9b21989be6bc01e2) [`325a75d`](https://github.com/Break-Eat-APP/flaix-expert/commit/325a75dbd36aec91527e5803d0c9cbd564793dae) [`04e39ff`](https://github.com/Break-Eat-APP/flaix-expert/commit/04e39ff9bee14028ecdf78572118a157a03a1712) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -2382,6 +2382,7 @@
 - **Commits** :
   - [`f4e5aa8`](https://github.com/Break-Eat-APP/flaix-expert/commit/f4e5aa88b6979734a6be3d1f9b21989be6bc01e2) 2026-10-17 — Remise à zéro du stock (restes et réserve, avec motif) et suppression d'un événement à venir — base, serveur
   - [`325a75d`](https://github.com/Break-Eat-APP/flaix-expert/commit/325a75dbd36aec91527e5803d0c9cbd564793dae) 2026-10-17 — Écrans : « Remettre à zéro » dans Stock (motif obligatoire), suppression d'un événement à venir dans Saison
+  - [`04e39ff`](https://github.com/Break-Eat-APP/flaix-expert/commit/04e39ff9bee14028ecdf78572118a157a03a1712) 2026-10-17 — Saison : la corbeille sur chaque événement ; ouvert ou clos, elle explique pourquoi il ne se supprime pas
 - **Migrations (base)** :
   - [`db/migrations/0053_remise_zero_suppression_evenement.sql`](../../db/migrations/0053_remise_zero_suppression_evenement.sql) — créé
 - **Moteur de calcul (packages/domain)** :
@@ -2443,3 +2444,4 @@
 - [`a3a959a`](https://github.com/Break-Eat-APP/flaix-expert/commit/a3a959a4abc5febb89d7a311b51138274f711d84) 2026-10-12 — Dossier §15.162 : le stade en direct (phase 63)
 - [`01704d9`](https://github.com/Break-Eat-APP/flaix-expert/commit/01704d9c200e516658e883a6e819baab88ba7bfe) 2026-10-16 — Dossier §15.163 : le stade en direct sans file d'attente (phase 64)
 - [`c0abb91`](https://github.com/Break-Eat-APP/flaix-expert/commit/c0abb91e5e3c865b1dfbfb003c750ccc3bc2344e) 2026-10-16 — Dossier §15.164 : le lieu en 3D, quatre décors et stands posés à la main (phase 65)
+- [`0004b81`](https://github.com/Break-Eat-APP/flaix-expert/commit/0004b81d242a6f85eb36ebf9ab084284b0e99559) 2026-10-17 — Dossier §15.165 : remise à zéro du stock, suppression d'un événement à venir (phase 66)

@@ -5,6 +5,20 @@
 
 ## 2026-10-17
 
+### [`04e39ff`](https://github.com/Break-Eat-APP/flaix-expert/commit/04e39ff9bee14028ecdf78572118a157a03a1712) — Saison : la corbeille sur chaque événement ; ouvert ou clos, elle explique pourquoi il ne se supprime pas *(phase 66)*
+
+- modifié : `apps/web/src/pages/parametres/Saison.tsx`
+- modifié : `apps/web/src/pages/stock/RemiseAZero.test.tsx`
+
+### [`0004b81`](https://github.com/Break-Eat-APP/flaix-expert/commit/0004b81d242a6f85eb36ebf9ab084284b0e99559) — Dossier §15.165 : remise à zéro du stock, suppression d'un événement à venir (phase 66)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`325a75d`](https://github.com/Break-Eat-APP/flaix-expert/commit/325a75dbd36aec91527e5803d0c9cbd564793dae) — Écrans : « Remettre à zéro » dans Stock (motif obligatoire), suppression d'un événement à venir dans Saison *(phase 66)*
 
 - modifié : `apps/web/src/pages/parametres/Saison.tsx`

@@ -5291,3 +5291,8 @@ réserve à 0, produits et tarifs intacts ; écriture seule maintenue, même pou
 événement clos sans vente refusé ; événement à venir supprimé avec sa mise en place ; événement ouvert avec ventes
 refusé, même en appelant la base directement), écran 3 ; stock, ingrédients, clôtures et conformité de la base
 relancés. Pas d'essai dans le navigateur (poste à court de mémoire, deux redémarrages le 2026-10-16 et 17).
+
+**Ajout du 2026-10-17** (retour de Rémi : *« j'arrive pas à supprimer le match du 23 Marseille vs Rouen »*) : la
+corbeille n'apparaissait que sur les événements à venir, sans rien dire pour les autres. Elle est désormais sur chaque
+événement ; pour un événement ouvert ou clos, elle explique pourquoi il ne se supprime pas (clôture de caisse scellée et
+chaînée) et renvoie à « Remettre à zéro » dans Stock (commit 04e39ff).

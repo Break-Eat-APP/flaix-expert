@@ -69,7 +69,7 @@ const PHASES = [
   { n: 63, titre: "Le stade en direct : stands en 3D, en couleur, alertes au clic", dossier: "§15.162", commits: ["8ff9104", "3af785c"] },
   { n: 64, titre: "Le stade en direct sans file d'attente : alertes utiles pendant les ventes", dossier: "§15.163", commits: ["af99274"] },
   { n: 65, titre: "Le lieu en 3D : quatre décors, stands posés à la main", dossier: "§15.164", commits: ["2bcf514", "284297b", "69daccc"] },
-  { n: 66, titre: "Remettre le stock à zéro ; supprimer un événement à venir", dossier: "§15.165", commits: ["f4e5aa8", "325a75d"] },
+  { n: 66, titre: "Remettre le stock à zéro ; supprimer un événement à venir", dossier: "§15.165", commits: ["f4e5aa8", "325a75d", "04e39ff"] },
 ];
 
 module.exports = { PHASES };
