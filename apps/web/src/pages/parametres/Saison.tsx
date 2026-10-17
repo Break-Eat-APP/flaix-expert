@@ -130,6 +130,27 @@ function LigneMatch({ evenement: e, maj }: { evenement: Evenement; maj: (l: Even
   const [confirmer, setConfirmer] = useState(false);
   const supprimer = useMutation({ mutationFn: () => api.supprimer<Evenement[]>(`/evenements/${e.id}`), onSuccess: maj });
 
+  // Ouvert ou clos : la corbeille explique pourquoi l'événement ne se supprime pas.
+  if (confirmer && e.etat !== "a_venir")
+    return (
+      <div className="caisse" style={{ alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 260px" }}>
+          <strong>« {e.libelle} » ne peut pas être supprimé</strong>
+          <div className="discret" style={{ fontSize: 12.5 }}>
+            {e.etat === "ouvert"
+              ? "Il est ouvert. Un événement qui a été ouvert reste dans l'historique : à sa clôture, il reçoit une clôture de caisse scellée et chaînée aux autres (obligation légale)."
+              : "Il a été ouvert puis clos : sa clôture de caisse est scellée et chaînée aux autres (obligation légale). Il reste dans l'historique, à 0 € s'il n'a rien vendu."}{" "}
+            S'il s'agissait d'un essai{e.etat === "ouvert" ? ", clôture-le dans Clôtures, puis" : ","} remets le stock à zéro (<Link to="/stock">Stock › Remettre à zéro</Link>) : il ne pèsera plus sur ton stock. Pour tes prochains essais, utilise le mode Formation.
+          </div>
+        </div>
+        <div className="actions">
+          <button className="btn btn-fantome" onClick={() => setConfirmer(false)}>
+            Compris
+          </button>
+        </div>
+      </div>
+    );
+
   if (confirmer)
     return (
       <div className="caisse" style={{ alignItems: "center", flexWrap: "wrap" }}>
@@ -198,14 +219,9 @@ function LigneMatch({ evenement: e, maj }: { evenement: Evenement; maj: (l: Even
               Modifier
             </button>
             {e.etat === "a_venir" && (
-              <>
-                <Link className="btn btn-fantome" to="/caisses" title="L'événement s'ouvre le jour J depuis Caisses">
-                  S'ouvre depuis Caisses
-                </Link>
-                <button className="btn btn-fantome" aria-label={`Supprimer ${e.libelle}`} title="Supprimer cet événement" onClick={() => setConfirmer(true)}>
-                  <Trash2 size={15} />
-                </button>
-              </>
+              <Link className="btn btn-fantome" to="/caisses" title="L'événement s'ouvre le jour J depuis Caisses">
+                S'ouvre depuis Caisses
+              </Link>
             )}
             {e.etat === "ouvert" && (
               <>
@@ -222,6 +238,9 @@ function LigneMatch({ evenement: e, maj }: { evenement: Evenement; maj: (l: Even
                 Voir les tickets
               </Link>
             )}
+            <button className="btn btn-fantome" aria-label={`Supprimer ${e.libelle}`} title="Supprimer cet événement" onClick={() => setConfirmer(true)}>
+              <Trash2 size={15} />
+            </button>
           </div>
         </>
       )}

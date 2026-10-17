@@ -46,12 +46,15 @@ describe("supprimer un événement", () => {
   const essai = evt({ id: "e", libelle: "Essai du 23" });
   const clos = evt({ id: "c", libelle: "Match d'ouverture", etat: "clos", closLe: "2026-09-23T23:00:00.000Z" });
 
-  it("à venir : confirmation puis suppression ; clos : pas de bouton", async () => {
+  it("à venir : confirmation puis suppression ; clos : la corbeille explique pourquoi, sans rien envoyer", async () => {
     const serveur = vi.fn(async (_url: string, init?: RequestInit) => reponse(init?.method === "DELETE" ? [clos] : [essai, clos]));
     vi.stubGlobal("fetch", serveur);
     monter(<Saison />);
     expect(await screen.findByText("Essai du 23")).toBeTruthy();
-    expect(screen.queryByLabelText("Supprimer Match d'ouverture")).toBeNull();
+    fireEvent.click(screen.getByLabelText("Supprimer Match d'ouverture"));
+    expect(screen.getByText("« Match d'ouverture » ne peut pas être supprimé")).toBeTruthy();
+    expect(screen.getByText(/chaînée aux autres/)).toBeTruthy();
+    fireEvent.click(screen.getByText("Compris"));
     fireEvent.click(screen.getByLabelText("Supprimer Essai du 23"));
     expect(screen.getByText("Supprimer « Essai du 23 » ?")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
