@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-17 : remise à zéro du stock, suppression d'un événement à venir (§15.165)
+
+Stock › « Remettre à zéro » (motif, journal) ; Saison › supprimer un événement à venir. Un événement clos ne se supprime pas (clôture chaînée). Migration 0053.
+
 ## 2026-10-16 : le lieu en 3D, quatre décors et stands posés à la main (§15.164)
 
 Décor au choix (stade, patinoire, arène ronde, salle de spectacle) ; mode « Placer les stands » : glisser-déposer, retour en automatique, enregistrer. Migration 0052.

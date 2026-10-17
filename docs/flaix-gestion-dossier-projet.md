@@ -5260,3 +5260,34 @@ placement : décor choisi, stand glissé, remis en automatique, enregistré). Es
 avec 6 stands simulés, puis sur le compte de démonstration : patinoire choisie, Buvette Nord glissée au sud-est,
 enregistrée et relue. Corrigés à l'essai : buvettes de l'arène trop serrées et ordre inversé au sud, buvettes nord de la
 salle cachées par l'écran, fosse peu visible.
+
+### 15.165 Remettre le stock à zéro ; supprimer un événement à venir (2026-10-17)
+
+**Demande de Rémi** (2026-10-17) : *« si je veux un accès aux données produits, stock… pour supprimer les stocks que
+j'ai rentrés sur mon dernier événement, comment je fais ? »* puis *« je veux remettre à zéro, tu me le fais toi les
+stocks, et supprime-moi les événements du 23, garde les produits et leurs tarifs »* — et *« ok go »* pour les deux
+boutons proposés.
+
+**Décisions** :
+- **Pas d'effacement direct dans la base en ligne** (ni par Claude, ni par un accès donné à Rémi) : le stock et les
+  événements sont tracés exprès, la base refuse elle-même les suppressions, et le journal de caisse se conserve
+  (obligation légale). À la place, deux actions dans l'application, faites par le directeur, inscrites au journal.
+- **Remettre le stock à zéro** (Stock › « Remettre à zéro », motif obligatoire, refusé pendant un événement ouvert) :
+  rien n'est effacé ; une remise datée fait que les restes comptés avant elle ne passent plus à l'événement suivant
+  (produits et ingrédients), et la réserve repart d'un inventaire à 0 pour chaque produit et ingrédient qui y avait un
+  solde. Produits, tarifs et emballages ne bougent pas.
+- **Supprimer un événement** (Saison, après confirmation) : **seulement un événement à venir**, jamais ouvert ; sa mise
+  en place (produits, ingrédients), son planning, ses objectifs, ses dépenses et son brief partent avec lui.
+  **Un événement ouvert puis clos ne se supprime pas, même sans vente** : sa clôture de caisse (niveau « match ») est
+  scellée et chaînée aux autres clôtures (séquence, empreinte précédente, perpétuel) — la retirer casserait la chaîne.
+  Il reste dans l'historique (à 0 € s'il n'a rien vendu) ; la remise à zéro fait qu'il ne pèse plus sur le stock.
+- Base : les tables en écriture seule le restent ; seule la fonction `supprimer_evenement_a_venir` (propriétaire de la
+  base) peut retirer les lignes d'un événement à venir (mise en place, brief), pendant la suppression et pour cet
+  événement seulement. Toute autre trace inattendue bloque la suppression par sa clé étrangère.
+
+**Réalisé le 2026-10-17** : migration 0053 ; serveur (POST /api/stock/remise-a-zero, DELETE /api/evenements/:id) ;
+écrans (Stock, Saison). **Tests** : serveur 5 (remise refusée pendant un événement ouvert et sans motif, restes et
+réserve à 0, produits et tarifs intacts ; écriture seule maintenue, même pour le propriétaire hors suppression ;
+événement clos sans vente refusé ; événement à venir supprimé avec sa mise en place ; événement ouvert avec ventes
+refusé, même en appelant la base directement), écran 3 ; stock, ingrédients, clôtures et conformité de la base
+relancés. Pas d'essai dans le navigateur (poste à court de mémoire, deux redémarrages le 2026-10-16 et 17).

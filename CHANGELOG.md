@@ -3,7 +3,34 @@
 > Généré par `node infra/outils/journal-developpement.cjs` à partir de Git. Ne pas modifier à la main.
 > Chaque entrée : date, commit (lien GitHub), message, fichiers créés ou modifiés. Le plus récent en premier. Phases : [docs/developpement/JOURNAL_DES_PHASES.md](docs/developpement/JOURNAL_DES_PHASES.md).
 
+## 2026-10-17
+
+### [`325a75d`](https://github.com/Break-Eat-APP/flaix-expert/commit/325a75dbd36aec91527e5803d0c9cbd564793dae) — Écrans : « Remettre à zéro » dans Stock (motif obligatoire), suppression d'un événement à venir dans Saison *(phase 66)*
+
+- modifié : `apps/web/src/pages/parametres/Saison.tsx`
+- créé : `apps/web/src/pages/stock/RemiseAZero.test.tsx`
+- créé : `apps/web/src/pages/stock/RemiseAZero.tsx`
+- modifié : `apps/web/src/pages/stock/Stock.tsx`
+
+### [`f4e5aa8`](https://github.com/Break-Eat-APP/flaix-expert/commit/f4e5aa88b6979734a6be3d1f9b21989be6bc01e2) — Remise à zéro du stock (restes et réserve, avec motif) et suppression d'un événement à venir — base, serveur *(phase 66)*
+
+- modifié : `apps/api/src/routes/evenements.ts`
+- modifié : `apps/api/src/routes/stock-ingredients.ts`
+- modifié : `apps/api/src/routes/stock.ts`
+- créé : `apps/api/test/remise-zero.test.ts`
+- créé : `db/migrations/0053_remise_zero_suppression_evenement.sql`
+- modifié : `packages/domain/src/journal-technique.ts`
+
 ## 2026-10-16
+
+### [`c0abb91`](https://github.com/Break-Eat-APP/flaix-expert/commit/c0abb91e5e3c865b1dfbfb003c750ccc3bc2344e) — Dossier §15.164 : le lieu en 3D, quatre décors et stands posés à la main (phase 65)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/phases.cjs`
 
 ### [`69daccc`](https://github.com/Break-Eat-APP/flaix-expert/commit/69dacccb4d5c16bcd19da326cbec79bee1288efa) — Plan du lieu : ordre et écart des buvettes de l'arène, buvettes nord de la salle derrière l'écran, fosse plus visible *(phase 65)*
 
