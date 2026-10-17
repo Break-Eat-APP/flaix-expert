@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, PackagePlus, Plus, Sparkles } from "lucide-react";
+import { Minus, PackagePlus, Plus, RotateCcw, Sparkles } from "lucide-react";
 import { formaterMontant, lireMontant, type EtatReserve, type Evenement, type LigneStock, type StockMatch } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 import { StockIngredients } from "./StockIngredients.tsx";
 import { PrixFournisseurs } from "./PrixFournisseurs.tsx";
+import { RemiseAZero } from "./RemiseAZero.tsx";
 
 type Onglet = "mep" | "match" | "comptage" | "reserve" | "ingredients" | "fournisseurs";
 const ETAT = { a_venir: "à venir", ouvert: "en cours", clos: "clos" } as const;
@@ -28,6 +29,7 @@ export function Stock() {
   const [onglet, setOnglet] = useState<Onglet>("mep");
   const [evenementId, setEvenementId] = useState<string | null>(null);
   const [standId, setStandId] = useState("");
+  const [remise, setRemise] = useState(false);
   const evenements = useQuery({ queryKey: ["evenements"], queryFn: () => api.get<Evenement[]>("/evenements") });
   const stock = useQuery({
     queryKey: ["stock", evenementId],
@@ -47,11 +49,19 @@ export function Stock() {
         titre="Stock"
         description="Qu'est-ce que j'envoie aux stands, qu'est-ce qu'il reste ?"
         actions={
-          <Link className="btn btn-fantome" to="/prevision">
-            Prévision du prochain événement
-          </Link>
+          <>
+            <Link className="btn btn-fantome" to="/prevision">
+              Prévision du prochain événement
+            </Link>
+            {!remise && (
+              <button className="btn btn-fantome" onClick={() => setRemise(true)}>
+                <RotateCcw size={15} /> Remettre à zéro
+              </button>
+            )}
+          </>
         }
       />
+      {remise && <RemiseAZero fermer={() => setRemise(false)} />}
       <div className="onglets">
         {bouton("mep", "Mise en place")}
         {bouton("match", "Pendant l'événement")}

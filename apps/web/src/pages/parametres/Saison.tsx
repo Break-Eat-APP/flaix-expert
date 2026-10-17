@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import type { Evenement } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
@@ -105,7 +105,8 @@ export function Saison() {
           <li><strong>Un seul événement ouvert à la fois</strong> : chaque ticket sait ainsi, sans ambiguïté, à quel événement il appartient.</li>
           <li>Les caisses ne s'ouvrent que pendant un événement ouvert. Un événement ne se clôt qu'une fois toutes ses caisses clôturées ; sa clôture est définitive.</li>
           <li>Le libellé et la date se modifient tant que l'événement est à venir. Le <strong>nombre de spectateurs</strong> peut être complété à tout moment (il sert au CA par spectateur, il n'est pas une donnée fiscale).</li>
-          <li>Chaque création, ouverture, clôture et modification est inscrite au journal technique, avec son auteur et l'heure.</li>
+          <li><strong>Supprimer</strong> : seulement un événement à venir, jamais ouvert ; sa mise en place de stock, son planning, ses objectifs et ses dépenses partent avec lui. Un événement ouvert puis clos ne se supprime pas : sa clôture de caisse est scellée et chaînée aux autres (obligation légale). Il reste dans l'historique ; pour qu'il ne pèse plus sur le stock, remets le stock à zéro (Stock).</li>
+          <li>Chaque création, ouverture, clôture, modification et suppression est inscrite au journal technique, avec son auteur et l'heure.</li>
         </ul>
       </Regles>
     </>
@@ -125,6 +126,30 @@ function LigneMatch({ evenement: e, maj }: { evenement: Evenement; maj: (l: Even
     },
   });
   const nb = spectateurs.trim() === "" ? null : Number(spectateurs.replace(/\s/g, ""));
+  // Suppression d'un événement à venir (§15.165), après confirmation.
+  const [confirmer, setConfirmer] = useState(false);
+  const supprimer = useMutation({ mutationFn: () => api.supprimer<Evenement[]>(`/evenements/${e.id}`), onSuccess: maj });
+
+  if (confirmer)
+    return (
+      <div className="caisse" style={{ alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 260px" }}>
+          <strong>Supprimer « {e.libelle} » ?</strong>
+          <div className="discret" style={{ fontSize: 12.5 }}>
+            Sa mise en place de stock, son planning, ses objectifs et ses dépenses partent avec lui. Produits et tarifs ne bougent pas.
+          </div>
+          <MessageErreur erreur={supprimer.error} />
+        </div>
+        <div className="actions">
+          <button className="btn btn-danger" disabled={supprimer.isPending} onClick={() => supprimer.mutate()}>
+            <Trash2 size={15} /> Supprimer
+          </button>
+          <button className="btn btn-fantome" disabled={supprimer.isPending} onClick={() => setConfirmer(false)}>
+            Annuler
+          </button>
+        </div>
+      </div>
+    );
 
   return (
     <div className="caisse" style={{ alignItems: "flex-start" }}>
@@ -173,9 +198,14 @@ function LigneMatch({ evenement: e, maj }: { evenement: Evenement; maj: (l: Even
               Modifier
             </button>
             {e.etat === "a_venir" && (
-              <Link className="btn btn-fantome" to="/caisses" title="L'événement s'ouvre le jour J depuis Caisses">
-                S'ouvre depuis Caisses
-              </Link>
+              <>
+                <Link className="btn btn-fantome" to="/caisses" title="L'événement s'ouvre le jour J depuis Caisses">
+                  S'ouvre depuis Caisses
+                </Link>
+                <button className="btn btn-fantome" aria-label={`Supprimer ${e.libelle}`} title="Supprimer cet événement" onClick={() => setConfirmer(true)}>
+                  <Trash2 size={15} />
+                </button>
+              </>
             )}
             {e.etat === "ouvert" && (
               <>
