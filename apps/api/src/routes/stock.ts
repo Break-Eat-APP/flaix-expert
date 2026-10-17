@@ -22,7 +22,7 @@ import { inscrireJet } from "../journal-technique.ts";
 import { listerEvenements } from "./evenements.ts";
 import { Uuid, contexte, corps } from "./outils.ts";
 import { aUneRecette } from "./recettes.ts";
-import { stockIngredientsDuMatch } from "./stock-ingredients.ts";
+import { reserveParIngredient, stockIngredientsDuMatch } from "./stock-ingredients.ts";
 
 /*
  * Stock suivi à l'unité (dossier §15.105, module 4) : réserve centrale, mise en place et
@@ -42,6 +42,8 @@ const Livraison = z.object({
   fournisseur: z.string().trim().max(120).nullish().transform((v) => (v ? v : null)),
   dateLivraison: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date de livraison invalide."),
 });
+const RemiseZero = z.object({ motif: z.string().trim().min(5, "Indique un motif (5 caractères au moins).").max(300) });
+const jourDeParis = () => new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 const Inventaire = z.object({
   dateInventaire: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date d'inventaire invalide."),
   lignes: z.array(z.object({ produitId: Uuid, compte: z.number().int().min(0).max(1_000_000) })).min(1, "Compte au moins un produit.").max(2000),
@@ -111,12 +113,14 @@ export async function stockDuMatch(c: Client, lieuId: string, e: Evenement): Pro
       WHERE c.lieu_id = $1 AND c.evenement_id = $2`,
     p,
   );
-  // Reste de l'événement précédent : le dernier comptage du même stand, sur un événement joué avant.
+  // Reste de l'événement précédent : le dernier comptage du même stand, sur un événement joué avant — et après la
+  // dernière remise à zéro du stock (§15.165).
   const { rows: restes } = avant.length
     ? await c.query<{ stand_id: string; produit_id: string; quantite: number }>(
         `SELECT DISTINCT ON (c.stand_id, c.produit_id) c.stand_id, c.produit_id, c.quantite
            FROM stock_comptage c JOIN evenement e ON e.lieu_id = c.lieu_id AND e.id = c.evenement_id
           WHERE c.lieu_id = $1 AND c.evenement_id = ANY($2::uuid[])
+            AND coalesce(e.ouvert_le, e.debut) > coalesce((SELECT max(r.le) FROM stock_remise_zero r WHERE r.lieu_id = $1), '-infinity'::timestamptz)
           ORDER BY c.stand_id, c.produit_id, coalesce(e.ouvert_le, e.debut) DESC`,
         [lieuId, avant],
       )
@@ -444,6 +448,44 @@ export async function routesStock(app: FastifyInstance, { base }: { base: Base }
     });
     rep.code(201);
     return resultat;
+  });
+
+  // ---------- Remise à zéro (§15.165) : restes des stands ignorés désormais, réserve inventoriée à 0 ----------
+  app.post("/api/stock/remise-a-zero", async (req): Promise<{ le: string; produits: number; ingredients: number }> => {
+    const auth = await exigerDirecteur(req, base);
+    const { motif } = corps(RemiseZero, req);
+    return base.transaction(contexte(auth), async (c) => {
+      await verrouiller(c, `inventaire:${auth.lieuId}`);
+      if ((await listerEvenements(c, auth.lieuId)).some((e) => e.etat === "ouvert"))
+        throw new ErreurMetier(409, "Un événement est ouvert : clôture-le avant de remettre le stock à zéro.");
+      const { rows } = await c.query<{ le: Date }>("INSERT INTO stock_remise_zero (lieu_id, motif, par) VALUES ($1, $2, $3) RETURNING le", [auth.lieuId, motif, auth.utilisateurId]);
+      // Réserve : un inventaire à 0 pour chaque produit et ingrédient qui y a un solde.
+      const produits = (await reserveParProduit(c, auth.lieuId)).filter((r) => r.solde !== 0);
+      const ingredients = (await reserveParIngredient(c, auth.lieuId)).filter((r) => r.solde !== 0);
+      if (produits.length || ingredients.length) {
+        const { rows: inv } = await c.query<{ id: string }>("INSERT INTO inventaire_reserve (lieu_id, date_inventaire, par) VALUES ($1, $2, $3) RETURNING id", [
+          auth.lieuId,
+          jourDeParis(),
+          auth.utilisateurId,
+        ]);
+        for (const r of produits)
+          await c.query("INSERT INTO inventaire_reserve_ligne (lieu_id, inventaire_id, produit_id, calcule, compte) VALUES ($1, $2, $3, $4, 0)", [auth.lieuId, inv[0]!.id, r.produitId, r.solde]);
+        for (const r of ingredients)
+          await c.query("INSERT INTO inventaire_reserve_ingredient (lieu_id, inventaire_id, ingredient_id, calcule_milli, compte_milli) VALUES ($1, $2, $3, $4, 0)", [
+            auth.lieuId,
+            inv[0]!.id,
+            r.ingredientId,
+            Math.round(r.solde),
+          ]);
+      }
+      await inscrireJet(c, {
+        lieuId: auth.lieuId,
+        type: "stock_remis_a_zero",
+        utilisateurId: auth.utilisateurId,
+        details: { motif, reserveProduits: Object.fromEntries(produits.map((r) => [r.nom, r.solde])), reserveIngredients: Object.fromEntries(ingredients.map((r) => [r.nom, r.solde])) },
+      });
+      return { le: rows[0]!.le.toISOString(), produits: produits.length, ingredients: ingredients.length };
+    });
   });
 
   app.post("/api/stock/inventaires", async (req, rep): Promise<EtatReserve> => {

@@ -127,6 +127,35 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
     });
   });
 
+  // ---------- Suppression d'un événement à venir (§15.165) ----------
+  // Un événement ouvert puis clos a sa clôture scellée et chaînée aux autres : il reste dans l'historique.
+  app.delete("/api/evenements/:id", async (req) => {
+    const auth = await exigerDirecteur(req, base);
+    const { id } = ParamId.parse(req.params);
+    return base.transaction(contexte(auth), async (c) => {
+      const e = await lireEvenement(c, auth.lieuId, id);
+      if (e.etat === "ouvert") throw new ErreurMetier(409, `« ${e.libelle} » est ouvert : il ne se supprime pas.`);
+      if (e.etat === "clos")
+        throw new ErreurMetier(
+          409,
+          `« ${e.libelle} » a été ouvert puis clos : sa clôture fait partie de la chaîne des clôtures de caisse (obligation légale), il ne se supprime pas. Il reste dans l'historique ; pour qu'il ne pèse plus sur le stock, remets le stock à zéro (Stock).`,
+        );
+      const { rows } = await c.query<{ stock: number; planning: number }>(
+        `SELECT (SELECT count(*) FROM stock_mouvement WHERE lieu_id = $1 AND evenement_id = $2)::int + (SELECT count(*) FROM ingredient_mouvement WHERE lieu_id = $1 AND evenement_id = $2)::int AS stock,
+                (SELECT count(*) FROM affectation WHERE lieu_id = $1 AND evenement_id = $2)::int AS planning`,
+        [auth.lieuId, id],
+      );
+      await c.query("SELECT supprimer_evenement_a_venir($1)", [id]);
+      await inscrireJet(c, {
+        lieuId: auth.lieuId,
+        type: "evenement_supprime",
+        utilisateurId: auth.utilisateurId,
+        details: { evenement: id, libelle: e.libelle, debut: e.debut.toISOString(), lignesStock: rows[0]!.stock, affectations: rows[0]!.planning },
+      });
+      return listerEvenements(c, auth.lieuId);
+    });
+  });
+
   app.post("/api/evenements/:id/ouverture", async (req) => {
     const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);

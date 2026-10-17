@@ -131,6 +131,8 @@ export const TYPES_JET = {
   evenement_prive: "Événement privé : créé, modifié, clôturé ou réglé",
   facture_vente_emise: "Facture de vente émise",
   plan_stade_modifie: "Plan du lieu en 3D modifié (décor, place des stands)",
+  stock_remis_a_zero: "Stock remis à zéro (restes des stands et réserve)",
+  evenement_supprime: "Événement à venir supprimé (avec ce qui avait été préparé pour lui)",
 } as const;
 
 export type TypeJet = keyof typeof TYPES_JET;

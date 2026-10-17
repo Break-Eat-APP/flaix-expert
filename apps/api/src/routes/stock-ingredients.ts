@@ -86,7 +86,7 @@ async function consommation(c: Client, lieuId: string, e: Evenement): Promise<So
 }
 
 /** Solde calculé de la réserve par ingrédient suivi : dernier inventaire + livraisons − sorties depuis. */
-async function reserveParIngredient(c: Client, lieuId: string): Promise<IngredientReserve[]> {
+export async function reserveParIngredient(c: Client, lieuId: string): Promise<IngredientReserve[]> {
   const { rows } = await c.query<{ id: string; nom: string; unite: UniteIngredient; prix: number; compte: number | null; date_inventaire: string | null; livre: number; sorti: number }>(
     `WITH dernier AS (
        SELECT DISTINCT ON (l.ingredient_id) l.ingredient_id, l.compte_milli, i.le, to_char(i.date_inventaire, 'YYYY-MM-DD') AS date_inventaire
@@ -147,6 +147,7 @@ export async function stockIngredientsDuMatch(c: Client, lieuId: string, e: Even
         `SELECT DISTINCT ON (c.stand_id, c.ingredient_id) c.stand_id, c.ingredient_id, c.quantite_milli::float8 AS quantite
            FROM ingredient_comptage c JOIN evenement e ON e.lieu_id = c.lieu_id AND e.id = c.evenement_id
           WHERE c.lieu_id = $1 AND c.evenement_id = ANY($2::uuid[])
+            AND coalesce(e.ouvert_le, e.debut) > coalesce((SELECT max(r.le) FROM stock_remise_zero r WHERE r.lieu_id = $1), '-infinity'::timestamptz)
           ORDER BY c.stand_id, c.ingredient_id, coalesce(e.ouvert_le, e.debut) DESC`,
         [lieuId, avant],
       )
