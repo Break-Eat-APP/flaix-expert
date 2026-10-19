@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ProduitVendu } from "./modele.ts";
-import { aRevoir, mediane, pistesMarges, rangHeure, regrouperParts, reperesMarges, variation } from "./resultats.ts";
+import { aRevoir, margesParCategorie, mediane, pistesMarges, rangHeure, regrouperParts, reperesMarges, variation } from "./resultats.ts";
 import { formaterMontant } from "./argent.ts";
 
 const produit = (nom: string, quantite: number, prix: number, cout: number | null, taux = 1.2): ProduitVendu => {
@@ -44,5 +44,26 @@ describe("Résultats — calculs de présentation (§15.103)", () => {
     expect(pistes.map((p) => p.produit)).toEqual(["Bière 25 cl"]);
     // +0,50 € TTC à 20 % de TVA = +0,4167 € HT par vente × 312 = +130 €.
     expect(pistes[0]!.calcul).toContain("130,00");
+  });
+});
+
+describe("marge par catégorie (§15.169)", () => {
+  const p = (nom: string, categorie: string | null, quantite: number, caHt: number, marge: number | null, cibleMarge: number | null = null) =>
+    ({ produitId: nom, nom, categorie, quantite, caTtc: caHt, caHt, coutUnitaire: marge === null ? null : 0, marge, cibleMarge }) as ProduitVendu;
+  it("somme des marges, taux sur les produits au coût connu, cible commune, « Sans catégorie » en dernier", () => {
+    const r = margesParCategorie([
+      p("Pression", "Bières", 100, 50_000, 35_000, 7_000),
+      p("Bouteille", "Bières", 20, 10_000, 5_000, 7_000),
+      p("Sans coût", "Bières", 5, 2_000, null, 7_000),
+      p("Hot-dog", "Snacking", 40, 20_000, 12_000, 6_000),
+      p("Frites", "Snacking", 30, 9_000, 6_000, null),
+      p("Divers", null, 3, 900, 900),
+      p("Retiré", "Snacking", 0, 0, 0),
+    ]);
+    expect(r).toEqual([
+      { categorie: "Bières", quantite: 125, caHt: 62_000, marge: 40_000, caHtAvecCout: 60_000, sansCout: 1, cible: 7_000 },
+      { categorie: "Snacking", quantite: 70, caHt: 29_000, marge: 18_000, caHtAvecCout: 29_000, sansCout: 0, cible: null },
+      { categorie: "Sans catégorie", quantite: 3, caHt: 900, marge: 900, caHtAvecCout: 900, sansCout: 0, cible: null },
+    ]);
   });
 });

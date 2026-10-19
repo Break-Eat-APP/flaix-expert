@@ -10,6 +10,7 @@ import {
   type Periode,
   tauxMargePb,
   margeParVente,
+  margesParCategorie,
   pistesMarges,
   rangHeure,
   regrouperParts,
@@ -495,6 +496,7 @@ function VueMarges({ s }: { s: StatsMatch }) {
           </div>
         </Carte>
       )}
+      <MargeParCategorie produits={lignes} />
       <Carte titre="Marge produit par produit">
         <div className="scroll-x">
           <table className="tableau">
@@ -538,6 +540,67 @@ function VueMarges({ s }: { s: StatsMatch }) {
         </div>
       </Carte>
     </>
+  );
+}
+
+/** Marge totale de chaque catégorie (§15.169), avec sa cible quand elle est la même pour tous ses produits. */
+function MargeParCategorie({ produits }: { produits: readonly ProduitVendu[] }) {
+  const cats = margesParCategorie(produits);
+  if (cats.length === 0) return null;
+  const total = cats.reduce((t, c) => ({ caHt: t.caHt + c.caHt, marge: t.marge + c.marge, base: t.base + c.caHtAvecCout, sansCout: t.sansCout + c.sansCout }), { caHt: 0, marge: 0, base: 0, sansCout: 0 });
+  const taux = (marge: number, base: number) => (base > 0 ? `${((marge / base) * 100).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %` : "—");
+  return (
+    <Carte titre="Marge par catégorie" description="Marge = CA HT − coût matière et conditionnement. Le taux se calcule sur les produits dont le coût est saisi.">
+      <div className="scroll-x">
+        <table className="tableau">
+          <thead>
+            <tr>
+              <th>Catégorie</th>
+              <th className="d">Vendus</th>
+              <th className="d">CA HT</th>
+              <th className="d">Marge totale</th>
+              <th className="d">Marge %</th>
+              <th>Cible</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cats.map((c) => (
+              <tr key={c.categorie}>
+                <td>
+                  {c.categorie}
+                  {c.sansCout > 0 && (
+                    <span className="cout-manquant" style={{ marginLeft: 8 }}>
+                      {c.sansCout} sans coût
+                    </span>
+                  )}
+                </td>
+                <td className="d chiffre">{c.quantite}</td>
+                <td className="d chiffre">{euros(c.caHt)}</td>
+                <td className="d chiffre">{c.caHtAvecCout > 0 ? euros(c.marge) : "—"}</td>
+                <td className="d chiffre">{taux(c.marge, c.caHtAvecCout)}</td>
+                <td>{c.caHtAvecCout > 0 ? <EtatCibleMarge etat={etatCible(tauxMargePb(c.marge, c.caHtAvecCout), c.cible)} /> : null}</td>
+              </tr>
+            ))}
+            <tr className="total">
+              <td>
+                <strong>Total</strong>
+              </td>
+              <td />
+              <td className="d chiffre">
+                <strong>{euros(total.caHt)}</strong>
+              </td>
+              <td className="d chiffre">
+                <strong>{total.base > 0 ? euros(total.marge) : "—"}</strong>
+              </td>
+              <td className="d chiffre">
+                <strong>{taux(total.marge, total.base)}</strong>
+              </td>
+              <td />
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </Carte>
   );
 }
 

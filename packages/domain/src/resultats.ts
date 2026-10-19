@@ -31,6 +31,46 @@ export function regrouperParts<T extends { nom: string; ca: number }>(parts: rea
   return [...tete, { nom: "Autres", ca: tries.slice(max).reduce((s, p) => s + p.ca, 0), autres: true }];
 }
 
+export interface MargeCategorie {
+  categorie: string;
+  quantite: number;
+  caHt: number;
+  /** Somme des marges des produits dont le coût est connu. */
+  marge: number;
+  /** CA HT des produits dont le coût est connu : base du taux de marge. */
+  caHtAvecCout: number;
+  /** Produits vendus sans coût : leur marge manque au total. */
+  sansCout: number;
+  /** Cible de marge commune à tous les produits de la catégorie (points de base) ; null sinon. */
+  cible: number | null;
+}
+
+/**
+ * Marge par catégorie (§15.169) : somme des marges produit par produit ; le taux se calcule sur le CA HT des seuls
+ * produits dont le coût est connu, les autres sont comptés à part (« coût manquant »). Triée par marge décroissante,
+ * « Sans catégorie » en dernier.
+ */
+export function margesParCategorie(produits: readonly ProduitVendu[]): MargeCategorie[] {
+  const parCat = new Map<string, MargeCategorie & { cibles: Set<number | null> }>();
+  for (const p of produits) {
+    if (p.quantite === 0) continue;
+    const nom = p.categorie ?? "Sans catégorie";
+    const c = parCat.get(nom) ?? { categorie: nom, quantite: 0, caHt: 0, marge: 0, caHtAvecCout: 0, sansCout: 0, cible: null, cibles: new Set() };
+    c.quantite += p.quantite;
+    c.caHt += p.caHt;
+    if (p.marge === null) c.sansCout += 1;
+    else {
+      c.marge += p.marge;
+      c.caHtAvecCout += p.caHt;
+    }
+    c.cibles.add(p.cibleMarge ?? null);
+    parCat.set(nom, c);
+  }
+  return [...parCat.values()]
+    .map(({ cibles, ...c }) => ({ ...c, cible: cibles.size === 1 ? [...cibles][0]! : null }))
+    .sort((a, b) => Number(a.categorie === "Sans catégorie") - Number(b.categorie === "Sans catégorie") || b.marge - a.marge);
+}
+
 export const margeParVente = (p: ProduitVendu): number | null => (p.marge === null || p.quantite <= 0 ? null : p.marge / p.quantite);
 
 export interface RepereMarges {
