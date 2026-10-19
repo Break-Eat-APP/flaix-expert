@@ -5418,3 +5418,37 @@ l'export de L'Addition), serveur (annulation d'un mauvais import puis réimport,
 
 **À faire par Rémi** : dans Caisses connectées › Importer › « Fichiers importés », annuler les deux imports ratés,
 réimporter le fichier, puis valider les rapprochements proposés dans Correspondances.
+
+### 15.169 Décor du lieu fixe, stock dans l'ordre, ouverture depuis En direct, stock des événements privés, marge par catégorie (2026-10-19)
+
+**Questions de Rémi** (2026-10-19) : réserve centrale en premier dans le stock, étapes séparées, filtre par stand ;
+*« pourquoi une TVA à 2,1 % ? »* ; stock des événements privés ; marge totale de chaque catégorie ; un chemin plus simple
+pour ouvrir un événement ; puis *« produits seulement et tu peux enchaîner le développement des 5 points »* et *« j'ai
+cru voir que l'enregistrement du schéma stade se remet à zéro… la patinoire reste la patinoire »*.
+
+**Constats** : le filtre par stand existait déjà (Mise en place, Pendant l'événement, Comptage) ; le décor du lieu
+n'était enregistré qu'avec « Enregistrer » à la fin de « Placer les stands » : quitter sans ce clic ramenait le stade ;
+un événement privé ne sortait rien du stock ; aucune marge par catégorie.
+
+**Décisions et réalisation** :
+- **Décor fixe** : le décor s'enregistre dès qu'on le choisit (« ✓ Décor enregistré »), indépendamment du placement.
+- **Stock** : onglets numérotés « 1. Réserve centrale · 2. Mise en place · 3. Pendant l'événement · 4. Comptage », puis
+  Ingrédients et Prix fournisseurs ; une phrase en tête de chaque étape explique le chemin (réserve → stands → réassort →
+  restes). La page s'ouvre sur la réserve, ou sur « Pendant l'événement » quand un événement est ouvert.
+- **TVA à 2,1 %** (médicaments remboursés, presse, premières représentations de spectacles) : retirée des choix ;
+  toujours acceptée, et proposée au produit qui l'a déjà.
+- **Ouvrir l'événement depuis En direct** : bouton avec confirmation (« la mise en place sera figée »), en plus de
+  l'ouverture par la première caisse et de Caisses. Pas d'ouverture automatique à l'heure prévue : elle figerait une
+  mise en place peut-être inachevée.
+- **Événements privés et stock** (choix de Rémi : produits seulement ; une seule réserve, celle du lieu) : à la clôture,
+  chaque produit du catalogue sort de la **réserve centrale** ; un produit dont la recette utilise un ingrédient suivi
+  sort ses ingrédients (une pinte sort 0,5 L du fût), pour ne rien retirer deux fois ; les lignes libres ne sortent rien.
+  Mouvement « Événement privé » dans le journal des mouvements, rappel sur la fiche clôturée. Migration 0055 : type
+  `evenement_prive` sur `stock_mouvement` et `ingredient_mouvement` (écriture seule, une fois par produit ou ingrédient,
+  seulement après la clôture, vérifié par la base). Les événements privés clôturés avant cette version ne sortent rien.
+- **Marge par catégorie** (Résultats › Marges) : vendus, CA HT, marge totale, marge %, cible commune, total ; le taux se
+  calcule sur les produits dont le coût est saisi, les autres sont signalés « sans coût ».
+
+**Tests** : moteur (taux proposés, marge par catégorie), serveur (sortie de stock d'un événement privé 3 ; événements
+privés, stock, ingrédients, remise à zéro, conformité de la base relancés), écrans (En direct 6, stock, privés,
+résultats 17) ; types et construction. Vu dans le navigateur en local : Stock et Marge par catégorie.

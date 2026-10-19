@@ -73,6 +73,7 @@ const PHASES = [
   { n: 67, titre: "Le tableau En direct, d'après la maquette, avec le lieu en 3D", dossier: "§15.166", commits: ["0e5db30", "a54313b", "77de79f"] },
   { n: 68, titre: "En direct à part, au design des maquettes ; Résultats pour les événements terminés", dossier: "§15.167", commits: ["25fcf2a", "a34efbd", "f73a1b3"] },
   { n: 69, titre: "Exports de L'Addition lus seuls ; annuler un import de caisse connectée", dossier: "§15.168", commits: ["b54f0f6"] },
+  { n: 70, titre: "Décor fixe, stock dans l'ordre, ouverture depuis En direct, stock des événements privés, marge par catégorie", dossier: "§15.169", commits: ["074b283", "9a05031", "47bddbf", "600c400", "61ad9fb"] },
 ];
 
 module.exports = { PHASES };

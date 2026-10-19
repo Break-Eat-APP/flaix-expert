@@ -87,6 +87,8 @@ Demande de Rémi (§15.99) : construire les tableaux de Résultats. Référence 
   - médiane, heures d'une soirée qui passe minuit
   - camembert : 5 parts nommées au plus, le reste en « Autres » ; jamais une part « Autres » d'un seul élément
   - nuage des marges : repères = médianes des produits dont le coût est connu ; « à revoir » = beaucoup vendu, peu de marge
+- **marge par catégorie (§15.169)**
+  - somme des marges, taux sur les produits au coût connu, cible commune, « Sans catégorie » en dernier
 
 ## 5. Pour reprendre ou vérifier cette phase
 
