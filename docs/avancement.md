@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-19 : le tableau En direct, d'après la maquette (§15.166)
+
+En direct refait : 4 chiffres (CA comparé au match précédent à la même minute, tickets, ventes par minute et rythme, caisses), le lieu en 3D avec « À traiter » et le réassort, une carte par stand (ventes des 10 dernières minutes, barres de stock). Le stade quitte Résultats. À venir, avec Rémi : « Prévenir le stand » (message aux tablettes).
+
 ## 2026-10-19 : documentation de reprise à jour
 
 Guide de reprise pour un développeur (`docs/developpement/GUIDE_DE_REPRISE.md` et `.docx`), carte du code complétée (tous les modules jusqu'à la migration 0053), fiches des 67 phases régénérées en Markdown et en Word (elles s'arrêtaient à la phase 38).

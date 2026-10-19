@@ -75,7 +75,7 @@ salle cachées par l'écran, fosse peu visible.
 - `apps/web/src/pages/Resultats.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/69dacccb4d5c16bcd19da326cbec79bee1288efa/apps/web/src/pages/Resultats.tsx)
 - `apps/web/src/pages/resultats/decors3d.ts` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/69dacccb4d5c16bcd19da326cbec79bee1288efa/apps/web/src/pages/resultats/decors3d.ts)
 - `apps/web/src/pages/resultats/modeles-plan.ts` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/69dacccb4d5c16bcd19da326cbec79bee1288efa/apps/web/src/pages/resultats/modeles-plan.ts)
-- `apps/web/src/pages/resultats/PlanStade.test.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/69dacccb4d5c16bcd19da326cbec79bee1288efa/apps/web/src/pages/resultats/PlanStade.test.tsx)
+- `apps/web/src/pages/resultats/PlanStade.test.tsx` — modifié (n'existe plus)
 - `apps/web/src/pages/resultats/PlanStade.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/69dacccb4d5c16bcd19da326cbec79bee1288efa/apps/web/src/pages/resultats/PlanStade.tsx)
 - `apps/web/src/pages/resultats/Stade3D.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/69dacccb4d5c16bcd19da326cbec79bee1288efa/apps/web/src/pages/resultats/Stade3D.tsx)
 - `apps/web/src/styles.css` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/69dacccb4d5c16bcd19da326cbec79bee1288efa/apps/web/src/styles.css)

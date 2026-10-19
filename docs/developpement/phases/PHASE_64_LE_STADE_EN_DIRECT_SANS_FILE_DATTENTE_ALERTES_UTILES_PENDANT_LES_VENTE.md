@@ -60,7 +60,7 @@ tablette), écran 2.
 
 ### Écrans (apps/web)
 
-- `apps/web/src/pages/resultats/PlanStade.test.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/af99274982ae73f30fb39365fafb0e429ba960dc/apps/web/src/pages/resultats/PlanStade.test.tsx)
+- `apps/web/src/pages/resultats/PlanStade.test.tsx` — modifié (n'existe plus)
 - `apps/web/src/pages/resultats/PlanStade.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/af99274982ae73f30fb39365fafb0e429ba960dc/apps/web/src/pages/resultats/PlanStade.tsx)
 
 ## 4. Tests créés dans cette phase

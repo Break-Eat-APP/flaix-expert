@@ -3,6 +3,177 @@
 > Généré par `node infra/outils/journal-developpement.cjs` à partir de Git. Ne pas modifier à la main.
 > Chaque entrée : date, commit (lien GitHub), message, fichiers créés ou modifiés. Le plus récent en premier. Phases : [docs/developpement/JOURNAL_DES_PHASES.md](docs/developpement/JOURNAL_DES_PHASES.md).
 
+## 2026-10-19
+
+### [`77de79f`](https://github.com/Break-Eat-APP/flaix-expert/commit/77de79f0bf42f5e1ed518a6323257cb4dc062c43) — En direct : en-tête et chiffres lisibles sur téléphone ; « 1 caisse ouverte sur 2 » *(phase 67)*
+
+- modifié : `apps/web/src/pages/direct/EnDirect.tsx`
+- modifié : `apps/web/src/styles.css`
+
+### [`a54313b`](https://github.com/Break-Eat-APP/flaix-expert/commit/a54313b9270212f230f55e7cd5d42ccd828d3111) — En direct refait d'après la maquette : chiffres de la soirée, lieu 3D en haut avec À traiter, cartes des stands, réassort en deux gestes ; le stade quitte Résultats *(phase 67)*
+
+- modifié : `apps/web/src/App.tsx`
+- modifié : `apps/web/src/pages/Resultats.tsx`
+- créé : `apps/web/src/pages/direct/EnDirect.test.tsx`
+- modifié : `apps/web/src/pages/direct/EnDirect.tsx`
+- supprimé : `apps/web/src/pages/resultats/PlanStade.test.tsx`
+- modifié : `apps/web/src/pages/resultats/PlanStade.tsx`
+- modifié : `apps/web/src/styles.css`
+
+### [`0e5db30`](https://github.com/Break-Eat-APP/flaix-expert/commit/0e5db300d4aa4cf49b5e7403de1fac3af2bf3137) — En direct : chiffres de la soirée, ventes des 10 dernières minutes, rythme, match précédent au même moment (moteur, serveur) *(phase 67)*
+
+- modifié : `apps/api/src/routes/plan-stade.ts`
+- modifié : `apps/api/test/plan-stade.test.ts`
+- modifié : `packages/domain/src/plan-stade.test.ts`
+- modifié : `packages/domain/src/plan-stade.ts`
+
+### [`cd00826`](https://github.com/Break-Eat-APP/flaix-expert/commit/cd008264774dd6c23a521ea6c74a1fcf65c3b8af) — Documentation de reprise : guide pour un développeur (Markdown et Word), carte du code complète, fiches des 67 phases régénérées
+
+- modifié : `CHANGELOG.md`
+- modifié : `README.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- créé : `docs/developpement/GUIDE_DE_REPRISE.docx`
+- créé : `docs/developpement/GUIDE_DE_REPRISE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/developpement/phases/PHASE_00_SOCLE_DE_PRODUCTION_ET_CONFIGURATION_DUN_LIEU_VIDE.md`
+- modifié : `docs/developpement/phases/PHASE_01_MATCHS_CAISSE_MES_CAISSES_JOURNAL_DES_TICKETS.md`
+- modifié : `docs/developpement/phases/PHASE_02_RETOUR_DE_DEMONSTRATION_ORGANISATION_EN_6_ENTREES_MAQUETTES.md`
+- modifié : `docs/developpement/phases/PHASE_03_VENTE_SANS_RESEAU_LA_TABLETTE_SCELLE_LE_SERVEUR_VERIFIE.md`
+- modifié : `docs/developpement/phases/PHASE_04_SERVEUR_DE_TEST_OVH.md`
+- modifié : `docs/developpement/phases/PHASE_05_COMPTES_DES_CAISSIERES_ET_TABLETTES_ENREGISTREES.md`
+- modifié : `docs/developpement/phases/PHASE_06_TICKET_CLIENT_SUR_DEMANDE_ET_DUPLICATA.md`
+- modifié : `docs/developpement/phases/PHASE_07_CLOTURE_DU_MATCH_Z_DES_TIROIRS_RECTIFICATION_SIGNEE.md`
+- modifié : `docs/developpement/phases/PHASE_08_RESULTATS_SUR_LES_VRAIES_VENTES.md`
+- modifié : `docs/developpement/phases/PHASE_09_EQUIPE_FICHES_PLANNING_MASSE_SALARIALE.md`
+- modifié : `docs/developpement/phases/PHASE_10_STOCK_RESERVE_LIVRAISONS_AU_CUMP_MISE_EN_PLACE_COMPTAGE.md`
+- modifié : `docs/developpement/phases/PHASE_11_REMONTEES_AU_COFFRE_ET_Z_DU_COFFRE.md`
+- modifié : `docs/developpement/phases/PHASE_12_CLOTURES_MENSUELLE_ET_ANNUELLE_TOTAL_PERPETUEL.md`
+- modifié : `docs/developpement/phases/PHASE_13_EXERCICE_PAR_LIEU_SAUVEGARDES_CHIFFREES_HORS_SERVEUR.md`
+- modifié : `docs/developpement/phases/PHASE_14_MODE_FORMATION_FACTICE.md`
+- modifié : `docs/developpement/phases/PHASE_15_EXPORT_POUR_LEXPERT_COMPTABLE.md`
+- modifié : `docs/developpement/phases/PHASE_16_CLICK_COLLECT_MOTEUR_DE_PRIX_ET_CATALOGUE.md`
+- modifié : `docs/developpement/phases/PHASE_17_VUE_TELEPHONE_EN_DIRECT.md`
+- modifié : `docs/developpement/phases/PHASE_18_COUTS_PAR_BUVETTE.md`
+- modifié : `docs/developpement/phases/PHASE_19_FIDELITE_PARTIE_GESTION.md`
+- modifié : `docs/developpement/phases/PHASE_20_FACTURES_FOURNISSEURS.md`
+- modifié : `docs/developpement/phases/PHASE_21_BACK_OFFICE_EDITEUR_NIVEAU_1.md`
+- modifié : `docs/developpement/phases/PHASE_22_DECISIONS_DU_2026_10_01_ET_RECETTES.md`
+- modifié : `docs/developpement/phases/PHASE_23_OPTIONS_PAR_LIEU_APPLICATION_INSTALLABLE_LOGO.md`
+- modifié : `docs/developpement/phases/PHASE_24_ADRESSE_DU_SITE_FLAIXEXPERT_FLAIXLABS_COM.md`
+- modifié : `docs/developpement/phases/PHASE_25_MARQUE_FLAIX_EXPERT_LIEUX_ET_DIRECTEURS_DEPUIS_LE_BACK_OFFICE_MOTS_DE_.md`
+- modifié : `docs/developpement/phases/PHASE_26_CLICK_COLLECT_NEUTRE_EXPORT_COMPTABLE_DANS_LA_BASE_ASSIETTE_DE_LA_COMM.md`
+- modifié : `docs/developpement/phases/PHASE_27_STOCK_DES_INGREDIENTS_AU_CHOIX_BIERE_PRESSION.md`
+- modifié : `docs/developpement/phases/PHASE_28_LOGO_OFFICIEL_V2.md`
+- modifié : `docs/developpement/phases/PHASE_29_DOSSIER_DE_CONFORMITE_V0_1.md`
+- modifié : `docs/developpement/phases/PHASE_30_FIDELITE_A_LA_CAISSE_CODE_PROMO_ET_POINTS_DANS_LE_TICKET_SCELLE.md`
+- modifié : `docs/developpement/phases/PHASE_31_SUIVI_DU_DEVELOPPEMENT_ET_PREPARATION_DE_LAUDIT_CODEX.md`
+- modifié : `docs/developpement/phases/PHASE_32_PREMIER_AUDIT_CODEX_ET_CORRECTIONS.md`
+- modifié : `docs/developpement/phases/PHASE_33_CAISSE_AUTOMATIQUE_SELON_LA_DATE_CLOTURE_PAR_LE_DIRECTEUR_EVENEMENT_PA.md`
+- modifié : `docs/developpement/phases/PHASE_34_RAPPORT_DE_SOIREE_FIGE_A_LA_CLOTURE_IMPRIMABLE_ET_EN_PDF.md`
+- modifié : `docs/developpement/phases/PHASE_35_CIBLES_DE_MARGE_ET_GESTION_FINANCIERE_DE_LA_SOIREE.md`
+- modifié : `docs/developpement/phases/PHASE_36_BILAN_SUR_UNE_PERIODE_DU_AU.md`
+- modifié : `docs/developpement/phases/PHASE_37_BRIEF_DE_FIN_DE_SOIREE_EN_NOTIFICATION_SUR_LE_TELEPHONE.md`
+- modifié : `docs/developpement/phases/PHASE_38_ASSISTANT_POSE_TA_QUESTION_ET_BRIEF_REFORMULE_PAR_MISTRAL.md`
+- créé : `docs/developpement/phases/PHASE_39_REVENUE_ENGINE_OU_JE_PERDS_DE_LARGENT.md`
+- créé : `docs/developpement/phases/PHASE_40_TEMPS_DE_PRISE_DE_COMMANDE_PAR_CAISSE_ET_PAR_STAND.md`
+- créé : `docs/developpement/phases/PHASE_41_CENTRE_DALERTES_ET_RUPTURE_DE_STOCK_POUSSEE_SUR_LE_TELEPHONE.md`
+- créé : `docs/developpement/phases/PHASE_42_COMPARAISON_DES_PRIX_ENTRE_FOURNISSEURS.md`
+- créé : `docs/developpement/phases/PHASE_43_BACK_OFFICE_NIVEAU_2_SUPPORT_SUR_AUTORISATION_DU_LIEU.md`
+- créé : `docs/developpement/phases/PHASE_44_PREVISION_DU_PROCHAIN_EVENEMENT.md`
+- créé : `docs/developpement/phases/PHASE_45_IA_OVHCLOUD_SEUL_COMME_MOTEUR_DE_LANGAGE_DE_LAGENT.md`
+- créé : `docs/developpement/phases/PHASE_46_E_MAILS_PAR_BREVO_RAPPORT_DE_SOIREE_ET_RECTIFICATIONS.md`
+- créé : `docs/developpement/phases/PHASE_47_CARTE_ABONNE_DANS_APPLE_WALLET_ET_GOOGLE_WALLET.md`
+- créé : `docs/developpement/phases/PHASE_48_DESIGN_DE_LA_CARTE_ABONNE_LOGO_BANNIERE_COULEURS_TEXTES_ET_LIENS.md`
+- créé : `docs/developpement/phases/PHASE_49_AUDITS_DU_2026_10_05_CLAUDE_PUIS_CODEX_ET_CORRECTIONS.md`
+- créé : `docs/developpement/phases/PHASE_50_COMPTEUR_DE_CONSOMMATION_DE_LIA_DANS_LE_BACK_OFFICE.md`
+- créé : `docs/developpement/phases/PHASE_51_CAISSES_CONNECTEES_VENTES_DUNE_CAISSE_EXTERNE_IMPORTEES.md`
+- créé : `docs/developpement/phases/PHASE_52_VENTES_DEPOSEES_DANS_TOUT_FLAIX_EXPERT_FICHIERS_EXCEL.md`
+- créé : `docs/developpement/phases/PHASE_53_CAISSES_CONNECTEES_CORRESPONDANCES_AUTOMATIQUES_ET_SUGGEREES.md`
+- créé : `docs/developpement/phases/PHASE_54_NOUVEAU_STYLE_ARRONDI_EPURE_TOUJOURS_CLAIR.md`
+- créé : `docs/developpement/phases/PHASE_55_CE_QUIL_TE_RESTE_ET_MES_FRAIS.md`
+- créé : `docs/developpement/phases/PHASE_56_CONDITIONNEMENT_DE_CHAQUE_PRODUIT.md`
+- créé : `docs/developpement/phases/PHASE_57_HYGIENE_ET_HACCP.md`
+- créé : `docs/developpement/phases/PHASE_58_ALLERGENES_DE_CHAQUE_PRODUIT.md`
+- créé : `docs/developpement/phases/PHASE_59_STOCK_DES_EMBALLAGES.md`
+- créé : `docs/developpement/phases/PHASE_60_HYGIENE_SUR_LA_TABLETTE_DES_CAISSIERES_PHOTOS_DETIQUETTES.md`
+- créé : `docs/developpement/phases/PHASE_61_EVENEMENTS_PRIVES.md`
+- créé : `docs/developpement/phases/PHASE_62_PRODUITS_PRIX_PLUS_CLAIR_SECTION_ACTIVE_ALLERGENES_COCHABLES_EMBALLAGE.md`
+- créé : `docs/developpement/phases/PHASE_63_LE_STADE_EN_DIRECT_STANDS_EN_3D_EN_COULEUR_ALERTES_AU_CLIC.md`
+- créé : `docs/developpement/phases/PHASE_64_LE_STADE_EN_DIRECT_SANS_FILE_DATTENTE_ALERTES_UTILES_PENDANT_LES_VENTE.md`
+- créé : `docs/developpement/phases/PHASE_65_LE_LIEU_EN_3D_QUATRE_DECORS_STANDS_POSES_A_LA_MAIN.md`
+- créé : `docs/developpement/phases/PHASE_66_REMETTRE_LE_STOCK_A_ZERO_SUPPRIMER_UN_EVENEMENT_A_VENIR.md`
+- modifié : `docs/developpement/phases/README.md`
+- modifié : `docs/developpement/phases/word/PHASE_00_SOCLE_DE_PRODUCTION_ET_CONFIGURATION_DUN_LIEU_VIDE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_01_MATCHS_CAISSE_MES_CAISSES_JOURNAL_DES_TICKETS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_02_RETOUR_DE_DEMONSTRATION_ORGANISATION_EN_6_ENTREES_MAQUETTES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_03_VENTE_SANS_RESEAU_LA_TABLETTE_SCELLE_LE_SERVEUR_VERIFIE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_04_SERVEUR_DE_TEST_OVH.docx`
+- modifié : `docs/developpement/phases/word/PHASE_05_COMPTES_DES_CAISSIERES_ET_TABLETTES_ENREGISTREES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_06_TICKET_CLIENT_SUR_DEMANDE_ET_DUPLICATA.docx`
+- modifié : `docs/developpement/phases/word/PHASE_07_CLOTURE_DU_MATCH_Z_DES_TIROIRS_RECTIFICATION_SIGNEE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_08_RESULTATS_SUR_LES_VRAIES_VENTES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_09_EQUIPE_FICHES_PLANNING_MASSE_SALARIALE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_10_STOCK_RESERVE_LIVRAISONS_AU_CUMP_MISE_EN_PLACE_COMPTAGE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_11_REMONTEES_AU_COFFRE_ET_Z_DU_COFFRE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_12_CLOTURES_MENSUELLE_ET_ANNUELLE_TOTAL_PERPETUEL.docx`
+- modifié : `docs/developpement/phases/word/PHASE_13_EXERCICE_PAR_LIEU_SAUVEGARDES_CHIFFREES_HORS_SERVEUR.docx`
+- modifié : `docs/developpement/phases/word/PHASE_14_MODE_FORMATION_FACTICE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_15_EXPORT_POUR_LEXPERT_COMPTABLE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_16_CLICK_COLLECT_MOTEUR_DE_PRIX_ET_CATALOGUE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_17_VUE_TELEPHONE_EN_DIRECT.docx`
+- modifié : `docs/developpement/phases/word/PHASE_18_COUTS_PAR_BUVETTE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_19_FIDELITE_PARTIE_GESTION.docx`
+- modifié : `docs/developpement/phases/word/PHASE_20_FACTURES_FOURNISSEURS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_21_BACK_OFFICE_EDITEUR_NIVEAU_1.docx`
+- modifié : `docs/developpement/phases/word/PHASE_22_DECISIONS_DU_2026_10_01_ET_RECETTES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_23_OPTIONS_PAR_LIEU_APPLICATION_INSTALLABLE_LOGO.docx`
+- modifié : `docs/developpement/phases/word/PHASE_24_ADRESSE_DU_SITE_FLAIXEXPERT_FLAIXLABS_COM.docx`
+- modifié : `docs/developpement/phases/word/PHASE_25_MARQUE_FLAIX_EXPERT_LIEUX_ET_DIRECTEURS_DEPUIS_LE_BACK_OFFICE_MOTS_DE_.docx`
+- modifié : `docs/developpement/phases/word/PHASE_26_CLICK_COLLECT_NEUTRE_EXPORT_COMPTABLE_DANS_LA_BASE_ASSIETTE_DE_LA_COMM.docx`
+- modifié : `docs/developpement/phases/word/PHASE_27_STOCK_DES_INGREDIENTS_AU_CHOIX_BIERE_PRESSION.docx`
+- modifié : `docs/developpement/phases/word/PHASE_28_LOGO_OFFICIEL_V2.docx`
+- modifié : `docs/developpement/phases/word/PHASE_29_DOSSIER_DE_CONFORMITE_V0_1.docx`
+- modifié : `docs/developpement/phases/word/PHASE_30_FIDELITE_A_LA_CAISSE_CODE_PROMO_ET_POINTS_DANS_LE_TICKET_SCELLE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_31_SUIVI_DU_DEVELOPPEMENT_ET_PREPARATION_DE_LAUDIT_CODEX.docx`
+- modifié : `docs/developpement/phases/word/PHASE_32_PREMIER_AUDIT_CODEX_ET_CORRECTIONS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_33_CAISSE_AUTOMATIQUE_SELON_LA_DATE_CLOTURE_PAR_LE_DIRECTEUR_EVENEMENT_PA.docx`
+- modifié : `docs/developpement/phases/word/PHASE_34_RAPPORT_DE_SOIREE_FIGE_A_LA_CLOTURE_IMPRIMABLE_ET_EN_PDF.docx`
+- modifié : `docs/developpement/phases/word/PHASE_35_CIBLES_DE_MARGE_ET_GESTION_FINANCIERE_DE_LA_SOIREE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_36_BILAN_SUR_UNE_PERIODE_DU_AU.docx`
+- modifié : `docs/developpement/phases/word/PHASE_37_BRIEF_DE_FIN_DE_SOIREE_EN_NOTIFICATION_SUR_LE_TELEPHONE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_38_ASSISTANT_POSE_TA_QUESTION_ET_BRIEF_REFORMULE_PAR_MISTRAL.docx`
+- créé : `docs/developpement/phases/word/PHASE_39_REVENUE_ENGINE_OU_JE_PERDS_DE_LARGENT.docx`
+- créé : `docs/developpement/phases/word/PHASE_40_TEMPS_DE_PRISE_DE_COMMANDE_PAR_CAISSE_ET_PAR_STAND.docx`
+- créé : `docs/developpement/phases/word/PHASE_41_CENTRE_DALERTES_ET_RUPTURE_DE_STOCK_POUSSEE_SUR_LE_TELEPHONE.docx`
+- créé : `docs/developpement/phases/word/PHASE_42_COMPARAISON_DES_PRIX_ENTRE_FOURNISSEURS.docx`
+- créé : `docs/developpement/phases/word/PHASE_43_BACK_OFFICE_NIVEAU_2_SUPPORT_SUR_AUTORISATION_DU_LIEU.docx`
+- créé : `docs/developpement/phases/word/PHASE_44_PREVISION_DU_PROCHAIN_EVENEMENT.docx`
+- créé : `docs/developpement/phases/word/PHASE_45_IA_OVHCLOUD_SEUL_COMME_MOTEUR_DE_LANGAGE_DE_LAGENT.docx`
+- créé : `docs/developpement/phases/word/PHASE_46_E_MAILS_PAR_BREVO_RAPPORT_DE_SOIREE_ET_RECTIFICATIONS.docx`
+- créé : `docs/developpement/phases/word/PHASE_47_CARTE_ABONNE_DANS_APPLE_WALLET_ET_GOOGLE_WALLET.docx`
+- créé : `docs/developpement/phases/word/PHASE_48_DESIGN_DE_LA_CARTE_ABONNE_LOGO_BANNIERE_COULEURS_TEXTES_ET_LIENS.docx`
+- créé : `docs/developpement/phases/word/PHASE_49_AUDITS_DU_2026_10_05_CLAUDE_PUIS_CODEX_ET_CORRECTIONS.docx`
+- créé : `docs/developpement/phases/word/PHASE_50_COMPTEUR_DE_CONSOMMATION_DE_LIA_DANS_LE_BACK_OFFICE.docx`
+- créé : `docs/developpement/phases/word/PHASE_51_CAISSES_CONNECTEES_VENTES_DUNE_CAISSE_EXTERNE_IMPORTEES.docx`
+- créé : `docs/developpement/phases/word/PHASE_52_VENTES_DEPOSEES_DANS_TOUT_FLAIX_EXPERT_FICHIERS_EXCEL.docx`
+- créé : `docs/developpement/phases/word/PHASE_53_CAISSES_CONNECTEES_CORRESPONDANCES_AUTOMATIQUES_ET_SUGGEREES.docx`
+- créé : `docs/developpement/phases/word/PHASE_54_NOUVEAU_STYLE_ARRONDI_EPURE_TOUJOURS_CLAIR.docx`
+- créé : `docs/developpement/phases/word/PHASE_55_CE_QUIL_TE_RESTE_ET_MES_FRAIS.docx`
+- créé : `docs/developpement/phases/word/PHASE_56_CONDITIONNEMENT_DE_CHAQUE_PRODUIT.docx`
+- créé : `docs/developpement/phases/word/PHASE_57_HYGIENE_ET_HACCP.docx`
+- créé : `docs/developpement/phases/word/PHASE_58_ALLERGENES_DE_CHAQUE_PRODUIT.docx`
+- créé : `docs/developpement/phases/word/PHASE_59_STOCK_DES_EMBALLAGES.docx`
+- créé : `docs/developpement/phases/word/PHASE_60_HYGIENE_SUR_LA_TABLETTE_DES_CAISSIERES_PHOTOS_DETIQUETTES.docx`
+- créé : `docs/developpement/phases/word/PHASE_61_EVENEMENTS_PRIVES.docx`
+- créé : `docs/developpement/phases/word/PHASE_62_PRODUITS_PRIX_PLUS_CLAIR_SECTION_ACTIVE_ALLERGENES_COCHABLES_EMBALLAGE.docx`
+- créé : `docs/developpement/phases/word/PHASE_63_LE_STADE_EN_DIRECT_STANDS_EN_3D_EN_COULEUR_ALERTES_AU_CLIC.docx`
+- créé : `docs/developpement/phases/word/PHASE_64_LE_STADE_EN_DIRECT_SANS_FILE_DATTENTE_ALERTES_UTILES_PENDANT_LES_VENTE.docx`
+- créé : `docs/developpement/phases/word/PHASE_65_LE_LIEU_EN_3D_QUATRE_DECORS_STANDS_POSES_A_LA_MAIN.docx`
+- créé : `docs/developpement/phases/word/PHASE_66_REMETTRE_LE_STOCK_A_ZERO_SUPPRIMER_UN_EVENEMENT_A_VENIR.docx`
+- modifié : `infra/outils/carte-du-code-intro.md`
+- modifié : `infra/outils/journal-developpement.cjs`
+
 ## 2026-10-17
 
 ### [`dca76ed`](https://github.com/Break-Eat-APP/flaix-expert/commit/dca76edc4972e07ceef9b5373afbc975281aa0e6) — Avancement : au passage en production, base neuve et reprise de la seule configuration

@@ -77,7 +77,7 @@ au terrain (ordre de calcul du cadrage), stands du bord hors cadre, étiquettes 
 - `apps/web/package.json` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/3af785c695d739f8c33bfb6dd28e0aa4bd056c6d/apps/web/package.json)
 - `apps/web/src/pages/parametres/StandsCaisses.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/3af785c695d739f8c33bfb6dd28e0aa4bd056c6d/apps/web/src/pages/parametres/StandsCaisses.tsx)
 - `apps/web/src/pages/Resultats.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/3af785c695d739f8c33bfb6dd28e0aa4bd056c6d/apps/web/src/pages/Resultats.tsx)
-- `apps/web/src/pages/resultats/PlanStade.test.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/3af785c695d739f8c33bfb6dd28e0aa4bd056c6d/apps/web/src/pages/resultats/PlanStade.test.tsx)
+- `apps/web/src/pages/resultats/PlanStade.test.tsx` — créé (n'existe plus)
 - `apps/web/src/pages/resultats/PlanStade.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/3af785c695d739f8c33bfb6dd28e0aa4bd056c6d/apps/web/src/pages/resultats/PlanStade.tsx)
 - `apps/web/src/pages/resultats/Stade3D.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/3af785c695d739f8c33bfb6dd28e0aa4bd056c6d/apps/web/src/pages/resultats/Stade3D.tsx)
 - `apps/web/src/styles.css` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/3af785c695d739f8c33bfb6dd28e0aa4bd056c6d/apps/web/src/styles.css)
@@ -104,6 +104,7 @@ au terrain (ordre de calcul du cadrage), stands du bord hors cadre, étiquettes 
   - stock : rupture prévue au rythme des 15 dernières minutes, réserve rappelée ; rien sans vente récente
   - caisses : aucune vente depuis 15 min alors que le stade vend ; ventes hors tarif ; annulations nombreuses
   - tablette muette (rouge après 15 min) ou tickets à envoyer, hygiène du stand → orange ; hors événement, le stock ne compte pas
+  - en direct : chiffres de la soirée, ventes des 10 dernières minutes, rythme, match précédent au même moment, caisses ; produits du plus entamé au moins entamé
 
 ## 5. Pour reprendre ou vérifier cette phase
 

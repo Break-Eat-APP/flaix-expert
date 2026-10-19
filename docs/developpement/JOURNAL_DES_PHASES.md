@@ -72,6 +72,7 @@
 | 64 | [Le stade en direct sans file d'attente : alertes utiles pendant les ventes](#phase-64) | §15.163 | [`af99274`](https://github.com/Break-Eat-APP/flaix-expert/commit/af99274982ae73f30fb39365fafb0e429ba960dc) | livrée |
 | 65 | [Le lieu en 3D : quatre décors, stands posés à la main](#phase-65) | §15.164 | [`2bcf514`](https://github.com/Break-Eat-APP/flaix-expert/commit/2bcf5147ff8c71bc4b2043c05ff9050b1ac30ee5) [`284297b`](https://github.com/Break-Eat-APP/flaix-expert/commit/284297bec857e094f0e40459c102f2b8a2b564c4) [`69daccc`](https://github.com/Break-Eat-APP/flaix-expert/commit/69dacccb4d5c16bcd19da326cbec79bee1288efa) | livrée |
 | 66 | [Remettre le stock à zéro ; supprimer un événement à venir](#phase-66) | §15.165 | [`f4e5aa8`](https://github.com/Break-Eat-APP/flaix-expert/commit/f4e5aa88b6979734a6be3d1f9b21989be6bc01e2) [`325a75d`](https://github.com/Break-Eat-APP/flaix-expert/commit/325a75dbd36aec91527e5803d0c9cbd564793dae) [`04e39ff`](https://github.com/Break-Eat-APP/flaix-expert/commit/04e39ff9bee14028ecdf78572118a157a03a1712) | livrée |
+| 67 | [Le tableau En direct, d'après la maquette, avec le lieu en 3D](#phase-67) | §15.166 | [`0e5db30`](https://github.com/Break-Eat-APP/flaix-expert/commit/0e5db300d4aa4cf49b5e7403de1fac3af2bf3137) [`a54313b`](https://github.com/Break-Eat-APP/flaix-expert/commit/a54313b9270212f230f55e7cd5d42ccd828d3111) [`77de79f`](https://github.com/Break-Eat-APP/flaix-expert/commit/77de79f0bf42f5e1ed518a6323257cb4dc062c43) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -2313,7 +2314,7 @@
   - [`apps/web/package.json`](../../apps/web/package.json) — modifié
   - [`apps/web/src/pages/parametres/StandsCaisses.tsx`](../../apps/web/src/pages/parametres/StandsCaisses.tsx) — modifié
   - [`apps/web/src/pages/Resultats.tsx`](../../apps/web/src/pages/Resultats.tsx) — modifié
-  - [`apps/web/src/pages/resultats/PlanStade.test.tsx`](../../apps/web/src/pages/resultats/PlanStade.test.tsx) — créé
+  - `apps/web/src/pages/resultats/PlanStade.test.tsx` (n'existe plus) — créé
   - [`apps/web/src/pages/resultats/PlanStade.tsx`](../../apps/web/src/pages/resultats/PlanStade.tsx) — créé
   - [`apps/web/src/pages/resultats/Stade3D.tsx`](../../apps/web/src/pages/resultats/Stade3D.tsx) — créé
   - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
@@ -2336,7 +2337,7 @@
 - **Serveur (apps/api)** :
   - [`apps/api/src/routes/plan-stade.ts`](../../apps/api/src/routes/plan-stade.ts) — modifié
 - **Écrans (apps/web)** :
-  - [`apps/web/src/pages/resultats/PlanStade.test.tsx`](../../apps/web/src/pages/resultats/PlanStade.test.tsx) — modifié
+  - `apps/web/src/pages/resultats/PlanStade.test.tsx` (n'existe plus) — modifié
   - [`apps/web/src/pages/resultats/PlanStade.tsx`](../../apps/web/src/pages/resultats/PlanStade.tsx) — modifié
 - **Tests** :
   - [`apps/api/test/plan-stade.test.ts`](../../apps/api/test/plan-stade.test.ts) — modifié
@@ -2364,7 +2365,7 @@
   - [`apps/web/src/pages/Resultats.tsx`](../../apps/web/src/pages/Resultats.tsx) — modifié
   - [`apps/web/src/pages/resultats/decors3d.ts`](../../apps/web/src/pages/resultats/decors3d.ts) — créé
   - [`apps/web/src/pages/resultats/modeles-plan.ts`](../../apps/web/src/pages/resultats/modeles-plan.ts) — créé
-  - [`apps/web/src/pages/resultats/PlanStade.test.tsx`](../../apps/web/src/pages/resultats/PlanStade.test.tsx) — modifié
+  - `apps/web/src/pages/resultats/PlanStade.test.tsx` (n'existe plus) — modifié
   - [`apps/web/src/pages/resultats/PlanStade.tsx`](../../apps/web/src/pages/resultats/PlanStade.tsx) — modifié
   - [`apps/web/src/pages/resultats/Stade3D.tsx`](../../apps/web/src/pages/resultats/Stade3D.tsx) — modifié
   - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
@@ -2398,6 +2399,32 @@
   - [`apps/web/src/pages/stock/Stock.tsx`](../../apps/web/src/pages/stock/Stock.tsx) — modifié
 - **Tests** :
   - [`apps/api/test/remise-zero.test.ts`](../../apps/api/test/remise-zero.test.ts) — créé
+
+<a id="phase-67"></a>
+## Phase 67 — Le tableau En direct, d'après la maquette, avec le lieu en 3D
+
+- **Dates** : 2026-10-19
+- **Décision et raisonnement** : dossier projet §15.166
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`0e5db30`](https://github.com/Break-Eat-APP/flaix-expert/commit/0e5db300d4aa4cf49b5e7403de1fac3af2bf3137) 2026-10-19 — En direct : chiffres de la soirée, ventes des 10 dernières minutes, rythme, match précédent au même moment (moteur, serveur)
+  - [`a54313b`](https://github.com/Break-Eat-APP/flaix-expert/commit/a54313b9270212f230f55e7cd5d42ccd828d3111) 2026-10-19 — En direct refait d'après la maquette : chiffres de la soirée, lieu 3D en haut avec À traiter, cartes des stands, réassort en deux gestes ; le stade quitte Résultats
+  - [`77de79f`](https://github.com/Break-Eat-APP/flaix-expert/commit/77de79f0bf42f5e1ed518a6323257cb4dc062c43) 2026-10-19 — En direct : en-tête et chiffres lisibles sur téléphone ; « 1 caisse ouverte sur 2 »
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/plan-stade.ts`](../../packages/domain/src/plan-stade.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/plan-stade.ts`](../../apps/api/src/routes/plan-stade.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/App.tsx`](../../apps/web/src/App.tsx) — modifié
+  - [`apps/web/src/pages/direct/EnDirect.test.tsx`](../../apps/web/src/pages/direct/EnDirect.test.tsx) — créé
+  - [`apps/web/src/pages/direct/EnDirect.tsx`](../../apps/web/src/pages/direct/EnDirect.tsx) — modifié
+  - [`apps/web/src/pages/Resultats.tsx`](../../apps/web/src/pages/Resultats.tsx) — modifié
+  - `apps/web/src/pages/resultats/PlanStade.test.tsx` (n'existe plus) — supprimé
+  - [`apps/web/src/pages/resultats/PlanStade.tsx`](../../apps/web/src/pages/resultats/PlanStade.tsx) — modifié
+  - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
+- **Tests** :
+  - [`apps/api/test/plan-stade.test.ts`](../../apps/api/test/plan-stade.test.ts) — modifié
+  - [`packages/domain/src/plan-stade.test.ts`](../../packages/domain/src/plan-stade.test.ts) — modifié
 
 ## Commits non rattachés à une phase
 
@@ -2447,3 +2474,4 @@
 - [`0004b81`](https://github.com/Break-Eat-APP/flaix-expert/commit/0004b81d242a6f85eb36ebf9ab084284b0e99559) 2026-10-17 — Dossier §15.165 : remise à zéro du stock, suppression d'un événement à venir (phase 66)
 - [`6be91d3`](https://github.com/Break-Eat-APP/flaix-expert/commit/6be91d397f274f1fd855735bcb1767f0d17a5940) 2026-10-17 — Dossier §15.165 : la corbeille explique un refus (phase 66)
 - [`dca76ed`](https://github.com/Break-Eat-APP/flaix-expert/commit/dca76edc4972e07ceef9b5373afbc975281aa0e6) 2026-10-17 — Avancement : au passage en production, base neuve et reprise de la seule configuration
+- [`cd00826`](https://github.com/Break-Eat-APP/flaix-expert/commit/cd008264774dd6c23a521ea6c74a1fcf65c3b8af) 2026-10-19 — Documentation de reprise : guide pour un développeur (Markdown et Word), carte du code complète, fiches des 67 phases régénérées

@@ -5296,3 +5296,40 @@ relancés. Pas d'essai dans le navigateur (poste à court de mémoire, deux red�
 corbeille n'apparaissait que sur les événements à venir, sans rien dire pour les autres. Elle est désormais sur chaque
 événement ; pour un événement ouvert ou clos, elle explique pourquoi il ne se supprime pas (clôture de caisse scellée et
 chaînée) et renvoie à « Remettre à zéro » dans Stock (commit 04e39ff).
+
+### 15.166 Le tableau En direct, d'après la maquette de Rémi, avec le lieu en 3D (2026-10-19)
+
+**Demande de Rémi** (2026-10-19, avec deux captures des maquettes de l'artifact de design du 2026-10-11) : *« je pense
+que la section en direct est très sympa, notamment comment le logiciel est présenté avec les graphiques et les modules,
+avec les petites sections… ça serait bien de faire le dashboard en direct et aussi ce que tu as développé avec le stade
+en 3D… pose-moi tes questions, donne des propositions, on construit ensemble »*.
+
+**Avis donné avant de construire** : la maquette affichait une attente (« 6 min », « Chargé / Fluide ») que rien ne
+mesure (la file retirée au §15.163), et « Prévenir le stand » suppose un message vers les tablettes, qui n'existe pas.
+
+**Réponses de Rémi** : stade **en haut** d'En direct, cartes des stands dessous (recommandé) ; à la place de l'attente,
+les **ventes des 10 dernières minutes** (recommandé) ; **pas d'horloge de match** ; « Prévenir le stand » **plus tard**.
+
+**Décisions** :
+- **En direct** devient le tableau de la soirée : en-tête « ● En direct · ouvert depuis 1 h 52 », mis à jour toutes les
+  10 s, bouton vers l'assistant ; **4 chiffres** — CA en cours comparé au **match précédent à la même minute** (dernier
+  événement clos qui a des ventes ; CA de ses tickets jusqu'au même temps écoulé depuis son ouverture), tickets et ceux
+  des 10 dernières minutes, **ventes par minute** avec une pastille *Calme / Normal / Soutenu* (rythme des 10 dernières
+  minutes rapporté à la moyenne de la soirée, < 0,6 ou > 1,4, dès 15 min d'ouverture), caisses ouvertes et tablettes
+  sans réseau.
+- **Le lieu en 3D** (décor, couleurs, placement des stands) passe de Résultats à En direct, avec **« À traiter »** à côté :
+  toutes les alertes des stands, rouges d'abord, avec le **réassort en deux gestes** (alertes de stock), « Voir le stand »
+  (la page défile jusqu'à sa carte) ou « Y aller ». Un clic sur un stand dans la 3D fait aussi défiler jusqu'à sa carte.
+- **Une carte par stand**, de la plus urgente à la fermée : CA, tickets, ventes des 10 dernières minutes, les 3 produits
+  les plus entamés en barres (% restant ; rouge en rupture, orange en stock faible, vert sinon), caisses ouvertes et
+  dernière vente.
+- **Téléphone** : chiffres et cartes d'abord, « À traiter » en carte, le lieu en 3D derrière un bouton.
+- **Hors événement** : « Aucun événement ouvert » (et le prochain), le lieu en gris et le placement des stands.
+- Résultats ne montre plus le stade (il garde ses tableaux et l'accroche vers En direct pendant l'événement).
+
+**Réalisé le 2026-10-19** : sans migration. Moteur (`planStade` : ventes récentes par stand, produits suivis, `Direct`,
+`rythmeVentes`) ; serveur (ventes des 10 dernières minutes, match précédent au même moment) ; écran (`EnDirect.tsx`
+refait, `LieuEnDirect` dans `PlanStade.tsx`). **Tests** : moteur 6, serveur 4, écran 5 (chiffres et comparaison, cartes
+et barres, stand choisi dans la 3D, À traiter et réassort envoyé, placement, hors événement) ; suite des écrans 97/97.
+Essayé dans le navigateur avec une soirée simulée (4 stands, alertes) : ordinateur et téléphone. Corrigés à l'essai :
+en-tête et chiffres serrés sur téléphone, « 1 / 2 caisses ouverte ».
