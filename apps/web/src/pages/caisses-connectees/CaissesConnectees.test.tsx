@@ -91,6 +91,10 @@ describe("caisses connectées", () => {
     expect(await screen.findByText(/vente.* lue/)).toBeTruthy();
     expect(corpsDe(appels("/api/caisses-externes/k1/import", "POST")[0]!)).toMatchObject({ fichier: "ventes.csv", apercu: true });
 
+    // Toutes les colonnes reconnues : un résumé, la grille s'ouvre sur « Modifier les colonnes » (§15.168).
+    expect(screen.getByText(/Colonnes reconnues/)).toBeTruthy();
+    expect(screen.queryByLabelText("Colonne : Point de vente")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Modifier les colonnes" }));
     fireEvent.change(screen.getByLabelText("Colonne : Point de vente"), { target: { value: "2" } });
     await waitFor(() => expect(appels("/api/caisses-externes/k1/import", "POST")).toHaveLength(2));
     expect(corpsDe(appels("/api/caisses-externes/k1/import", "POST")[1]!)).toMatchObject({ apercu: true, colonnes: { vente: 0, pointDeVente: 2 } });

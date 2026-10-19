@@ -144,3 +144,24 @@ describe("correspondances suggérées (§15.152)", () => {
     expect(suggererCorrespondance("Bière 50 cl", [])).toBeNull();
   });
 });
+
+describe("export de L'Addition (§15.168)", () => {
+  it("colonnes reconnues (taux, paiements, salle, remises, offerts), « - » vide, ligne Total ignorée, remise et offert retirés", () => {
+    const csv = [
+      "Etablissement;Timestamp;ID Ticket;Nom user;Menu parent;ID produit;Nom;Qte;Prix TTC;Remises TTC;Offerts TTC;Taux;TAG_Salle;Paiements",
+      "Spartiate;2026-10-02 19:02:00;HT-1;Admin;-;HD-289;HOTDOG;2;6,9;1;0;10%;MANATHAN HOT DOG;CB",
+      "Spartiate;2026-10-02 19:03:00;HT-1;Admin;-;H19-332;POWERRADE;1;4;0;4;5.5%;MANATHAN HOT DOG;CB",
+      "Total;46308,61;-;-;-;-;-;3;;0;0;;-;-",
+    ].join("\n");
+    const l = lireExportCaisse(csv);
+    expect(l.colonnes).toMatchObject({ vente: 2, date: 1, code: 5, produit: 6, quantite: 7, prixUnitaire: 8, remise: 9, offert: 10, tva: 11, pointDeVente: 12, paiement: 13 });
+    expect(l.erreurs).toEqual([]);
+    expect(l.ventes).toHaveLength(1);
+    const v = l.ventes[0]!;
+    expect(v).toMatchObject({ idExterne: "HT-1", pointDeVente: "MANATHAN HOT DOG", paiement: "CB", total: 1_280 });
+    expect(v.lignes.map((x) => [x.libelle, x.code, x.montant, x.tvaPb])).toEqual([
+      ["HOTDOG", "HD-289", 1_280, 1_000],
+      ["POWERRADE", "H19-332", 0, 550],
+    ]);
+  });
+});

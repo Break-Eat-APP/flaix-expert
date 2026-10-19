@@ -12,6 +12,7 @@ import {
   type LigneSynthese,
   type PointDeVenteExterne,
   type Produit,
+  type ImportDeVentes,
   type ProduitExterne,
   type Stand,
   type SyntheseVentesExternes,
@@ -77,7 +78,12 @@ export function CaissesConnectees() {
             {bouton("correspondances", "Correspondances")}
             {bouton("resultats", "Résultats")}
           </div>
-          {onglet === "importer" ? <Importer caisse={caisse} /> : onglet === "correspondances" ? <Correspondances caisse={caisse} /> : <Resultats />}
+          {onglet === "importer" ? (
+            <>
+              <Importer caisse={caisse} />
+              <ListeImports caisse={caisse} />
+            </>
+          ) : onglet === "correspondances" ? <Correspondances caisse={caisse} /> : <Resultats />}
         </>
       )}
       <Regles>
@@ -174,6 +180,8 @@ function Importer({ caisse }: { caisse: CaisseExterne }) {
   const [lecture, setLecture] = useState<{ enCours: boolean; erreur: Error | null }>({ enCours: false, erreur: null });
   const [colonnes, setColonnes] = useState<ColonnesExport | null>(null);
   const [resultat, setResultat] = useState<string | null>(null);
+  // Colonnes toutes reconnues : un résumé ; le détail (une liste par colonne) seulement sur demande ou s'il en manque.
+  const [modifier, setModifier] = useState(false);
   const apercu = useMutation({
     mutationFn: (p: { nom: string; contenu: string; colonnes?: ColonnesExport }) =>
       api.post<Apercu>(`/caisses-externes/${caisse.id}/import`, { fichier: p.nom, contenu: p.contenu, colonnes: p.colonnes, apercu: true }),
@@ -217,6 +225,7 @@ function Importer({ caisse }: { caisse: CaisseExterne }) {
         setLecture({ enCours: false, erreur: null });
         setFichier({ nom: f.name, contenu: lu.contenu, brut: f, feuilles: lu.feuilles, feuille: lu.feuille });
         setColonnes(null);
+        setModifier(false);
         apercu.mutate({ nom: f.name, contenu: lu.contenu });
       })
       .catch((erreur: unknown) => setLecture({ enCours: false, erreur: erreur instanceof Error ? erreur : new Error(String(erreur)) }));
@@ -280,6 +289,33 @@ function Importer({ caisse }: { caisse: CaisseExterne }) {
 
       {a && fichier && (
         <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+          {a.manquants.length === 0 && !modifier ? (
+            <div className="colonnes-reconnues">
+              <strong>✓ Colonnes reconnues</strong>
+              <span className="discret">
+                {" "}
+                — FlaiX Expert a trouvé tout seul où sont, dans ton fichier
+                {fichier.feuille ? ` (feuille « ${fichier.feuille} »)` : ""}, le n° de ticket, la date, le produit, la quantité et le prix :
+              </span>
+              <ul>
+                {CHAMPS_EXPORT.filter((c) => colonnes?.[c.champ] !== undefined).map((c) => (
+                  <li key={c.champ}>
+                    {c.libelle} ← « {a.entetes[colonnes![c.champ]!] || `colonne ${colonnes![c.champ]! + 1}`} »
+                  </li>
+                ))}
+              </ul>
+              <button type="button" className="btn btn-fantome" style={{ padding: "4px 10px", fontSize: 12.5 }} onClick={() => setModifier(true)}>
+                Modifier les colonnes
+              </button>
+            </div>
+          ) : (
+            <p className="note" style={{ margin: 0 }}>
+              {a.manquants.length
+                ? "Indique dans quelle colonne de ton fichier se trouve chaque information marquée ⚠ (n° de ticket, date, produit, quantité, prix) : les listes proposent les titres des colonnes du fichier. Si rien ne correspond, vérifie la feuille du classeur choisie au-dessus."
+                : "Chaque liste dit dans quelle colonne du fichier se trouve l'information."}
+            </p>
+          )}
+          {(a.manquants.length > 0 || modifier) && (
           <div className="grille-champs">
             {CHAMPS_EXPORT.map((c) => (
               <label key={c.champ} className="champ" title={c.aide}>
@@ -298,6 +334,7 @@ function Importer({ caisse }: { caisse: CaisseExterne }) {
               </label>
             ))}
           </div>
+          )}
           {a.manquants.length > 0 ? (
             <div className="message message-erreur" role="alert">
               À choisir : {a.manquants.map(libelleChamp).join(", ")}.
@@ -668,5 +705,77 @@ function Resultats() {
         </>
       )}
     </>
+  );
+}
+
+/**
+ * Les fichiers importés pour cette caisse (§15.168) : un import fait avec de mauvaises colonnes s'annule (ses ventes sont
+ * retirées, le relevé et l'annulation restent au journal), puis le fichier se réimporte.
+ */
+function ListeImports({ caisse }: { caisse: CaisseExterne }) {
+  const client = useQueryClient();
+  const imports = useQuery({ queryKey: ["caisses-externes-imports", caisse.id], queryFn: () => api.get<ImportDeVentes[]>(`/caisses-externes/${caisse.id}/imports`) });
+  const [confirmer, setConfirmer] = useState<string | null>(null);
+  const annuler = useMutation({
+    mutationFn: (importId: string) => api.post<ImportDeVentes[]>(`/caisses-externes/${caisse.id}/imports/${importId}/annulation`, {}),
+    onSuccess: (l) => {
+      client.setQueryData(["caisses-externes-imports", caisse.id], l);
+      setConfirmer(null);
+      for (const cle of ["caisses-externes", "caisses-externes-synthese", "caisses-externes-produits", "caisses-externes-pdv"]) void client.invalidateQueries({ queryKey: [cle] });
+    },
+  });
+  if (!imports.data?.length) return null;
+  return (
+    <Carte
+      titre="Fichiers importés"
+      description="Un fichier importé avec de mauvaises colonnes (montants absurdes, produits illisibles, ventes en double) s'annule : ses ventes sont retirées, puis tu peux le réimporter. L'annulation reste inscrite au journal."
+    >
+      <div style={{ overflowX: "auto" }}>
+        <table className="tableau">
+          <thead>
+            <tr>
+              <th>Fichier</th>
+              <th>Importé le</th>
+              <th className="chiffre">Ventes</th>
+              <th className="chiffre">Montant</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {imports.data.map((i) => (
+              <tr key={i.id} style={i.annule ? { opacity: 0.6 } : undefined}>
+                <td style={{ maxWidth: 320, overflowWrap: "anywhere" }}>{i.fichier}</td>
+                <td>
+                  {formaterDateHeure(i.le)} · {i.par}
+                </td>
+                <td className="chiffre">{i.annule ? i.annule.ventes : i.ventes}</td>
+                <td className="chiffre">{formaterMontant(i.annule ? i.annule.montant : i.montant)}</td>
+                <td style={{ textAlign: "right" }}>
+                  {i.annule ? (
+                    <span className="puce">Annulé le {formaterDateHeure(i.annule.le)}</span>
+                  ) : i.ventes === 0 ? (
+                    <span className="discret">aucune vente ajoutée</span>
+                  ) : confirmer === i.id ? (
+                    <span className="en-ligne" style={{ justifyContent: "flex-end" }}>
+                      <button className="btn btn-danger" disabled={annuler.isPending} onClick={() => annuler.mutate(i.id)}>
+                        Retirer ses {i.ventes} ventes
+                      </button>
+                      <button className="btn btn-fantome" onClick={() => setConfirmer(null)}>
+                        Garder
+                      </button>
+                    </span>
+                  ) : (
+                    <button className="btn btn-fantome" onClick={() => setConfirmer(i.id)}>
+                      Annuler cet import
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <MessageErreur erreur={annuler.error} />
+    </Carte>
   );
 }

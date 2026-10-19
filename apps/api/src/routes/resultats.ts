@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { conditionnementVendu, dansPeriode, estJour, etatCible, formaterMontant, idPeriode, libellePeriode, periodePrecedente, rangHeure, tauxMargePb, type Periode, type AlerteResultat, type Evenement, type MatchResume, type ProduitVendu, type Resultats, type StatsMatch, type TauxTvaPb } from "@flaix/domain";
+import { conditionnementVendu, evenementTermine, dansPeriode, estJour, etatCible, formaterMontant, idPeriode, libellePeriode, periodePrecedente, rangHeure, tauxMargePb, type Periode, type AlerteResultat, type Evenement, type MatchResume, type ProduitVendu, type Resultats, type StatsMatch, type TauxTvaPb } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { listerEvenements } from "./evenements.ts";
@@ -225,7 +225,8 @@ export async function routesResultats(app: FastifyInstance, { base }: { base: Ba
     return base.transaction(contexte(auth), async (c) => {
       // Résultats ne montre que les événements terminés (clos) : la soirée en cours est dans En direct (§15.167).
       const evenements = (await listerEvenements(c, auth.lieuId)).filter((e) => e.etat !== "ouvert");
-      const matchs = (await resumeMatchs(c, auth.lieuId)).filter((m) => m.etat === "clos");
+      // Terminé : clos, ou — lieu dont les ventes viennent d'une caisse connectée — commencé et avec des ventes (§15.151).
+      const matchs = (await resumeMatchs(c, auth.lieuId)).filter((m) => evenementTermine(m, true));
       const avecVentes = new Set(matchs.map((m) => m.id));
       const maintenant = Date.now();
       const prochains = evenements
@@ -261,7 +262,7 @@ export async function routesResultats(app: FastifyInstance, { base }: { base: Ba
       }
 
       // Événement affiché : celui demandé s'il est terminé ; sinon le plus récent des événements terminés qui ont des ventes.
-      const evenement = evenements.find((e) => e.id === choix.evenementId && e.etat === "clos") ?? evenements.find((e) => e.id === matchs[0]?.id) ?? null;
+      const evenement = evenements.find((e) => e.id === choix.evenementId && matchs.some((m) => m.id === e.id)) ?? evenements.find((e) => e.id === matchs[0]?.id) ?? null;
       if (!evenement) return { matchs, evenement: null, comparaison: null, actuel: null, precedent: null, alertes: [], prochains };
 
       // Comparaison : celle demandée ; sinon l'événement joué juste avant qui a des ventes (liste déjà dans l'ordre où ils ont été joués).

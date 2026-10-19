@@ -1,4 +1,5 @@
 import type { CellObject, WorkSheet } from "xlsx";
+import { champsManquants, devinerColonnes } from "@flaix/domain";
 
 /*
  * Fichiers d'export d'une caisse (dossier §15.150) : CSV, ou classeur Excel (.xlsx, .xlsm, l'ancien .xls) et OpenDocument
@@ -77,6 +78,25 @@ function lignesDeLaFeuille(X: Xlsx, ws: WorkSheet): string[][] {
 }
 
 /**
+ * Feuille des ventes d'un classeur à plusieurs feuilles (L'Addition : « Accueil », « SalesDocumentLines »…) : celle dont
+ * les en-têtes (parmi ses 20 premières lignes) donnent toutes les colonnes nécessaires, la plus complète, puis la plus
+ * longue ; aucune : null.
+ */
+function meilleureFeuille(feuilles: readonly string[], lire: (nom: string) => string[][]): string | null {
+  let meilleure: { nom: string; score: number; lignes: number } | null = null;
+  for (const nom of feuilles) {
+    const lignes = lire(nom);
+    for (const l of lignes.slice(0, 20)) {
+      const c = devinerColonnes(l);
+      if (champsManquants(c).length) continue;
+      const score = Object.keys(c).length;
+      if (!meilleure || score > meilleure.score || (score === meilleure.score && lignes.length > meilleure.lignes)) meilleure = { nom, score, lignes: lignes.length };
+    }
+  }
+  return meilleure?.nom ?? null;
+}
+
+/**
  * Lit le fichier choisi : un CSV tel quel ; un classeur, sa feuille demandée ou la première qui contient des données.
  */
 export async function lireFichierVentes(f: File, feuille?: string): Promise<FichierLu> {
@@ -97,7 +117,7 @@ export async function lireFichierVentes(f: File, feuille?: string): Promise<Fich
   const feuilles = classeur.SheetNames;
   const lues = new Map<string, string[][]>();
   const lire = (nom: string) => lues.get(nom) ?? lues.set(nom, lignesDeLaFeuille(X, classeur.Sheets[nom]!)).get(nom)!;
-  const choisie = feuille && feuilles.includes(feuille) ? feuille : (feuilles.find((n) => lire(n).length > 1) ?? feuilles[0]);
+  const choisie = feuille && feuilles.includes(feuille) ? feuille : (meilleureFeuille(feuilles, lire) ?? feuilles.find((n) => lire(n).length > 1) ?? feuilles[0]);
   if (!choisie) throw new Error("Ce classeur ne contient aucune feuille.");
   return { contenu: enCsv(lire(choisie)), feuilles, feuille: choisie };
 }

@@ -17,7 +17,7 @@ export const SYSTEMES_CAISSE = [
 ] as const;
 export type SystemeCaisse = (typeof SYSTEMES_CAISSE)[number]["cle"];
 
-export type ChampExport = "vente" | "date" | "heure" | "pointDeVente" | "produit" | "code" | "quantite" | "prixUnitaire" | "montant" | "tva" | "paiement" | "statut";
+export type ChampExport = "vente" | "date" | "heure" | "pointDeVente" | "produit" | "code" | "quantite" | "prixUnitaire" | "montant" | "remise" | "offert" | "tva" | "paiement" | "statut";
 /** Colonne du fichier (à partir de 0) de chaque champ reconnu. */
 export type ColonnesExport = Partial<Record<ChampExport, number>>;
 
@@ -31,6 +31,8 @@ export const CHAMPS_EXPORT: { champ: ChampExport; libelle: string; aide: string 
   { champ: "quantite", libelle: "Quantité", aide: "Obligatoire. Négative pour un remboursement." },
   { champ: "prixUnitaire", libelle: "Prix unitaire TTC", aide: "Le prix unitaire ou le montant de la ligne est obligatoire." },
   { champ: "montant", libelle: "Montant TTC de la ligne", aide: "Quantité × prix, remise comprise." },
+  { champ: "remise", libelle: "Remise TTC de la ligne", aide: "Retirée du prix × quantité (sans colonne de montant)." },
+  { champ: "offert", libelle: "Offert TTC de la ligne", aide: "Retiré du prix × quantité (sans colonne de montant)." },
   { champ: "tva", libelle: "Taux de TVA", aide: "20, 10, 5,5…" },
   { champ: "paiement", libelle: "Moyen de paiement", aide: "Carte, espèces, cashless…" },
   { champ: "statut", libelle: "Statut", aide: "Une valeur « annulé » ou « remboursé » retire la vente." },
@@ -41,14 +43,16 @@ const ALIAS: [ChampExport, RegExp][] = [
   ["vente", /^(n ?ticket|ticket|no ticket|numero ticket|numero de ticket|n de ticket|id ticket|ticket id|id vente|n vente|numero vente|numero de vente|vente|transaction|id transaction|n transaction|numero transaction|transaction id|commande|n commande|numero commande|numero de commande|id commande|order|order id|receipt|receipt id|facture|n facture)$/],
   ["date", /^(date|date heure|date et heure|horodatage|date vente|date de vente|date transaction|date de la transaction|date commande|date ticket|created at|created|datetime|timestamp)$/],
   ["heure", /^(heure|heure vente|heure de vente|time)$/],
-  ["pointDeVente", /^(point de vente|points de vente|pdv|bar|stand|buvette|terminal|caisse|poste|comptoir|lieu de vente|device|appareil|point of sale|pos|kiosque|borne)$/],
+  ["pointDeVente", /^(point de vente|points de vente|pdv|bar|stand|buvette|terminal|caisse|poste|comptoir|lieu de vente|device|appareil|point of sale|pos|kiosque|borne|salle|tag salle)$/],
   ["produit", /^(produit|article|libelle|libelle article|libelle produit|designation|nom produit|nom article|nom du produit|item|item name|product|product name|nom)$/],
   ["code", /^(code|code produit|code article|reference|ref|sku|id produit|id article|product id|item id|plu)$/],
   ["quantite", /^(quantite|qte|qty|quantity|nombre|nb|quantite vendue)$/],
   ["prixUnitaire", /^(prix|prix unitaire|pu|prix ttc|prix unitaire ttc|pu ttc|unit price|prix de vente)$/],
   ["montant", /^(montant|montant ttc|total|total ttc|total ligne|montant ligne|ca|ca ttc|amount|line total|prix total|total article)$/],
-  ["tva", /^(tva|taux tva|taux de tva|tx tva|vat|vat rate|tax rate|taxe)$/],
-  ["paiement", /^(paiement|moyen de paiement|moyens de paiement|mode de paiement|mode reglement|mode de reglement|reglement|payment|payment method|type de paiement)$/],
+  ["remise", /^(remise|remises|remise ttc|remises ttc|discount|discount amount)$/],
+  ["offert", /^(offert|offerts|offert ttc|offerts ttc|offered amount)$/],
+  ["tva", /^(tva|taux tva|taux de tva|tx tva|vat|vat rate|tax rate|taxe|taux)$/],
+  ["paiement", /^(paiement|paiements|moyen de paiement|moyens de paiement|mode de paiement|mode reglement|mode de reglement|reglement|payment|payment method|type de paiement)$/],
   ["statut", /^(statut|etat|status|annule|annulation|type)$/],
 ];
 
@@ -164,6 +168,8 @@ export function lireDateExport(date: string, heure = ""): string | null {
 }
 
 const ANNULEE = /(annul|rembours|cancel|refund|void|avoir)/;
+/** Case « vide » écrite comme un tiret ou un souligné. */
+const VIDE = /^[-_—–]+$/;
 
 /** Champs sans lesquels rien n'est lu. */
 export function champsManquants(colonnes: ColonnesExport): ChampExport[] {
@@ -210,10 +216,15 @@ export function lireExportCaisse(texte: string, colonnesDonnees?: ColonnesExport
   };
   const parVente = new Map<string, VenteExterneLue>();
   for (const { numero, champs } of fichier.lignes) {
-    const champ = (f: ChampExport) => (colonnes[f] === undefined ? "" : (champs[colonnes[f]!] ?? "").trim());
+    // « - » ou « _ » : case vide (exports de L'Addition).
+    const champ = (f: ChampExport) => {
+      const v = colonnes[f] === undefined ? "" : (champs[colonnes[f]!] ?? "").trim();
+      return VIDE.test(v) ? "" : v;
+    };
     const idExterne = champ("vente");
-    // Ligne de total ou de sous-total, sans date : ignorée sans bruit.
-    if (!champ("date") && (!idExterne || /^(sous[ -]?)?totaux?|^total/i.test(sansAccents(idExterne)))) continue;
+    // Ligne de total ou de sous-total (sans n° de vente, ou intitulée « Total ») : ignorée sans bruit.
+    if (!idExterne && (!champ("date") || champs.some((x) => /^(sous[ -]?)?totaux?$|^total/i.test(sansAccents(x))))) continue;
+    if (/^(sous[ -]?)?totaux?|^total/i.test(sansAccents(idExterne))) continue;
     if (!idExterne) {
       erreur(numero, "N° de vente vide.");
       continue;
@@ -244,7 +255,9 @@ export function lireExportCaisse(texte: string, colonnesDonnees?: ColonnesExport
       erreur(numero, "Prix et montant illisibles ou vides.");
       continue;
     }
-    const montant = mt ?? Math.round(pu! * quantite);
+    // Sans colonne de montant : prix × quantité, moins la remise et l'offert de la ligne s'ils sont donnés.
+    const deduit = (f: ChampExport) => (champ(f) ? (lireMontantExport(champ(f)) ?? 0) : 0);
+    const montant = mt ?? Math.round(pu! * quantite) - Math.abs(deduit("remise")) - Math.abs(deduit("offert"));
     const prixUnitaire = pu ?? (quantite !== 0 ? Math.round(montant / quantite) : 0);
     const statut = sansAccents(champ("statut"));
     let vente = parVente.get(idExterne);
@@ -401,6 +414,19 @@ export interface ImportVentesExternes {
 }
 
 /** Produit vu dans les ventes d'une caisse et sa correspondance dans FlaiX Expert. */
+/** Un import d'export de caisse, pour la liste « Imports » (§15.168). */
+export interface ImportDeVentes {
+  id: string;
+  le: string;
+  par: string;
+  fichier: string;
+  ventesAjoutees: number;
+  /** Ventes encore là et leur montant (0 une fois annulé). */
+  ventes: number;
+  montant: Centimes;
+  annule: { le: string; par: string; ventes: number; montant: Centimes } | null;
+}
+
 export interface ProduitExterne {
   cle: string;
   libelle: string;

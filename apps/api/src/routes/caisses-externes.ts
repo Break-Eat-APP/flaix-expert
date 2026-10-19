@@ -12,6 +12,7 @@ import {
   type ImportVentesExternes,
   type LigneSynthese,
   type PointDeVenteExterne,
+  type ImportDeVentes,
   type ProduitExterne,
   type ResultatLecture,
   type SuggestionCorrespondance,
@@ -105,6 +106,30 @@ async function candidats(c: Client, lieuId: string, table: "produit" | "stand"):
 function suggestion(nom: string, liste: Candidat[]): SuggestionCorrespondance | null {
   const s = suggererCorrespondance(nom, liste);
   return s && { id: s.id, nom: s.nom, memeNom: s.score === 1 };
+}
+
+async function listerImports(c: Client, lieuId: string, caisseId: string): Promise<ImportDeVentes[]> {
+  const { rows } = await c.query<{ id: string; le: Date; par: string; fichier: string; ajoutees: number; ventes: number; montant: string; a_le: Date | null; a_par: string | null; a_ventes: number | null; a_montant: string | null }>(
+    `SELECT i.id, i.le, u.nom AS par, i.fichier, i.ventes_ajoutees AS ajoutees,
+            (SELECT count(*)::int FROM vente_externe v WHERE v.lieu_id = i.lieu_id AND v.import_id = i.id AND NOT v.annulee) AS ventes,
+            (SELECT coalesce(sum(v.total_centimes), 0) FROM vente_externe v WHERE v.lieu_id = i.lieu_id AND v.import_id = i.id AND NOT v.annulee) AS montant,
+            a.le AS a_le, ua.nom AS a_par, a.ventes AS a_ventes, a.montant_centimes AS a_montant
+       FROM import_ventes_externes i JOIN utilisateur u ON u.id = i.par
+       LEFT JOIN import_ventes_externes_annule a ON a.import_id = i.id LEFT JOIN utilisateur ua ON ua.id = a.par
+      WHERE i.lieu_id = $1 AND i.caisse_externe_id = $2
+      ORDER BY i.le DESC LIMIT 50`,
+    [lieuId, caisseId],
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    le: r.le.toISOString(),
+    par: r.par,
+    fichier: r.fichier,
+    ventesAjoutees: r.ajoutees,
+    ventes: r.ventes,
+    montant: Number(r.montant),
+    annule: r.a_le ? { le: r.a_le.toISOString(), par: r.a_par!, ventes: r.a_ventes!, montant: Number(r.a_montant) } : null,
+  }));
 }
 
 async function produitsExternes(c: Client, lieuId: string, caisseId: string): Promise<ProduitExterne[]> {
@@ -267,7 +292,8 @@ export async function routesCaissesExternes(app: FastifyInstance, { base }: { ba
       await exigerHorsFormation(c, auth.lieuId);
       return exigerCaisse(c, auth.lieuId, id);
     });
-    const lu = lireExportCaisse(d.contenu, d.colonnes ?? caisse.colonnes ?? undefined);
+    const devine = d.colonnes ? null : lireExportCaisse(d.contenu);
+    const lu = d.colonnes ? lireExportCaisse(d.contenu, d.colonnes) : devine!.manquants.length && caisse.colonnes ? lireExportCaisse(d.contenu, caisse.colonnes) : devine!;
     if (d.apercu) return apercu(lu);
     if (lu.manquants.length) throw new ErreurMetier(400, `Colonnes à choisir : ${lu.manquants.map((m) => CHAMPS_EXPORT.find((x) => x.champ === m)!.libelle).join(", ")}.`);
     if (lu.ventes.length === 0) throw new ErreurMetier(400, "Aucune vente lisible dans ce fichier.");
@@ -332,6 +358,37 @@ export async function routesCaissesExternes(app: FastifyInstance, { base }: { ba
       return { importId, ajoutees: nouvelles.length, deja: lu.ventes.length - nouvelles.length, annulationsReportees: annulees.length, relies };
     });
     return { ...resultat, lignesLues: lu.lignesLues, erreurs: lu.erreurs, caisses: await base.transaction(contexte(auth), (c) => listerCaisses(c, auth.lieuId)) };
+  });
+
+  // ---------- Imports et leur annulation (§15.168) ----------
+  app.get("/api/caisses-externes/:id/imports", async (req): Promise<ImportDeVentes[]> => {
+    const auth = await exigerDirecteur(req, base);
+    const { id } = ParamId.parse(req.params);
+    return base.transaction(contexte(auth), async (c) => {
+      await exigerCaisse(c, auth.lieuId, id);
+      return listerImports(c, auth.lieuId, id);
+    });
+  });
+
+  app.post("/api/caisses-externes/:id/imports/:importId/annulation", async (req): Promise<ImportDeVentes[]> => {
+    const auth = await exigerDirecteur(req, base);
+    const { id, importId } = z.object({ id: Uuid, importId: Uuid }).parse(req.params);
+    return base.transaction(contexte(auth), async (c) => {
+      await exigerHorsFormation(c, auth.lieuId);
+      await exigerCaisse(c, auth.lieuId, id);
+      const { rows: imp } = await c.query<{ fichier: string }>("SELECT fichier FROM import_ventes_externes WHERE lieu_id = $1 AND caisse_externe_id = $2 AND id = $3", [auth.lieuId, id, importId]);
+      if (!imp[0]) throw introuvable("Import");
+      const { rows: deja } = await c.query("SELECT 1 FROM import_ventes_externes_annule WHERE import_id = $1", [importId]);
+      if (deja[0]) throw new ErreurMetier(409, "Cet import est déjà annulé.");
+      const { rows } = await c.query<{ ventes: number; montant: string }>("SELECT * FROM annuler_import_ventes_externes($1, $2)", [importId, auth.utilisateurId]);
+      await inscrireJet(c, {
+        lieuId: auth.lieuId,
+        type: "caisse_externe_import_annule",
+        utilisateurId: auth.utilisateurId,
+        details: { caisse: id, import: importId, fichier: imp[0].fichier, ventesRetirees: rows[0]!.ventes, montantRetire: Number(rows[0]!.montant) },
+      });
+      return listerImports(c, auth.lieuId, id);
+    });
   });
 
   app.get("/api/caisses-externes/:id/produits", async (req): Promise<ProduitExterne[]> => {

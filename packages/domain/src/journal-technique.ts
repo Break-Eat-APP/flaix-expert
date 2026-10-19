@@ -116,6 +116,7 @@ export const TYPES_JET = {
   caisse_externe_creee: "Caisse connectée ajoutée",
   caisse_externe_modifiee: "Caisse connectée renommée",
   caisse_externe_import: "Ventes d'une caisse connectée importées",
+  caisse_externe_import_annule: "Import de ventes d'une caisse connectée annulé (ses ventes retirées)",
   correspondance_externe_modifiee: "Caisse connectée : correspondance d'un produit ou d'un point de vente modifiée",
   correspondances_suggerees_acceptees: "Caisse connectée : correspondances suggérées acceptées",
   frais_mensuel_cree: "Mes frais : frais du mois ajouté",
