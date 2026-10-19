@@ -131,8 +131,9 @@ export function EnDirect({ session }: { session: SessionInfo }) {
         <Carte>
           <EtatVide titre="Aucun événement ouvert">
             {prochain ? `Prochain événement : ${prochain.libelle}, le ${formaterDateHeure(prochain.debut)}. ` : ""}
-            L'événement s'ouvre dans <Link to="/caisses">Caisses</Link>. Ici, les chiffres et les couleurs s'allument à son ouverture ; en attendant, tu peux placer tes stands. Les événements terminés se comparent dans <Link to="/">Résultats</Link>.
+            Il s'ouvre tout seul avec la première caisse d'une caissière, ou ici. Les chiffres et les couleurs s'allument à son ouverture ; en attendant, tu peux placer tes stands. Les événements terminés se comparent dans <Link to="/">Résultats</Link>.
           </EtatVide>
+          {prochain && !session.support && <OuvrirEvenement evenement={prochain} />}
         </Carte>
       )}
 
@@ -212,6 +213,45 @@ export function EnDirect({ session }: { session: SessionInfo }) {
 }
 
 /** Les chiffres clés, au design des cartes de Résultats : valeur, écart au match précédent au même moment, petite courbe. */
+/**
+ * Ouvrir l'événement depuis En direct (§15.169), comme dans Caisses : après confirmation, la mise en place est figée.
+ */
+function OuvrirEvenement({ evenement }: { evenement: Evenement }) {
+  const client = useQueryClient();
+  const [confirmer, setConfirmer] = useState(false);
+  const ouvrir = useMutation({
+    mutationFn: () => api.post<Evenement[]>(`/evenements/${evenement.id}/ouverture`),
+    onSuccess: (l) => {
+      client.setQueryData(["evenements"], l);
+      for (const cle of ["plan-stade", "direct", "tableau-caisses", "stock"]) void client.invalidateQueries({ queryKey: [cle] });
+    },
+  });
+  return (
+    <div className="direct-ouvrir">
+      {confirmer ? (
+        <>
+          <span>
+            Ouvrir <strong>{evenement.libelle}</strong> maintenant ? La mise en place du stock sera figée ; ensuite, on passe par le réassort.
+          </span>
+          <div className="actions">
+            <button className="btn" disabled={ouvrir.isPending} onClick={() => ouvrir.mutate()}>
+              Confirmer l'ouverture
+            </button>
+            <button className="btn btn-fantome" onClick={() => setConfirmer(false)}>
+              Annuler
+            </button>
+          </div>
+        </>
+      ) : (
+        <button className="btn" onClick={() => setConfirmer(true)}>
+          Ouvrir l'événement
+        </button>
+      )}
+      <MessageErreur erreur={ouvrir.error} />
+    </div>
+  );
+}
+
 function Chiffres({ t, d }: { t: TableauDirect | null; d: NonNullable<PlanStade["direct"]> }) {
   // Badge « +9 % » en haut à droite ; dessous, la valeur du match précédent au même moment (comme Résultats).
   const badge = (k: Kpi | undefined) => (k?.ecartPb != null ? <span className={`variation ${k.ecartPb >= 0 ? "hausse" : "baisse"}`}>{pct(k.ecartPb)}</span> : undefined);

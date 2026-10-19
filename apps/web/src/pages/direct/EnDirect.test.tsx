@@ -96,6 +96,7 @@ const monter = (plan: PlanStade, evenements: Evenement[]) => {
     if (url === "/api/evenements") return reponse(evenements);
     if (url === "/api/direct") return reponse(plan.evenement ? tableau : null);
     if (init?.method === "PUT") return reponse({ ...plan, modele: "patinoire" });
+    if (url.endsWith("/ouverture")) return reponse(evenements.map((e) => ({ ...e, etat: "ouvert" })));
     if (init?.method === "POST") return reponse({});
     return reponse(plan);
   });
@@ -189,5 +190,15 @@ describe("En direct", () => {
     expect(await screen.findByText(/Prochain événement : FC Rouen – Orléans/)).toBeTruthy();
     expect(screen.queryByText("Les stands, maintenant")).toBeNull();
     expect(screen.getByText("Placer les stands")).toBeTruthy();
+  });
+
+  it("hors événement : ouvrir le prochain d'ici, après confirmation (§15.169)", async () => {
+    const prochain = { id: "p", libelle: "FC Rouen – Orléans", etat: "a_venir", debut: "2026-10-24T18:30:00.000Z" } as Evenement;
+    const serveur = monter({ ...enDirect, evenement: null, direct: null, stands: [] }, [prochain]);
+    fireEvent.click(await screen.findByRole("button", { name: "Ouvrir l'événement" }));
+    expect(screen.getByText(/La mise en place du stock sera figée/)).toBeTruthy();
+    expect(serveur.mock.calls.some(([u]) => u.endsWith("/ouverture"))).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Confirmer l'ouverture" }));
+    await waitFor(() => expect(serveur.mock.calls.some(([u, i]) => u === "/api/evenements/p/ouverture" && i?.method === "POST")).toBe(true));
   });
 });
