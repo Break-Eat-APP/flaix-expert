@@ -124,6 +124,8 @@ résultats, autre lieu isolé), écran 3. Non vu dans le navigateur : le poste d
 - **correspondances suggérées (§15.152)**
   - même nom aux majuscules, accents, espaces et ponctuation près : relié ; homonymes ou rien : pas de lien
   - nom proche : proposé ; contenances différentes jamais confondues ; nom sans rapport : rien
+- **export de L'Addition (§15.168)**
+  - colonnes reconnues (taux, paiements, salle, remises, offerts), « - » vide, ligne Total ignorée, remise et offert retirés
 
 ## 5. Pour reprendre ou vérifier cette phase
 

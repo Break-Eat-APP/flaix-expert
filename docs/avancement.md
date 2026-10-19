@@ -2,6 +2,12 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-19 : exports de L'Addition lus seuls, import annulable (§15.168)
+
+Feuille des ventes et colonnes de L'Addition reconnues seules (résumé au lieu de 14 listes), produits par leur nom,
+« Fichiers importés » pour annuler un import raté (migration 0054). Résultats : les événements de caisse connectée
+avec ventes y reviennent. Rémi doit annuler ses deux imports ratés puis réimporter.
+
 ## 2026-10-19 : En direct à part, au design des maquettes ; Résultats pour les événements terminés (§15.167)
 
 Entrée « En direct » dans le menu ; 8 chiffres (CA, tickets, panier avec % au même moment, marge, prévision, rythme, CA par spectateur, caisses) ; lieu 3D avec petits chiffres sous chaque stand et détail en grand au clic ; courbe de la soirée, catégories, meilleurs produits. Résultats : événements clos seulement. À suivre : Résultats au design de la 2e maquette.

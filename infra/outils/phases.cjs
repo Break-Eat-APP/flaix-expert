@@ -72,6 +72,7 @@ const PHASES = [
   { n: 66, titre: "Remettre le stock à zéro ; supprimer un événement à venir", dossier: "§15.165", commits: ["f4e5aa8", "325a75d", "04e39ff"] },
   { n: 67, titre: "Le tableau En direct, d'après la maquette, avec le lieu en 3D", dossier: "§15.166", commits: ["0e5db30", "a54313b", "77de79f"] },
   { n: 68, titre: "En direct à part, au design des maquettes ; Résultats pour les événements terminés", dossier: "§15.167", commits: ["25fcf2a", "a34efbd", "f73a1b3"] },
+  { n: 69, titre: "Exports de L'Addition lus seuls ; annuler un import de caisse connectée", dossier: "§15.168", commits: ["b54f0f6"] },
 ];
 
 module.exports = { PHASES };

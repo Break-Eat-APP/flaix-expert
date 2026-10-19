@@ -5375,3 +5375,46 @@ lignes, rangée du graphique de hauteur inégale, cartes des stands trop serrée
 
 **À faire ensuite** (avec Rémi) : la page Résultats au design de la 2e maquette pour les événements terminés ;
 « Prévenir le stand » (message aux tablettes).
+
+### 15.168 Exports de L'Addition lus seuls ; annuler un import de caisse connectée (2026-10-19)
+
+**Demande de Rémi** (2026-10-19, avec l'export Excel de L'Addition et deux captures) : *« qu'est-ce que tu me
+conseillerais afin de coordonner facilement les caisses connectées avec le dépôt de document Excel ? »*, puis *« il faut
+aussi gérer les correspondances dans FlaiX Expert, je comprends pas à quoi correspond HD7CD, faudrait faciliter les
+choses »* et, sur l'écran d'import ouvert sur la feuille « Accueil » avec 14 listes vides, *« ça aussi j'ai du mal à
+comprendre ce que ça veut dire »*.
+
+**Constat** sur le fichier : le classeur a plusieurs feuilles, les ventes sont dans « SalesDocumentLines » et l'écran
+ouvrait la première (« Accueil », vide) ; une ligne par article ; « - » écrit dans les cases vides (« Menu parent ») ;
+colonnes « Taux », « Paiements », « TAG_Salle », « Remises TTC », « Offerts TTC » non reconnues. Dans les données de
+Rémi : un premier import fait avec de mauvaises colonnes (produit « - », 1 072 articles pour 6,7 millions d'euros, relié
+à tort à « La Box ») et un second où le produit était le code interne de L'Addition (« HD7CF-289 ») : rien ne permettait
+de retirer un import raté. La colonne « URL Ticket » contient des liens de ticket signés : jamais lue ni gardée.
+
+**Décisions** :
+- **Feuille choisie seule** : celle dont les en-têtes (20 premières lignes) donnent toutes les colonnes nécessaires,
+  la plus complète puis la plus longue ; le choix de feuille reste possible.
+- **Colonnes de L'Addition reconnues** : « Taux » (TVA), « Paiements », « Salle »/« TAG_Salle » (point de vente),
+  « Remises TTC » et « Offerts TTC » (nouveaux champs retirés de prix × quantité quand il n'y a pas de montant) ;
+  « - » ou « _ » vaut case vide ; lignes de total ou de sous-total ignorées.
+- **Écran** : quand tout est reconnu, un résumé « ✓ Colonnes reconnues » (colonne du fichier → sens) remplace la grille
+  de 14 listes ; la grille s'ouvre par « Modifier les colonnes », ou d'office s'il manque une colonne.
+- **Produits par leur nom** : nom de l'article, avec le code de la caisse à côté (« HOTDOG · HD7CF-289 ») ; le code
+  sert à reconnaître le même article d'un fichier à l'autre.
+- **Sans colonnes choisies**, le serveur prend les colonnes reconnues dans le fichier avant celles gardées du dernier
+  import : un mauvais choix fait une fois ne se répète plus.
+- **Annuler un import** (onglet Importer › « Fichiers importés ») : retire ses ventes et leurs articles ; l'import reste
+  dans le relevé, marqué annulé (date, auteur, ventes et montant retirés) ; une seule fois ; journal
+  `caisse_externe_import_annule` ; refusé en formation. Migration 0054 : table `import_ventes_externes_annule` (écriture
+  seule), fonction `annuler_import_ventes_externes` (propriétaire de la base) ; les articles restent en écriture seule
+  hors de cette annulation.
+- **Résultats** (correction de §15.167) : un événement d'un lieu à caisse connectée, commencé et avec des ventes,
+  compte comme terminé (`evenementTermine`) ; le filtre « clos seulement » les avait écartés.
+
+**Réalisé le 2026-10-19**. Essai sur le vrai fichier de Rémi : feuille « SalesDocumentLines » choisie seule, 11
+colonnes reconnues, 372 ventes, 1 072 articles, 0 erreur, 6 286,30 €, produits nommés. **Tests** : moteur 9 (dont
+l'export de L'Addition), serveur (annulation d'un mauvais import puis réimport, caisses connectées 12, résultats 6),
+écran 8 ; moteur complet 271 ; types et construction.
+
+**À faire par Rémi** : dans Caisses connectées › Importer › « Fichiers importés », annuler les deux imports ratés,
+réimporter le fichier, puis valider les rapprochements proposés dans Correspondances.
