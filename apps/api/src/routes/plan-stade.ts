@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { RAYON_PLAN, SEUILS_STADE, clotureADistance, planStade, type DonneesStand, type ModeleLieu, type PlanStade, type Tribune } from "@flaix/domain";
+import { RAYON_PLAN, SEUILS_STADE, clotureADistance, planStade, type DonneesStand, type EntreeDirect, type ModeleLieu, type PlanStade, type Tribune } from "@flaix/domain";
 import { verrouiller, type Base, type Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { introuvable } from "../erreurs.ts";
@@ -27,7 +27,8 @@ const ModifPlan = z.object({
  */
 export async function lirePlanStade(c: Client, lieuId: string, maintenant = new Date()): Promise<PlanStade> {
   const options = await lireOptions(c, lieuId);
-  const enCours = (await listerEvenements(c, lieuId)).find((e) => e.etat === "ouvert") ?? null;
+  const evenements = await listerEvenements(c, lieuId);
+  const enCours = evenements.find((e) => e.etat === "ouvert") ?? null;
 
   const { rows: lieu } = await c.query<{ plan_modele: ModeleLieu }>("SELECT plan_modele FROM lieu WHERE id = $1", [lieuId]);
   const { rows: stands } = await c.query<{ id: string; nom: string; tribune: Tribune | null; x: number | null; z: number | null }>(
@@ -37,7 +38,7 @@ export async function lirePlanStade(c: Client, lieuId: string, maintenant = new 
   const donnees = new Map<string, DonneesStand>(
     stands.map((s) => [
       s.id,
-      { id: s.id, nom: s.nom, tribune: s.tribune, position: s.x === null || s.z === null ? null : { x: s.x, z: s.z }, caisses: [], stock: [], hygiene: { nonConformes: 0, ouvertureARelever: [] } },
+      { id: s.id, nom: s.nom, tribune: s.tribune, position: s.x === null || s.z === null ? null : { x: s.x, z: s.z }, caisses: [], recentes: { tickets: 0, caNet: 0 }, stock: [], hygiene: { nonConformes: 0, ouvertureARelever: [] } },
     ]),
   );
 
@@ -105,6 +106,7 @@ export async function lirePlanStade(c: Client, lieuId: string, maintenant = new 
         ...st.lignes
           .filter((l) => l.depart + l.reassort > 0)
           .map((l) => ({
+            produitId: l.produitId,
             nom: l.nom,
             alerte: l.alerte,
             restant: l.restant,
@@ -141,7 +143,38 @@ export async function lirePlanStade(c: Client, lieuId: string, maintenant = new 
     }
   }
 
-  return planStade(lieu[0]!.plan_modele, [...donnees.values()], enCours ? { id: enCours.id, libelle: enCours.libelle } : null, maintenant.getTime());
+  // En direct (§15.166) : ventes des 10 dernières minutes par stand, et le match précédent au même moment de sa soirée.
+  let entreeDirect: EntreeDirect | null = null;
+  if (enCours?.ouvertLe) {
+    const { rows: recentes } = await c.query<{ stand_id: string; tickets: number; ca: number }>(
+      `SELECT j.stand_id, count(*) FILTER (WHERE j.type = 'vente')::int AS tickets, coalesce(sum(j.total_ttc_centimes), 0)::int AS ca
+         FROM journal_caisse j
+        WHERE j.lieu_id = $1 AND j.evenement_id = $2 AND j.type IN ('vente', 'annulation') AND j.horodatage > $3
+        GROUP BY j.stand_id`,
+      [lieuId, enCours.id, new Date(maintenant.getTime() - SEUILS_STADE.recentesMinutes * 60_000)],
+    );
+    for (const x of recentes) {
+      const d = donnees.get(x.stand_id);
+      if (d) d.recentes = { tickets: x.tickets, caNet: x.ca };
+    }
+    const ecoule = maintenant.getTime() - Date.parse(enCours.ouvertLe);
+    const precedent = evenements
+      .filter((e) => e.etat === "clos" && e.ouvertLe && Date.parse(e.ouvertLe) < Date.parse(enCours.ouvertLe!))
+      .sort((a, b) => Date.parse(b.ouvertLe!) - Date.parse(a.ouvertLe!))[0];
+    let comparaison: EntreeDirect["comparaison"] = null;
+    if (precedent) {
+      const { rows } = await c.query<{ ca: number; n: number }>(
+        `SELECT coalesce(sum(total_ttc_centimes) FILTER (WHERE horodatage <= $3), 0)::int AS ca, count(*)::int AS n
+           FROM journal_caisse WHERE lieu_id = $1 AND evenement_id = $2 AND type IN ('vente', 'annulation')`,
+        [lieuId, precedent.id, new Date(Date.parse(precedent.ouvertLe!) + ecoule)],
+      );
+      // Un match précédent sans aucune vente ne sert pas de repère.
+      if (rows[0]!.n > 0) comparaison = { libelle: precedent.libelle, caNet: rows[0]!.ca };
+    }
+    entreeDirect = { ouvertLe: enCours.ouvertLe, comparaison };
+  }
+
+  return planStade(lieu[0]!.plan_modele, [...donnees.values()], enCours ? { id: enCours.id, libelle: enCours.libelle } : null, maintenant.getTime(), entreeDirect);
 }
 
 export async function routesPlanStade(app: FastifyInstance, { base }: { base: Base }) {

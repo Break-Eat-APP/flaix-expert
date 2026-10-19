@@ -60,6 +60,11 @@ export const SEUILS_STADE = {
   /** Annulations : 5 au moins, et au moins 5 % des tickets de la caisse. */
   annulationsMin: 5,
   annulationsPct: 5,
+  /** En direct (§15.166) : ventes des 10 dernières minutes ; rythme comparé à la moyenne de la soirée, dès 15 min d'ouverture. */
+  recentesMinutes: 10,
+  rythmeOuvertMinutes: 15,
+  rythmeCalme: 0.6,
+  rythmeSoutenu: 1.4,
 } as const;
 
 export type CouleurStand = "rouge" | "orange" | "vert" | "gris";
@@ -69,6 +74,14 @@ export interface SignalStand {
   titre: string;
   detail: string;
   lien: string;
+  /** Alerte de stock : le produit, pour le réassort en deux gestes depuis l'écran. */
+  produitId?: string;
+}
+
+export interface VentesRecentes {
+  minutes: number;
+  tickets: number;
+  caNet: Centimes;
 }
 
 /** Ce que le serveur lit pour un stand actif. */
@@ -94,8 +107,10 @@ export interface DonneesStand {
     horsTarif: number;
     derniereVente: string | null;
   }[];
+  /** Ventes des 10 dernières minutes (tickets de vente, CA TTC). */
+  recentes: { tickets: number; caNet: Centimes };
   /** Produits suivis en stock au stand pendant l'événement ouvert (vide sans suivi). */
-  stock: { nom: string; alerte: AlerteStock; restant: number; sur: number; vendu: number; venduRecent: number; reserve: number | null }[];
+  stock: { produitId: string; nom: string; alerte: AlerteStock; restant: number; sur: number; vendu: number; venduRecent: number; reserve: number | null }[];
   hygiene: { nonConformes: number; ouvertureARelever: string[] };
 }
 
@@ -113,6 +128,30 @@ export interface EtatStand {
   resume: string;
   signaux: SignalStand[];
   chiffres: { caNet: Centimes; tickets: number; caissesOuvertes: number; caisses: number; derniereVente: string | null };
+  /** En direct : ventes des 10 dernières minutes ; produits suivis, du plus entamé au moins entamé. */
+  recentes: VentesRecentes;
+  produits: { produitId: string; nom: string; restant: number; sur: number; alerte: AlerteStock }[];
+}
+
+/** Ce que le serveur ajoute pendant un événement ouvert : son ouverture, et le match précédent au même moment. */
+export interface EntreeDirect {
+  ouvertLe: string;
+  comparaison: { libelle: string; caNet: Centimes } | null;
+}
+
+/** Le tableau En direct (§15.166) : chiffres de la soirée, rythme, comparaison, caisses. */
+export interface Direct {
+  ouvertLe: string;
+  caNet: Centimes;
+  tickets: number;
+  recentes: VentesRecentes;
+  /** CA par minute sur les 10 dernières minutes. */
+  caParMinute: Centimes;
+  /** Rythme des 10 dernières minutes rapporté à la moyenne de la soirée ; null avant 15 min d'ouverture ou sans vente. */
+  rythme: "calme" | "normal" | "soutenu" | null;
+  /** Le match précédent au même moment de sa soirée ; écart en points de base. */
+  comparaison: { libelle: string; caNet: Centimes; ecartPb: number | null } | null;
+  caisses: { ouvertes: number; total: number; sansNouvelles: number };
 }
 
 /** Réponse de GET /api/plan-stade. */
@@ -120,6 +159,8 @@ export interface PlanStade {
   modele: ModeleLieu;
   evenement: { id: string; libelle: string } | null;
   stands: EtatStand[];
+  /** Pendant un événement ouvert seulement. */
+  direct: Direct | null;
   seuils: typeof SEUILS_STADE;
 }
 
@@ -177,15 +218,15 @@ export function signauxStand(d: DonneesStand, contexte: { enDirect: boolean; sta
     for (const l of d.stock) {
       const reserve = l.reserve !== null && l.reserve > 0 ? ` ${l.reserve} en réserve : réassort en deux gestes depuis « En direct ».` : "";
       if (l.alerte === "rupture") {
-        signaux.push({ couleur: "rouge", titre: `Rupture : ${l.nom}`, detail: `Reste 0 sur ${l.sur} · vendu ${l.vendu}.${reserve || " Réassort en deux gestes depuis « En direct »."}`, lien: "/direct" });
+        signaux.push({ couleur: "rouge", titre: `Rupture : ${l.nom}`, detail: `Reste 0 sur ${l.sur} · vendu ${l.vendu}.${reserve || " Réassort en deux gestes depuis « En direct »."}`, lien: "/direct", produitId: l.produitId });
         continue;
       }
       const dans = minutesAvantRupture(l.restant, l.venduRecent);
       const prevue = dans !== null && dans <= S.rupturePrevueMinutes;
       if (l.alerte === "faible")
-        signaux.push({ couleur: "orange", titre: `Stock faible : ${l.nom}`, detail: `Reste ${l.restant} sur ${l.sur} · vendu ${l.vendu}.${prevue ? ` Au rythme actuel, rupture dans ${dans} min environ.` : ""}${reserve}`, lien: "/direct" });
+        signaux.push({ couleur: "orange", titre: `Stock faible : ${l.nom}`, detail: `Reste ${l.restant} sur ${l.sur} · vendu ${l.vendu}.${prevue ? ` Au rythme actuel, rupture dans ${dans} min environ.` : ""}${reserve}`, lien: "/direct", produitId: l.produitId });
       else if (prevue)
-        signaux.push({ couleur: "orange", titre: `Rupture prévue : ${l.nom} dans ${dans} min environ`, detail: `Reste ${l.restant}, ${l.venduRecent} vendus ces ${S.rythmeMinutes} dernières minutes.${reserve}`, lien: "/direct" });
+        signaux.push({ couleur: "orange", titre: `Rupture prévue : ${l.nom} dans ${dans} min environ`, detail: `Reste ${l.restant}, ${l.venduRecent} vendus ces ${S.rythmeMinutes} dernières minutes.${reserve}`, lien: "/direct", produitId: l.produitId });
     }
   }
 
@@ -252,14 +293,27 @@ export function signauxStand(d: DonneesStand, contexte: { enDirect: boolean; sta
   return signaux.sort((a, b) => (a.couleur === b.couleur ? 0 : a.couleur === "rouge" ? -1 : 1));
 }
 
-/** Couleur et état du stade, stand par stand. `stadeVend` : une vente dans les 5 dernières minutes, tous stands confondus. */
+/** Rythme des ventes récentes rapporté à la moyenne de la soirée. */
+export function rythmeVentes(recentesCa: Centimes, caNet: Centimes, minutesOuvert: number): Direct["rythme"] {
+  const S = SEUILS_STADE;
+  if (minutesOuvert < S.rythmeOuvertMinutes || caNet <= 0) return null;
+  const ratio = recentesCa / S.recentesMinutes / (caNet / minutesOuvert);
+  return ratio < S.rythmeCalme ? "calme" : ratio > S.rythmeSoutenu ? "soutenu" : "normal";
+}
+
+/**
+ * Couleur et état du lieu, stand par stand ; pendant un événement ouvert, les chiffres du tableau En direct.
+ * Le stade « vend » s'il y a eu une vente dans les 5 dernières minutes, tous stands confondus.
+ */
 export function planStade(
   modele: ModeleLieu,
   donnees: readonly DonneesStand[],
   evenement: { id: string; libelle: string } | null,
   maintenant: number,
-  stadeVend = donnees.some((d) => d.caisses.some((k) => k.derniereVente && maintenant - Date.parse(k.derniereVente) <= SEUILS_STADE.stadeVendMinutes * 60_000)),
+  entreeDirect: EntreeDirect | null = null,
 ): PlanStade {
+  const stadeVend = donnees.some((d) => d.caisses.some((k) => k.derniereVente && maintenant - Date.parse(k.derniereVente) <= SEUILS_STADE.stadeVendMinutes * 60_000));
+  const recentes = (d: DonneesStand): VentesRecentes => ({ minutes: SEUILS_STADE.recentesMinutes, tickets: evenement ? d.recentes.tickets : 0, caNet: evenement ? d.recentes.caNet : 0 });
   const places = placerStands(donnees);
   const stands = donnees.map((d): EtatStand => {
     const signaux = signauxStand(d, { enDirect: evenement !== null, stadeVend }, maintenant);
@@ -286,9 +340,40 @@ export function planStade(
             : evenement ? "Fermé : aucune caisse ouverte" : "Hors événement",
       signaux,
       chiffres: { caNet, tickets, caissesOuvertes: ouvertes, caisses: d.caisses.length, derniereVente: evenement ? derniereVente : null },
+      recentes: recentes(d),
+      produits: evenement
+        ? d.stock
+            .filter((l) => l.sur > 0)
+            .map((l) => ({ produitId: l.produitId, nom: l.nom, restant: Math.max(0, l.restant), sur: l.sur, alerte: l.alerte }))
+            .sort((a, b) => a.restant / a.sur - b.restant / b.sur || a.nom.localeCompare(b.nom, "fr"))
+        : [],
     };
   });
   const ordre = TRIBUNES.map((t) => t.code);
   stands.sort((a, b) => ordre.indexOf(a.tribune) - ordre.indexOf(b.tribune) || a.rang - b.rang);
-  return { modele, evenement, stands, seuils: SEUILS_STADE };
+
+  let direct: Direct | null = null;
+  if (evenement && entreeDirect) {
+    const caNet = stands.reduce((s, x) => s + x.chiffres.caNet, 0);
+    const tickets = stands.reduce((s, x) => s + x.chiffres.tickets, 0);
+    const rec: VentesRecentes = { minutes: SEUILS_STADE.recentesMinutes, tickets: stands.reduce((s, x) => s + x.recentes.tickets, 0), caNet: stands.reduce((s, x) => s + x.recentes.caNet, 0) };
+    const caisses = donnees.flatMap((d) => d.caisses);
+    const ouvertes = caisses.filter((k) => k.ouverte);
+    const c = entreeDirect.comparaison;
+    direct = {
+      ouvertLe: entreeDirect.ouvertLe,
+      caNet,
+      tickets,
+      recentes: rec,
+      caParMinute: Math.round(rec.caNet / SEUILS_STADE.recentesMinutes),
+      rythme: rythmeVentes(rec.caNet, caNet, (maintenant - Date.parse(entreeDirect.ouvertLe)) / 60_000),
+      comparaison: c ? { ...c, ecartPb: c.caNet > 0 ? Math.round(((caNet - c.caNet) / c.caNet) * 10_000) : null } : null,
+      caisses: {
+        ouvertes: ouvertes.length,
+        total: caisses.length,
+        sansNouvelles: ouvertes.filter((k) => !k.vueLe || maintenant - Date.parse(k.vueLe) > DELAI_NOUVELLES_TABLETTE_MS).length,
+      },
+    };
+  }
+  return { modele, evenement, stands, direct, seuils: SEUILS_STADE };
 }

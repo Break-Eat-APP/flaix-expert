@@ -102,6 +102,11 @@ describe("le stade en direct", () => {
     expect(n.signaux[0]!.detail).toContain("Reste 0 sur 10 · vendu 10");
     expect(du(p, comptoir)).toMatchObject({ couleur: "gris", resume: "Fermé : aucune caisse ouverte" });
     expect(n.chiffres.derniereVente).not.toBeNull();
+    // En direct (§15.166) : chiffres de la soirée, ventes des 10 dernières minutes, caisses ; pas de match précédent.
+    expect(p.direct).toMatchObject({ caNet: 5_000, tickets: 10, recentes: { minutes: 10, tickets: 10, caNet: 5_000 }, comparaison: null, caisses: { ouvertes: 1, total: 2 } });
+    expect(n.recentes).toEqual({ minutes: 10, tickets: 10, caNet: 5_000 });
+    expect(n.produits).toEqual([{ produitId: frites.id, nom: "Frites", restant: 0, sur: 10, alerte: "rupture" }]);
+    expect(n.signaux[0]!.produitId).toBe(frites.id);
   });
 
   it("ventes à vérifier : un prix différent du tarif, 5 annulations sur 16 ventes → alertes de la caisse", async () => {

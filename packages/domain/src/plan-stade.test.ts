@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { minutesAvantRupture, placerStands, planStade, tribuneDuNom, type DonneesStand } from "./plan-stade.ts";
+import { minutesAvantRupture, placerStands, planStade, rythmeVentes, tribuneDuNom, type DonneesStand } from "./plan-stade.ts";
 
 const MAINTENANT = Date.parse("2026-10-12T19:00:00.000Z");
 const ilYa = (min: number) => new Date(MAINTENANT - min * 60_000).toISOString();
@@ -9,6 +9,7 @@ const stand = (x: Partial<DonneesStand>): DonneesStand => ({
   tribune: null,
   position: null,
   caisses: [{ numero: 1, ouverte: true, ouverteLe: ilYa(30), vueLe: ilYa(0), aEnvoyer: 0, caNet: 12_000, tickets: 20, annulations: 0, horsTarif: 0, derniereVente: ilYa(1) }],
+  recentes: { tickets: 0, caNet: 0 },
   stock: [],
   hygiene: { nonConformes: 0, ouvertureARelever: [] },
   ...x,
@@ -40,8 +41,8 @@ describe("le stade en direct (§15.162)", () => {
     const plan = planStade(
       "stade",
       [
-        stand({ id: "r", nom: "Buvette Nord", stock: [{ nom: "Frites", alerte: "rupture", restant: -2, sur: 120, vendu: 122, venduRecent: 30, reserve: 48 }, { nom: "Bière", alerte: "faible", restant: 10, sur: 200, vendu: 190, venduRecent: 0, reserve: null }] }),
-        stand({ id: "o", nom: "Buvette Est", stock: [{ nom: "Bière", alerte: "faible", restant: 10, sur: 200, vendu: 190, venduRecent: 0, reserve: null }] }),
+        stand({ id: "r", nom: "Buvette Nord", stock: [{ produitId: "p-frites", nom: "Frites", alerte: "rupture", restant: -2, sur: 120, vendu: 122, venduRecent: 30, reserve: 48 }, { produitId: "p-biere", nom: "Bière", alerte: "faible", restant: 10, sur: 200, vendu: 190, venduRecent: 0, reserve: null }] }),
+        stand({ id: "o", nom: "Buvette Est", stock: [{ produitId: "p-biere", nom: "Bière", alerte: "faible", restant: 10, sur: 200, vendu: 190, venduRecent: 0, reserve: null }] }),
         stand({ id: "v", nom: "Buvette Sud" }),
         stand({ id: "g", nom: "Buvette Ouest", caisses: [{ numero: 4, ouverte: false, ouverteLe: null, vueLe: null, aEnvoyer: null, caNet: 0, tickets: 0, annulations: 0, horsTarif: 0, derniereVente: null }] }),
       ],
@@ -61,7 +62,7 @@ describe("le stade en direct (§15.162)", () => {
 
   it("stock : rupture prévue au rythme des 15 dernières minutes, réserve rappelée ; rien sans vente récente", () => {
     const etat = (l: Partial<DonneesStand["stock"][number]>) =>
-      planStade("stade", [stand({ stock: [{ nom: "Frites", alerte: null, restant: 30, sur: 200, vendu: 170, venduRecent: 0, reserve: null, ...l }] })], EV, MAINTENANT).stands[0]!;
+      planStade("stade", [stand({ stock: [{ produitId: "p-frites", nom: "Frites", alerte: null, restant: 30, sur: 200, vendu: 170, venduRecent: 0, reserve: null, ...l }] })], EV, MAINTENANT).stands[0]!;
     expect(minutesAvantRupture(30, 45)).toBe(10);
     expect(minutesAvantRupture(0, 45)).toBeNull();
     expect(etat({ venduRecent: 0 }).couleur).toBe("vert");
@@ -99,10 +100,49 @@ describe("le stade en direct (§15.162)", () => {
     expect(hygiene.signaux.map((s) => s.titre)).toEqual(["Hygiène : 2 températures hors limite en 7 jours", "Hygiène : températures d'ouverture à relever (1)"]);
     const horsEvenement = planStade(
       "stade",
-      [stand({ caisses: [], stock: [{ nom: "Frites", alerte: "rupture", restant: 0, sur: 1, vendu: 1, venduRecent: 1, reserve: null }], hygiene: { nonConformes: 0, ouvertureARelever: ["Frigo"] } })],
+      [stand({ caisses: [], stock: [{ produitId: "p-frites", nom: "Frites", alerte: "rupture", restant: 0, sur: 1, vendu: 1, venduRecent: 1, reserve: null }], hygiene: { nonConformes: 0, ouvertureARelever: ["Frigo"] } })],
       null,
       MAINTENANT,
     ).stands[0]!;
     expect(horsEvenement).toMatchObject({ couleur: "gris", resume: "Hors événement", signaux: [], chiffres: { derniereVente: null } });
+  });
+
+  it("en direct : chiffres de la soirée, ventes des 10 dernières minutes, rythme, match précédent au même moment, caisses ; produits du plus entamé au moins entamé", () => {
+    expect(rythmeVentes(10_000, 100_000, 10)).toBeNull(); // moins de 15 min d'ouverture
+    expect(rythmeVentes(5_000, 100_000, 100)).toBe("calme"); // 500 €/min contre 1 000 €/min de moyenne
+    expect(rythmeVentes(10_000, 100_000, 100)).toBe("normal");
+    expect(rythmeVentes(20_000, 100_000, 100)).toBe("soutenu");
+    const muette = { numero: 2, ouverte: true, ouverteLe: ilYa(60), vueLe: ilYa(9), aEnvoyer: 0, caNet: 8_000, tickets: 10, annulations: 0, horsTarif: 0, derniereVente: ilYa(9) };
+    const plan = planStade(
+      "stade",
+      [
+        stand({ id: "a", nom: "Buvette Nord", recentes: { tickets: 6, caNet: 3_000 }, stock: [
+          { produitId: "p-biere", nom: "Bière", alerte: null, restant: 150, sur: 200, vendu: 50, venduRecent: 4, reserve: null },
+          { produitId: "p-frites", nom: "Frites", alerte: "faible", restant: 10, sur: 100, vendu: 90, venduRecent: 4, reserve: null },
+        ] }),
+        stand({ id: "b", nom: "Buvette Sud", caisses: [muette], recentes: { tickets: 0, caNet: 0 } }),
+      ],
+      EV,
+      MAINTENANT,
+      { ouvertLe: ilYa(100), comparaison: { libelle: "Rouen – Lyon", caNet: 16_000 } },
+    );
+    expect(plan.direct).toEqual({
+      ouvertLe: ilYa(100),
+      caNet: 20_000,
+      tickets: 30,
+      recentes: { minutes: 10, tickets: 6, caNet: 3_000 },
+      caParMinute: 300,
+      rythme: "soutenu", // 300 €/min contre 200 €/min de moyenne
+      comparaison: { libelle: "Rouen – Lyon", caNet: 16_000, ecartPb: 2_500 },
+      caisses: { ouvertes: 2, total: 2, sansNouvelles: 1 },
+    });
+    const nord = plan.stands.find((x) => x.id === "a")!;
+    expect(nord.recentes).toEqual({ minutes: 10, tickets: 6, caNet: 3_000 });
+    expect(nord.produits.map((x) => x.nom)).toEqual(["Frites", "Bière"]);
+    expect(nord.signaux.find((x) => x.titre === "Stock faible : Frites")!.produitId).toBe("p-frites");
+    // Hors événement : ni chiffres du direct, ni produits, ni ventes récentes.
+    const hors = planStade("stade", [stand({ recentes: { tickets: 6, caNet: 3_000 } })], null, MAINTENANT);
+    expect(hors.direct).toBeNull();
+    expect(hors.stands[0]!).toMatchObject({ produits: [], recentes: { tickets: 0, caNet: 0 } });
   });
 });
