@@ -631,7 +631,8 @@ export interface StockMatch {
 
 export interface MouvementStock {
   id: string;
-  type: "livraison" | "mise_en_place" | "reassort";
+  /** « evenement_prive » : sortie de la réserve à la clôture d'un événement privé (§15.169) ; `match` porte son nom. */
+  type: "livraison" | "mise_en_place" | "reassort" | "evenement_prive";
   produit: string;
   stand: string | null;
   match: string | null;

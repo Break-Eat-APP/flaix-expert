@@ -6,6 +6,7 @@ import {
   empreinteFacture,
   estTauxTva,
   formaterMontant,
+  formaterQuantiteStock,
   numeroFacture,
   type ClientPrive,
   type EvenementPrive,
@@ -15,6 +16,7 @@ import {
   type ModeReglementPrive,
   type ResumePrive,
   type TauxTvaPb,
+  type UniteIngredient,
 } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
@@ -136,6 +138,51 @@ async function fraisDe(c: Client, lieuId: string, id: string): Promise<FraisPriv
   return rows;
 }
 
+/**
+ * Clôture d'un événement privé : ses produits du catalogue sortent de la réserve centrale (§15.169). Un produit dont la
+ * recette utilise un ingrédient suivi sort ses ingrédients (la pinte sort 0,5 L du fût), les autres sortent eux-mêmes ;
+ * les lignes libres ne sortent rien. Renvoie le nombre de produits et d'ingrédients sortis.
+ */
+async function sortirDeLaReserve(c: Client, lieuId: string, id: string, par: string): Promise<{ produits: number; ingredients: number }> {
+  const produits = await c.query(
+    `INSERT INTO stock_mouvement (lieu_id, type, produit_id, evenement_prive_id, quantite, par)
+     SELECT $1, 'evenement_prive', l.produit_id, $2, sum(l.quantite)::int, $3
+       FROM evenement_prive_ligne l
+      WHERE l.lieu_id = $1 AND l.evenement_id = $2 AND l.produit_id IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM recette_ligne r JOIN ingredient g ON g.lieu_id = r.lieu_id AND g.id = r.ingredient_id
+                         WHERE r.lieu_id = $1 AND r.produit_id = l.produit_id AND g.suivi_stock)
+      GROUP BY l.produit_id`,
+    [lieuId, id, par],
+  );
+  const ingredients = await c.query(
+    `INSERT INTO ingredient_mouvement (lieu_id, type, ingredient_id, evenement_prive_id, quantite_milli, par)
+     SELECT $1, 'evenement_prive', r.ingredient_id, $2, sum(l.quantite::bigint * r.quantite_milli), $3
+       FROM evenement_prive_ligne l
+       JOIN recette_ligne r ON r.lieu_id = l.lieu_id AND r.produit_id = l.produit_id
+       JOIN ingredient g ON g.lieu_id = r.lieu_id AND g.id = r.ingredient_id AND g.suivi_stock
+      WHERE l.lieu_id = $1 AND l.evenement_id = $2
+      GROUP BY r.ingredient_id
+     HAVING sum(l.quantite::bigint * r.quantite_milli) > 0`,
+    [lieuId, id, par],
+  );
+  return { produits: produits.rowCount ?? 0, ingredients: ingredients.rowCount ?? 0 };
+}
+
+async function sortieStockDe(c: Client, lieuId: string, id: string): Promise<EvenementPrive["sortieStock"]> {
+  const { rows } = await c.query<{ nom: string; quantite: number; unite: UniteIngredient | null }>(
+    `SELECT p.nom, m.quantite::float8 AS quantite, NULL AS unite
+       FROM stock_mouvement m JOIN produit p ON p.lieu_id = m.lieu_id AND p.id = m.produit_id
+      WHERE m.lieu_id = $1 AND m.evenement_prive_id = $2
+     UNION ALL
+     SELECT g.nom, m.quantite_milli::float8, g.unite
+       FROM ingredient_mouvement m JOIN ingredient g ON g.lieu_id = m.lieu_id AND g.id = m.ingredient_id
+      WHERE m.lieu_id = $1 AND m.evenement_prive_id = $2
+     ORDER BY 1`,
+    [lieuId, id],
+  );
+  return rows.map((r) => ({ nom: r.nom, quantite: r.unite ? formaterQuantiteStock(r.quantite, r.unite) : `${r.quantite} ×` }));
+}
+
 export async function evenementPrive(c: Client, lieuId: string, id: string): Promise<EvenementPrive> {
   const { rows } = await c.query<LigneFiche>(`${SELECT_FICHE} WHERE e.lieu_id = $1 AND e.id = $2`, [lieuId, id]);
   const f = rows[0];
@@ -160,6 +207,7 @@ export async function evenementPrive(c: Client, lieuId: string, id: string): Pro
     frais,
     bilan: bilanPrive(lignes, frais, f.budget_centimes),
     facture: fact[0] ? { id: fact[0].id, numero: fact[0].numero, emiseLe: fact[0].emise_le.toISOString() } : null,
+    sortieStock: f.etat === "cloture" ? await sortieStockDe(c, lieuId, id) : [],
   };
 }
 
@@ -338,11 +386,12 @@ export async function routesEvenementsPrives(app: FastifyInstance, { base }: { b
         await c.query("UPDATE evenement_prive_ligne SET cout_unitaire = $3 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, l.id, l.coutUnitaire]);
       }
       await c.query("UPDATE evenement_prive SET etat = 'cloture', cloture_le = now(), cloture_par = $3 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, id, auth.utilisateurId]);
+      const sortie = await sortirDeLaReserve(c, auth.lieuId, id, auth.utilisateurId);
       await inscrireJet(c, {
         lieuId: auth.lieuId,
         type: "evenement_prive",
         utilisateurId: auth.utilisateurId,
-        details: { action: "clôturé", nom: e.nom, total: formaterMontant(e.bilan.totalTtc), reste: e.bilan.reste === null ? "non calculable" : formaterMontant(e.bilan.reste) },
+        details: { action: "clôturé", nom: e.nom, total: formaterMontant(e.bilan.totalTtc), reste: e.bilan.reste === null ? "non calculable" : formaterMontant(e.bilan.reste), sortieStock: sortie },
       });
       return evenementPrive(c, auth.lieuId, id);
     });

@@ -43,6 +43,11 @@ export function EvenementPrive() {
           <Frais e={e} />
         </div>
       </div>
+      {!ouvert && e.sortieStock.length > 0 && (
+        <div className="message message-info">
+          Sorti de la réserve centrale à la clôture : {e.sortieStock.map((s) => (s.quantite.endsWith("×") ? `${s.quantite} ${s.nom}` : `${s.quantite} de ${s.nom}`)).join(", ")}.
+        </div>
+      )}
       {ouvert ? <Cloture e={e} /> : <ApresCloture e={e} />}
       {(ouvert || !e.facture) && <Fiche e={e} />}
     </>
@@ -318,7 +323,7 @@ function Cloture({ e }: { e: Donnees }) {
     <Carte titre="Fin de la soirée" description="La clôture fige les consommations, les frais et les coûts ; ensuite viennent le règlement et la facture.">
       {confirmer ? (
         <div className="en-ligne">
-          <span>Clôturer pour {formaterMontant(e.bilan.totalTtc)} TTC ? Plus rien ne pourra changer.</span>
+          <span>Clôturer pour {formaterMontant(e.bilan.totalTtc)} TTC ? Plus rien ne pourra changer ; les produits du catalogue sortent de la réserve centrale.</span>
           <button className="btn" disabled={cloturer.isPending} onClick={() => cloturer.mutate()}>
             Oui, clôturer
           </button>

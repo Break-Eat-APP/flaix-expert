@@ -269,12 +269,13 @@ async function lireMouvements(c: Client, lieuId: string): Promise<MouvementIngre
     par: string;
     le: Date;
   }>(
-    `SELECT m.id, m.type, g.nom AS ingredient, g.unite, s.nom AS stand, e.libelle AS match, m.quantite_milli::float8 AS quantite, m.prix_total_centimes,
+    `SELECT m.id, m.type, g.nom AS ingredient, g.unite, s.nom AS stand, coalesce(e.libelle, ep.nom) AS match, m.quantite_milli::float8 AS quantite, m.prix_total_centimes,
             m.fournisseur, to_char(m.date_livraison, 'YYYY-MM-DD') AS date_livraison, m.prix_avant_centimes, m.prix_apres_centimes, u.nom AS par, m.le
        FROM ingredient_mouvement m
        JOIN ingredient g ON g.lieu_id = m.lieu_id AND g.id = m.ingredient_id
        LEFT JOIN stand s ON s.lieu_id = m.lieu_id AND s.id = m.stand_id
        LEFT JOIN evenement e ON e.lieu_id = m.lieu_id AND e.id = m.evenement_id
+       LEFT JOIN evenement_prive ep ON ep.lieu_id = m.lieu_id AND ep.id = m.evenement_prive_id
        JOIN utilisateur u ON u.id = m.par
       WHERE m.lieu_id = $1 ORDER BY m.le DESC LIMIT 300`,
     [lieuId],

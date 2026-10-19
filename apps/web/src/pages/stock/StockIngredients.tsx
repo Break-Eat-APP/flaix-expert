@@ -449,7 +449,7 @@ function ReserveIngredients() {
                 {e.mouvements.slice(0, 30).map((m) => (
                   <tr key={m.id}>
                     <td className="chiffre">{formaterDateHeure(m.le)}</td>
-                    <td>{m.type === "livraison" ? "Livraison" : m.type === "mise_en_place" ? "Mise en place" : "Réassort"}</td>
+                    <td>{m.type === "livraison" ? "Livraison" : m.type === "mise_en_place" ? "Mise en place" : m.type === "evenement_prive" ? "Événement privé" : "Réassort"}</td>
                     <td>{m.ingredient}</td>
                     <td className="d chiffre">{formaterQuantiteStock(m.quantite, m.unite)}</td>
                     <td className="discret" style={{ fontSize: 12 }}>

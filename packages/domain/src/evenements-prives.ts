@@ -133,6 +133,8 @@ export interface EvenementPrive {
   frais: FraisPrive[];
   bilan: BilanPrive;
   facture: { id: string; numero: string; emiseLe: string } | null;
+  /** Sorti de la réserve centrale à la clôture (§15.169) : « 30 × Bière », « 15 L · Fût blonde ». */
+  sortieStock: { nom: string; quantite: string }[];
 }
 
 export interface ResumePrive {

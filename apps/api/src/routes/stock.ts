@@ -246,12 +246,13 @@ async function lireMouvements(c: Client, lieuId: string): Promise<MouvementStock
     par: string;
     le: Date;
   }>(
-    `SELECT m.id, m.type, p.nom AS produit, s.nom AS stand, e.libelle AS match, m.quantite, m.prix_unitaire_centimes, m.fournisseur,
+    `SELECT m.id, m.type, p.nom AS produit, s.nom AS stand, coalesce(e.libelle, ep.nom) AS match, m.quantite, m.prix_unitaire_centimes, m.fournisseur,
             to_char(m.date_livraison, 'YYYY-MM-DD') AS date_livraison, m.cout_avant_centimes, m.cout_apres_centimes, u.nom AS par, m.le
        FROM stock_mouvement m
        JOIN produit p ON p.lieu_id = m.lieu_id AND p.id = m.produit_id
        LEFT JOIN stand s ON s.lieu_id = m.lieu_id AND s.id = m.stand_id
        LEFT JOIN evenement e ON e.lieu_id = m.lieu_id AND e.id = m.evenement_id
+       LEFT JOIN evenement_prive ep ON ep.lieu_id = m.lieu_id AND ep.id = m.evenement_prive_id
        JOIN utilisateur u ON u.id = m.par
       WHERE m.lieu_id = $1 ORDER BY m.le DESC LIMIT 300`,
     [lieuId],

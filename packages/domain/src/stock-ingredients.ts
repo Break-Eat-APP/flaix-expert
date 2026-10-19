@@ -89,7 +89,7 @@ export interface IngredientReserve {
 
 export interface MouvementIngredient {
   id: string;
-  type: "livraison" | "mise_en_place" | "reassort";
+  type: "livraison" | "mise_en_place" | "reassort" | "evenement_prive";
   ingredient: string;
   unite: UniteIngredient;
   stand: string | null;

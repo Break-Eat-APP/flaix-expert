@@ -769,7 +769,7 @@ function Reserve() {
                   {e.mouvements.map((m) => (
                     <tr key={m.id}>
                       <td className="chiffre">{formaterDateHeure(m.le)}</td>
-                      <td>{m.type === "livraison" ? "Livraison" : m.type === "mise_en_place" ? "Mise en place" : m.quantite < 0 ? "Retour en réserve" : "Réassort"}</td>
+                      <td>{m.type === "livraison" ? "Livraison" : m.type === "mise_en_place" ? "Mise en place" : m.type === "evenement_prive" ? "Événement privé" : m.quantite < 0 ? "Retour en réserve" : "Réassort"}</td>
                       <td>{m.produit}</td>
                       <td className="d chiffre">{signe(m.type === "livraison" ? m.quantite : -m.quantite)}</td>
                       <td className="discret" style={{ fontSize: 12 }}>

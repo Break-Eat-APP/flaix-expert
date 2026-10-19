@@ -28,6 +28,7 @@ const evenement = (etat: "prevu" | "cloture"): Donnees => ({
   frais: [],
   bilan: bilanPrive([BIERE], [], 24_000),
   facture: null,
+  sortieStock: [],
 });
 let etat: "prevu" | "cloture";
 let serveur: ReturnType<typeof vi.fn>;
