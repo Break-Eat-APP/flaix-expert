@@ -5,7 +5,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
-import type { Evenement, PlanStade, Produit, RepriseCaisse, Stand } from "@flaix/domain";
+import type { Evenement, PlanStade, Produit, RepriseCaisse, Stand, TableauDirect } from "@flaix/domain";
 import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { travauxTermines } from "../src/arriere-plan.ts";
@@ -56,6 +56,7 @@ describe("le stade en direct", () => {
   it("hors événement : tribune devinée du nom ou répartie, stands gris ; tribune choisie dans les paramètres ; valeur inconnue refusée", async () => {
     let p = await plan();
     expect(p.evenement).toBeNull();
+    expect((await appel("GET", "/api/direct")).corps).toBeNull();
     expect(du(p, nord)).toMatchObject({ tribune: "nord", tribuneChoisie: false, couleur: "gris", resume: "Hors événement", signaux: [] });
     expect(du(p, comptoir)).toMatchObject({ tribune: "est", tribuneChoisie: false, couleur: "gris" });
 
@@ -107,6 +108,11 @@ describe("le stade en direct", () => {
     expect(n.recentes).toEqual({ minutes: 10, tickets: 10, caNet: 5_000 });
     expect(n.produits).toEqual([{ produitId: frites.id, nom: "Frites", restant: 0, sur: 10, alerte: "rupture" }]);
     expect(n.signaux[0]!.produitId).toBe(frites.id);
+    // Tableau En direct (§15.167) : chiffres de la soirée, courbe par quart d'heure ; pas de match précédent.
+    const tab = (await appel<TableauDirect>("GET", "/api/direct")).corps;
+    expect(tab).toMatchObject({ evenement: { id: ev.id }, precedent: null, ca: { valeur: 5_000, auMemeMoment: null }, tickets: { valeur: 10 }, panier: { valeur: 500 } });
+    expect(tab.courbe.actuel.reduce((x, y) => x + y, 0)).toBe(5_000);
+    expect(tab.meilleurs[0]).toEqual({ nom: "Frites", caTtc: 5_000, quantite: 10 });
   });
 
   it("ventes à vérifier : un prix différent du tarif, 5 annulations sur 16 ventes → alertes de la caisse", async () => {

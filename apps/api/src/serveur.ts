@@ -41,6 +41,7 @@ import { routesRecettes } from "./routes/recettes.ts";
 import { routesPertes } from "./routes/pertes.ts";
 import { routesAlertes } from "./routes/alertes.ts";
 import { routesPlanStade } from "./routes/plan-stade.ts";
+import { routesDirect } from "./routes/direct.ts";
 import { routesFournisseurs } from "./routes/fournisseurs.ts";
 import { controlerSupport, routesSupport } from "./routes/support.ts";
 import { routesPrevision } from "./routes/prevision.ts";
@@ -181,6 +182,7 @@ export async function construireServeur(base: Base, options: { journaliser?: boo
   await app.register(routesPertes, { base });
   await app.register(routesAlertes, { base });
   await app.register(routesPlanStade, { base });
+  await app.register(routesDirect, { base });
   await app.register(routesFournisseurs, { base });
   await app.register(routesSupport, { base });
   await app.register(routesPrevision, { base });
