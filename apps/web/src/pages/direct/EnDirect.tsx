@@ -22,6 +22,8 @@ const ilYa = (iso: string, maintenant: number) => {
   const min = Math.max(0, Math.round((maintenant - Date.parse(iso)) / 60_000));
   return min < 1 ? "à l'instant" : `il y a ${duree(min * 60_000)}`;
 };
+/** Grand montant arrondi à l'euro : « 14 980 € ». */
+const eurosRonds = (c: number) => `${Math.round(c / 100).toLocaleString("fr-FR")} €`;
 const pct = (pb: number) => `${pb > 0 ? "+" : pb < 0 ? "−" : ""}${Math.round(Math.abs(pb) / 100)} %`;
 const RYTHME = { calme: { libelle: "Calme", puce: "puce" }, normal: { libelle: "Normal", puce: "puce-violet" }, soutenu: { libelle: "Soutenu", puce: "puce-vert" } } as const;
 
@@ -151,7 +153,7 @@ export function EnDirect({ session }: { session: SessionInfo }) {
       </div>
 
       {t && (
-        <div className="direct-deux">
+        <div className="direct-deux egales">
           <Carte
             titre="Chiffre d'affaires de la soirée"
             description="Par quart d'heure depuis l'ouverture"
@@ -211,14 +213,16 @@ export function EnDirect({ session }: { session: SessionInfo }) {
 
 /** Les chiffres clés, au design des cartes de Résultats : valeur, écart au match précédent au même moment, petite courbe. */
 function Chiffres({ t, d }: { t: TableauDirect | null; d: NonNullable<PlanStade["direct"]> }) {
-  const ecart = (k: Kpi | undefined) =>
+  // Badge « +9 % » en haut à droite ; dessous, la valeur du match précédent au même moment (comme Résultats).
+  const badge = (k: Kpi | undefined) => (k?.ecartPb != null ? <span className={`variation ${k.ecartPb >= 0 ? "hausse" : "baisse"}`}>{pct(k.ecartPb)}</span> : undefined);
+  const ecart = (k: Kpi | undefined, format: (v: number) => string) =>
     !t?.precedent ? (
-      <span className="variation neutre">pas de match précédent</span>
-    ) : k?.ecartPb == null ? (
-      <span className="variation neutre">pas de comparaison possible</span>
+      <span className="direct-pied">pas de match précédent à comparer</span>
+    ) : k?.auMemeMoment == null ? (
+      <span className="direct-pied">pas de comparaison possible</span>
     ) : (
-      <span className={`variation ${k.ecartPb >= 0 ? "hausse" : "baisse"}`}>
-        {pct(k.ecartPb)} vs {t.precedent} au même moment
+      <span className="direct-pied" title={`${t.precedent}, au même moment de sa soirée`}>
+        {format(k.auMemeMoment)} au match précédent
       </span>
     );
   const carte = (etiquette: string, valeur: ReactNode, pied: ReactNode, serie?: number[], principal = false, badge?: ReactNode) => (
@@ -235,18 +239,18 @@ function Chiffres({ t, d }: { t: TableauDirect | null; d: NonNullable<PlanStade[
   const prev = t?.prevision ?? null;
   return (
     <div className="chiffres direct-chiffres-cles">
-      {carte("CA en cours", formaterMontant(t?.ca.valeur ?? d.caNet), ecart(t?.ca), t?.ca.serie, true)}
-      {carte("Tickets", (t?.tickets.valeur ?? d.tickets).toLocaleString("fr-FR"), ecart(t?.tickets), t?.tickets.serie)}
-      {carte("Panier moyen", t?.panier.valeur != null ? formaterMontant(t.panier.valeur) : "—", ecart(t?.panier), t?.panier.serie)}
+      {carte("CA en cours", eurosRonds(t?.ca.valeur ?? d.caNet), ecart(t?.ca, eurosRonds), t?.ca.serie, true, badge(t?.ca))}
+      {carte("Tickets", (t?.tickets.valeur ?? d.tickets).toLocaleString("fr-FR"), ecart(t?.tickets, (v) => v.toLocaleString("fr-FR")), t?.tickets.serie, false, badge(t?.tickets))}
+      {carte("Panier moyen", t?.panier.valeur != null ? formaterMontant(t.panier.valeur) : "—", ecart(t?.panier, formaterMontant), t?.panier.serie, false, badge(t?.panier))}
       {carte(
         "Marge brute",
-        t?.marge.valeur != null ? formaterMontant(t.marge.valeur) : "—",
+        t?.marge.valeur != null ? eurosRonds(t.marge.valeur) : "—",
         t?.marge.valeur != null ? (
-          <span className="variation neutre">
+          <span className="direct-pied">
             {Math.round((t.marge.tauxPb ?? 0) / 100)} % du CA HT{t.marge.produitsSansCout ? ` · ${t.marge.produitsSansCout} coût manquant` : ""}
           </span>
         ) : (
-          <span className="variation neutre">
+          <span className="direct-pied">
             <Link to="/parametres/produits">coût manquant : saisis-le</Link>
           </span>
         ),
@@ -254,29 +258,29 @@ function Chiffres({ t, d }: { t: TableauDirect | null; d: NonNullable<PlanStade[
       {carte(
         "Ventes par minute",
         formaterMontant(d.caParMinute),
-        <span className="variation neutre">sur les 10 dernières minutes</span>,
+        <span className="direct-pied">sur les 10 dernières minutes</span>,
         undefined,
         false,
         d.rythme ? <span className={`puce ${RYTHME[d.rythme].puce}`}>{RYTHME[d.rythme].libelle}</span> : undefined,
       )}
       {carte(
         "Prévision de fin de soirée",
-        prev ? `≈ ${formaterMontant(prev.median)}` : "—",
+        prev ? `≈ ${eurosRonds(prev.median)}` : "—",
         prev ? (
-          <span className="variation neutre">
-            {prev.avancementPb !== null ? `déjà ${Math.round(prev.avancementPb / 100)} % atteints · ` : ""}entre {formaterMontant(prev.bas)} et {formaterMontant(prev.haut)}
+          <span className="direct-pied">
+            {prev.avancementPb !== null ? `déjà ${Math.round(prev.avancementPb / 100)} % atteints · ` : ""}entre {eurosRonds(prev.bas)} et {eurosRonds(prev.haut)}
           </span>
         ) : (
-          <span className="variation neutre">pas assez de matchs passés pour prévoir</span>
+          <span className="direct-pied">pas assez de matchs passés pour prévoir</span>
         ),
       )}
       {carte(
         "CA par spectateur",
         t?.caParSpectateur != null ? formaterMontant(t.caParSpectateur) : "—",
         t?.spectateurs ? (
-          <span className="variation neutre">{t.spectateurs.toLocaleString("fr-FR")} spectateurs</span>
+          <span className="direct-pied">{t.spectateurs.toLocaleString("fr-FR")} spectateurs</span>
         ) : (
-          <span className="variation neutre">
+          <span className="direct-pied">
             <Link to="/parametres/saison">Saisir l'affluence</Link>
           </span>
         ),
@@ -284,7 +288,7 @@ function Chiffres({ t, d }: { t: TableauDirect | null; d: NonNullable<PlanStade[
       {carte(
         "Caisses ouvertes",
         `${d.caisses.ouvertes} / ${d.caisses.total}`,
-        <span className="variation neutre">{d.caisses.sansNouvelles ? "tablette sans nouvelles depuis plus de 2 min" : "toutes les tablettes répondent"}</span>,
+        <span className="direct-pied">{d.caisses.sansNouvelles ? "tablette sans nouvelles depuis plus de 2 min" : "toutes les tablettes répondent"}</span>,
         undefined,
         false,
         d.caisses.sansNouvelles > 0 ? <span className="puce puce-ambre">{d.caisses.sansNouvelles} sans réseau</span> : undefined,
@@ -381,16 +385,16 @@ function CarteStand({ stand: s, choisi, maintenant, ouvrir }: { stand: EtatStand
       <div className="direct-stand-chiffres">
         <div>
           <span>CA</span>
-          <strong>{formaterMontant(c.caNet)}</strong>
+          <strong>{eurosRonds(c.caNet)}</strong>
         </div>
         <div>
           <span>Tickets</span>
           <strong>{c.tickets}</strong>
         </div>
-        <div>
-          <span>10 dernières min</span>
-          <strong>{s.recentes.tickets} tickets</strong>
-          <small>{formaterMontant(s.recentes.caNet)}</small>
+        <div title="Ventes des 10 dernières minutes">
+          <span>10 min</span>
+          <strong>{s.recentes.tickets} t.</strong>
+          <small>{eurosRonds(s.recentes.caNet)}</small>
         </div>
       </div>
       {s.produits.length > 0 ? (

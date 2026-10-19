@@ -119,9 +119,11 @@ describe("En direct", () => {
     monter(enDirect, [ouvert]);
     expect(await screen.findByRole("heading", { name: "FC Rouen – Le Mans" })).toBeTruthy();
     expect(screen.getByText("ouvert depuis 1 h 52")).toBeTruthy();
-    expect(await screen.findByText("+25 % vs FC Rouen – Orléans au même moment")).toBeTruthy();
-    expect(screen.getByText("+9 % vs FC Rouen – Orléans au même moment")).toBeTruthy();
-    expect(screen.getByText("+15 % vs FC Rouen – Orléans au même moment")).toBeTruthy();
+    expect(await screen.findByText("+25 %")).toBeTruthy();
+    expect(screen.getByText("11 984 € au match précédent")).toBeTruthy();
+    expect(screen.getByText("+9 %")).toBeTruthy();
+    expect(screen.getByText("+15 %")).toBeTruthy();
+    expect(screen.getByText(/^14\s980 €$/)).toBeTruthy();
     expect(screen.getByText("65 % du CA HT")).toBeTruthy();
     expect(screen.getByText(/déjà 76 % atteints/)).toBeTruthy();
     expect(screen.getByText("7 980 spectateurs")).toBeTruthy();
@@ -138,7 +140,7 @@ describe("En direct", () => {
     const cartes = document.querySelectorAll(".direct-stand-carte");
     expect([...cartes].map((c) => c.querySelector("h3")!.textContent)).toEqual(["Tribune Est", "Bar Nord"]);
     const carteNord = cartes[1] as HTMLElement;
-    expect(within(carteNord).getByText("26 tickets")).toBeTruthy();
+    expect(within(carteNord).getByText("26 t.")).toBeTruthy();
     expect(within(carteNord).getByRole("meter", { name: "Bière blonde : 18 % restant" })).toBeTruthy();
     expect(within(cartes[0] as HTMLElement).getByText("Rupture", { selector: "strong" })).toBeTruthy();
     fireEvent.click(await screen.findByText("Stand dans la 3D"));
