@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useState, type ComponentType } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Cable, ChartLine, FileText, Heart, KeyRound, Lock, LogOut, Menu, Package, Receipt, ShieldCheck, SlidersHorizontal, Sparkles, Users, Wine, X } from "lucide-react";
+import { Cable, ChartLine, FileText, Heart, KeyRound, Lock, LogOut, Menu, Package, Radio, Receipt, ShieldCheck, SlidersHorizontal, Sparkles, Users, Wine, X } from "lucide-react";
 import type { OptionLieu, OptionsLieu, SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
 import { useDeconnexion, useOptions } from "../session.tsx";
@@ -23,6 +23,8 @@ interface Entree {
 // Chaque entrée ouvre un seul écran ; les sous-parties sont des onglets ou des tuiles dans l'écran.
 const MENU: Entree[] = [
   { id: "resultats", libelle: "Résultats", icone: ChartLine, route: "/" },
+  // En direct à part (§15.167) : la soirée en cours, le lieu en 3D ; un point rouge pendant un événement ouvert.
+  { id: "direct", libelle: "En direct", icone: Radio, route: "/direct" },
   { id: "assistant", libelle: "Assistant", icone: Sparkles, route: "/assistant", option: "assistant" },
   { id: "caisses", libelle: "Caisses", icone: Receipt, route: "/caisses" },
   { id: "caisses-connectees", libelle: "Caisses connectées", icone: Cable, route: "/caisses-connectees", option: "caisses_connectees" },
@@ -46,6 +48,8 @@ export function Coquille({ session }: { session: SessionInfo }) {
   const deconnecter = useDeconnexion();
   const options = useOptions();
   const [mobileVisible, setMobileVisible] = useState(false);
+  const evenements = useQuery({ queryKey: ["evenements"], queryFn: () => api.get<{ etat: string }[]>("/evenements"), enabled: session.role === "directeur" || session.role === "support" });
+  const enCours = evenements.data?.some((e) => e.etat === "ouvert") ?? false;
   const stands = useQuery({ queryKey: ["stands"], queryFn: () => api.get<Stand[]>("/stands"), enabled: session.role === "directeur" || session.role === "support" });
 
   useEffect(() => setMobileVisible(false), [pathname]);
@@ -90,6 +94,7 @@ export function Coquille({ session }: { session: SessionInfo }) {
             return entree.route ? (
               <NavLink key={entree.id} to={entree.route} end={entree.route === "/"} className={({ isActive }) => `nav-section${isActive ? " active" : ""}`}>
                 <Icone size={17} /> {entree.libelle}
+                {entree.id === "direct" && enCours && <span className="nav-direct-point" aria-label="événement en cours" />}
               </NavLink>
             ) : (
               <button key={entree.id} className="nav-section" disabled>

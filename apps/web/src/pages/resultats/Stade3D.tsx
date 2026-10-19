@@ -247,7 +247,23 @@ function creerMonde(conteneur: HTMLDivElement, rappels: Rappels): Monde {
       const nom = document.createElement("span");
       nom.className = "stade-nom";
       nom.textContent = s.nom;
-      b.etiquette.append(point, nom);
+      // Pendant l'événement, les petits chiffres du stand sous son nom, et le nombre d'alertes (§15.167).
+      const texte = document.createElement("span");
+      texte.className = "stade-texte";
+      texte.append(nom);
+      if (s.chiffres.caNet > 0 || s.chiffres.caissesOuvertes > 0) {
+        const mini = document.createElement("span");
+        mini.className = "stade-mini";
+        mini.textContent = `${Math.round(s.chiffres.caNet / 100).toLocaleString("fr-FR")} € · ${s.chiffres.tickets} tickets`;
+        texte.append(mini);
+      }
+      b.etiquette.append(point, texte);
+      if (s.signaux.length) {
+        const n = document.createElement("span");
+        n.className = `stade-alertes ${s.signaux.some((x) => x.couleur === "rouge") ? "rouge" : "orange"}`;
+        n.textContent = String(s.signaux.length);
+        b.etiquette.append(n);
+      }
       b.etiquette.setAttribute("aria-label", `${s.nom} : ${s.resume}`);
     }
     majSelection(selection);

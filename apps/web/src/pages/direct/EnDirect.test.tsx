@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
-import { SEUILS_STADE, type EtatStand, type Evenement, type ModeleLieu, type PlanStade, type PositionPlan, type SessionInfo } from "@flaix/domain";
+import { SEUILS_STADE, type EtatStand, type Evenement, type ModeleLieu, type PlanStade, type PositionPlan, type SessionInfo, type TableauDirect } from "@flaix/domain";
 import { EnDirect } from "./EnDirect.tsx";
 
 vi.mock("../resultats/Stade3D.tsx", () => ({
@@ -74,12 +74,27 @@ const enDirect: PlanStade = {
   },
   seuils: SEUILS_STADE,
 };
+const tableau: TableauDirect = {
+  evenement: { id: "ev", libelle: "FC Rouen – Le Mans" },
+  precedent: "FC Rouen – Orléans",
+  ca: { valeur: 1_498_000, auMemeMoment: 1_198_400, ecartPb: 2_500, serie: [100_000, 300_000, 200_000] },
+  tickets: { valeur: 1_762, auMemeMoment: 1_620, ecartPb: 876, serie: [80, 120, 90] },
+  panier: { valeur: 850, auMemeMoment: 740, ecartPb: 1_486, serie: [800, 900, 850] },
+  marge: { valeur: 812_000, tauxPb: 6_500, produitsSansCout: 0 },
+  prevision: { bas: 1_700_000, median: 1_980_000, haut: 2_200_000, avancementPb: 7_566 },
+  spectateurs: 7_980,
+  caParSpectateur: 188,
+  courbe: { libelles: ["19 h 00", "19 h 15", "19 h 30"], actuel: [100_000, 300_000, 200_000], precedent: [90_000, 250_000, 210_000] },
+  parCategorie: [{ nom: "Bières", ca: 900_000 }, { nom: "Snacking", ca: 400_000 }],
+  meilleurs: [{ nom: "Bière pression 50 cl", caTtc: 612_000, quantite: 1_020 }, { nom: "Hot-dog", caTtc: 248_000, quantite: 410 }],
+};
 const ouvert = { id: "ev", libelle: "FC Rouen – Le Mans", etat: "ouvert", debut: ilYa(130) } as Evenement;
 const session = { support: false, formation: false } as unknown as SessionInfo;
 
 const monter = (plan: PlanStade, evenements: Evenement[]) => {
   const serveur = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === "/api/evenements") return reponse(evenements);
+    if (url === "/api/direct") return reponse(plan.evenement ? tableau : null);
     if (init?.method === "PUT") return reponse({ ...plan, modele: "patinoire" });
     if (init?.method === "POST") return reponse({});
     return reponse(plan);
@@ -100,19 +115,24 @@ afterEach(() => {
 });
 
 describe("En direct", () => {
-  it("chiffres de la soirée : CA comparé au match précédent, tickets récents, rythme, caisses", async () => {
+  it("chiffres clés : CA, tickets, panier comparés au match précédent au même moment ; marge, prévision, spectateurs, rythme, caisses", async () => {
     monter(enDirect, [ouvert]);
     expect(await screen.findByRole("heading", { name: "FC Rouen – Le Mans" })).toBeTruthy();
     expect(screen.getByText("ouvert depuis 1 h 52")).toBeTruthy();
-    expect(screen.getByText("+25 %")).toBeTruthy();
-    expect(screen.getByText(/à la même minute de FC Rouen – Orléans/)).toBeTruthy();
-    expect(screen.getByText("260 ces 10 dernières minutes")).toBeTruthy();
+    expect(await screen.findByText("+25 % vs FC Rouen – Orléans au même moment")).toBeTruthy();
+    expect(screen.getByText("+9 % vs FC Rouen – Orléans au même moment")).toBeTruthy();
+    expect(screen.getByText("+15 % vs FC Rouen – Orléans au même moment")).toBeTruthy();
+    expect(screen.getByText("65 % du CA HT")).toBeTruthy();
+    expect(screen.getByText(/déjà 76 % atteints/)).toBeTruthy();
+    expect(screen.getByText("7 980 spectateurs")).toBeTruthy();
     expect(screen.getByText("Soutenu")).toBeTruthy();
+    expect(screen.getByText("Chiffre d'affaires de la soirée")).toBeTruthy();
+    expect(screen.getByText("Bière pression 50 cl")).toBeTruthy();
     expect(screen.getByText("6 / 7")).toBeTruthy();
     expect(screen.getByText("1 sans réseau")).toBeTruthy();
   });
 
-  it("cartes des stands, du plus urgent : ventes des 10 dernières minutes, barres de stock ; un stand choisi dans la 3D", async () => {
+  it("cartes des stands, du plus urgent : ventes des 10 dernières minutes, barres de stock ; un stand choisi dans la 3D s'ouvre en grand", async () => {
     monter(enDirect, [ouvert]);
     await screen.findByText("Les stands, maintenant");
     const cartes = document.querySelectorAll(".direct-stand-carte");
@@ -123,6 +143,13 @@ describe("En direct", () => {
     expect(within(cartes[0] as HTMLElement).getByText("Rupture", { selector: "strong" })).toBeTruthy();
     fireEvent.click(await screen.findByText("Stand dans la 3D"));
     expect(document.getElementById("stand-n")!.className).toContain("choisie");
+    const fiche = document.querySelector(".direct-fiche") as HTMLElement;
+    expect(within(fiche).getByRole("heading", { name: "Bar Nord" })).toBeTruthy();
+    expect(within(fiche).getByText("Part du CA du lieu")).toBeTruthy();
+    expect(within(fiche).getByText("34 %")).toBeTruthy(); // 5 120 € sur 14 980 €
+    expect(within(fiche).getByText("Stock faible : Bière blonde")).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("Fermer le détail du stand"));
+    expect(document.querySelector(".direct-fiche")).toBeNull();
   });
 
   it("À traiter : les alertes, rouges d'abord ; réassort en deux gestes envoyé au serveur", async () => {

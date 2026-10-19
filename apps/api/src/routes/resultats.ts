@@ -223,8 +223,9 @@ export async function routesResultats(app: FastifyInstance, { base }: { base: Ba
     const auth = await exigerDirecteur(req, base);
     const choix = Choix.parse(req.query);
     return base.transaction(contexte(auth), async (c) => {
-      const evenements = await listerEvenements(c, auth.lieuId);
-      const matchs = await resumeMatchs(c, auth.lieuId);
+      // Résultats ne montre que les événements terminés (clos) : la soirée en cours est dans En direct (§15.167).
+      const evenements = (await listerEvenements(c, auth.lieuId)).filter((e) => e.etat !== "ouvert");
+      const matchs = (await resumeMatchs(c, auth.lieuId)).filter((m) => m.etat === "clos");
       const avecVentes = new Set(matchs.map((m) => m.id));
       const maintenant = Date.now();
       const prochains = evenements
@@ -259,9 +260,8 @@ export async function routesResultats(app: FastifyInstance, { base }: { base: Ba
         };
       }
 
-      // Événement affiché : celui demandé ; sinon l'événement ouvert s'il a des ventes ; sinon le plus récent qui en a.
-      const ouvert = evenements.find((e) => e.etat === "ouvert" && avecVentes.has(e.id));
-      const evenement = evenements.find((e) => e.id === choix.evenementId) ?? ouvert ?? evenements.find((e) => e.id === matchs[0]?.id) ?? null;
+      // Événement affiché : celui demandé s'il est terminé ; sinon le plus récent des événements terminés qui ont des ventes.
+      const evenement = evenements.find((e) => e.id === choix.evenementId && e.etat === "clos") ?? evenements.find((e) => e.id === matchs[0]?.id) ?? null;
       if (!evenement) return { matchs, evenement: null, comparaison: null, actuel: null, precedent: null, alertes: [], prochains };
 
       // Comparaison : celle demandée ; sinon l'événement joué juste avant qui a des ventes (liste déjà dans l'ordre où ils ont été joués).
