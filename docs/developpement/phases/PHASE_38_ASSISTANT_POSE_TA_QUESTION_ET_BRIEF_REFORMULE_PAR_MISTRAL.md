@@ -1,6 +1,6 @@
 # Phase 38 — Assistant « pose ta question » et brief reformulé par Mistral
 
-> FlaiX Expert · dossier de développement · généré le 2026-10-04 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-10-19 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|
@@ -97,7 +97,7 @@
 
 - **assistant « pose ta question »**
   - [F] option désactivée par défaut (chaque question coûte) : l'assistant est fermé
-  - option active mais clé Mistral absente : l'écran le sait, la question est refusée proprement
+  - option active mais clé de l'IA absente : l'écran le sait, la question est refusée proprement
   - l'IA lit les résultats par un outil en lecture seule, recopie le montant, cite sa source ; l'échange est gardé
   - [F] un chiffre que les données ne contiennent pas : la réponse est marquée « à vérifier »
   - [F] limite par jour atteinte : la question est refusée

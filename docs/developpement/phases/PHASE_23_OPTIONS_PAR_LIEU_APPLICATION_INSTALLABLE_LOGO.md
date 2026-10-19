@@ -1,6 +1,6 @@
 # Phase 23 — Options par lieu, application installable, logo
 
-> FlaiX Expert · dossier de développement · généré le 2026-10-04 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-10-19 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|
@@ -95,7 +95,7 @@
 ### `apps/api/test/options.test.ts`
 
 - **options d'un lieu**
-  - sans réglage, toutes les options sont actives (rien ne change pour un lieu existant), sauf l'assistant IA, payant à l'usage
+  - sans réglage, toutes les options sont actives (rien ne change pour un lieu existant), sauf l'assistant IA, payant à l'usage, et les caisses connectées (§15.150)
   - FlaiX Expert désactive le Stock : ses adresses sont fermées, le lieu le voit dans son journal
   - le lieu de formation suit les options du vrai lieu
   - réactivée, l'option rouvre ses adresses

@@ -1,6 +1,6 @@
 # Dossier de développement par phase — FlaiX Expert
 
-> Généré le 2026-10-04 par `node infra/outils/phases-word.cjs` depuis le dépôt. Un document par phase, en Markdown (ici) et en Word (`word/`). Règles du projet : [`AGENTS.md`](../../../AGENTS.md).
+> Généré le 2026-10-19 par `node infra/outils/phases-word.cjs` depuis le dépôt. Un document par phase, en Markdown (ici) et en Word (`word/`). Règles du projet : [`AGENTS.md`](../../../AGENTS.md).
 
 | Phase | Document | Décision | État |
 |---|---|---|---|
@@ -43,3 +43,31 @@
 | 36 | [Bilan sur une période du … au …](PHASE_36_BILAN_SUR_UNE_PERIODE_DU_AU.md) · [Word](word/PHASE_36_BILAN_SUR_UNE_PERIODE_DU_AU.docx) | §15.133 | livrée |
 | 37 | [Brief de fin de soirée en notification sur le téléphone](PHASE_37_BRIEF_DE_FIN_DE_SOIREE_EN_NOTIFICATION_SUR_LE_TELEPHONE.md) · [Word](word/PHASE_37_BRIEF_DE_FIN_DE_SOIREE_EN_NOTIFICATION_SUR_LE_TELEPHONE.docx) | §15.134, §15.135 | livrée |
 | 38 | [Assistant « pose ta question » et brief reformulé par Mistral](PHASE_38_ASSISTANT_POSE_TA_QUESTION_ET_BRIEF_REFORMULE_PAR_MISTRAL.md) · [Word](word/PHASE_38_ASSISTANT_POSE_TA_QUESTION_ET_BRIEF_REFORMULE_PAR_MISTRAL.docx) | §15.136, §15.137 | livrée |
+| 39 | [Revenue Engine : « Où je perds de l'argent »](PHASE_39_REVENUE_ENGINE_OU_JE_PERDS_DE_LARGENT.md) · [Word](word/PHASE_39_REVENUE_ENGINE_OU_JE_PERDS_DE_LARGENT.docx) | §15.138 | livrée |
+| 40 | [Temps de prise de commande, par caisse et par stand](PHASE_40_TEMPS_DE_PRISE_DE_COMMANDE_PAR_CAISSE_ET_PAR_STAND.md) · [Word](word/PHASE_40_TEMPS_DE_PRISE_DE_COMMANDE_PAR_CAISSE_ET_PAR_STAND.docx) | §15.139 | livrée |
+| 41 | [Centre d'alertes et rupture de stock poussée sur le téléphone](PHASE_41_CENTRE_DALERTES_ET_RUPTURE_DE_STOCK_POUSSEE_SUR_LE_TELEPHONE.md) · [Word](word/PHASE_41_CENTRE_DALERTES_ET_RUPTURE_DE_STOCK_POUSSEE_SUR_LE_TELEPHONE.docx) | §15.140 | livrée |
+| 42 | [Comparaison des prix entre fournisseurs](PHASE_42_COMPARAISON_DES_PRIX_ENTRE_FOURNISSEURS.md) · [Word](word/PHASE_42_COMPARAISON_DES_PRIX_ENTRE_FOURNISSEURS.docx) | §15.141 | livrée |
+| 43 | [Back-office niveau 2 : support sur autorisation du lieu](PHASE_43_BACK_OFFICE_NIVEAU_2_SUPPORT_SUR_AUTORISATION_DU_LIEU.md) · [Word](word/PHASE_43_BACK_OFFICE_NIVEAU_2_SUPPORT_SUR_AUTORISATION_DU_LIEU.docx) | §15.142 | livrée |
+| 44 | [Prévision du prochain événement](PHASE_44_PREVISION_DU_PROCHAIN_EVENEMENT.md) · [Word](word/PHASE_44_PREVISION_DU_PROCHAIN_EVENEMENT.docx) | §15.143 | livrée |
+| 45 | [IA : OVHcloud seul comme moteur de langage de l'agent](PHASE_45_IA_OVHCLOUD_SEUL_COMME_MOTEUR_DE_LANGAGE_DE_LAGENT.md) · [Word](word/PHASE_45_IA_OVHCLOUD_SEUL_COMME_MOTEUR_DE_LANGAGE_DE_LAGENT.docx) | §15.145 | livrée |
+| 46 | [E-mails par Brevo : rapport de soirée et rectifications](PHASE_46_E_MAILS_PAR_BREVO_RAPPORT_DE_SOIREE_ET_RECTIFICATIONS.md) · [Word](word/PHASE_46_E_MAILS_PAR_BREVO_RAPPORT_DE_SOIREE_ET_RECTIFICATIONS.docx) | §15.146 | livrée |
+| 47 | [Carte abonné dans Apple Wallet et Google Wallet](PHASE_47_CARTE_ABONNE_DANS_APPLE_WALLET_ET_GOOGLE_WALLET.md) · [Word](word/PHASE_47_CARTE_ABONNE_DANS_APPLE_WALLET_ET_GOOGLE_WALLET.docx) | §15.147 | livrée |
+| 48 | [Design de la carte abonné : logo, bannière, couleurs, textes et liens](PHASE_48_DESIGN_DE_LA_CARTE_ABONNE_LOGO_BANNIERE_COULEURS_TEXTES_ET_LIENS.md) · [Word](word/PHASE_48_DESIGN_DE_LA_CARTE_ABONNE_LOGO_BANNIERE_COULEURS_TEXTES_ET_LIENS.docx) | §15.148 | livrée |
+| 49 | [Audits du 2026-10-05 (Claude puis Codex) et corrections](PHASE_49_AUDITS_DU_2026_10_05_CLAUDE_PUIS_CODEX_ET_CORRECTIONS.md) · [Word](word/PHASE_49_AUDITS_DU_2026_10_05_CLAUDE_PUIS_CODEX_ET_CORRECTIONS.docx) | docs/audits | livrée |
+| 50 | [Compteur de consommation de l'IA dans le back-office](PHASE_50_COMPTEUR_DE_CONSOMMATION_DE_LIA_DANS_LE_BACK_OFFICE.md) · [Word](word/PHASE_50_COMPTEUR_DE_CONSOMMATION_DE_LIA_DANS_LE_BACK_OFFICE.docx) | §15.149 | livrée |
+| 51 | [Caisses connectées : ventes d'une caisse externe importées](PHASE_51_CAISSES_CONNECTEES_VENTES_DUNE_CAISSE_EXTERNE_IMPORTEES.md) · [Word](word/PHASE_51_CAISSES_CONNECTEES_VENTES_DUNE_CAISSE_EXTERNE_IMPORTEES.docx) | §15.150 | livrée |
+| 52 | [Ventes déposées dans tout FlaiX Expert ; fichiers Excel](PHASE_52_VENTES_DEPOSEES_DANS_TOUT_FLAIX_EXPERT_FICHIERS_EXCEL.md) · [Word](word/PHASE_52_VENTES_DEPOSEES_DANS_TOUT_FLAIX_EXPERT_FICHIERS_EXCEL.docx) | §15.151 | livrée |
+| 53 | [Caisses connectées : correspondances automatiques et suggérées](PHASE_53_CAISSES_CONNECTEES_CORRESPONDANCES_AUTOMATIQUES_ET_SUGGEREES.md) · [Word](word/PHASE_53_CAISSES_CONNECTEES_CORRESPONDANCES_AUTOMATIQUES_ET_SUGGEREES.docx) | §15.152 | livrée |
+| 54 | [Nouveau style : arrondi, épuré, toujours clair](PHASE_54_NOUVEAU_STYLE_ARRONDI_EPURE_TOUJOURS_CLAIR.md) · [Word](word/PHASE_54_NOUVEAU_STYLE_ARRONDI_EPURE_TOUJOURS_CLAIR.docx) | §15.153 | livrée |
+| 55 | [Ce qu'il te reste et Mes frais](PHASE_55_CE_QUIL_TE_RESTE_ET_MES_FRAIS.md) · [Word](word/PHASE_55_CE_QUIL_TE_RESTE_ET_MES_FRAIS.docx) | §15.154 | livrée |
+| 56 | [Conditionnement de chaque produit](PHASE_56_CONDITIONNEMENT_DE_CHAQUE_PRODUIT.md) · [Word](word/PHASE_56_CONDITIONNEMENT_DE_CHAQUE_PRODUIT.docx) | §15.155 | livrée |
+| 57 | [Hygiène et HACCP](PHASE_57_HYGIENE_ET_HACCP.md) · [Word](word/PHASE_57_HYGIENE_ET_HACCP.docx) | §15.156 | livrée |
+| 58 | [Allergènes de chaque produit](PHASE_58_ALLERGENES_DE_CHAQUE_PRODUIT.md) · [Word](word/PHASE_58_ALLERGENES_DE_CHAQUE_PRODUIT.docx) | §15.157 | livrée |
+| 59 | [Stock des emballages](PHASE_59_STOCK_DES_EMBALLAGES.md) · [Word](word/PHASE_59_STOCK_DES_EMBALLAGES.docx) | §15.158 | livrée |
+| 60 | [Hygiène sur la tablette des caissières ; photos d'étiquettes](PHASE_60_HYGIENE_SUR_LA_TABLETTE_DES_CAISSIERES_PHOTOS_DETIQUETTES.md) · [Word](word/PHASE_60_HYGIENE_SUR_LA_TABLETTE_DES_CAISSIERES_PHOTOS_DETIQUETTES.docx) | §15.159 | livrée |
+| 61 | [Événements privés](PHASE_61_EVENEMENTS_PRIVES.md) · [Word](word/PHASE_61_EVENEMENTS_PRIVES.docx) | §15.160 | livrée |
+| 62 | [Produits & prix plus clair : section active, allergènes cochables, emballages expliqués](PHASE_62_PRODUITS_PRIX_PLUS_CLAIR_SECTION_ACTIVE_ALLERGENES_COCHABLES_EMBALLAGE.md) · [Word](word/PHASE_62_PRODUITS_PRIX_PLUS_CLAIR_SECTION_ACTIVE_ALLERGENES_COCHABLES_EMBALLAGE.docx) | §15.161 | livrée |
+| 63 | [Le stade en direct : stands en 3D, en couleur, alertes au clic](PHASE_63_LE_STADE_EN_DIRECT_STANDS_EN_3D_EN_COULEUR_ALERTES_AU_CLIC.md) · [Word](word/PHASE_63_LE_STADE_EN_DIRECT_STANDS_EN_3D_EN_COULEUR_ALERTES_AU_CLIC.docx) | §15.162 | livrée |
+| 64 | [Le stade en direct sans file d'attente : alertes utiles pendant les ventes](PHASE_64_LE_STADE_EN_DIRECT_SANS_FILE_DATTENTE_ALERTES_UTILES_PENDANT_LES_VENTE.md) · [Word](word/PHASE_64_LE_STADE_EN_DIRECT_SANS_FILE_DATTENTE_ALERTES_UTILES_PENDANT_LES_VENTE.docx) | §15.163 | livrée |
+| 65 | [Le lieu en 3D : quatre décors, stands posés à la main](PHASE_65_LE_LIEU_EN_3D_QUATRE_DECORS_STANDS_POSES_A_LA_MAIN.md) · [Word](word/PHASE_65_LE_LIEU_EN_3D_QUATRE_DECORS_STANDS_POSES_A_LA_MAIN.docx) | §15.164 | livrée |
+| 66 | [Remettre le stock à zéro ; supprimer un événement à venir](PHASE_66_REMETTRE_LE_STOCK_A_ZERO_SUPPRIMER_UN_EVENEMENT_A_VENIR.md) · [Word](word/PHASE_66_REMETTRE_LE_STOCK_A_ZERO_SUPPRIMER_UN_EVENEMENT_A_VENIR.docx) | §15.165 | livrée |

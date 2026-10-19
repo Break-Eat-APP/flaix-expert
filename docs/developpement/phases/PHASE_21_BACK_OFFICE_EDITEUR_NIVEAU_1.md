@@ -1,6 +1,6 @@
 # Phase 21 — Back-office éditeur, niveau 1
 
-> FlaiX Expert · dossier de développement · généré le 2026-10-04 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-10-19 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|
@@ -88,6 +88,8 @@
 - **vérification d'intégrité**
   - le serveur relit les chaînes du lieu, ne renvoie que des états, et l'inscrit au journal du lieu
   - [F] un lieu inconnu ou de formation est refusé
+- **consommation de l'IA (§15.149)**
+  - totaux par lieu et coût estimé, sans le texte des questions ; réservée aux comptes FlaiX Expert
 - **mot de passe et déconnexion**
   - changement de mot de passe (l'actuel est exigé), puis déconnexion
 

@@ -57,6 +57,19 @@ const CLES = [
   ["Carte wallet", "apps/api/src/wallet/images.ts", ["controlerImages"]],
   ["Carte wallet", "apps/api/src/wallet/cms.ts", ["signerDetache"]],
   ["Caisses connectées", "packages/domain/src/caisses-externes.ts", ["lireExportCaisse", "devinerColonnes"]],
+  ["Où je perds de l'argent", "packages/domain/src/pertes.ts", ["analyserPertes", "estimerRupture"]],
+  ["Temps de prise de commande", "packages/domain/src/temps-service.ts", ["tempsDeService"]],
+  ["Centre d'alertes", "packages/domain/src/alertes.ts", ["trierAlertes", "variationsFournisseur", "alerteMercuriale"]],
+  ["Centre d'alertes", "apps/api/src/routes/alertes.ts", ["centreAlertes", "pousserAlertesStock"]],
+  ["Prévision", "packages/domain/src/prevision.ts", ["prevoir", "caissesAuPic"]],
+  ["Ce qu'il te reste", "packages/domain/src/frais.ts", ["partDesFrais", "montantDuMois"]],
+  ["Hygiène", "packages/domain/src/hygiene.ts", ["limitesEquipement", "receptionConforme"]],
+  ["Événements privés", "packages/domain/src/evenements-prives.ts", ["bilanPrive", "construireFacture"]],
+  ["Stade en direct", "packages/domain/src/plan-stade.ts", ["placerStands", "signauxStand", "planStade"]],
+  ["Stade en direct", "apps/api/src/routes/plan-stade.ts", ["lirePlanStade", "/api/plan-stade"]],
+  ["Stade en direct", "apps/web/src/pages/resultats/modeles-plan.ts", ["placeStand"]],
+  ["Stade en direct", "apps/web/src/pages/resultats/decors3d.ts", ["construireDecor"]],
+  ["Remise à zéro du stock", "apps/api/src/routes/stock.ts", ["/api/stock/remise-a-zero"]],
 ];
 
 const commitsTous = git("log", "--reverse", "--date=short", "--pretty=format:%H|%h|%ad|%s").trim().split("\n").map((l) => {

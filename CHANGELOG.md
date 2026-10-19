@@ -5,6 +5,18 @@
 
 ## 2026-10-17
 
+### [`dca76ed`](https://github.com/Break-Eat-APP/flaix-expert/commit/dca76edc4972e07ceef9b5373afbc975281aa0e6) — Avancement : au passage en production, base neuve et reprise de la seule configuration
+
+- modifié : `docs/avancement.md`
+
+### [`6be91d3`](https://github.com/Break-Eat-APP/flaix-expert/commit/6be91d397f274f1fd855735bcb1767f0d17a5940) — Dossier §15.165 : la corbeille explique un refus (phase 66)
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`04e39ff`](https://github.com/Break-Eat-APP/flaix-expert/commit/04e39ff9bee14028ecdf78572118a157a03a1712) — Saison : la corbeille sur chaque événement ; ouvert ou clos, elle explique pourquoi il ne se supprime pas *(phase 66)*
 
 - modifié : `apps/web/src/pages/parametres/Saison.tsx`

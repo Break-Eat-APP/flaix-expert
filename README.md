@@ -1,6 +1,7 @@
 # FlaiX Expert
 
 Caisse et gestion financière des buvettes de stade — FlaiX Expert (éditeur Break Eat App).
+**Développeur qui reprend le projet : commencer par [`docs/developpement/GUIDE_DE_REPRISE.md`](docs/developpement/GUIDE_DE_REPRISE.md).**
 Suivi du développement : [`docs/developpement/JOURNAL_DES_PHASES.md`](docs/developpement/JOURNAL_DES_PHASES.md), [`docs/developpement/CARTE_DU_CODE.md`](docs/developpement/CARTE_DU_CODE.md), [`CHANGELOG.md`](CHANGELOG.md).
 Décisions d'architecture : [`docs/decisions-architecture-production.md`](docs/decisions-architecture-production.md). Dossier projet (source de vérité) : [`docs/flaix-gestion-dossier-projet.md`](docs/flaix-gestion-dossier-projet.md).
 
@@ -10,7 +11,7 @@ Décisions d'architecture : [`docs/decisions-architecture-production.md`](docs/d
 apps/api          serveur (Node.js + Fastify) — droits, règles, calculs
 apps/web          écrans directeur (React + Vite)
 packages/domain   modèle canonique + moteur de calcul pur, testé
-db/migrations     schéma PostgreSQL versionné (une migration appliquée ne se modifie jamais)
+db/migrations     schéma PostgreSQL versionné, 0001 → 0053 (une migration appliquée ne se modifie jamais)
 infra/            base PostgreSQL locale (Docker)
 docs/             dossier projet, brief, décisions, questions à l'expert-comptable
 ```
@@ -40,6 +41,7 @@ Mot de passe perdu : `pnpm cli nouveau-mot-de-passe --email …`
 
 ```bash
 pnpm test           # moteur de calcul + serveur + tests de conformité contre la vraie base
+cd apps/api && pnpm test:un-par-un   # serveur, un fichier à la fois (poste à peu de mémoire)
 pnpm typecheck
 ```
 

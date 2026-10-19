@@ -2445,3 +2445,5 @@
 - [`01704d9`](https://github.com/Break-Eat-APP/flaix-expert/commit/01704d9c200e516658e883a6e819baab88ba7bfe) 2026-10-16 — Dossier §15.163 : le stade en direct sans file d'attente (phase 64)
 - [`c0abb91`](https://github.com/Break-Eat-APP/flaix-expert/commit/c0abb91e5e3c865b1dfbfb003c750ccc3bc2344e) 2026-10-16 — Dossier §15.164 : le lieu en 3D, quatre décors et stands posés à la main (phase 65)
 - [`0004b81`](https://github.com/Break-Eat-APP/flaix-expert/commit/0004b81d242a6f85eb36ebf9ab084284b0e99559) 2026-10-17 — Dossier §15.165 : remise à zéro du stock, suppression d'un événement à venir (phase 66)
+- [`6be91d3`](https://github.com/Break-Eat-APP/flaix-expert/commit/6be91d397f274f1fd855735bcb1767f0d17a5940) 2026-10-17 — Dossier §15.165 : la corbeille explique un refus (phase 66)
+- [`dca76ed`](https://github.com/Break-Eat-APP/flaix-expert/commit/dca76edc4972e07ceef9b5373afbc975281aa0e6) 2026-10-17 — Avancement : au passage en production, base neuve et reprise de la seule configuration

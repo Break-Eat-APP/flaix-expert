@@ -2,6 +2,10 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-19 : documentation de reprise à jour
+
+Guide de reprise pour un développeur (`docs/developpement/GUIDE_DE_REPRISE.md` et `.docx`), carte du code complétée (tous les modules jusqu'à la migration 0053), fiches des 67 phases régénérées en Markdown et en Word (elles s'arrêtaient à la phase 38).
+
 ## À faire au passage en production (demande de Rémi du 2026-10-17)
 
 Aucune donnée de test en production : base de production neuve, où l'on ne reprend que la configuration (lieu, stands et caisses, produits, catégories, tarifs, recettes, emballages, équipe, réglages) — jamais les matchs, tickets, clôtures, stock ni factures d'essai. La base de test est sauvegardée puis archivée. Outil de reprise de configuration à préparer et tester avant la bascule, faite avec Rémi.
