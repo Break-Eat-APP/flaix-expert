@@ -116,7 +116,7 @@ export function PrixFournisseurs() {
   if (r.articles.length === 0)
     return (
       <Carte>
-        <EtatVide titre="Aucune livraison avec un prix">La comparaison se construit à partir de tes livraisons (onglet Réserve & livraisons) : produit, quantité, prix et fournisseur.</EtatVide>
+        <EtatVide titre="Aucune livraison avec un prix">La comparaison se construit à partir de tes livraisons (onglet Réserve centrale) : produit, quantité, prix et fournisseur.</EtatVide>
       </Carte>
     );
   return (

@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, Minus, Plus, Trash2 } from "lucide-react";
 import {
   MODES_REGLEMENT,
-  TAUX_TVA,
+  tauxTvaProposes,
   coutPersonnel,
   formaterMontant,
   formaterPourcentage,
@@ -188,7 +188,7 @@ function Consommations({ e }: { e: Donnees }) {
               <label className="champ">
                 <span>TVA</span>
                 <select value={tva} onChange={(ev) => setTva(Number(ev.target.value) as TauxTvaPb)}>
-                  {TAUX_TVA.map((t) => (
+                  {tauxTvaProposes(tva).map((t) => (
                     <option key={t.pb} value={t.pb}>
                       {t.libelle}
                     </option>

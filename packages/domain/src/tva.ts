@@ -14,6 +14,14 @@ export const TAUX_TVA: ReadonlyArray<{ pb: TauxTvaPb; libelle: string }> = [
   { pb: 210, libelle: "2,1 %" },
 ];
 
+/**
+ * Taux proposés au choix d'un produit (§15.169) : sans le 2,1 % (médicaments remboursés, presse, premières
+ * représentations de spectacles), qui ne sert jamais en buvette ; il reste accepté, et proposé au produit qui l'a déjà.
+ */
+export function tauxTvaProposes(actuel?: TauxTvaPb | ""): ReadonlyArray<{ pb: TauxTvaPb; libelle: string }> {
+  return TAUX_TVA.filter((t) => t.pb !== 210 || t.pb === actuel);
+}
+
 export function estTauxTva(valeur: unknown): valeur is TauxTvaPb {
   return TAUX_TVA.some((t) => t.pb === valeur);
 }

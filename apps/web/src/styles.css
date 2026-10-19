@@ -488,6 +488,7 @@ input[aria-invalid="true"] { border-color: var(--red); }
 .onglets { display: flex; width: fit-content; max-width: 100%; gap: 4px; margin-bottom: 18px; flex-wrap: wrap; padding: 5px; border-radius: 26px; background: var(--onglets); }
 .onglet { padding: 9px 18px; border-radius: 999px; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; border: 0; background: transparent; color: #5a546f; transition: background 0.15s ease, color 0.15s ease; }
 .onglet:hover { color: var(--ink); }
+.stock-parcours { margin: -6px 0 16px; padding: 10px 14px; border-radius: 14px; background: var(--onglets); color: #4a4560; font-size: 13.5px; line-height: 1.45; }
 .onglet.actif { background: var(--surface); color: var(--violet); font-weight: 800; box-shadow: 0 2px 8px rgba(20, 16, 36, 0.08); }
 
 /* Connexion des caissières sur une tablette enregistrée (dossier §15.100). */

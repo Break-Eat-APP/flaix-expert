@@ -2,7 +2,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChefHat, ChevronDown, ChevronRight, CupSoda, Plus, Search, Tags, Wheat } from "lucide-react";
 import {
-  TAUX_TVA,
+  tauxTvaProposes,
   formaterMontant,
   libelleTauxTva,
   cibleEffective,
@@ -277,7 +277,7 @@ function ChoixTva({ valeur, onChange }: { valeur: TauxTvaPb | ""; onChange: (v: 
       <span>Taux de TVA *</span>
       <select value={valeur} onChange={(e) => onChange(e.target.value ? (Number(e.target.value) as TauxTvaPb) : "")} required>
         <option value="">Choisir…</option>
-        {TAUX_TVA.map((t) => (
+        {tauxTvaProposes(valeur).map((t) => (
           <option key={t.pb} value={t.pb}>
             {t.libelle}
           </option>

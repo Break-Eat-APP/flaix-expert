@@ -25,12 +25,22 @@ const valeur = (lignes: LigneStock[], q: (l: LigneStock) => number) => {
  * mise en place par événement et par stand, réassort pendant l'événement, comptage de fin d'événement.
  * Les totaux sont en euros : des unités de produits différents ne s'additionnent pas.
  */
+/** Le chemin du stock, rappelé en tête de chaque étape : réserve → stands → réassort → restes (§15.169). */
+const PARCOURS: Partial<Record<Onglet, string>> = {
+  reserve: "Étape 1 · Le dépôt du lieu : les livraisons y entrent, l'inventaire de la réserve en donne le point de départ. C'est d'ici que partent les produits vers les stands.",
+  mep: "Étape 2 · Avant l'événement : ce que la réserve envoie à chaque stand. Choisis un stand pour ne voir que le sien ; la colonne « Réserve centrale » montre ce qu'il reste à répartir.",
+  match: "Étape 3 · Pendant l'événement : le réassort d'un stand sort de la réserve, au fil des ventes.",
+  comptage: "Étape 4 · En fin d'événement : ce qu'on trouve à chaque stand. Les écarts se voient ici ; l'événement se clôt une fois tout compté.",
+};
+
 export function Stock() {
-  const [onglet, setOnglet] = useState<Onglet>("mep");
+  // Ouverture sur la réserve centrale, d'où part tout le stock ; pendant un événement, sur le réassort (§15.169).
+  const [ongletChoisi, setOnglet] = useState<Onglet | null>(null);
   const [evenementId, setEvenementId] = useState<string | null>(null);
   const [standId, setStandId] = useState("");
   const [remise, setRemise] = useState(false);
   const evenements = useQuery({ queryKey: ["evenements"], queryFn: () => api.get<Evenement[]>("/evenements") });
+  const onglet: Onglet = ongletChoisi ?? (evenements.data?.some((e) => e.etat === "ouvert") ? "match" : "reserve");
   const stock = useQuery({
     queryKey: ["stock", evenementId],
     queryFn: () => api.get<StockMatch | null>(`/stock${evenementId ? `?evenementId=${evenementId}` : ""}`),
@@ -63,13 +73,14 @@ export function Stock() {
       />
       {remise && <RemiseAZero fermer={() => setRemise(false)} />}
       <div className="onglets">
-        {bouton("mep", "Mise en place")}
-        {bouton("match", "Pendant l'événement")}
-        {bouton("comptage", "Comptage")}
-        {bouton("reserve", "Réserve & livraisons")}
+        {bouton("reserve", "1. Réserve centrale")}
+        {bouton("mep", "2. Mise en place")}
+        {bouton("match", "3. Pendant l'événement")}
+        {bouton("comptage", "4. Comptage")}
         {bouton("ingredients", "Ingrédients")}
         {bouton("fournisseurs", "Prix fournisseurs")}
       </div>
+      {PARCOURS[onglet] && <p className="stock-parcours">{PARCOURS[onglet]}</p>}
       {onglet === "reserve" ? (
         <Reserve />
       ) : onglet === "fournisseurs" ? (
@@ -326,7 +337,7 @@ function MiseEnPlace({ s, stands, cle }: { s: StockMatch; stands: StockMatch["st
       ))}
       {Object.values(s.reserve).some((v) => v < 0) && (
         <div className="message message-alerte">
-          Réserve centrale en négatif sur certains produits : son stock de départ n'est pas déclaré, ou une livraison manque. Onglet <strong>Réserve & livraisons</strong>.
+          Réserve centrale en négatif sur certains produits : son stock de départ n'est pas déclaré, ou une livraison manque. Onglet <strong>Réserve centrale</strong>.
         </div>
       )}
     </>

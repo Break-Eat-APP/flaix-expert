@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   MODES_STOCK_CC,
-  TAUX_TVA,
+  tauxTvaProposes,
   cascadeEncaissement,
   formaterMontant,
   libelleTauxTva,
@@ -410,7 +410,7 @@ function Simulateur({ reglages }: { reglages: ReglagesClickCollect | null }) {
         <label className="champ">
           <span>TVA du produit</span>
           <select value={s.tva} onChange={(ev) => setS({ ...s, tva: Number(ev.target.value) })}>
-            {TAUX_TVA.map((t) => (
+            {tauxTvaProposes().map((t) => (
               <option key={t.pb} value={t.pb}>
                 {t.libelle}
               </option>
