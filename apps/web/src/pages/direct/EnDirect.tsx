@@ -237,7 +237,7 @@ function CarteStand({ stand: s, choisi, maintenant }: { stand: EtatStand; choisi
         </p>
       )}
       <div className="discret direct-stand-pied">
-        {c.caissesOuvertes} / {c.caisses} caisse{c.caisses > 1 ? "s" : ""} ouverte{c.caissesOuvertes > 1 ? "s" : ""} · {c.derniereVente ? `dernière vente ${ilYa(c.derniereVente, maintenant)}` : "aucune vente"}
+        {c.caissesOuvertes} caisse{c.caissesOuvertes > 1 ? "s" : ""} ouverte{c.caissesOuvertes > 1 ? "s" : ""} sur {c.caisses} · {c.derniereVente ? `dernière vente ${ilYa(c.derniereVente, maintenant)}` : "aucune vente"}
       </div>
     </section>
   );

@@ -789,7 +789,12 @@ details.inventaire summary { cursor: pointer; font-size: 13px; }
 @media (max-width: 1100px) { .direct-chiffres { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) {
   .direct-stands { grid-template-columns: minmax(0, 1fr); }
+  .direct-tableau .direct-entete { flex-direction: column; align-items: flex-start; }
   .direct-tableau .direct-titre { font-size: 21px; }
+  .direct-chiffres { gap: 10px; }
+  .direct-chiffre { padding: 12px 14px; }
+  .direct-chiffre.principal { grid-column: 1 / -1; }
+  .direct-chiffre-tete { flex-wrap: wrap; gap: 4px 8px; }
   .direct-chiffre strong { font-size: 22px; }
-  .direct-chiffre.principal strong { font-size: 26px; }
+  .direct-chiffre.principal strong { font-size: 28px; }
 }
