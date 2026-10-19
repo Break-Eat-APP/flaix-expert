@@ -5333,3 +5333,45 @@ refait, `LieuEnDirect` dans `PlanStade.tsx`). **Tests** : moteur 6, serveur 4, �
 et barres, stand choisi dans la 3D, À traiter et réassort envoyé, placement, hors événement) ; suite des écrans 97/97.
 Essayé dans le navigateur avec une soirée simulée (4 stands, alertes) : ordinateur et téléphone. Corrigés à l'essai :
 en-tête et chiffres serrés sur téléphone, « 1 / 2 caisses ouverte ».
+
+### 15.167 En direct à part, au design des maquettes ; Résultats pour les événements terminés (2026-10-19)
+
+**Demande de Rémi** (2026-10-19, avec les deux maquettes « En direct » et « Résultats » de l'artifact de design) :
+*« je veux séparer le « en direct », avoir une section à part… « résultats » à part, la consulter pour les événements
+terminés seulement pour comparer. Où est passé le stade en 3D ? … on peut afficher les KPI au-dessus de chaque stand en
+petit et les alertes aussi, et à chaque clic sur le stand cela apparaît en gros les détails et KPI, alertes… au-dessus
+du stade toujours afficher les KPI importants, CA, tickets vendus, avec %… je veux exactement le même design et couleur…
+même le graphique avec l'évolution des heures et des ventes »*.
+
+**Constat** : le stade n'avait pas disparu, mais En direct n'avait **pas d'entrée dans le menu** (seulement une accroche
+dans Résultats pendant un événement) : hors événement, il était introuvable.
+
+**Choix de Rémi** (KPI proposés, tous calculables) : CA, tickets, panier moyen (avec % et petite courbe), marge brute
+en cours, prévision de fin de soirée ; ventes par minute et rythme, CA par spectateur. Ordre : En direct d'abord.
+
+**Décisions** :
+- **Menu** : entrée « En direct » juste après Résultats, avec un point rouge pendant un événement ouvert.
+- **Résultats** ne montre plus que les **événements terminés (clos)**, pour comparer ; l'événement en cours est dans
+  En direct (le serveur écarte l'événement ouvert de la liste, du choix par défaut et des bilans de période).
+- **En direct**, au design de Résultats (cartes, couleurs, graphiques) :
+  - **8 chiffres** : CA en cours, tickets, panier moyen (badge « +9 % » contre le **dernier événement clos qui a des
+    ventes au même temps écoulé depuis son ouverture**, valeur de ce match dessous, petite courbe par quart d'heure),
+    marge brute (en € et en % du CA HT, coût manquant signalé), ventes par minute et rythme, **prévision de fin de
+    soirée** (médiane du module Prévision, fourchette, part déjà atteinte), CA par spectateur (si l'affluence est saisie),
+    caisses ouvertes et tablettes sans réseau. Montants arrondis à l'euro comme sur la maquette.
+  - **Le lieu en 3D** : sous chaque stand, ses petits chiffres (CA, tickets) et une pastille avec le nombre d'alertes ;
+    **un clic ouvre son détail en grand** à côté (CA, tickets, panier, 10 dernières minutes, part du CA du lieu,
+    dernière vente, alertes avec leurs actions, stock restant) ; sans stand choisi, « À traiter ».
+  - **Chiffre d'affaires de la soirée** par quart d'heure, ce match en trait plein, le précédent en pointillé (même
+    graphique que Résultats) ; **ventes par catégorie** (anneau) ; **cartes des stands** ; **ce qui se vend le mieux**.
+  - Sur téléphone : chiffres et cartes, le lieu en 3D derrière un bouton ; les petits chiffres sous les stands masqués.
+
+**Réalisé le 2026-10-19** : sans migration. Moteur `direct.ts` (quarts d'heure, cumul au même moment, `tableauDirect`) ;
+serveur GET /api/direct ; écran (menu, `EnDirect.tsx`, étiquettes de la 3D) ; Résultats limité aux événements clos.
+**Tests** : moteur 3, serveur (tableau d'un événement ouvert, aucun hors événement), écran 5 et menu 3 ; suite des écrans
+97/97 ; résultats, périodes, assistant et prévision relancés. Essayé dans le navigateur sur une soirée simulée
+(ordinateur). Corrigés à l'essai : textes de comparaison trop longs dans les badges, montants avec centimes sur deux
+lignes, rangée du graphique de hauteur inégale, cartes des stands trop serrées.
+
+**À faire ensuite** (avec Rémi) : la page Résultats au design de la 2e maquette pour les événements terminés ;
+« Prévenir le stand » (message aux tablettes).

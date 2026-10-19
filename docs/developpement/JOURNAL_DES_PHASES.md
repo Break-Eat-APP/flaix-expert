@@ -73,6 +73,7 @@
 | 65 | [Le lieu en 3D : quatre décors, stands posés à la main](#phase-65) | §15.164 | [`2bcf514`](https://github.com/Break-Eat-APP/flaix-expert/commit/2bcf5147ff8c71bc4b2043c05ff9050b1ac30ee5) [`284297b`](https://github.com/Break-Eat-APP/flaix-expert/commit/284297bec857e094f0e40459c102f2b8a2b564c4) [`69daccc`](https://github.com/Break-Eat-APP/flaix-expert/commit/69dacccb4d5c16bcd19da326cbec79bee1288efa) | livrée |
 | 66 | [Remettre le stock à zéro ; supprimer un événement à venir](#phase-66) | §15.165 | [`f4e5aa8`](https://github.com/Break-Eat-APP/flaix-expert/commit/f4e5aa88b6979734a6be3d1f9b21989be6bc01e2) [`325a75d`](https://github.com/Break-Eat-APP/flaix-expert/commit/325a75dbd36aec91527e5803d0c9cbd564793dae) [`04e39ff`](https://github.com/Break-Eat-APP/flaix-expert/commit/04e39ff9bee14028ecdf78572118a157a03a1712) | livrée |
 | 67 | [Le tableau En direct, d'après la maquette, avec le lieu en 3D](#phase-67) | §15.166 | [`0e5db30`](https://github.com/Break-Eat-APP/flaix-expert/commit/0e5db300d4aa4cf49b5e7403de1fac3af2bf3137) [`a54313b`](https://github.com/Break-Eat-APP/flaix-expert/commit/a54313b9270212f230f55e7cd5d42ccd828d3111) [`77de79f`](https://github.com/Break-Eat-APP/flaix-expert/commit/77de79f0bf42f5e1ed518a6323257cb4dc062c43) | livrée |
+| 68 | [En direct à part, au design des maquettes ; Résultats pour les événements terminés](#phase-68) | §15.167 | [`25fcf2a`](https://github.com/Break-Eat-APP/flaix-expert/commit/25fcf2a9fbdb17a911700a253ddad814aae2e521) [`a34efbd`](https://github.com/Break-Eat-APP/flaix-expert/commit/a34efbd946d10f3234fd45df50937f0e1854d6a1) [`f73a1b3`](https://github.com/Break-Eat-APP/flaix-expert/commit/f73a1b3f3be51fca8848cf9fe133baae0b0da3c5) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -2426,6 +2427,34 @@
   - [`apps/api/test/plan-stade.test.ts`](../../apps/api/test/plan-stade.test.ts) — modifié
   - [`packages/domain/src/plan-stade.test.ts`](../../packages/domain/src/plan-stade.test.ts) — modifié
 
+<a id="phase-68"></a>
+## Phase 68 — En direct à part, au design des maquettes ; Résultats pour les événements terminés
+
+- **Dates** : 2026-10-19
+- **Décision et raisonnement** : dossier projet §15.167
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`25fcf2a`](https://github.com/Break-Eat-APP/flaix-expert/commit/25fcf2a9fbdb17a911700a253ddad814aae2e521) 2026-10-19 — Tableau En direct : CA, tickets et panier comparés au match précédent au même moment, courbe par quart d'heure, marge, prévision, catégories, meilleurs produits (moteur, serveur)
+  - [`a34efbd`](https://github.com/Break-Eat-APP/flaix-expert/commit/a34efbd946d10f3234fd45df50937f0e1854d6a1) 2026-10-19 — En direct à part dans le menu (point rouge pendant un événement) : chiffres clés au design de Résultats, lieu 3D avec petits chiffres par stand et détail en grand au clic, courbe de la soirée, ventes par catégorie, meilleurs produits ; Résultats limité aux événements terminés
+  - [`f73a1b3`](https://github.com/Break-Eat-APP/flaix-expert/commit/f73a1b3f3be51fca8848cf9fe133baae0b0da3c5) 2026-10-19 — En direct : badges courts et montants arrondis comme la maquette, rangée courbe/catégories à hauteur égale, cartes des stands plus lisibles
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/direct.ts`](../../packages/domain/src/direct.ts) — créé
+  - [`packages/domain/src/index.ts`](../../packages/domain/src/index.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/direct.ts`](../../apps/api/src/routes/direct.ts) — créé
+  - [`apps/api/src/routes/resultats.ts`](../../apps/api/src/routes/resultats.ts) — modifié
+  - [`apps/api/src/serveur.ts`](../../apps/api/src/serveur.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/composants/Coquille.tsx`](../../apps/web/src/composants/Coquille.tsx) — modifié
+  - [`apps/web/src/pages/direct/EnDirect.test.tsx`](../../apps/web/src/pages/direct/EnDirect.test.tsx) — modifié
+  - [`apps/web/src/pages/direct/EnDirect.tsx`](../../apps/web/src/pages/direct/EnDirect.tsx) — modifié
+  - [`apps/web/src/pages/resultats/Stade3D.tsx`](../../apps/web/src/pages/resultats/Stade3D.tsx) — modifié
+  - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
+- **Tests** :
+  - [`apps/api/test/plan-stade.test.ts`](../../apps/api/test/plan-stade.test.ts) — modifié
+  - [`apps/web/src/composants/Coquille.test.ts`](../../apps/web/src/composants/Coquille.test.ts) — modifié
+  - [`packages/domain/src/direct.test.ts`](../../packages/domain/src/direct.test.ts) — créé
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -2475,3 +2504,4 @@
 - [`6be91d3`](https://github.com/Break-Eat-APP/flaix-expert/commit/6be91d397f274f1fd855735bcb1767f0d17a5940) 2026-10-17 — Dossier §15.165 : la corbeille explique un refus (phase 66)
 - [`dca76ed`](https://github.com/Break-Eat-APP/flaix-expert/commit/dca76edc4972e07ceef9b5373afbc975281aa0e6) 2026-10-17 — Avancement : au passage en production, base neuve et reprise de la seule configuration
 - [`cd00826`](https://github.com/Break-Eat-APP/flaix-expert/commit/cd008264774dd6c23a521ea6c74a1fcf65c3b8af) 2026-10-19 — Documentation de reprise : guide pour un développeur (Markdown et Word), carte du code complète, fiches des 67 phases régénérées
+- [`8182a81`](https://github.com/Break-Eat-APP/flaix-expert/commit/8182a81f6691cd73fffc07e5a0d2031e2115506f) 2026-10-19 — Dossier §15.166 : le tableau En direct d'après la maquette (phase 67)
