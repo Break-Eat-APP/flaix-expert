@@ -51,6 +51,13 @@ export function LieuEnDirect({
     },
   });
 
+  // Le décor s'enregistre dès qu'on le choisit (§15.169) : il ne dépend plus du bouton « Enregistrer » du placement,
+  // oublié en quittant la page, et la patinoire revenait au stade.
+  const choisirDecor = useMutation({
+    mutationFn: (m: ModeleLieu) => api.put<Plan>("/plan-stade", { modele: m, positions: [] }),
+    onSuccess: (p) => client.setQueryData(["plan-stade"], p),
+  });
+
   const modele = brouillon?.modele ?? plan.modele;
   const stands = brouillon ? plan.stands.map((s) => (s.id in brouillon.positions ? { ...s, position: brouillon.positions[s.id]! } : s)) : plan.stands;
   const compte = (c: CouleurStand) => stands.filter((s) => s.couleur === c).length;
@@ -99,7 +106,11 @@ export function LieuEnDirect({
               brouillon={brouillon}
               stands={stands}
               choisi={selection}
-              changerModele={(m) => setBrouillon({ ...brouillon, modele: m })}
+              changerModele={(m) => {
+                setBrouillon({ ...brouillon, modele: m });
+                choisirDecor.mutate(m);
+              }}
+              decorEnregistre={choisirDecor.isSuccess && !choisirDecor.isPending}
               placer={placer}
               annuler={() => {
                 setBrouillon(null);
@@ -107,7 +118,7 @@ export function LieuEnDirect({
               }}
               enregistrer={() => enregistrer.mutate(brouillon)}
               enCours={enregistrer.isPending}
-              erreur={enregistrer.error}
+              erreur={enregistrer.error ?? choisirDecor.error}
             />
           ) : (
             aside
@@ -123,6 +134,7 @@ function PanneauPlacement({
   stands,
   choisi,
   changerModele,
+  decorEnregistre,
   placer,
   annuler,
   enregistrer,
@@ -133,6 +145,7 @@ function PanneauPlacement({
   stands: readonly EtatStand[];
   choisi: string | null;
   changerModele: (m: ModeleLieu) => void;
+  decorEnregistre: boolean;
   placer: (p: Record<string, PositionPlan | null>) => void;
   annuler: () => void;
   enregistrer: () => void;
@@ -158,6 +171,7 @@ function PanneauPlacement({
           </button>
         ))}
       </div>
+      <p className="note" style={{ margin: "6px 0 0" }}>{decorEnregistre ? "✓ Décor enregistré : il reste le même à chaque connexion." : "Le décor choisi s'enregistre tout de suite."}</p>
       <h4>Place des stands</h4>
       <p className="note" style={{ margin: "0 0 8px" }}>
         Les stands que tu ne déplaces pas sont placés tout seuls, sur leur tribune (Stands & caisses).

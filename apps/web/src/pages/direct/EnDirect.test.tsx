@@ -167,16 +167,19 @@ describe("En direct", () => {
     expect(JSON.parse(init!.body as string)).toEqual({ evenementId: "ev", standId: "e", produitId: "p-frites", quantite: 40 });
   });
 
-  it("placer les stands : décor choisi, stand glissé, enregistré", async () => {
+  it("placer les stands : décor enregistré dès le clic, stand glissé, enregistré", async () => {
     const serveur = monter(enDirect, [ouvert]);
     fireEvent.click(await screen.findByText("Placer les stands"));
     fireEvent.click(screen.getByRole("radio", { name: /Patinoire/ }));
     expect(screen.getByText("La patinoire en direct")).toBeTruthy();
+    // Le décor s'enregistre dès le clic, sans attendre « Enregistrer » (§15.169).
+    const puts = () => serveur.mock.calls.filter(([, i]) => i?.method === "PUT").map(([, i]) => JSON.parse(i!.body as string));
+    await waitFor(() => expect(puts()).toEqual([{ modele: "patinoire", positions: [] }]));
+    expect(await screen.findByText(/Décor enregistré/)).toBeTruthy();
     fireEvent.click(screen.getByText("Glisser la 1re buvette"));
     fireEvent.click(screen.getByText("Enregistrer"));
-    await waitFor(() => expect(serveur.mock.calls.some(([, i]) => i?.method === "PUT")).toBe(true));
-    const [, init] = serveur.mock.calls.find(([, i]) => i?.method === "PUT")!;
-    expect(JSON.parse(init!.body as string)).toEqual({ modele: "patinoire", positions: [{ standId: "n", position: { x: 10, z: -50 } }] });
+    await waitFor(() => expect(puts()).toHaveLength(2));
+    expect(puts()[1]).toEqual({ modele: "patinoire", positions: [{ standId: "n", position: { x: 10, z: -50 } }] });
   });
 
   it("hors événement : le lieu à placer, sans chiffres ni cartes", async () => {
