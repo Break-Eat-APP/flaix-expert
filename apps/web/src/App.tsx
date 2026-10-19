@@ -100,7 +100,7 @@ function AppLieu() {
         <Route element={<Coquille session={session.data} />}>
           {/* Organisation en 6 entrées (dossier §15.96) : Résultats, Caisses, Stock, Équipe, Clôtures, Paramètres. */}
           <Route index element={<Resultats session={session.data} />} />
-          <Route path="direct" element={<EnDirect />} />
+          <Route path="direct" element={<EnDirect session={session.data} />} />
           <Route path="alertes" element={<CentreAlertes />} />
           <Route path="prevision" element={<Prevision />} />
           <Route path="assistant" element={<Assistant />} />

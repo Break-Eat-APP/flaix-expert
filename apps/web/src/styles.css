@@ -744,3 +744,52 @@ details.inventaire summary { cursor: pointer; font-size: 13px; }
 .stade-places .discret { font-size: 12px; }
 .stade-places .btn { padding: 5px 9px; }
 .stade-placement-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; position: sticky; bottom: 0; background: var(--surface); padding-top: 8px; }
+
+/* ---------- En direct, refait d'après la maquette de Rémi (§15.166) ---------- */
+.direct-tableau { display: flex; flex-direction: column; gap: 16px; }
+.direct-tableau > .carte { margin: 0; }
+.direct-tableau .direct-titre { font-size: 26px; margin: 6px 0 0; }
+.direct-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--red-soft); color: var(--red); font-size: 11.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.direct-point { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: direct-pouls 1.6s ease-in-out infinite; }
+@keyframes direct-pouls { 50% { opacity: 0.35; } }
+.direct-chiffres { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.direct-chiffre { background: var(--surface); border-radius: var(--rayon); padding: 16px 18px; box-shadow: var(--ombre); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.direct-chiffre-tete { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.direct-chiffre strong { font-family: "Raleway", "Plus Jakarta Sans", sans-serif; font-size: 28px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.direct-chiffre small { font-size: 12px; color: var(--muted); }
+.direct-chiffre.principal { background: linear-gradient(135deg, var(--violet) 0%, var(--violet-dim) 100%); box-shadow: var(--ombre-violet); }
+.direct-chiffre.principal .direct-chiffre-tete, .direct-chiffre.principal small { color: rgba(255, 255, 255, 0.82); }
+.direct-chiffre.principal strong { color: #fff; font-size: 32px; }
+.direct-ecart { background: rgba(255, 255, 255, 0.2); color: #fff; border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 800; }
+.direct-section { font-size: 17px; margin: 4px 0 0; }
+.direct-stands { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.direct-stand-carte { background: var(--surface); border-radius: var(--rayon); padding: 16px 18px; box-shadow: var(--ombre); border: 2px solid transparent; display: flex; flex-direction: column; gap: 12px; scroll-margin: 90px; transition: box-shadow 0.2s; }
+.direct-stand-carte h3 { margin: 0; font-size: 16px; }
+.direct-stand-carte.bord-rouge { border-color: #f4b9bb; }
+.direct-stand-carte.bord-orange { border-color: #f7d9a3; }
+.direct-stand-carte.choisie { box-shadow: var(--ombre), 0 0 0 3px var(--violet-soft); border-color: var(--violet); }
+.direct-stand-chiffres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.direct-stand-chiffres > div { background: var(--field); border-radius: 14px; padding: 8px 10px; display: flex; flex-direction: column; min-width: 0; }
+.direct-stand-chiffres span { font-size: 11.5px; color: var(--muted); }
+.direct-stand-chiffres strong { font-size: 15px; font-variant-numeric: tabular-nums; }
+.direct-stand-chiffres small { font-size: 11.5px; color: var(--muted); }
+.direct-barres { display: flex; flex-direction: column; gap: 9px; }
+.direct-barre .direct-ligne { font-size: 13px; flex-wrap: nowrap; }
+.direct-barre .direct-ligne span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.direct-jauge { height: 7px; border-radius: 999px; background: var(--track); overflow: hidden; margin-top: 4px; }
+.direct-jauge span { display: block; height: 100%; border-radius: 999px; transition: width 0.4s; }
+.direct-stand-pied { font-size: 12px; }
+.direct-traiter h4 { margin: 0; font-size: 15px; }
+.direct-traiter ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.direct-a-traiter { border-radius: 14px; padding: 10px 12px; background: var(--amber-soft); display: flex; flex-direction: column; gap: 8px; }
+.direct-a-traiter.rouge { background: var(--red-soft); }
+.direct-a-traiter p { margin: 2px 0 0; font-size: 12.5px; }
+.direct-a-traiter .btn { padding: 5px 11px; font-size: 12.5px; background: var(--surface); }
+.direct-voir-3d { align-self: flex-start; }
+@media (max-width: 1100px) { .direct-chiffres { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .direct-stands { grid-template-columns: minmax(0, 1fr); }
+  .direct-tableau .direct-titre { font-size: 21px; }
+  .direct-chiffre strong { font-size: 22px; }
+  .direct-chiffre.principal strong { font-size: 26px; }
+}
