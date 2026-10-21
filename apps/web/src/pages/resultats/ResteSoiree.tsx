@@ -53,14 +53,16 @@ export function ResteSoiree({ f, enDirect = false, periode = false, action }: { 
         <span className="montant">{phrase}</span>
         {m !== null && (
           <span className="reste-calcul">
-            {euros(f.encaisseTtc)} encaissés
+            <span>{euros(f.encaisseTtc)} encaissés</span>
             {retraits.map((l) => (
               <span key={l.libelle}>
                 {" "}
                 − {euros(l.montant!)} {court(l.libelle)}
               </span>
             ))}{" "}
-            = <strong>{euros(m)}</strong>
+            <span>
+              = <strong>{euros(m)}</strong>
+            </span>
             {part ? ` · ${part}` : ""} · avant impôt
           </span>
         )}

@@ -4,7 +4,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
-import type { CodeCaissiere, EmployeCree, Employe, EntreeJournalTechnique, Evenement, MasseSalariale, PlanningMatch, Produit, RepriseCaisse, Resultats, Stand } from "@flaix/domain";
+import type { CodeCaissiere, EmployeCree, Employe, EntreeJournalTechnique, Evenement, FinancesSoiree, MasseSalariale, PlanningMatch, Produit, RepriseCaisse, Stand } from "@flaix/domain";
 import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { MOT_DE_PASSE_TEST, basesDeTest, creerLieuDeTest } from "./aide.ts";
@@ -151,7 +151,8 @@ describe("masse salariale et Résultats → Finances", () => {
     const t = tablette(sud.caisses[0]!.id, (await appel<RepriseCaisse>("POST", `/api/caisses/${sud.caisses[0]!.id}/ouverture`, {})).corps);
     vendreHorsLigne(t, [ligne(biere, 3)]);
     await envoyer(appel, t);
-    const r = (await appel<Resultats>("GET", `/api/resultats?evenementId=${match.id}`)).corps;
-    expect(r.actuel!.personnel).toEqual({ reel: 39835, affectations: 3, tauxManquants: 0 });
+    // Pendant l'événement, Finances (le net en direct, §15.170) ; Résultats ne montre que les événements terminés.
+    const f = (await appel<FinancesSoiree>("GET", `/api/finances?evenementId=${match.id}`)).corps;
+    expect(f.personnel).toEqual({ reel: 39835, affectations: 3, tauxManquants: 0 });
   });
 });
