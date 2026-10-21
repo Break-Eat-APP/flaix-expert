@@ -2,6 +2,9 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChefHat, ChevronDown, ChevronRight, CupSoda, Plus, Search, Tags, Wheat } from "lucide-react";
 import {
+  FAMILLES_CATEGORIE,
+  devinerFamille,
+  type FamilleCategorie,
   tauxTvaProposes,
   formaterMontant,
   libelleTauxTva,
@@ -579,7 +582,7 @@ function GestionCategories({ categories }: { categories: Categorie[] }) {
   const maj = (l: Categorie[]) => client.setQueryData(["categories"], l);
   const creer = useMutation({ mutationFn: (n: string) => api.post<Categorie[]>("/categories", { nom: n }), onSuccess: (l) => { maj(l); setNom(""); } });
   const modifier = useMutation({
-    mutationFn: ({ id, ...corps }: { id: string; nom?: string; actif?: boolean }) => api.patch<Categorie[]>(`/categories/${id}`, corps),
+    mutationFn: ({ id, ...corps }: { id: string; nom?: string; actif?: boolean; famille?: FamilleCategorie | null }) => api.patch<Categorie[]>(`/categories/${id}`, corps),
     onSuccess: (l) => {
       maj(l);
       setEdition(null);
@@ -587,7 +590,7 @@ function GestionCategories({ categories }: { categories: Categorie[] }) {
   });
 
   return (
-    <Carte titre="Catégories" description="Pour regrouper les produits (à l'écran de caisse, et plus tard pour les cibles de marge). Une catégorie se désactive, elle ne se supprime pas.">
+    <Carte titre="Catégories" description="Pour regrouper les produits (écran de caisse, cibles de marge). La famille (boissons, nourriture, autre) sert à la part boissons / nourriture de Résultats : devinée d'après le nom, à corriger au besoin. Une catégorie se désactive, elle ne se supprime pas.">
       <form
         className="en-ligne"
         onSubmit={(e) => {
@@ -629,6 +632,19 @@ function GestionCategories({ categories }: { categories: Categorie[] }) {
               <button type="button" className="btn-lien" style={{ fontSize: 11 }} onClick={() => modifier.mutate({ id: c.id, actif: !c.actif })}>
                 {c.actif ? "désactiver" : "réactiver"}
               </button>
+              <select
+                aria-label={`Famille : ${c.nom}`}
+                className="famille-categorie"
+                value={c.famille ?? ""}
+                onChange={(e) => modifier.mutate({ id: c.id, famille: (e.target.value || null) as FamilleCategorie | null })}
+              >
+                <option value="">auto : {FAMILLES_CATEGORIE.find((f) => f.cle === devinerFamille(c.nom))!.libelle.toLowerCase()}</option>
+                {FAMILLES_CATEGORIE.map((f) => (
+                  <option key={f.cle} value={f.cle}>
+                    {f.libelle.toLowerCase()}
+                  </option>
+                ))}
+              </select>
             </span>
           ),
         )}

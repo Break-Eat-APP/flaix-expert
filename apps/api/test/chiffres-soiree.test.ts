@@ -21,7 +21,7 @@ let t: Tablette;
 let snacking: Categorie;
 
 const EN_TETES = { "content-type": "application/json", origin: "http://localhost:5173" };
-function appel<T = unknown>(method: "GET" | "POST" | "PATCH", url: string, payload?: unknown) {
+function appel<T = unknown>(method: "GET" | "POST" | "PUT" | "PATCH", url: string, payload?: unknown) {
   return serveur
     .inject({ method, url, headers: { ...(method === "GET" ? {} : EN_TETES), cookie }, payload: method === "GET" ? undefined : ((payload ?? {}) as object) })
     .then((r) => ({ statut: r.statusCode, corps: r.json() as T }));

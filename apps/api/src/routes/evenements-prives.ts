@@ -263,6 +263,9 @@ export async function routesEvenementsPrives(app: FastifyInstance, { base }: { b
           etat: e.etat,
           facture: e.facture?.numero ?? null,
           regle: e.reglement !== null,
+          budgetPb: e.bilan.budgetPb,
+          coutMarchandise: e.bilan.coutMarchandise,
+          frais: e.bilan.frais,
         });
       }
       return liste;

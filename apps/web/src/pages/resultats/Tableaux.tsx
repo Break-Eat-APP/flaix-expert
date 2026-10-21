@@ -29,8 +29,10 @@ import { VueFinances } from "./Finances.tsx";
 import { VuePertes } from "./Pertes.tsx";
 import { EtatCibleMarge } from "../../composants/cibles.tsx";
 import { ResteSoiree } from "./ResteSoiree.tsx";
+import { ChiffresSoiree } from "./ChiffresSoiree.tsx";
+import { VuePrives } from "./Prives.tsx";
 
-type Vue = "ensemble" | "ventes" | "finances" | "marges" | "pertes" | "rapports";
+type Vue = "ensemble" | "ventes" | "finances" | "marges" | "pertes" | "rapports" | "prives";
 const VUES: [Vue, string][] = [
   ["ensemble", "Vue d'ensemble"],
   ["ventes", "Ventes"],
@@ -38,6 +40,7 @@ const VUES: [Vue, string][] = [
   ["marges", "Marges"],
   ["pertes", "Où je perds de l'argent"],
   ["rapports", "Rapports de soirée"],
+  ["prives", "Événements privés"],
 ];
 const COULEURS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--c5)"];
 const dateCourte = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
@@ -152,6 +155,7 @@ export function Tableaux() {
           {vue === "finances" && (d.periode ? <VueFinances periode={{ du: d.periode.du, au: d.periode.au }} s={d.actuel!} /> : <VueFinances evenementId={e.id} s={d.actuel!} />)}
           {vue === "marges" && <VueMarges s={d.actuel!} />}
           {vue === "pertes" && (d.periode ? <VuePertes periode={{ du: d.periode.du, au: d.periode.au }} /> : <VuePertes evenementId={e.id} />)}
+          {vue === "prives" && <VuePrives periode={d.periode ? { du: d.periode.du, au: d.periode.au } : undefined} />}
           {vue === "rapports" && <VueRapports d={d} choisir={(id) => { setEvenementId(id); setComparaisonId(null); }} />}
         </div>
         <aside className="resultats-panneau">
@@ -277,6 +281,8 @@ function VueEnsemble({ d, voirFinances }: { d: Resultats; voirFinances: () => vo
           </div>
         ))}
       </div>
+
+      <ChiffresSoiree d={d} />
 
       <Carte
         titre="Chiffre d'affaires par heure"

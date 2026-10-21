@@ -153,6 +153,10 @@ export interface ResumePrive {
   etat: EtatPrive;
   facture: string | null;
   regle: boolean;
+  /** Pour Résultats (§15.171) : part du budget consommée (points de base), marchandise au coût d'achat, frais. */
+  budgetPb: number | null;
+  coutMarchandise: Centimes | null;
+  frais: Centimes;
 }
 
 // ---------- Facture ----------
