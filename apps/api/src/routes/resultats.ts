@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { conditionnementVendu, evenementTermine, dansPeriode, estJour, etatCible, formaterMontant, idPeriode, libellePeriode, periodePrecedente, rangHeure, tauxMargePb, type Periode, type AlerteResultat, type Evenement, type MatchResume, type ProduitVendu, type Resultats, type StatsMatch, type TauxTvaPb } from "@flaix/domain";
+import { chiffresSoiree, conditionnementVendu, devinerFamille, evenementTermine, type FamilleCategorie, dansPeriode, estJour, etatCible, formaterMontant, idPeriode, libellePeriode, periodePrecedente, rangHeure, tauxMargePb, type Periode, type AlerteResultat, type Evenement, type MatchResume, type ProduitVendu, type Resultats, type StatsMatch, type TauxTvaPb } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { listerEvenements } from "./evenements.ts";
@@ -79,9 +79,9 @@ export async function statsEvenements(c: Client, lieuId: string, evs: readonly E
     p,
   );
   // Les lignes des annulations portent des quantités et montants négatifs : les sommes sont nettes.
-  const { rows: lignes } = await c.query<{ produit_id: string; nom: string; categorie: string | null; cout: number | null; cond: number | null; cible: number | null; quantite: number; ttc: number; ht: number }>(
+  const { rows: lignes } = await c.query<{ produit_id: string; nom: string; categorie: string | null; famille: FamilleCategorie | null; cout: number | null; cond: number | null; cible: number | null; quantite: number; ttc: number; ht: number }>(
     // Produit d'une caisse connectée pas encore rapproché (§15.151) : vendu sans coût connu, comme un produit sans coût.
-    `SELECT coalesce(l.produit_id::text, 'externe:' || l.libelle) AS produit_id, coalesce(p.nom, l.libelle) AS nom, cat.nom AS categorie,
+    `SELECT coalesce(l.produit_id::text, 'externe:' || l.libelle) AS produit_id, coalesce(p.nom, l.libelle) AS nom, cat.nom AS categorie, cat.famille,
             p.cout_matiere_centimes AS cout, pc.millimes AS cond, coalesce(p.cible_marge_pb, cat.cible_marge_pb) AS cible,
             sum(l.quantite)::int AS quantite, sum(l.net_ttc_centimes)::int AS ttc, coalesce(sum(l.ht_centimes), 0)::int AS ht
        FROM ligne_gestion l
@@ -90,8 +90,8 @@ export async function statsEvenements(c: Client, lieuId: string, evs: readonly E
        LEFT JOIN categorie cat ON cat.lieu_id = p.lieu_id AND cat.id = p.categorie_id
        LEFT JOIN produit_conditionnement pc ON pc.lieu_id = p.lieu_id AND pc.produit_id = p.id
       WHERE l.lieu_id = $1 AND j.evenement_id = ANY($2::uuid[])
-      GROUP BY 1, 2, cat.nom, p.cout_matiere_centimes, pc.millimes, p.cible_marge_pb, cat.cible_marge_pb
-      ORDER BY 6 DESC`,
+      GROUP BY 1, 2, cat.nom, cat.famille, p.cout_matiere_centimes, pc.millimes, p.cible_marge_pb, cat.cible_marge_pb
+      ORDER BY 7 DESC`,
     p,
   );
   const { rows: taux } = await c.query<{ taux: TauxTvaPb; ht: number; tva: number; ttc: number }>(
@@ -132,6 +132,16 @@ export async function statsEvenements(c: Client, lieuId: string, evs: readonly E
   const coutMatiere = sansCout.length ? null : produits.reduce((s, x) => s + x.quantite * (x.coutUnitaire ?? 0), 0);
   const coutConditionnement = conditionnementVendu(produits);
   const caHt = taux.reduce((s, x) => s + x.ht, 0);
+  const famille = new Map(lignes.map((l) => [l.produit_id, l.famille ?? devinerFamille(l.categorie ?? l.nom)]));
+  const chiffres = chiffresSoiree({
+    caTtc: t.ca,
+    caHt,
+    tickets,
+    spectateurs,
+    produits: produits.map((x) => ({ quantite: x.quantite, caTtc: x.caTtc, caHt: x.caHt, marge: x.marge, famille: famille.get(x.produitId) ?? "autre" })),
+    ...(await chiffresDeSoiree(c, lieuId, evs)),
+    personnel: { minutes: await minutesPersonnel(c, lieuId, evs), cout: personnel.reel },
+  });
   const categories = new Map<string, number>();
   for (const x of produits) categories.set(x.categorie ?? "Sans catégorie", (categories.get(x.categorie ?? "Sans catégorie") ?? 0) + x.caTtc);
 
@@ -157,6 +167,66 @@ export async function statsEvenements(c: Client, lieuId: string, evs: readonly E
     produitsSansCout: sansCout.map((x) => x.nom),
     caHtSansCout: sansCout.reduce((s, x) => s + x.caHt, 0),
     personnel,
+    chiffres,
+  };
+}
+
+/** Minutes réelles du personnel au planning des événements (fin avant le début : après minuit). */
+async function minutesPersonnel(c: Client, lieuId: string, evs: readonly Evenement[]): Promise<number> {
+  const { rows } = await c.query<{ m: number }>(
+    `SELECT coalesce(sum(extract(epoch FROM (fin_reel - debut_reel)) / 60 + CASE WHEN fin_reel < debut_reel THEN 1440 ELSE 0 END), 0)::float8 AS m
+       FROM affectation WHERE lieu_id = $1 AND evenement_id = ANY($2::uuid[])`,
+    [lieuId, evs.map((e) => e.id)],
+  );
+  return Math.round(rows[0]!.m);
+}
+
+/**
+ * Données des chiffres de la soirée (§15.171) : CA par quart d'heure et par minute (un seul événement), tickets de la
+ * caisse FlaiX Expert et ceux d'un abonné, ventes Click & Collect importées (caisse connectée « breakeat »).
+ */
+async function chiffresDeSoiree(c: Client, lieuId: string, evs: readonly Evenement[]) {
+  const p = [lieuId, evs.map((e) => e.id)];
+  const parTemps = async (minutes: number) =>
+    evs.length !== 1
+      ? []
+      : (
+          await c.query<{ debut: string; ca: number }>(
+            `SELECT to_char(date_trunc('hour', h) + floor(extract(minute FROM h) / ${minutes}) * interval '${minutes} minutes', 'HH24:MI') AS debut,
+                    sum(total_ttc_centimes)::int AS ca
+               FROM (SELECT horodatage AT TIME ZONE 'Europe/Paris' AS h, total_ttc_centimes
+                       FROM vente_gestion WHERE lieu_id = $1 AND evenement_id = ANY($2::uuid[]) AND type IN ('vente', 'annulation')) x
+              GROUP BY 1`,
+            p,
+          )
+        ).rows;
+  const { rows: caisse } = await c.query<{ tickets: number; ca: number; tickets_ab: number; ca_ab: number }>(
+    `WITH t AS (
+       SELECT v.total_ttc_centimes AS ttc, v.details->'ajustement'->>'motif' = 'abonne' AS abonne
+         FROM journal_caisse v
+        WHERE v.lieu_id = $1 AND v.evenement_id = ANY($2::uuid[]) AND v.type = 'vente'
+          AND NOT EXISTS (SELECT 1 FROM journal_caisse a WHERE a.lieu_id = v.lieu_id AND a.ref_evenement = v.id AND a.type = 'annulation'))
+     SELECT count(*)::int AS tickets, coalesce(sum(ttc), 0)::int AS ca,
+            count(*) FILTER (WHERE abonne)::int AS tickets_ab, coalesce(sum(ttc) FILTER (WHERE abonne), 0)::int AS ca_ab
+       FROM t`,
+    p,
+  );
+  const { rows: cc } = await c.query<{ sources: number; commandes: number; ca: number }>(
+    `SELECT (SELECT count(*) FROM caisse_externe WHERE lieu_id = $1 AND systeme = 'breakeat')::int AS sources,
+            count(g.id)::int AS commandes, coalesce(sum(g.total_ttc_centimes), 0)::int AS ca
+       FROM vente_gestion g
+       JOIN vente_externe v ON v.lieu_id = g.lieu_id AND v.id = g.id
+       JOIN caisse_externe ce ON ce.lieu_id = v.lieu_id AND ce.id = v.caisse_externe_id AND ce.systeme = 'breakeat'
+      WHERE g.lieu_id = $1 AND g.evenement_id = ANY($2::uuid[]) AND g.source = 'externe'`,
+    p,
+  );
+  const k = caisse[0]!;
+  return {
+    quarts: await parTemps(15),
+    minutes: await parTemps(1),
+    caisse: { tickets: k.tickets, ca: k.ca },
+    abonnes: { tickets: k.tickets_ab, ca: k.ca_ab },
+    clickCollect: cc[0]!.sources > 0 ? { commandes: cc[0]!.commandes, ca: cc[0]!.ca } : null,
   };
 }
 

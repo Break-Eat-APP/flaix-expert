@@ -13,6 +13,7 @@ export const SYSTEMES_CAISSE = [
   { cle: "digifood", libelle: "Digifood" },
   { cle: "weezevent", libelle: "Weezevent (WeezPay)" },
   { cle: "laddition", libelle: "L'Addition" },
+  { cle: "breakeat", libelle: "Click & Collect (application Break Eat)" },
   { cle: "autre", libelle: "Autre caisse" },
 ] as const;
 export type SystemeCaisse = (typeof SYSTEMES_CAISSE)[number]["cle"];

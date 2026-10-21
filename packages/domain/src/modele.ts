@@ -82,6 +82,8 @@ export interface Categorie {
   actif: boolean;
   /** Cible de marge brute de la catégorie, en points de base du CA HT (7 000 = 70 %) ; null : aucune (§15.132). */
   cibleMarge: number | null;
+  /** Boisson, nourriture ou autre (§15.171) ; null : devinée d'après le nom. */
+  famille: import("./chiffres-soiree.ts").FamilleCategorie | null;
 }
 
 export interface Tarif {
@@ -481,6 +483,8 @@ export interface StatsMatch {
   caHtSansCout: Centimes;
   /** Personnel de l'événement lu dans le planning (§15.104) ; reel null si un taux manque. */
   personnel: { reel: Centimes | null; affectations: number; tauxManquants: number };
+  /** Les chiffres de la soirée (§15.171) : conversion, articles par ticket, pic, personnel, fidélité, familles, Click & Collect. */
+  chiffres?: import("./chiffres-soiree.ts").ChiffresSoiree;
 }
 
 export interface AlerteResultat {

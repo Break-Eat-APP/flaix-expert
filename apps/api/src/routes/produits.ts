@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { conditionnementMillimes, estAllergene, libelleAllergenes, trierAllergenes, estTauxTva, formaterMontant, libelleTauxTva, type Categorie, type Produit, type Tarif, type TauxTvaPb } from "@flaix/domain";
+import { conditionnementMillimes, estAllergene, libelleAllergenes, trierAllergenes, estTauxTva, formaterMontant, libelleTauxTva, type Categorie, type FamilleCategorie, type Produit, type Tarif, type TauxTvaPb } from "@flaix/domain";
 import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
@@ -14,7 +14,12 @@ const TauxTva = z.number().refine(estTauxTva, "Taux de TVA non reconnu.") as unk
 const NouvelleCategorie = z.object({ nom: texte(60, "Le nom de la catégorie") });
 /** Cible de marge en points de base (0 à 100 %), ou null pour l'effacer (§15.132). */
 const CibleMarge = z.number().int().min(0, "Cible de marge entre 0 et 100 %.").max(10_000, "Cible de marge entre 0 et 100 %.").nullable();
-const ModifCategorie = z.object({ nom: texte(60, "Le nom de la catégorie").optional(), actif: z.boolean().optional(), cibleMarge: CibleMarge.optional() });
+const ModifCategorie = z.object({
+  nom: texte(60, "Le nom de la catégorie").optional(),
+  actif: z.boolean().optional(),
+  cibleMarge: CibleMarge.optional(),
+  famille: z.enum(["boisson", "nourriture", "autre"]).nullable().optional(),
+});
 
 const NouveauProduit = z.object({
   nom: texte(80, "Le nom du produit"),
@@ -126,7 +131,7 @@ export async function listerProduits(c: Client, lieuId: string): Promise<Produit
 
 export async function listerCategories(c: Client, lieuId: string): Promise<Categorie[]> {
   const { rows } = await c.query<Categorie>(
-    "SELECT id, nom, actif, cible_marge_pb AS \"cibleMarge\" FROM categorie WHERE lieu_id = $1 ORDER BY actif DESC, lower(nom)",
+    "SELECT id, nom, actif, cible_marge_pb AS \"cibleMarge\", famille FROM categorie WHERE lieu_id = $1 ORDER BY actif DESC, lower(nom)",
     [lieuId],
   );
   return rows;
@@ -215,20 +220,21 @@ export async function routesProduits(app: FastifyInstance, { base }: { base: Bas
     const { id } = ParamId.parse(req.params);
     const demande = corps(ModifCategorie, req);
     return base.transaction(contexte(auth), async (c) => {
-      const { rows } = await c.query<{ nom: string; actif: boolean; cibleMarge: number | null }>(
-        "SELECT nom, actif, cible_marge_pb AS \"cibleMarge\" FROM categorie WHERE lieu_id = $1 AND id = $2 FOR UPDATE",
+      const { rows } = await c.query<{ nom: string; actif: boolean; cibleMarge: number | null; famille: FamilleCategorie | null }>(
+        "SELECT nom, actif, cible_marge_pb AS \"cibleMarge\", famille FROM categorie WHERE lieu_id = $1 AND id = $2 FOR UPDATE",
         [auth.lieuId, id],
       );
       const cat = rows[0];
       if (!cat) throw introuvable("Catégorie");
       const modifications = differences(cat, demande);
       if (Object.keys(modifications).length > 0) {
-        await c.query("UPDATE categorie SET nom = $3, actif = $4, cible_marge_pb = $5 WHERE lieu_id = $1 AND id = $2", [
+        await c.query("UPDATE categorie SET nom = $3, actif = $4, cible_marge_pb = $5, famille = $6 WHERE lieu_id = $1 AND id = $2", [
           auth.lieuId,
           id,
           demande.nom ?? cat.nom,
           demande.actif ?? cat.actif,
           demande.cibleMarge !== undefined ? demande.cibleMarge : cat.cibleMarge,
+          demande.famille !== undefined ? demande.famille : cat.famille,
         ]);
         await inscrireJet(c, {
           lieuId: auth.lieuId,
