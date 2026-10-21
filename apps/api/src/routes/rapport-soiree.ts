@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import {
+  bilanDeStock,
   briefDeSoiree,
   ecartEvenement,
   ecartsDeStock,
@@ -29,6 +30,13 @@ import { ParamId, contexte } from "./outils.ts";
  * une ligne en écriture seule, scellée par son empreinte. Établi en clôturant l'événement ; pour un
  * événement clos avant que le rapport existe, à la première lecture (« a posteriori »).
  */
+
+/** Stock du rapport : écarts comptés et, depuis le §15.170, ce qui est parti de la réserve stand par stand. */
+async function stockDuRapport(c: Client, lieuId: string, e: Evenement): Promise<RapportSoiree["stock"]> {
+  const stock = await stockDuMatch(c, lieuId, e);
+  const ingredients = await stockIngredientsDuMatch(c, lieuId, e);
+  return { ...ecartsDeStock(stock, ingredients), bilan: bilanDeStock(stock, ingredients) };
+}
 
 /** Rassemble le rapport d'un événement clos, à partir des modules existants. */
 async function etablirRapport(c: Client, lieuId: string, e: Evenement): Promise<RapportSoiree> {
@@ -85,7 +93,7 @@ async function etablirRapport(c: Client, lieuId: string, e: Evenement): Promise<
     cibleMargeNette: finances.etatCible,
     produitsSansCout: stats.produitsSansCout,
     especes: especesDuRapport(await lireClotureMatch(c, lieuId, e.id)),
-    stock: ecartsDeStock(await stockDuMatch(c, lieuId, e), await stockIngredientsDuMatch(c, lieuId, e)),
+    stock: await stockDuRapport(c, lieuId, e),
     comparaison: {
       evenement: evenementPrecedent ? { libelle: evenementPrecedent.libelle, debut: evenementPrecedent.debut } : null,
       encaisseTtc: ecartEvenement(stats.caTtc, precedent?.caTtc),

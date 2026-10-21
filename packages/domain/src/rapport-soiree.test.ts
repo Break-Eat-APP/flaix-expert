@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cascadeSoiree, ecartEvenement, ecartsDeStock, empreinteRapport, especesDuRapport, topProduits, type RapportSoiree } from "./rapport-soiree.ts";
+import { bilanDeStock, cascadeSoiree, ecartEvenement, ecartsDeStock, empreinteRapport, especesDuRapport, topProduits, type RapportSoiree } from "./rapport-soiree.ts";
 import type { ClotureMatch, ComptageEspeces, ProduitVendu, StockMatch } from "./modele.ts";
 import type { StockIngredientsMatch } from "./stock-ingredients.ts";
 
@@ -96,6 +96,34 @@ describe("rapport de soirée : écarts de stock", () => {
 
   it("stock non suivi sur l'événement : section vide, dite comme telle", () => {
     expect(ecartsDeStock(null, null)).toEqual({ produits: [], ingredients: [], valeurTotale: 0, suivi: false });
+  });
+});
+
+describe("rapport de soirée : stock de la soirée (§15.170)", () => {
+  const stock = {
+    restes: { requis: true, manquants: 0 },
+    stands: [
+      {
+        nom: "Nord",
+        lignes: [
+          { nom: "Canette", reste: 4, miseEnPlace: 48, reassort: 12, vendu: 55, compte: 8, coutUnitaire: 80 },
+          { nom: "Eau", reste: 0, miseEnPlace: 0, reassort: 0, vendu: 0, compte: null, coutUnitaire: 30 },
+          { nom: "Chips", reste: 10, miseEnPlace: 0, reassort: 0, vendu: 3, compte: null, coutUnitaire: null },
+        ],
+      },
+    ],
+  } as unknown as StockMatch;
+  const ingredients = {
+    restes: { requis: true, manquants: 0 },
+    stands: [{ nom: "Nord", lignes: [{ nom: "Fût blonde", unite: "l", prix: 300, reste: 0, miseEnPlace: 30_000, reassort: 0, consomme: 27_500, compte: 2_000 }] }],
+  } as unknown as StockIngredientsMatch;
+
+  it("sorti de la réserve = mise en place + réassort, au coût d'achat ; rien de sorti ni vendu : absent", () => {
+    expect(bilanDeStock(stock, ingredients)).toEqual([
+      { stand: "Nord", nom: "Canette", avant: "4", sorti: "60", vendu: "55", compte: "8", valeurSortie: 4_800 },
+      { stand: "Nord", nom: "Chips", avant: "10", sorti: "0", vendu: "3", compte: null, valeurSortie: null },
+      { stand: "Nord", nom: "Fût blonde", avant: "0 L", sorti: "30 L", vendu: "27,5 L", compte: "2 L", valeurSortie: 9_000 },
+    ]);
   });
 });
 

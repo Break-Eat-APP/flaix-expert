@@ -67,37 +67,6 @@ afterAll(async () => {
   await app.fermer();
 });
 
-describe("cibles de marge (module 5)", () => {
-  it("sans cible saisie, rien n'est jugé", async () => {
-    const r = await resultats();
-    expect(r.actuel!.produits.every((p) => p.cibleMarge === null)).toBe(true);
-    expect(r.alertes.some((a) => a.titre.includes("cible"))).toBe(false);
-  });
-
-  it("cible de la catégorie : la bière (79,4 % réalisés) passe sous une cible de 90 % ; alerte et journal", async () => {
-    const c = await appel<Categorie[]>("PATCH", `/api/categories/${boissons.id}`, { cibleMarge: 9_000 });
-    expect(c.corps.find((x) => x.id === boissons.id)!.cibleMarge).toBe(9_000);
-    const r = await resultats();
-    expect(r.actuel!.produits.find((p) => p.nom === "Bière")!.cibleMarge).toBe(9_000);
-    expect(r.actuel!.produits.find((p) => p.nom === "Hot-dog")!.cibleMarge).toBeNull();
-    expect(r.alertes.find((a) => a.titre === "1 produit sous sa cible de marge")!.detail).toContain("Bière");
-    expect((await jet()).find((e) => e.type === "cible_marge_modifiee")!.details).toMatchObject({ categorie: "Boissons", modifications: { cibleMarge: { avant: null, apres: 9_000 } } });
-  });
-
-  it("la cible du produit prime sur celle de sa catégorie : 70 % pour la bière, tenue", async () => {
-    const p = await appel<Produit[]>("PATCH", `/api/produits/${biere.id}`, { cibleMarge: 7_000 });
-    expect(p.corps.find((x) => x.id === biere.id)!.cibleMarge).toBe(7_000);
-    const r = await resultats();
-    expect(r.actuel!.produits.find((x) => x.nom === "Bière")!.cibleMarge).toBe(7_000);
-    expect(r.alertes.some((a) => a.titre.includes("cible"))).toBe(false);
-  });
-
-  it("[F] une cible hors de 0 à 100 % est refusée", async () => {
-    expect((await appel("PATCH", `/api/categories/${boissons.id}`, { cibleMarge: 12_000 })).statut).toBe(400);
-    expect((await appel("PATCH", `/api/produits/${biere.id}`, { cibleMarge: -1 })).statut).toBe(400);
-  });
-});
-
 describe("gestion financière de la soirée (module 11)", () => {
   it("sans dépense ni cible : la cascade s'arrête aux chiffres calculés, aucun jugement", async () => {
     const f = await finances();
@@ -147,7 +116,7 @@ describe("gestion financière de la soirée (module 11)", () => {
     expect(f.etatCible!.tenue).toBe(false);
     f = (await appel<FinancesSoiree>("PUT", `/api/finances/${match.id}/cible`, { cible: null })).corps;
     expect(f.cible.effective).toBe(5_000);
-    expect((await jet()).filter((e) => e.type === "cible_marge_modifiee").length).toBeGreaterThanOrEqual(5);
+    expect((await jet()).filter((e) => e.type === "cible_marge_modifiee").length).toBeGreaterThanOrEqual(3); // lieu, événement, retrait
   });
 
   it("[F] poste désactivé : il ne se supprime pas, ses montants passés restent ; pas de nouvelle saisie", async () => {
@@ -184,5 +153,37 @@ describe("gestion financière de la soirée (module 11)", () => {
     const sienne = await connecter(autre.email);
     expect((await appel("PATCH", `/api/postes-depense/${gobelets.id}`, { actif: false }, sienne)).statut).toBe(404);
     expect((await appel("GET", `/api/finances?evenementId=${match.id}`, undefined, sienne)).statut).toBe(404);
+  });
+});
+
+// Résultats ne montre que les événements terminés (§15.167) : les cibles se lisent après la clôture.
+describe("cibles de marge (module 5)", () => {
+  it("sans cible saisie, rien n'est jugé", async () => {
+    const r = await resultats();
+    expect(r.actuel!.produits.every((p) => p.cibleMarge === null)).toBe(true);
+    expect(r.alertes.some((a) => a.titre.includes("cible"))).toBe(false);
+  });
+
+  it("cible de la catégorie : la bière (79,4 % réalisés) passe sous une cible de 90 % ; alerte et journal", async () => {
+    const c = await appel<Categorie[]>("PATCH", `/api/categories/${boissons.id}`, { cibleMarge: 9_000 });
+    expect(c.corps.find((x) => x.id === boissons.id)!.cibleMarge).toBe(9_000);
+    const r = await resultats();
+    expect(r.actuel!.produits.find((p) => p.nom === "Bière")!.cibleMarge).toBe(9_000);
+    expect(r.actuel!.produits.find((p) => p.nom === "Hot-dog")!.cibleMarge).toBeNull();
+    expect(r.alertes.find((a) => a.titre === "1 produit sous sa cible de marge")!.detail).toContain("Bière");
+    expect((await jet()).find((e) => e.type === "cible_marge_modifiee")!.details).toMatchObject({ categorie: "Boissons", modifications: { cibleMarge: { avant: null, apres: 9_000 } } });
+  });
+
+  it("la cible du produit prime sur celle de sa catégorie : 70 % pour la bière, tenue", async () => {
+    const p = await appel<Produit[]>("PATCH", `/api/produits/${biere.id}`, { cibleMarge: 7_000 });
+    expect(p.corps.find((x) => x.id === biere.id)!.cibleMarge).toBe(7_000);
+    const r = await resultats();
+    expect(r.actuel!.produits.find((x) => x.nom === "Bière")!.cibleMarge).toBe(7_000);
+    expect(r.alertes.some((a) => a.titre.includes("cible"))).toBe(false);
+  });
+
+  it("[F] une cible hors de 0 à 100 % est refusée", async () => {
+    expect((await appel("PATCH", `/api/categories/${boissons.id}`, { cibleMarge: 12_000 })).statut).toBe(400);
+    expect((await appel("PATCH", `/api/produits/${biere.id}`, { cibleMarge: -1 })).statut).toBe(400);
   });
 });

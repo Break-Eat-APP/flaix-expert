@@ -39,7 +39,13 @@ function rapport(modif: Partial<Rapport> = {}): Rapport {
     cibleMargeNette: null,
     produitsSansCout: [],
     especes: { tiroirs: [{ caisse: 1, stand: "Buvette", attendu: 12_100, compte: 12_000, ecart: -100, motif: null, rectifie: false }], coffre: null, ecartTotal: -100, seuil: 500 },
-    stock: { produits: [], ingredients: [], valeurTotale: 0, suivi: false },
+    stock: {
+      produits: [],
+      ingredients: [],
+      valeurTotale: 0,
+      suivi: false,
+      bilan: [{ stand: "Nord", nom: "Canette", avant: "4", sorti: "60", vendu: "55", compte: "8", valeurSortie: 4_800 }],
+    },
     comparaison: {
       evenement: { libelle: "Gap", debut: "2026-11-07T19:00:00Z" },
       encaisseTtc: ecartEvenement(2_700, 1_400),
@@ -85,6 +91,9 @@ describe("rapport de soirée à l'écran", () => {
     await screen.findByText("Spartiates – Rouen");
     expect(screen.getByText("= Ce qu'il te reste (avant impôt)")).toBeTruthy();
     expect(screen.getByText(/l'impôt sur les bénéfices n'est pas déduit/)).toBeTruthy();
+    // Stock de la soirée (§15.170) : ce qui est parti de la réserve, stand par stand, au coût d'achat.
+    expect(screen.getByText("Stock de la soirée")).toBeTruthy();
+    expect(screen.getByText(/Valeur sortie au coût d'achat : 48,00/)).toBeTruthy();
     expect(screen.getByText(/Gap, /)).toBeTruthy();
     expect(screen.getByText("+92,9 %")).toBeTruthy();
     expect(screen.getByText(/Établi à la clôture de l'événement/)).toBeTruthy();

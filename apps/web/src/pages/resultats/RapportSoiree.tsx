@@ -183,6 +183,19 @@ function Document({ lu }: { lu: Lu }) {
         )}
       </Section>
 
+      {r.stock.bilan && r.stock.bilan.length > 0 && (
+        <Section
+          titre="Stock de la soirée"
+          description={`Ce qui est parti de la réserve centrale, stand par stand. Valeur sortie au coût d'achat : ${formaterMontant(r.stock.bilan.reduce((t, l) => t + (l.valeurSortie ?? 0), 0))}${r.stock.bilan.some((l) => l.valeurSortie === null) ? " (hors coûts manquants)" : ""}.`}
+        >
+          <Tableau
+            entetes={["Stand", "Article", "Déjà au stand", "Sorti de la réserve", "Vendu", "Restant compté", "Valeur sortie"]}
+            droite={[2, 3, 4, 5, 6]}
+            lignes={r.stock.bilan.map((l) => [l.stand, l.nom, l.avant, l.sorti, l.vendu, l.compte ?? "non compté", l.valeurSortie === null ? "coût manquant" : formaterMontant(l.valeurSortie)])}
+          />
+        </Section>
+      )}
+
       <Section titre="Écarts de stock" description={r.stock.suivi ? `Restes comptés en fin d'événement, comparés au calcul (mise en place + réassort − ventes). Valeur des écarts : ${signe(r.stock.valeurTotale, formaterMontant)}.` : undefined}>
         {!r.stock.suivi ? (
           <p className="rapport-vide">Stock non suivi sur cet événement (aucune mise en place ni réassort).</p>

@@ -18,7 +18,7 @@
 import type { Centimes } from "./argent.ts";
 import { EMPREINTE_INITIALE, calculerEmpreinte, jsonCanonique } from "./chaine.ts";
 import type { AlerteResultat, ClotureMatch, ComptageCoffre, ComptageEspeces, ProduitVendu, StockMatch } from "./modele.ts";
-import { formaterQuantiteStock, type StockIngredientsMatch } from "./stock-ingredients.ts";
+import { formaterQuantiteStock, valeurQuantiteStock, type StockIngredientsMatch } from "./stock-ingredients.ts";
 import type { EtatCibleSoiree } from "./finances.ts";
 import type { TauxTvaPb } from "./tva.ts";
 
@@ -144,6 +144,60 @@ export interface StockRapport {
   valeurTotale: Centimes;
   /** Le stock était-il suivi sur cet événement (mise en place ou réassort) ? */
   suivi: boolean;
+  /**
+   * Ce qui est parti de la réserve centrale, stand par stand (§15.170) : déjà au stand (reste de l'événement précédent),
+   * sorti de la réserve (mise en place + réassort), vendu, restant compté ; valeur de la sortie au coût d'achat.
+   * Absent des rapports établis avant le 2026-10-21.
+   */
+  bilan?: LigneBilanStock[];
+}
+
+export interface LigneBilanStock {
+  stand: string;
+  nom: string;
+  avant: string;
+  sorti: string;
+  vendu: string;
+  compte: string | null;
+  valeurSortie: Centimes | null;
+}
+
+/** Bilan de stock de l'événement (§15.170) : les articles sortis de la réserve ou vendus, stand par stand. */
+export function bilanDeStock(stock: StockMatch | null, ingredients: StockIngredientsMatch | null): LigneBilanStock[] {
+  const nombre = (n: number) => n.toLocaleString("fr-FR");
+  const produits = (stock?.stands ?? []).flatMap((s) =>
+    s.lignes
+      .filter((l) => l.miseEnPlace + l.reassort !== 0 || l.vendu !== 0)
+      .map((l) => {
+        const sorti = l.miseEnPlace + l.reassort;
+        return {
+          stand: s.nom,
+          nom: l.nom,
+          avant: nombre(l.reste),
+          sorti: nombre(sorti),
+          vendu: nombre(l.vendu),
+          compte: l.compte === null ? null : nombre(l.compte),
+          valeurSortie: l.coutUnitaire === null ? null : sorti * l.coutUnitaire,
+        };
+      }),
+  );
+  const ingr = (ingredients?.stands ?? []).flatMap((s) =>
+    s.lignes
+      .filter((l) => l.miseEnPlace + l.reassort !== 0 || l.consomme !== 0)
+      .map((l) => {
+        const sorti = l.miseEnPlace + l.reassort;
+        return {
+          stand: s.nom,
+          nom: l.nom,
+          avant: formaterQuantiteStock(l.reste, l.unite),
+          sorti: formaterQuantiteStock(sorti, l.unite),
+          vendu: formaterQuantiteStock(Math.round(l.consomme), l.unite),
+          compte: l.compte === null ? null : formaterQuantiteStock(l.compte, l.unite),
+          valeurSortie: Math.round(valeurQuantiteStock(sorti, l.prix)),
+        };
+      }),
+  );
+  return [...produits, ...ingr].sort((a, b) => a.stand.localeCompare(b.stand, "fr") || a.nom.localeCompare(b.nom, "fr"));
 }
 
 /** Écarts de stock comptés à la fin de l'événement (produits, puis ingrédients au poids ou au volume). */

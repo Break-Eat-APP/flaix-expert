@@ -117,6 +117,7 @@ describe("rapport de soirée : établi et figé à la clôture de l'événement"
     expect(r.top.parVolume.map((p) => p.nom)).toEqual(["Bière", "Hot-dog"]);
     expect(r.especes).toMatchObject({ ecartTotal: -100, seuil: 500, coffre: null });
     expect(r.stock).toMatchObject({ produits: [], ingredients: [], suivi: false });
+    expect(Array.isArray(r.stock.bilan)).toBe(true); // Stock de la soirée (§15.170), présent dans les nouveaux rapports
     expect(r.z).toMatchObject({ sequence: 2, totalTtc: 2_700, perpetuel: 4_100 });
   });
 
