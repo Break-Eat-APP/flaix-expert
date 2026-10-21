@@ -91,9 +91,10 @@ de gobelet, marge 2,57 €).
 - **conditionnement**
   - emballages du lieu au millième d'euro ; nom en double refusé
   - emballages d'une bière : 1 gobelet et 2 serviettes = 0,136 € la portion ; [F] doublon, quantité nulle, inconnu
-  - conditionnement vendu déduit avant la marge brute : Finances et Résultats
+  - conditionnement vendu déduit avant la marge brute dans Finances
   - prix du gobelet changé : tous les produits suivent ; emballage supprimé avec ses liens ; journal
   - stock des gobelets (§15.158) : comptage, ventes déduites, livraison, seuil et alerte
+  - Résultats, une fois l'événement clos (§15.167) : marge du produit, conditionnement compris
 
 ### `packages/domain/src/emballages.test.ts`
 

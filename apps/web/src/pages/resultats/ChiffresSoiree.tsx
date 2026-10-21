@@ -14,7 +14,7 @@ function Tuile({ titre, valeur, detail }: { titre: string; valeur: ReactNode; de
     <div className="chiffre-soiree">
       <span className="etiquette">{titre}</span>
       <span className="valeur">{valeur}</span>
-      {detail && <span className="detail">{detail}</span>}
+      {detail && <span className="cs-detail">{detail}</span>}
     </div>
   );
 }

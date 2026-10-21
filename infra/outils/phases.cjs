@@ -75,6 +75,7 @@ const PHASES = [
   { n: 69, titre: "Exports de L'Addition lus seuls ; annuler un import de caisse connectée", dossier: "§15.168", commits: ["b54f0f6"] },
   { n: 70, titre: "Décor fixe, stock dans l'ordre, ouverture depuis En direct, stock des événements privés, marge par catégorie", dossier: "§15.169", commits: ["074b283", "9a05031", "47bddbf", "600c400", "61ad9fb"] },
   { n: 71, titre: "Rapport de stock par événement ; « Ce qu'il te reste » en clair ; le net en direct", dossier: "§15.170", commits: ["26cf6ab", "631ca41", "5a7f287"] },
+  { n: 72, titre: "Les chiffres de la soirée ; événements privés dans Résultats ; Click & Collect par fichier", dossier: "§15.171", commits: ["b75c773", "2561df7"] },
 ];
 
 module.exports = { PHASES };

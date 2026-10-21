@@ -5488,3 +5488,40 @@ relancée fichier par fichier ; types et construction.
 
 **À suivre** (pilote automatique) : files d'attente estimées au rythme des tablettes ; anticipation de la mi-temps
 (réassort poussé au téléphone) ; mise en place calculée seule.
+
+### 15.171 Les chiffres de la soirée ; événements privés dans Résultats ; Click & Collect par fichier (2026-10-21)
+
+**Demande de Rémi** (2026-10-21) : budget des événements privés (% et reste, au regard du coût des produits) ;
+conversion des spectateurs ; part du Click & Collect dans le CA, les tickets et les spectateurs ; puis « développe ça »
+sur les idées proposées (articles par ticket, mi-temps et meilleure minute, productivité du personnel, pertes en % du
+CA, ventes manquées par rupture, part fidélité, panier Click & Collect contre comptoir, boissons / nourriture) ; pour le
+Click & Collect, « un fichier exporté de l'application pour commencer ».
+
+**Constats** : CA par spectateur et panier moyen existaient ; FlaiX Expert ne recevait aucune vente Click & Collect
+(elles passent par l'application Break Eat) ; les ventes importées d'une caisse connectée entraient déjà dans Résultats
+(vues `vente_gestion`, §15.151) ; aucune famille boisson / nourriture sur les catégories.
+
+**Décisions et réalisation** (migration 0056) :
+- **Moteur `chiffres-soiree.ts`** (`chiffresSoiree`, `devinerFamille`) : conversion (tickets ÷ spectateurs), articles
+  par ticket, quart d'heure le plus fort et sa part du CA, meilleure minute (un seul événement : sur une période, les
+  heures de soirées différentes ne s'additionnent pas), heures de personnel (minutes réelles du planning), CA HT par
+  heure de personnel et coût du personnel en % du CA HT, tickets d'abonnés (motif « abonné » des tickets de la caisse,
+  annulés exclus) et panier abonné contre les autres, part boissons / nourriture / autre du CA et de la marge, Click &
+  Collect (part du CA, des tickets, des spectateurs, panier contre comptoir). Donnée manquante : null, jamais supposée.
+- **Mi-temps** : FlaiX Expert ne connaît pas l'heure de la mi-temps (elle dépend du sport) : il montre le quart d'heure
+  le plus fort de la soirée, qui est en pratique celui de la mi-temps.
+- **Famille d'une catégorie** (`categorie.famille`, boisson / nourriture / autre) : devinée d'après le nom tant qu'elle
+  n'est pas choisie (« Bières » → boisson, « Snacking » → nourriture) ; liste « auto : … » à côté de chaque catégorie
+  dans Produits & prix ; modification journalisée. Non recopiée en mode formation (devinée là-bas).
+- **Click & Collect par fichier** : nouveau système de caisse connectée « Click & Collect (application Break Eat) »
+  (`breakeat`). Ses ventes s'importent comme celles de L'Addition (option Caisses connectées), entrent dans le CA de
+  l'événement et sont comptées à part pour les chiffres Click & Collect. Une liaison directe avec l'application viendra
+  plus tard, avec Rémi.
+- **Écran** : carte « Les chiffres de la soirée » dans Résultats › Vue d'ensemble (chaque chiffre dit ce qui lui manque,
+  avec le lien) ; pertes de stock en % du CA HT (Finances) et ventes manquées par rupture (« Où je perds de l'argent »)
+  repris en chiffres clés ; onglet **Événements privés** : budget, consommé TTC, budget utilisé (couleur de la jauge),
+  reste du budget, marchandise au coût d'achat, frais, ce qu'il te reste, total ; sur la période choisie, sinon tous.
+
+**Tests** : moteur 3 (familles, chiffres, données manquantes) ; serveur 3 (conversion, articles, pic, familles devinées
+puis choisies, Click & Collect importé) ; écran 2 ; Résultats, paramètres et événements privés relancés ; types et
+construction. Vu dans le navigateur en local (carte et onglet ; un encadré blanc corrigé à l'essai).
