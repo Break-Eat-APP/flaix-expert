@@ -28,7 +28,8 @@ const evenement = (etat: "prevu" | "cloture"): Donnees => ({
   frais: [],
   bilan: bilanPrive([BIERE], [], 24_000),
   facture: null,
-  sortieStock: [],
+  // Stock de l'événement (§15.170) : liste de préparation avant la clôture, sorti après.
+  sortieStock: [{ nom: "Bière", quantite: "30 ×", valeur: 3_600 }, { nom: "Fût blonde", quantite: "15 L", valeur: null }],
 });
 let etat: "prevu" | "cloture";
 let serveur: ReturnType<typeof vi.fn>;
@@ -66,6 +67,8 @@ describe("événement privé à l'écran", () => {
     monter();
     // 210 € consommés sur 240 € : 87,5 %, attention.
     expect(await screen.findByText(/87,5 % · reste 30,00\s€/)).toBeTruthy();
+    expect(screen.getByText("À sortir de la réserve centrale")).toBeTruthy();
+    expect(screen.getByText(/36,00\s€ \(hors coûts manquants\)/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Un Bière de plus" }));
     await waitFor(() => expect(envois("/api/evenements-prives/e1/lignes/l1", "PATCH")).toEqual([{ quantite: 31 }]));
     fireEvent.change(await screen.findByLabelText("Produit"), { target: { value: "hd" } });
@@ -87,6 +90,7 @@ describe("événement privé à l'écran", () => {
     etat = "cloture";
     monter();
     fireEvent.click(await screen.findByRole("button", { name: "Noter le règlement" }));
+    expect(screen.getByText("Sorti de la réserve centrale")).toBeTruthy();
     await waitFor(() => expect(envois("/api/evenements-prives/e1/reglement", "PUT")[0]).toMatchObject({ mode: "virement" }));
     expect(screen.queryByRole("button", { name: "Un Bière de plus" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /Émettre la facture/ }));

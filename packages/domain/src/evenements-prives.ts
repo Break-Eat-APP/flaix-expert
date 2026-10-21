@@ -133,8 +133,11 @@ export interface EvenementPrive {
   frais: FraisPrive[];
   bilan: BilanPrive;
   facture: { id: string; numero: string; emiseLe: string } | null;
-  /** Sorti de la réserve centrale à la clôture (§15.169) : « 30 × Bière », « 15 L · Fût blonde ». */
-  sortieStock: { nom: string; quantite: string }[];
+  /**
+   * Stock de l'événement (§15.169, rapport au §15.170) : avant la clôture, ce qui sortira de la réserve centrale pour les
+   * tables ; après, ce qui en est sorti. Quantité lisible (« 30 × », « 15 L ») et valeur au coût d'achat (null : coût manquant).
+   */
+  sortieStock: { nom: string; quantite: string; valeur: Centimes | null }[];
 }
 
 export interface ResumePrive {

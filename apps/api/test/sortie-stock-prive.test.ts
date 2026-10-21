@@ -57,7 +57,11 @@ describe("événement privé : sortie de la réserve centrale à la clôture", (
     await appel("POST", `/api/evenements-prives/${soiree.id}/lignes`, { produitId: canette.id, quantite: 12 });
     await appel("POST", `/api/evenements-prives/${soiree.id}/lignes`, { produitId: pinte.id, quantite: 30 });
     soiree = (await appel<EvenementPrive>("POST", `/api/evenements-prives/${soiree.id}/lignes`, { libelle: "Location du salon", prixTtc: 20_000, tauxTva: 2000 })).corps;
-    expect(soiree.sortieStock).toEqual([]);
+    // Liste de préparation (§15.170) : ce qui sortira à la clôture, au coût d'achat ; la location n'y est pas.
+    expect(soiree.sortieStock).toEqual([
+      { nom: "Canette", quantite: "12 ×", valeur: 960 },
+      { nom: "Fût blonde", quantite: "15 L", valeur: 4_500 },
+    ]);
     expect((await reserveProduits()).produits.find((p) => p.produitId === canette.id)!.solde).toBe(48);
     // [F] Une sortie écrite à la main avant la clôture est refusée par la base.
     await expect(
@@ -71,8 +75,8 @@ describe("événement privé : sortie de la réserve centrale à la clôture", (
     soiree = (await appel<EvenementPrive>("POST", `/api/evenements-prives/${soiree.id}/cloture`)).corps;
     expect(soiree.etat).toBe("cloture");
     expect(soiree.sortieStock).toEqual([
-      { nom: "Canette", quantite: "12 ×" },
-      { nom: "Fût blonde", quantite: "15 L" },
+      { nom: "Canette", quantite: "12 ×", valeur: 960 },
+      { nom: "Fût blonde", quantite: "15 L", valeur: 4_500 },
     ]);
     const produits = await reserveProduits();
     expect(produits.produits.find((p) => p.produitId === canette.id)!.solde).toBe(36);

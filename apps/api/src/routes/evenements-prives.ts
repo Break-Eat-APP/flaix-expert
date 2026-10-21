@@ -7,6 +7,7 @@ import {
   estTauxTva,
   formaterMontant,
   formaterQuantiteStock,
+  valeurQuantiteStock,
   numeroFacture,
   type ClientPrive,
   type EvenementPrive,
@@ -168,19 +169,43 @@ async function sortirDeLaReserve(c: Client, lieuId: string, id: string, par: str
   return { produits: produits.rowCount ?? 0, ingredients: ingredients.rowCount ?? 0 };
 }
 
-async function sortieStockDe(c: Client, lieuId: string, id: string): Promise<EvenementPrive["sortieStock"]> {
-  const { rows } = await c.query<{ nom: string; quantite: number; unite: UniteIngredient | null }>(
-    `SELECT p.nom, m.quantite::float8 AS quantite, NULL AS unite
-       FROM stock_mouvement m JOIN produit p ON p.lieu_id = m.lieu_id AND p.id = m.produit_id
-      WHERE m.lieu_id = $1 AND m.evenement_prive_id = $2
-     UNION ALL
-     SELECT g.nom, m.quantite_milli::float8, g.unite
-       FROM ingredient_mouvement m JOIN ingredient g ON g.lieu_id = m.lieu_id AND g.id = m.ingredient_id
-      WHERE m.lieu_id = $1 AND m.evenement_prive_id = $2
-     ORDER BY 1`,
+/**
+ * Stock de l'événement privé (§15.170) : clôturé, ce qui est sorti de la réserve (ses mouvements) ; avant, ce qui en
+ * sortira à la clôture, selon les mêmes règles (produit simple, ou ses ingrédients suivis). Valeur au coût d'achat.
+ */
+async function sortieStockDe(c: Client, lieuId: string, id: string, cloture: boolean): Promise<EvenementPrive["sortieStock"]> {
+  const { rows } = await c.query<{ nom: string; quantite: number; unite: UniteIngredient | null; prix: number | null }>(
+    cloture
+      ? `SELECT p.nom, m.quantite::float8 AS quantite, NULL AS unite, p.cout_matiere_centimes AS prix
+           FROM stock_mouvement m JOIN produit p ON p.lieu_id = m.lieu_id AND p.id = m.produit_id
+          WHERE m.lieu_id = $1 AND m.evenement_prive_id = $2
+         UNION ALL
+         SELECT g.nom, m.quantite_milli::float8, g.unite, g.prix_centimes
+           FROM ingredient_mouvement m JOIN ingredient g ON g.lieu_id = m.lieu_id AND g.id = m.ingredient_id
+          WHERE m.lieu_id = $1 AND m.evenement_prive_id = $2
+         ORDER BY 1`
+      : `SELECT p.nom, sum(l.quantite)::float8 AS quantite, NULL AS unite, p.cout_matiere_centimes AS prix
+           FROM evenement_prive_ligne l JOIN produit p ON p.lieu_id = l.lieu_id AND p.id = l.produit_id
+          WHERE l.lieu_id = $1 AND l.evenement_id = $2
+            AND NOT EXISTS (SELECT 1 FROM recette_ligne r JOIN ingredient g ON g.lieu_id = r.lieu_id AND g.id = r.ingredient_id
+                             WHERE r.lieu_id = $1 AND r.produit_id = l.produit_id AND g.suivi_stock)
+          GROUP BY p.id, p.nom, p.cout_matiere_centimes
+         UNION ALL
+         SELECT g.nom, sum(l.quantite::bigint * r.quantite_milli)::float8, g.unite, g.prix_centimes
+           FROM evenement_prive_ligne l
+           JOIN recette_ligne r ON r.lieu_id = l.lieu_id AND r.produit_id = l.produit_id
+           JOIN ingredient g ON g.lieu_id = r.lieu_id AND g.id = r.ingredient_id AND g.suivi_stock
+          WHERE l.lieu_id = $1 AND l.evenement_id = $2
+          GROUP BY g.id, g.nom, g.unite, g.prix_centimes
+         HAVING sum(l.quantite::bigint * r.quantite_milli) > 0
+         ORDER BY 1`,
     [lieuId, id],
   );
-  return rows.map((r) => ({ nom: r.nom, quantite: r.unite ? formaterQuantiteStock(r.quantite, r.unite) : `${r.quantite} ×` }));
+  return rows.map((r) => ({
+    nom: r.nom,
+    quantite: r.unite ? formaterQuantiteStock(r.quantite, r.unite) : `${r.quantite} ×`,
+    valeur: r.prix === null ? null : Math.round(r.unite ? valeurQuantiteStock(r.quantite, r.prix) : r.quantite * r.prix),
+  }));
 }
 
 export async function evenementPrive(c: Client, lieuId: string, id: string): Promise<EvenementPrive> {
@@ -207,7 +232,7 @@ export async function evenementPrive(c: Client, lieuId: string, id: string): Pro
     frais,
     bilan: bilanPrive(lignes, frais, f.budget_centimes),
     facture: fact[0] ? { id: fact[0].id, numero: fact[0].numero, emiseLe: fact[0].emise_le.toISOString() } : null,
-    sortieStock: f.etat === "cloture" ? await sortieStockDe(c, lieuId, id) : [],
+    sortieStock: await sortieStockDe(c, lieuId, id, f.etat === "cloture"),
   };
 }
 

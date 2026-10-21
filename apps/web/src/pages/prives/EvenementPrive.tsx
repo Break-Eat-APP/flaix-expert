@@ -43,11 +43,7 @@ export function EvenementPrive() {
           <Frais e={e} />
         </div>
       </div>
-      {!ouvert && e.sortieStock.length > 0 && (
-        <div className="message message-info">
-          Sorti de la réserve centrale à la clôture : {e.sortieStock.map((s) => (s.quantite.endsWith("×") ? `${s.quantite} ${s.nom}` : `${s.quantite} de ${s.nom}`)).join(", ")}.
-        </div>
-      )}
+      <StockDeLEvenement e={e} />
       {ouvert ? <Cloture e={e} /> : <ApresCloture e={e} />}
       {(ouvert || !e.facture) && <Fiche e={e} />}
     </>
@@ -311,6 +307,60 @@ function Frais({ e }: { e: Donnees }) {
         </>
       )}
       <MessageErreur erreur={ajouter.error ?? retirer.error} />
+    </Carte>
+  );
+}
+
+/**
+ * Rapport de stock de l'événement (§15.170) : ce qui part de la réserve centrale pour les tables — à préparer avant,
+ * sorti à la clôture —, au coût d'achat. Les lignes libres (location, service) n'y sont pas.
+ */
+function StockDeLEvenement({ e }: { e: Donnees }) {
+  if (e.sortieStock.length === 0) return null;
+  const clos = e.etat === "cloture";
+  const total = e.sortieStock.reduce((t, s) => t + (s.valeur ?? 0), 0);
+  const manque = e.sortieStock.some((s) => s.valeur === null);
+  return (
+    <Carte
+      titre={clos ? "Sorti de la réserve centrale" : "À sortir de la réserve centrale"}
+      description={
+        clos
+          ? "Ce qui a été mis sur les tables, sorti du stock à la clôture. Une pinte sort son fût (0,5 L), un produit simple sort lui-même."
+          : "Liste de préparation : ce qui partira de la réserve pour les tables. Le stock ne bouge qu'à la clôture."
+      }
+    >
+      <div className="scroll-x">
+        <table className="tableau">
+          <thead>
+            <tr>
+              <th>Produit ou ingrédient</th>
+              <th className="d">Quantité</th>
+              <th className="d">Valeur au coût d'achat</th>
+            </tr>
+          </thead>
+          <tbody>
+            {e.sortieStock.map((s) => (
+              <tr key={s.nom}>
+                <td>{s.nom}</td>
+                <td className="d chiffre">{s.quantite.endsWith("×") ? s.quantite.replace(" ×", "") : s.quantite}</td>
+                <td className="d chiffre">{s.valeur === null ? <span className="cout-manquant">coût manquant</span> : formaterMontant(s.valeur)}</td>
+              </tr>
+            ))}
+            <tr>
+              <td>
+                <strong>Total</strong>
+              </td>
+              <td />
+              <td className="d chiffre">
+                <strong>
+                  {formaterMontant(total)}
+                  {manque ? " (hors coûts manquants)" : ""}
+                </strong>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </Carte>
   );
 }
