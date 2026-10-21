@@ -1,6 +1,6 @@
 # Phase 34 — Rapport de soirée figé à la clôture, imprimable et en PDF
 
-> FlaiX Expert · dossier de développement · généré le 2026-10-19 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-10-21 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|
@@ -94,6 +94,8 @@
 - **rapport de soirée : écarts de stock**
   - seuls les écarts non nuls ; les ingrédients dans leur unité ; la valeur totale additionne ce qui est valorisé
   - stock non suivi sur l'événement : section vide, dite comme telle
+- **rapport de soirée : stock de la soirée (§15.170)**
+  - sorti de la réserve = mise en place + réassort, au coût d'achat ; rien de sorti ni vendu : absent
 - **rapport de soirée : document figé**
   - [F] l'empreinte change dès qu'un chiffre change ; l'ordre des clés relues de la base n'y change rien
 

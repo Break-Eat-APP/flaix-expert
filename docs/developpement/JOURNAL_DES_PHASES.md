@@ -76,6 +76,7 @@
 | 68 | [En direct à part, au design des maquettes ; Résultats pour les événements terminés](#phase-68) | §15.167 | [`25fcf2a`](https://github.com/Break-Eat-APP/flaix-expert/commit/25fcf2a9fbdb17a911700a253ddad814aae2e521) [`a34efbd`](https://github.com/Break-Eat-APP/flaix-expert/commit/a34efbd946d10f3234fd45df50937f0e1854d6a1) [`f73a1b3`](https://github.com/Break-Eat-APP/flaix-expert/commit/f73a1b3f3be51fca8848cf9fe133baae0b0da3c5) | livrée |
 | 69 | [Exports de L'Addition lus seuls ; annuler un import de caisse connectée](#phase-69) | §15.168 | [`b54f0f6`](https://github.com/Break-Eat-APP/flaix-expert/commit/b54f0f6ad4044e68fdc3dd6356ac658d21a65f27) | livrée |
 | 70 | [Décor fixe, stock dans l'ordre, ouverture depuis En direct, stock des événements privés, marge par catégorie](#phase-70) | §15.169 | [`074b283`](https://github.com/Break-Eat-APP/flaix-expert/commit/074b283ae3a9fde1d8411b92289eff4ce5e71948) [`9a05031`](https://github.com/Break-Eat-APP/flaix-expert/commit/9a05031b459346df960660f5dcaca687b489e418) [`47bddbf`](https://github.com/Break-Eat-APP/flaix-expert/commit/47bddbf9e7b0928298b7dfb6f0d49b24cebdb383) [`600c400`](https://github.com/Break-Eat-APP/flaix-expert/commit/600c4009e628aa1904f49a623979a1b2407c3e1b) [`61ad9fb`](https://github.com/Break-Eat-APP/flaix-expert/commit/61ad9fb0be474eec24bf32ef9adec9ee93409520) | livrée |
+| 71 | [Rapport de stock par événement ; « Ce qu'il te reste » en clair ; le net en direct](#phase-71) | §15.170 | [`26cf6ab`](https://github.com/Break-Eat-APP/flaix-expert/commit/26cf6abde2c89c15296ae8d56e5f36ecaf1a8eab) [`631ca41`](https://github.com/Break-Eat-APP/flaix-expert/commit/631ca4169ff7bf5861b65ede39c043de7f7782d4) [`5a7f287`](https://github.com/Break-Eat-APP/flaix-expert/commit/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -2524,6 +2525,38 @@
   - [`packages/domain/src/resultats.test.ts`](../../packages/domain/src/resultats.test.ts) — modifié
   - [`packages/domain/src/tva.test.ts`](../../packages/domain/src/tva.test.ts) — créé
 
+<a id="phase-71"></a>
+## Phase 71 — Rapport de stock par événement ; « Ce qu'il te reste » en clair ; le net en direct
+
+- **Dates** : 2026-10-21
+- **Décision et raisonnement** : dossier projet §15.170
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`26cf6ab`](https://github.com/Break-Eat-APP/flaix-expert/commit/26cf6abde2c89c15296ae8d56e5f36ecaf1a8eab) 2026-10-21 — Ce qu'il te reste en clair, en tête de Résultats et en direct (§15.170)
+  - [`631ca41`](https://github.com/Break-Eat-APP/flaix-expert/commit/631ca4169ff7bf5861b65ede39c043de7f7782d4) 2026-10-21 — Événement privé : rapport de stock, à sortir puis sorti de la réserve, au coût d'achat (§15.170)
+  - [`5a7f287`](https://github.com/Break-Eat-APP/flaix-expert/commit/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c) 2026-10-21 — Rapport de soirée : stock de la soirée stand par stand (§15.170) ; test des cibles après la clôture
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/evenements-prives.ts`](../../packages/domain/src/evenements-prives.ts) — modifié
+  - [`packages/domain/src/rapport-soiree.ts`](../../packages/domain/src/rapport-soiree.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/evenements-prives.ts`](../../apps/api/src/routes/evenements-prives.ts) — modifié
+  - [`apps/api/src/routes/rapport-soiree.ts`](../../apps/api/src/routes/rapport-soiree.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/direct/EnDirect.test.tsx`](../../apps/web/src/pages/direct/EnDirect.test.tsx) — modifié
+  - [`apps/web/src/pages/direct/EnDirect.tsx`](../../apps/web/src/pages/direct/EnDirect.tsx) — modifié
+  - [`apps/web/src/pages/prives/EvenementPrive.test.tsx`](../../apps/web/src/pages/prives/EvenementPrive.test.tsx) — modifié
+  - [`apps/web/src/pages/prives/EvenementPrive.tsx`](../../apps/web/src/pages/prives/EvenementPrive.tsx) — modifié
+  - [`apps/web/src/pages/resultats/RapportSoiree.test.tsx`](../../apps/web/src/pages/resultats/RapportSoiree.test.tsx) — modifié
+  - [`apps/web/src/pages/resultats/RapportSoiree.tsx`](../../apps/web/src/pages/resultats/RapportSoiree.tsx) — modifié
+  - [`apps/web/src/pages/resultats/ResteSoiree.tsx`](../../apps/web/src/pages/resultats/ResteSoiree.tsx) — créé
+  - [`apps/web/src/pages/resultats/Tableaux.tsx`](../../apps/web/src/pages/resultats/Tableaux.tsx) — modifié
+  - [`apps/web/src/resultats.css`](../../apps/web/src/resultats.css) — modifié
+- **Tests** :
+  - [`apps/api/test/finances.test.ts`](../../apps/api/test/finances.test.ts) — modifié
+  - [`apps/api/test/rapport-soiree.test.ts`](../../apps/api/test/rapport-soiree.test.ts) — modifié
+  - [`apps/api/test/sortie-stock-prive.test.ts`](../../apps/api/test/sortie-stock-prive.test.ts) — modifié
+  - [`packages/domain/src/rapport-soiree.test.ts`](../../packages/domain/src/rapport-soiree.test.ts) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -2576,3 +2609,4 @@
 - [`8182a81`](https://github.com/Break-Eat-APP/flaix-expert/commit/8182a81f6691cd73fffc07e5a0d2031e2115506f) 2026-10-19 — Dossier §15.166 : le tableau En direct d'après la maquette (phase 67)
 - [`d031e65`](https://github.com/Break-Eat-APP/flaix-expert/commit/d031e653c548dab555533ff0e2aa09085b8ff8e1) 2026-10-19 — Dossier §15.167 : En direct à part, Résultats pour les événements terminés (phase 68)
 - [`ae2f50c`](https://github.com/Break-Eat-APP/flaix-expert/commit/ae2f50caf0414ccc14dec418675ad6ff375ba219) 2026-10-19 — Dossier §15.168, avancement, phase 69
+- [`2a4d4c6`](https://github.com/Break-Eat-APP/flaix-expert/commit/2a4d4c6b38045a311997aa6d333f27e8997dd5b1) 2026-10-19 — Dossier §15.169, avancement, phase 70

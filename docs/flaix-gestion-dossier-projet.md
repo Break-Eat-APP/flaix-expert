@@ -5452,3 +5452,39 @@ un événement privé ne sortait rien du stock ; aucune marge par catégorie.
 **Tests** : moteur (taux proposés, marge par catégorie), serveur (sortie de stock d'un événement privé 3 ; événements
 privés, stock, ingrédients, remise à zéro, conformité de la base relancés), écrans (En direct 6, stock, privés,
 résultats 17) ; types et construction. Vu dans le navigateur en local : Stock et Marge par catégorie.
+
+### 15.170 Rapport de stock par événement ; « Ce qu'il te reste » en clair ; le net en direct (2026-10-21)
+
+**Demande de Rémi** (2026-10-19, puis « go » le 2026-10-21) : *« ça peut être intéressant dans événements d'avoir un
+rapport des stocks qui sont sortis pour comprendre ce qui a été mis sur les tables… ça sort directement de la réserve
+centrale »* ; *« un établissement veut savoir concrètement ce qu'il a gagné net à la soirée »* ; après la recherche sur
+les stades américains (Mashgin, Zippin, Amazon Just Walk Out, Wicket, WaitTime, Levy E15, Shift4 VenueNext, Appetize :
+surtout du matériel — caméras, visage —, aucun ne donne au gérant son bénéfice net en direct), premier pas du « pilote
+automatique de la soirée » : **le net en direct**.
+
+**Constat** : « Ce qu'il te reste » existait (Résultats › Finances, et un encadré en tête de Résultats), mais souvent
+« pas encore calculable » sans dire quoi compléter, et sans frais saisis il paraissait trop beau.
+
+**Décisions et réalisation** (sans migration) :
+- **« Ce qu'il te reste » en clair** (composant `ResteSoiree`) : une phrase (« Cette soirée t'a laissé 1 240 € » ;
+  « … t'a coûté … » en perte), le calcul en une ligne (encaissé − TVA − marchandise − emballages − pertes de stock −
+  personnel − frais de la soirée − part des frais du mois = reste, % du CA HT, avant impôt), ce qui manque pour le
+  calculer avec le lien où le compléter (coût d'achat des produits nommés, taux horaire dans Équipe), et un avertissement
+  quand aucun frais n'est saisi (« ce reste est trop beau » → Mes frais). En tête de Résultats (événement ou période).
+- **Le net en direct** (En direct, sous les chiffres clés) : le même calcul pour l'événement ouvert, relu toutes les
+  30 secondes (`/api/finances` sur l'événement ouvert : frais au pourcentage sur le CA du moment, part des frais du mois).
+- **Rapport de stock d'un événement privé** : carte « À sortir de la réserve centrale » avant la clôture (liste de
+  préparation, mêmes règles que la sortie : produit simple ou ses ingrédients suivis), « Sorti de la réserve centrale »
+  après ; quantité et valeur au coût d'achat, total (hors coûts manquants).
+- **Stock de la soirée** dans le rapport de soirée d'un match : stand par stand, déjà au stand, sorti de la réserve (mise
+  en place + réassort), vendu, restant compté, valeur sortie au coût d'achat (`bilanDeStock`). Champ facultatif du
+  rapport figé : absent des rapports établis avant le 2026-10-21.
+- **Test corrigé** : les cibles de marge (`finances.test.ts`) lisaient Résultats pendant l'événement ouvert, ce que le
+  §15.167 a retiré ; elles se lisent désormais après la clôture.
+
+**Tests** : moteur (bilan de stock), serveur (sortie et liste de préparation d'un événement privé, rapport de soirée,
+finances 12), écrans (net en direct, stock d'un événement privé, stock de la soirée dans le rapport) ; suite du serveur
+relancée fichier par fichier ; types et construction.
+
+**À suivre** (pilote automatique) : files d'attente estimées au rythme des tablettes ; anticipation de la mi-temps
+(réassort poussé au téléphone) ; mise en place calculée seule.

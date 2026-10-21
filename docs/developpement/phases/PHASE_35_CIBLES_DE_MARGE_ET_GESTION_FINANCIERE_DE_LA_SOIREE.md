@@ -1,6 +1,6 @@
 # Phase 35 — Cibles de marge et gestion financière de la soirée
 
-> FlaiX Expert · dossier de développement · généré le 2026-10-19 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-10-21 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|
@@ -82,11 +82,6 @@
 
 ### `apps/api/test/finances.test.ts`
 
-- **cibles de marge (module 5)**
-  - sans cible saisie, rien n'est jugé
-  - cible de la catégorie : la bière (79,4 % réalisés) passe sous une cible de 90 % ; alerte et journal
-  - la cible du produit prime sur celle de sa catégorie : 70 % pour la bière, tenue
-  - [F] une cible hors de 0 à 100 % est refusée
 - **gestion financière de la soirée (module 11)**
   - sans dépense ni cible : la cascade s'arrête aux chiffres calculés, aucun jugement
   - postes de dépense nommés par le lieu ; [F] un nom ne sert qu'une fois ; journalisés
@@ -96,6 +91,11 @@
   - [F] poste désactivé : il ne se supprime pas, ses montants passés restent ; pas de nouvelle saisie
   - le rapport de soirée fige les dépenses et la cible du moment de la clôture
   - [F] le directeur d'un autre lieu ne touche ni aux postes ni aux dépenses de ce lieu
+- **cibles de marge (module 5)**
+  - sans cible saisie, rien n'est jugé
+  - cible de la catégorie : la bière (79,4 % réalisés) passe sous une cible de 90 % ; alerte et journal
+  - la cible du produit prime sur celle de sa catégorie : 70 % pour la bière, tenue
+  - [F] une cible hors de 0 à 100 % est refusée
 
 ### `packages/domain/src/finances.test.ts`
 

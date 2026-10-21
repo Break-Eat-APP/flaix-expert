@@ -2,6 +2,12 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-21 : rapport de stock par événement, « Ce qu'il te reste » en clair, le net en direct (§15.170)
+
+En tête de Résultats et dans En direct : la phrase du reste, le calcul en une ligne, ce qui manque (avec liens). Fiche
+d'un événement privé : à sortir puis sorti de la réserve, au coût d'achat. Rapport de soirée : stock stand par stand.
+Suite : files d'attente estimées, anticipation de la mi-temps, mise en place calculée.
+
 ## 2026-10-19 : décor fixe, stock dans l'ordre, ouverture depuis En direct, stock des privés, marge par catégorie (§15.169)
 
 Décor du lieu enregistré dès le choix ; Stock : « 1. Réserve centrale » en premier, étapes expliquées ; TVA 2,1 % retirée
