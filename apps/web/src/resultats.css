@@ -14,8 +14,11 @@
 .reste-bref { display: flex; align-items: center; justify-content: space-between; gap: 14px 20px; flex-wrap: wrap; margin-bottom: 0; background: var(--violet-soft); box-shadow: none; }
 .reste-bref > div { display: grid; gap: 2px; min-width: 0; }
 .reste-bref .etiquette { font-size: 13px; font-weight: 700; color: var(--violet); }
-.reste-bref .montant { font-family: "Raleway", "Plus Jakarta Sans", sans-serif; font-size: 32px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.reste-bref .montant { font-family: "Raleway", "Plus Jakarta Sans", sans-serif; font-size: 26px; line-height: 1.2; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
 .reste-bref.perte { background: var(--red-soft); }
+.reste-bref .reste-calcul { font-size: 13.5px; color: #4a4560; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.reste-bref .reste-calcul span { white-space: nowrap; }
+.reste-bref .reste-manque { font-size: 13px; color: #8a5a00; line-height: 1.45; }
 .reste-bref.perte .etiquette, .reste-bref.perte .montant { color: #b4262b; }
 
 /* Chiffres clés avec mini-courbe */

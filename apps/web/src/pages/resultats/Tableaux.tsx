@@ -28,6 +28,7 @@ import { Anneau, CourbeHeures, Duo, MiniCourbe, Nuage, euros, eurosAxe } from ".
 import { VueFinances } from "./Finances.tsx";
 import { VuePertes } from "./Pertes.tsx";
 import { EtatCibleMarge } from "../../composants/cibles.tsx";
+import { ResteSoiree } from "./ResteSoiree.tsx";
 
 type Vue = "ensemble" | "ventes" | "finances" | "marges" | "pertes" | "rapports";
 const VUES: [Vue, string][] = [
@@ -222,31 +223,16 @@ function ResteEnBref({ d, voirFinances }: { d: Resultats; voirFinances: () => vo
   const chemin = d.periode ? `/finances?du=${d.periode.du}&au=${d.periode.au}` : `/finances?evenementId=${d.evenement!.id}`;
   const q = useQuery({ queryKey: ["finances", cle], queryFn: () => api.get<FinancesSoiree>(chemin) });
   if (!q.data) return null;
-  const f = q.data;
-  const part = f.margeNette !== null && f.caHt > 0 ? `${((f.margeNette / f.caHt) * 100).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} % du CA HT` : null;
   return (
-    <div className={`carte reste-bref${f.margeNette !== null && f.margeNette < 0 ? " perte" : ""}`}>
-      <div>
-        <span className="etiquette">Ce qu'il te reste{d.periode ? " sur la période" : ""}</span>
-        <span className="montant">{f.margeNette === null ? "pas encore calculable" : euros(f.margeNette)}</span>
-        <span className="discret">
-          {f.margeNette === null
-            ? f.margeBrute === null
-              ? "coût d'achat manquant sur un produit vendu"
-              : "taux horaire manquant dans Équipe"
-            : `${part ? `${part} · ` : ""}tout déduit : marchandise, personnel, frais de la soirée et du mois ; avant impôt`}
-          {f.fraisAVerifier > 0 && (
-            <>
-              {" · "}
-              <Link to="/parametres/frais">{f.fraisAVerifier} frais à vérifier</Link>
-            </>
-          )}
-        </span>
-      </div>
-      <button className="btn" onClick={voirFinances}>
-        Voir le détail
-      </button>
-    </div>
+    <ResteSoiree
+      f={q.data}
+      periode={!!d.periode}
+      action={
+        <button className="btn" onClick={voirFinances}>
+          Voir le détail
+        </button>
+      }
+    />
   );
 }
 

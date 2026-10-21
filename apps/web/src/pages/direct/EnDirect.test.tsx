@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
-import { SEUILS_STADE, type EtatStand, type Evenement, type ModeleLieu, type PlanStade, type PositionPlan, type SessionInfo, type TableauDirect } from "@flaix/domain";
+import { SEUILS_STADE, cascadeSoiree, type EtatStand, type FinancesSoiree, type Evenement, type ModeleLieu, type PlanStade, type PositionPlan, type SessionInfo, type TableauDirect } from "@flaix/domain";
 import { EnDirect } from "./EnDirect.tsx";
 
 vi.mock("../resultats/Stade3D.tsx", () => ({
@@ -91,10 +91,20 @@ const tableau: TableauDirect = {
 const ouvert = { id: "ev", libelle: "FC Rouen – Le Mans", etat: "ouvert", debut: ilYa(130) } as Evenement;
 const session = { support: false, formation: false } as unknown as SessionInfo;
 
+// Ce qu'il reste en direct (§15.170) : 1 200 € encaissés, 200 € de TVA, 300 € de marchandise, 100 € de commission.
+const cascade = cascadeSoiree({ encaisseTtc: 120_000, tva: 20_000, coutMatiere: 30_000, personnel: 0, depenses: 10_000 });
+const finances = {
+  evenement: { id: "ev", libelle: "FC Rouen – Le Mans", debut: ilYa(130), etat: "ouvert", spectateurs: null },
+  encaisseTtc: 120_000, tva: 20_000, caHt: 100_000, tickets: 100, coutMatiere: 30_000, conditionnement: 0, produitsSansCout: ["Frites"],
+  personnel: { reel: 0, affectations: 0, tauxManquants: 0 }, depenses: [], totalDepenses: 10_000, ecartStock: null, fraisMois: [], totalFraisMois: 0, fraisAVerifier: 0,
+  margeBrute: cascade.margeBrute, margeNette: cascade.margeNette, cascade: cascade.lignes, cible: { lieu: null, evenement: null, effective: null }, etatCible: null,
+} as FinancesSoiree;
+
 const monter = (plan: PlanStade, evenements: Evenement[]) => {
   const serveur = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === "/api/evenements") return reponse(evenements);
     if (url === "/api/direct") return reponse(plan.evenement ? tableau : null);
+    if (url.startsWith("/api/finances")) return reponse(finances);
     if (init?.method === "PUT") return reponse({ ...plan, modele: "patinoire" });
     if (url.endsWith("/ouverture")) return reponse(evenements.map((e) => ({ ...e, etat: "ouvert" })));
     if (init?.method === "POST") return reponse({});
@@ -181,6 +191,15 @@ describe("En direct", () => {
     fireEvent.click(screen.getByText("Enregistrer"));
     await waitFor(() => expect(puts()).toHaveLength(2));
     expect(puts()[1]).toEqual({ modele: "patinoire", positions: [{ standId: "n", position: { x: 10, z: -50 } }] });
+  });
+
+  it("le net en direct : ce qu'il reste à cette minute, le calcul en une ligne (§15.170)", async () => {
+    monter(enDirect, [ouvert]);
+    expect(await screen.findByText("Ce qu'il te reste, en direct")).toBeTruthy();
+    expect(screen.getByText(/En ce moment, il te reste 600/)).toBeTruthy();
+    const calcul = document.querySelector(".reste-calcul")!.textContent!.replace(/\s+/g, " ");
+    expect(calcul).toBe("1 200,00 € encaissés − 200,00 € TVA − 300,00 € marchandise − 100,00 € frais de la soirée = 600,00 € · 60 % du CA HT · avant impôt");
+    expect(screen.getByText(/il manque/).textContent).toContain("coût d'achat de Frites");
   });
 
   it("hors événement : le lieu à placer, sans chiffres ni cartes", async () => {

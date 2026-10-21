@@ -2,11 +2,12 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Box, CircleAlert, MessageCircleQuestion, PackagePlus, RefreshCw, X } from "lucide-react";
-import { formaterMontant, regrouperParts, type EtatStand, type Evenement, type Kpi, type PlanStade, type SessionInfo, type SignalStand, type TableauDirect } from "@flaix/domain";
+import { formaterMontant, regrouperParts, type EtatStand, type Evenement, type FinancesSoiree, type Kpi, type PlanStade, type SessionInfo, type SignalStand, type TableauDirect } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EtatVide, MessageErreur } from "../../composants/communs.tsx";
 import { LIBELLE, LieuEnDirect, PUCE, TEINTE } from "../resultats/PlanStade.tsx";
 import { Anneau, CourbeHeures, MiniCourbe } from "../resultats/graphiques.tsx";
+import { ResteSoiree } from "../resultats/ResteSoiree.tsx";
 
 const RAFRAICHISSEMENT_MS = 10_000;
 const COULEURS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--c5)"];
@@ -138,6 +139,7 @@ export function EnDirect({ session }: { session: SessionInfo }) {
       )}
 
       {d && <Chiffres t={t} d={d} />}
+      {p.evenement && !session.support && <ResteEnDirect evenementId={p.evenement.id} />}
 
       <div id="lieu-en-direct" style={{ scrollMarginTop: 80 }}>
         {p.stands.length > 0 &&
@@ -213,6 +215,16 @@ export function EnDirect({ session }: { session: SessionInfo }) {
 }
 
 /** Les chiffres clés, au design des cartes de Résultats : valeur, écart au match précédent au même moment, petite courbe. */
+/**
+ * Le net en direct (§15.170) : ce qu'il reste de la soirée à cette minute, tous les frais déduits (marchandise vendue,
+ * personnel, commission du club et frais de carte au pourcentage, part des frais du mois). Relu toutes les 30 secondes.
+ */
+function ResteEnDirect({ evenementId }: { evenementId: string }) {
+  const q = useQuery({ queryKey: ["finances", evenementId], queryFn: () => api.get<FinancesSoiree>(`/finances?evenementId=${evenementId}`), refetchInterval: 30_000 });
+  if (!q.data) return null;
+  return <ResteSoiree f={q.data} enDirect action={<Link className="btn btn-fantome" to="/parametres/frais">Mes frais</Link>} />;
+}
+
 /**
  * Ouvrir l'événement depuis En direct (§15.169), comme dans Caisses : après confirmation, la mise en place est figée.
  */
