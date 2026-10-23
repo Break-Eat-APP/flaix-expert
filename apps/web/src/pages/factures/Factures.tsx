@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FilePlus2, Paperclip } from "lucide-react";
+import { Download, FilePlus2, Paperclip } from "lucide-react";
 import {
   LIBELLES_STATUT_FACTURE,
   formaterMontant,
@@ -47,6 +47,7 @@ export function Factures({ integre = false }: { integre?: boolean }) {
 
   return (
     <>
+      {integre && <ExportComptable />}
       {integre ? (
         !nouvelle && (
           <div className="actions" style={{ justifyContent: "flex-end", marginBottom: 12 }}>
@@ -139,6 +140,41 @@ export function Factures({ integre = false }: { integre?: boolean }) {
         </ul>
       </Regles>
     </>
+  );
+}
+
+/** Mois précédent, du premier au dernier jour (AAAA-MM-JJ). */
+function moisPrecedent(): { du: string; au: string } {
+  const j = new Date();
+  const debut = new Date(j.getFullYear(), j.getMonth() - 1, 1);
+  const fin = new Date(j.getFullYear(), j.getMonth(), 0);
+  const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return { du: iso(debut), au: iso(fin) };
+}
+
+/**
+ * Export pour le comptable (§15.172) : un zip de la période — PDF et photos des factures fournisseurs, factures des
+ * événements privés en PDF, récapitulatif à ouvrir dans Excel (statut, payée ou non).
+ */
+function ExportComptable() {
+  const [p, setP] = useState(moisPrecedent);
+  const ok = p.du && p.au && p.du <= p.au;
+  return (
+    <Carte titre="Pour le comptable" description="Toutes les factures d'une période dans un seul fichier : les pièces des fournisseurs, les factures des événements privés en PDF, et un récapitulatif à ouvrir dans Excel (payée ou à payer).">
+      <div className="en-ligne" style={{ flexWrap: "wrap", gap: 10 }}>
+        <label className="champ" style={{ maxWidth: 170 }}>
+          <span>Du</span>
+          <input type="date" value={p.du} onChange={(e) => setP({ ...p, du: e.target.value })} />
+        </label>
+        <label className="champ" style={{ maxWidth: 170 }}>
+          <span>Au</span>
+          <input type="date" value={p.au} onChange={(e) => setP({ ...p, au: e.target.value })} />
+        </label>
+        <a className={`btn${ok ? "" : " desactive"}`} aria-disabled={!ok} href={ok ? `/api/factures/export?du=${p.du}&au=${p.au}` : undefined} download style={{ alignSelf: "flex-end" }}>
+          <Download size={15} /> Télécharger les factures
+        </a>
+      </div>
+    </Carte>
   );
 }
 

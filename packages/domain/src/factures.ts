@@ -147,3 +147,40 @@ export interface EtatFactures {
   /** Fournisseurs déjà connus (livraisons et factures), pour la saisie. */
   fournisseurs: string[];
 }
+
+// ---------------------------------------------------------------------------
+// Export pour le comptable (§15.172)
+// ---------------------------------------------------------------------------
+
+export interface LigneRecapFacture {
+  type: "Achat" | "Vente";
+  date: string;
+  numero: string;
+  tiers: string;
+  ht: Centimes;
+  /** Inconnus pour une facture fournisseur (saisie en HT). */
+  tva: Centimes | null;
+  ttc: Centimes | null;
+  statut: string;
+  payeeLe: string | null;
+  /** Chemin de la pièce dans le zip ; null : aucune pièce jointe. */
+  piece: string | null;
+}
+
+/** Nom de fichier sans caractère interdit par Windows ou macOS. */
+export const nomDeFichier = (s: string) => s.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "-").replace(/\s+/g, " ").trim().slice(0, 120);
+
+/**
+ * Récapitulatif des factures d'une période, au format CSV d'Excel en France : séparateur « ; », virgule décimale, BOM
+ * UTF-8 pour les accents. Trié par date, achats puis ventes.
+ */
+export function csvRecapFactures(lignes: readonly LigneRecapFacture[]): string {
+  const montant = (c: Centimes | null) => (c === null ? "" : (c / 100).toFixed(2).replace(".", ","));
+  const champ = (v: string) => (/[;"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  const date = (iso: string | null) => (iso ? iso.split("-").reverse().join("/") : "");
+  const tri = [...lignes].sort((a, b) => a.date.localeCompare(b.date) || a.type.localeCompare(b.type) || a.numero.localeCompare(b.numero));
+  const corps = tri.map((l) =>
+    [l.type, date(l.date), l.numero, l.tiers, montant(l.ht), montant(l.tva), montant(l.ttc), l.statut, date(l.payeeLe), l.piece ?? "aucune pièce jointe"].map(champ).join(";"),
+  );
+  return "\uFEFF" + ["Type;Date;Numéro;Fournisseur ou client;HT;TVA;TTC;Statut;Payée le;Pièce", ...corps].join("\r\n") + "\r\n";
+}

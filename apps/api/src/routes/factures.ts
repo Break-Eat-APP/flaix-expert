@@ -1,6 +1,12 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { strToU8, zipSync } from "fflate";
 import {
+  LIBELLES_STATUT_FACTURE,
+  csvRecapFactures,
+  nomDeFichier,
+  type FactureVente,
+  type LigneRecapFacture,
   ecartLigne,
   livraisonsCandidates,
   rapprocherFacture,
@@ -18,6 +24,7 @@ import { inscrireJet } from "../journal-technique.ts";
 import { ParamId, contexte, corps } from "./outils.ts";
 import { aUneRecette } from "./recettes.ts";
 import { enregistrerLivraison } from "./stock.ts";
+import { pdfFactureVente } from "../pdf-facture.ts";
 
 /**
  * Factures fournisseurs (module 12b ; dossier §15.115) : saisie, pièce jointe, rapprochement avec
@@ -278,6 +285,51 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
       await inscrireJet(c, { lieuId: auth.lieuId, type: "facture_piece_jointe", utilisateurId: auth.utilisateurId, details: { facture: id, nom: f.nom, taille: contenu.length } });
       return etat(c, auth.lieuId);
     });
+  });
+
+  // ---------- Export pour le comptable (§15.172) : un zip par période ----------
+  // achats/ : les pièces jointes des factures fournisseurs datées de la période ; ventes/ : les factures des événements
+  // privés émises sur la période, en PDF ; recapitulatif.csv : toutes, avec leur statut et leur date de paiement.
+  app.get("/api/factures/export", async (req, rep) => {
+    const auth = await exigerDirecteur(req, base);
+    const { du, au } = z
+      .object({ du: Jour, au: Jour })
+      .refine((p) => p.du <= p.au, "La date de début doit précéder celle de fin.")
+      .parse(req.query);
+    const fichiers: Record<string, Uint8Array> = {};
+    const recap: LigneRecapFacture[] = [];
+    await base.transaction(contexte(auth), async (c) => {
+      for (const f of (await etat(c, auth.lieuId)).factures.filter((x) => x.dateFacture >= du && x.dateFacture <= au)) {
+        let piece: string | null = null;
+        if (f.fichier) {
+          const { rows } = await c.query<{ contenu: Buffer }>("SELECT contenu FROM fichier_facture WHERE lieu_id = $1 AND facture_id = $2", [auth.lieuId, f.id]);
+          const ext = f.fichier.nom.includes(".") ? f.fichier.nom.slice(f.fichier.nom.lastIndexOf(".")).toLowerCase() : f.fichier.type === "application/pdf" ? ".pdf" : ".jpg";
+          piece = `achats/${nomDeFichier(`${f.dateFacture} ${f.fournisseur} ${f.numero}`)}${ext}`;
+          if (fichiers[piece]) piece = piece.replace(ext, ` (${f.id.slice(0, 8)})${ext}`);
+          fichiers[piece] = new Uint8Array(rows[0]!.contenu);
+        }
+        recap.push({ type: "Achat", date: f.dateFacture, numero: f.numero, tiers: f.fournisseur, ht: f.totalHt, tva: null, ttc: null, statut: f.statut === "validee" ? "Validée — à payer" : LIBELLES_STATUT_FACTURE[f.statut], payeeLe: f.paiement?.date ?? null, piece });
+      }
+      const { rows: ventes } = await c.query<{ numero: string; contenu: FactureVente; jour: string; regle_le: string | null }>(
+        `SELECT fv.numero, fv.contenu, to_char(fv.emise_le AT TIME ZONE 'Europe/Paris', 'YYYY-MM-DD') AS jour, to_char(ep.regle_le, 'YYYY-MM-DD') AS regle_le
+           FROM facture_vente fv JOIN evenement_prive ep ON ep.lieu_id = fv.lieu_id AND ep.id = fv.evenement_prive_id
+          WHERE fv.lieu_id = $1 AND (fv.emise_le AT TIME ZONE 'Europe/Paris')::date BETWEEN $2::date AND $3::date
+          ORDER BY fv.annee, fv.sequence`,
+        [auth.lieuId, du, au],
+      );
+      for (const v of ventes) {
+        const piece = `ventes/${nomDeFichier(v.numero)}.pdf`;
+        fichiers[piece] = await pdfFactureVente(v.contenu);
+        recap.push({ type: "Vente", date: v.jour, numero: v.numero, tiers: v.contenu.client.nom, ht: v.contenu.totalHt, tva: v.contenu.totalTva, ttc: v.contenu.totalTtc, statut: v.regle_le ? "Payée" : "À encaisser", payeeLe: v.regle_le, piece });
+      }
+      await inscrireJet(c, { lieuId: auth.lieuId, type: "factures_exportees", utilisateurId: auth.utilisateurId, details: { du, au, achats: recap.filter((r) => r.type === "Achat").length, ventes: ventes.length } });
+    });
+    fichiers["recapitulatif.csv"] = strToU8(csvRecapFactures(recap));
+    const zip = zipSync(fichiers, { level: 6 });
+    return rep
+      .header("content-type", "application/zip")
+      .header("content-disposition", `attachment; filename="factures-${du}-au-${au}.zip"`)
+      .send(Buffer.from(zip));
   });
 
   app.get("/api/factures/:id/fichier", async (req, rep) => {
