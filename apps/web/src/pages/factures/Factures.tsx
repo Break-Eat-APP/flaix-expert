@@ -152,7 +152,15 @@ function DetailFacture({ f, produits, fournisseurs }: { f: FactureVue; produits:
     mutationFn: (x: { ligneId: string; livraisonId: string | null }) => api.put<EtatFactures>(`/factures/${f.id}/lignes/${x.ligneId}/livraison`, { livraisonId: x.livraisonId }),
     onSuccess: maj,
   });
-  const valider = useMutation({ mutationFn: () => api.post<EtatFactures>(`/factures/${f.id}/validation`, { motif: motif || null }), onSuccess: maj });
+  const sansLivraison = f.lignes.filter((l) => l.produitId && !l.livraison).length;
+  const [entrer, setEntrer] = useState(true);
+  const valider = useMutation({
+    mutationFn: () => api.post<EtatFactures>(`/factures/${f.id}/validation`, { motif: motif || null, entrerEnReserve: entrer && sansLivraison > 0 }),
+    onSuccess: (r) => {
+      maj(r);
+      for (const cle of ["reserve", "stock", "produits", "fournisseurs"]) void client.invalidateQueries({ queryKey: [cle] });
+    },
+  });
   const payer = useMutation({ mutationFn: () => api.post<EtatFactures>(`/factures/${f.id}/paiement`, { datePaiement }), onSuccess: maj });
   const deposer = useMutation({
     mutationFn: async (fichier: File) => {
@@ -164,7 +172,8 @@ function DetailFacture({ f, produits, fournisseurs }: { f: FactureVue; produits:
     onSuccess: maj,
   });
   const figee = f.statut === "validee" || f.statut === "payee";
-  const motifRequis = f.statut === "ecart" || f.statut === "recue";
+  // Entrée en réserve cochée : les produits sans livraison en auront une ; reste un motif seulement en cas d'écart.
+  const motifRequis = f.statut === "ecart" || (f.statut === "recue" && !(entrer && sansLivraison > 0));
 
   if (modifier) {
     return (
@@ -273,6 +282,14 @@ function DetailFacture({ f, produits, fournisseurs }: { f: FactureVue; produits:
       </div>
       <MessageErreur erreur={deposer.error} />
 
+      {!figee && sansLivraison > 0 && (
+        <label className="case" style={{ marginTop: 10 }}>
+          <input type="checkbox" checked={entrer} onChange={(ev) => setEntrer(ev.target.checked)} />
+          <span>
+            Faire entrer en réserve centrale {sansLivraison} produit{sansLivraison > 1 ? "s" : ""} sans livraison saisie (quantité, prix et date de la facture)
+          </span>
+        </label>
+      )}
       {!figee && (
         <div className="actions" style={{ justifyContent: "flex-start", flexWrap: "wrap", marginTop: 10 }}>
           {motifRequis && (

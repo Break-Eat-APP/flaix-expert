@@ -2,6 +2,14 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-23 : EN COURS — Achats, Ingrédients, clôture, factures (§15.172, pas encore en ligne)
+
+Fait et commité (non déployé) : raccourci « Clôturer la soirée » dans En direct ; menu Achats (Factures, Livraisons,
+Prix fournisseurs) et page Ingrédients, Stock = produits seuls ; valider une facture fait entrer ses produits en réserve
+(case cochée par défaut, test `facture-reserve`). **Reste** : export zip par période des factures (PDF fournisseurs +
+factures de vente en PDF + récapitulatif Excel), suite complète des tests, aperçu navigateur, dossier §15.172, phase 73,
+mise en ligne. Lecture IA des factures : plus tard, service à choisir avec Rémi.
+
 ## 2026-10-21 : les chiffres de la soirée, événements privés dans Résultats, Click & Collect par fichier (§15.171)
 
 Résultats › Vue d'ensemble : conversion, articles par ticket, moment le plus fort, personnel, pertes, ruptures, abonnés,

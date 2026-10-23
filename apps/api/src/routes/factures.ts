@@ -16,6 +16,8 @@ import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { ParamId, contexte, corps } from "./outils.ts";
+import { aUneRecette } from "./recettes.ts";
+import { enregistrerLivraison } from "./stock.ts";
 
 /**
  * Factures fournisseurs (module 12b ; dossier §15.115) : saisie, pièce jointe, rapprochement avec
@@ -299,10 +301,31 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
   app.post("/api/factures/:id/validation", async (req): Promise<EtatFactures> => {
     const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);
-    const { motif } = corps(z.object({ motif: z.string().trim().max(500).nullish().transform((v) => (v ? v : null)) }), req);
+    const { motif, entrerEnReserve } = corps(
+      z.object({ motif: z.string().trim().max(500).nullish().transform((v) => (v ? v : null)), entrerEnReserve: z.boolean().default(false) }),
+      req,
+    );
     return base.transaction(contexte(auth), async (c) => {
       await factureModifiable(c, auth.lieuId, id);
-      const f = (await etat(c, auth.lieuId)).factures.find((x) => x.id === id)!;
+      let f = (await etat(c, auth.lieuId)).factures.find((x) => x.id === id)!;
+      // Entrée en réserve (§15.172) : chaque produit de la facture sans livraison rapprochée devient une livraison, au prix
+      // et à la date de la facture, puis lui est rapproché. Un produit fabriqué (avec une recette) ne se livre pas.
+      const entrees: string[] = [];
+      if (entrerEnReserve) {
+        for (const l of f.lignes.filter((x) => x.produitId && !x.livraison)) {
+          if (await aUneRecette(c, auth.lieuId, l.produitId!)) continue;
+          const livraison = await enregistrerLivraison(c, auth.lieuId, auth.utilisateurId, {
+            produitId: l.produitId!,
+            quantite: l.quantite,
+            prixUnitaire: l.prixUnitaire,
+            fournisseur: f.fournisseur,
+            dateLivraison: f.dateFacture,
+          });
+          await c.query("UPDATE ligne_facture_fournisseur SET livraison_id = $3 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, l.id, livraison]);
+          entrees.push(l.libelle);
+        }
+        if (entrees.length) f = (await etat(c, auth.lieuId)).factures.find((x) => x.id === id)!;
+      }
       if (f.statut !== "rapprochee" && (!motif || motif.length < 5)) {
         throw new ErreurMetier(400, f.statut === "ecart" ? "Il reste un écart : écris pourquoi tu valides (5 caractères au moins)." : "Une ligne n'est rapprochée d'aucune livraison : écris pourquoi tu valides (5 caractères au moins).");
       }
@@ -320,7 +343,7 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
         lieuId: auth.lieuId,
         type: "facture_validee",
         utilisateurId: auth.utilisateurId,
-        details: { facture: id, fournisseur: f.fournisseur, numero: f.numero, statut_avant: f.statut, motif, total_ht: f.totalHt },
+        details: { facture: id, fournisseur: f.fournisseur, numero: f.numero, statut_avant: f.statut, motif, total_ht: f.totalHt, entrees_en_reserve: entrees },
       });
       return etat(c, auth.lieuId);
     });

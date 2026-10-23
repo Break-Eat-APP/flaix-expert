@@ -53,6 +53,48 @@ const ParEvenement = z.object({ evenementId: Uuid.optional() });
 /** Ordre dans lequel les événements ont été joués : heure d'ouverture, sinon date prévue. */
 const jouerLe = (e: Evenement) => Date.parse(e.ouvertLe ?? e.debut);
 
+/**
+ * Livraison d'un fournisseur : elle entre en réserve centrale et le coût matière devient le coût moyen pondéré (source
+ * unique des valorisations et des marges). Sert à la saisie dans Achats et à la validation d'une facture (§15.172).
+ * Renvoie l'identifiant du mouvement.
+ */
+export async function enregistrerLivraison(
+  c: Client,
+  lieuId: string,
+  utilisateurId: string,
+  d: { produitId: string; quantite: number; prixUnitaire: number; fournisseur: string | null; dateLivraison: string },
+): Promise<string> {
+  await verrouiller(c, `reserve:${d.produitId}`);
+  const produit = (await reserveParProduit(c, lieuId)).find((x) => x.produitId === d.produitId);
+  if (!produit) throw introuvable("Produit");
+  if (await aUneRecette(c, lieuId, d.produitId)) {
+    throw new ErreurMetier(409, "Ce produit est fabriqué (il a une recette) : son coût vient de ses ingrédients, il ne se livre pas.");
+  }
+  const nouveau = cump(produit.solde, produit.coutUnitaire, d.quantite, d.prixUnitaire);
+  const { rows } = await c.query<{ id: string }>(
+    `INSERT INTO stock_mouvement (lieu_id, type, produit_id, quantite, prix_unitaire_centimes, fournisseur, date_livraison, cout_avant_centimes, cout_apres_centimes, par)
+     VALUES ($1, 'livraison', $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+    [lieuId, d.produitId, d.quantite, d.prixUnitaire, d.fournisseur, d.dateLivraison, produit.coutUnitaire, nouveau, utilisateurId],
+  );
+  await c.query("UPDATE produit SET cout_matiere_centimes = $3 WHERE lieu_id = $1 AND id = $2", [lieuId, d.produitId, nouveau]);
+  await inscrireJet(c, {
+    lieuId,
+    type: "livraison_recue",
+    utilisateurId,
+    details: {
+      produit: produit.nom,
+      quantite: d.quantite,
+      prixUnitaire: formaterMontant(d.prixUnitaire),
+      fournisseur: d.fournisseur,
+      date: d.dateLivraison,
+      soldeReserveAvant: produit.solde,
+      coutAvant: produit.coutUnitaire,
+      coutApres: nouveau,
+    },
+  });
+  return rows[0]!.id;
+}
+
 /** Solde calculé de la réserve centrale, par produit : dernier inventaire + livraisons − sorties depuis. */
 async function reserveParProduit(c: Client, lieuId: string): Promise<ProduitReserve[]> {
   const { rows } = await c.query<{ id: string; nom: string; cout: number | null; compte: number | null; date_inventaire: string | null; livre: number; sorti: number }>(
@@ -416,35 +458,7 @@ export async function routesStock(app: FastifyInstance, { base }: { base: Base }
     const auth = await exigerDirecteur(req, base);
     const d = corps(Livraison, req);
     const resultat = await base.transaction(contexte(auth), async (c) => {
-      await verrouiller(c, `reserve:${d.produitId}`);
-      const produit = (await reserveParProduit(c, auth.lieuId)).find((x) => x.produitId === d.produitId);
-      if (!produit) throw introuvable("Produit");
-      if (await aUneRecette(c, auth.lieuId, d.produitId)) {
-        throw new ErreurMetier(409, "Ce produit est fabriqué (il a une recette) : son coût vient de ses ingrédients, il ne se livre pas.");
-      }
-      // Le coût matière devient le coût moyen pondéré : source unique des valorisations et des marges.
-      const nouveau = cump(produit.solde, produit.coutUnitaire, d.quantite, d.prixUnitaire);
-      await c.query(
-        `INSERT INTO stock_mouvement (lieu_id, type, produit_id, quantite, prix_unitaire_centimes, fournisseur, date_livraison, cout_avant_centimes, cout_apres_centimes, par)
-         VALUES ($1, 'livraison', $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [auth.lieuId, d.produitId, d.quantite, d.prixUnitaire, d.fournisseur, d.dateLivraison, produit.coutUnitaire, nouveau, auth.utilisateurId],
-      );
-      await c.query("UPDATE produit SET cout_matiere_centimes = $3 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, d.produitId, nouveau]);
-      await inscrireJet(c, {
-        lieuId: auth.lieuId,
-        type: "livraison_recue",
-        utilisateurId: auth.utilisateurId,
-        details: {
-          produit: produit.nom,
-          quantite: d.quantite,
-          prixUnitaire: formaterMontant(d.prixUnitaire),
-          fournisseur: d.fournisseur,
-          date: d.dateLivraison,
-          soldeReserveAvant: produit.solde,
-          coutAvant: produit.coutUnitaire,
-          coutApres: nouveau,
-        },
-      });
+      await enregistrerLivraison(c, auth.lieuId, auth.utilisateurId, d);
       return etatReserve(c, auth.lieuId);
     });
     rep.code(201);
