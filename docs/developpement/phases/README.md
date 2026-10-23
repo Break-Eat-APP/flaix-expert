@@ -1,6 +1,6 @@
 # Dossier de développement par phase — FlaiX Expert
 
-> Généré le 2026-10-21 par `node infra/outils/phases-word.cjs` depuis le dépôt. Un document par phase, en Markdown (ici) et en Word (`word/`). Règles du projet : [`AGENTS.md`](../../../AGENTS.md).
+> Généré le 2026-10-23 par `node infra/outils/phases-word.cjs` depuis le dépôt. Un document par phase, en Markdown (ici) et en Word (`word/`). Règles du projet : [`AGENTS.md`](../../../AGENTS.md).
 
 | Phase | Document | Décision | État |
 |---|---|---|---|
@@ -77,3 +77,4 @@
 | 70 | [Décor fixe, stock dans l'ordre, ouverture depuis En direct, stock des événements privés, marge par catégorie](PHASE_70_DECOR_FIXE_STOCK_DANS_LORDRE_OUVERTURE_DEPUIS_EN_DIRECT_STOCK_DES_EVEN.md) · [Word](word/PHASE_70_DECOR_FIXE_STOCK_DANS_LORDRE_OUVERTURE_DEPUIS_EN_DIRECT_STOCK_DES_EVEN.docx) | §15.169 | livrée |
 | 71 | [Rapport de stock par événement ; « Ce qu'il te reste » en clair ; le net en direct](PHASE_71_RAPPORT_DE_STOCK_PAR_EVENEMENT_CE_QUIL_TE_RESTE_EN_CLAIR_LE_NET_EN_DIR.md) · [Word](word/PHASE_71_RAPPORT_DE_STOCK_PAR_EVENEMENT_CE_QUIL_TE_RESTE_EN_CLAIR_LE_NET_EN_DIR.docx) | §15.170 | livrée |
 | 72 | [Les chiffres de la soirée ; événements privés dans Résultats ; Click & Collect par fichier](PHASE_72_LES_CHIFFRES_DE_LA_SOIREE_EVENEMENTS_PRIVES_DANS_RESULTATS_CLICK_COLLE.md) · [Word](word/PHASE_72_LES_CHIFFRES_DE_LA_SOIREE_EVENEMENTS_PRIVES_DANS_RESULTATS_CLICK_COLLE.docx) | §15.171 | livrée |
+| 73 | [Achats, Ingrédients à part, raccourci de clôture ; facture qui entre en réserve ; export pour le comptable](PHASE_73_ACHATS_INGREDIENTS_A_PART_RACCOURCI_DE_CLOTURE_FACTURE_QUI_ENTRE_EN_RE.md) · [Word](word/PHASE_73_ACHATS_INGREDIENTS_A_PART_RACCOURCI_DE_CLOTURE_FACTURE_QUI_ENTRE_EN_RE.docx) | §15.172 | livrée |

@@ -5525,3 +5525,43 @@ Click & Collect, « un fichier exporté de l'application pour commencer ».
 **Tests** : moteur 3 (familles, chiffres, données manquantes) ; serveur 3 (conversion, articles, pic, familles devinées
 puis choisies, Click & Collect importé) ; écran 2 ; Résultats, paramètres et événements privés relancés ; types et
 construction. Vu dans le navigateur en local (carte et onglet ; un encadré blanc corrigé à l'essai).
+
+### 15.172 Achats, Ingrédients à part, raccourci de clôture ; facture qui entre en réserve ; export pour le comptable (2026-10-23)
+
+**Demande de Rémi** (2026-10-23) : *« clôture de caisse plus en avant dans la section En direct… les ingrédients séparés
+de la gestion stock, laissons le stock pur et compréhensible… lire une facture de fournisseur automatiquement pour
+qu'elle rentre en réserve principale ?… suivi de chaque facture payée ou pas, télécharger par période les factures en
+PDF pour la comptabilité… comment activer les notifications ?… le prix fournisseur, peut-être les mettre ailleurs.
+Le but : comprendre facilement le logiciel sans trop chercher. »* Choix de Rémi : Achats et Ingrédients à part ;
+clôture : « juste un raccourci » ; factures : d'abord sans IA ; factures concernées : fournisseurs reçues et
+événements privés.
+
+**Décisions et réalisation** :
+- **En direct** : bouton rouge « Clôturer la soirée » pendant un événement ouvert, vers Clôtures (les contrôles restent
+  ceux de Clôtures).
+- **Menu** : « Achats » remplace « Factures » et regroupe trois onglets — Factures, Livraisons (le formulaire de
+  livraison sorti de la réserve, et les dernières livraisons), Prix fournisseurs ; visible avec l'option Factures ou
+  l'option Stock (l'onglet suit l'option). « Ingrédients » devient une page du menu (réserve, mise en place, comptage des
+  ingrédients suivis). **Stock** ne garde que les produits, en 4 étapes ; la réserve renvoie vers Achats pour une
+  livraison. L'adresse /factures mène à Achats › Factures.
+- **Facture validée → réserve** : à la validation, une case (cochée par défaut) fait entrer en réserve centrale chaque
+  produit de la facture sans livraison rapprochée : une livraison au prix et à la date de la facture, coût moyen pondéré
+  recalculé (fonction `enregistrerLivraison`, commune avec la saisie d'une livraison), rapprochée de sa ligne ; un
+  produit fabriqué (recette) ne se livre pas. Sans la case, la règle d'avant (motif exigé) demeure. Journal : liste des
+  produits entrés.
+- **Export pour le comptable** (Achats › Factures › « Pour le comptable », mois précédent par défaut) : un zip
+  `factures-AAAA-MM-JJ-au-AAAA-MM-JJ.zip` — `achats/` : la pièce jointe (PDF ou photo) de chaque facture fournisseur
+  datée de la période ; `ventes/` : chaque facture d'événement privé émise sur la période, en PDF fabriqué depuis son
+  contenu scellé (`pdf-facture.ts`, pdf-lib, Helvetica) ; `recapitulatif.csv` (Excel : « ; », virgule décimale, BOM) :
+  type, date, numéro, fournisseur ou client, HT, TVA et TTC (ventes), statut, date de paiement, pièce. Journalisé
+  (`factures_exportees`). Dépendances ajoutées : fflate 0.8.3, pdf-lib 1.17.1.
+- **Lecture automatique des factures (IA)** : plus tard, une fois le service choisi avec Rémi (coût à la page, envoi
+  de la facture à un tiers) ; la saisie validée par le directeur restera obligatoire.
+- **Notifications** (réponse à Rémi, rien de changé) : Paramètres › Notifications › « Activer sur cet appareil » sur
+  chaque téléphone ; sur iPhone, ajouter d'abord FlaiX Expert à l'écran d'accueil (Safari › Partager) et l'ouvrir par
+  son icône. Ruptures et stock bas pendant l'événement, brief de fin de soirée ; rapport de soirée par e-mail.
+
+**Tests** : serveur (facture → réserve 2, export 2, factures, stock), écrans 102 (menu : Achats et Ingrédients) ;
+suite du serveur relancée fichier par fichier ; types et construction. Vu dans le navigateur en local : Achats
+(Factures et l'encadré pour le comptable, Livraisons), Ingrédients, Stock. Le PDF n'a pas pu être regardé à l'écran
+(le navigateur intégré n'affiche pas les PDF) : à vérifier sur le premier export réel.
