@@ -202,7 +202,7 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
       // Événement avec une mise en place ou un réassort : chaque produit concerné doit être compté (§15.105).
       const restes = await restesDuMatch(c, auth.lieuId, (await listerEvenements(c, auth.lieuId)).find((x) => x.id === id)!);
       if (restes.requis && restes.manquants > 0) {
-        throw new ErreurMetier(409, `${restes.manquants} produit(s) ou ingrédient(s) de stock pas encore compté(s) : fais le comptage dans Stock (Comptage, Ingrédients) avant de clore l'événement.`);
+        throw new ErreurMetier(409, `${restes.manquants} produit(s) ou ingrédient(s) de stock pas encore compté(s) : fais le comptage dans Stock (Comptage) et Ingrédients avant de clore l'événement.`);
       }
       // Consommation des ingrédients figée avec les recettes du moment (§15.124).
       await figerConsommationIngredients(c, auth.lieuId, id);

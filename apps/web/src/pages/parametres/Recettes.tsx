@@ -129,7 +129,7 @@ export function GestionIngredients() {
                   </td>
                   <td className="d chiffre">{i.recettes}</td>
                   <td>
-                    <label className="case" title="Suivre cet ingrédient en stock (Stock → Ingrédients)">
+                    <label className="case" title="Suivre cet ingrédient en stock (page Ingrédients)">
                       <input type="checkbox" checked={i.suiviStock} disabled={modifier.isPending} onChange={(e) => modifier.mutate({ id: i.id, suiviStock: e.target.checked })} /> suivre
                     </label>
                   </td>

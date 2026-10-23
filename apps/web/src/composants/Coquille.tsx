@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useState, type ComponentType } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Cable, ChartLine, FileText, Heart, KeyRound, Lock, LogOut, Menu, Package, Radio, Receipt, ShieldCheck, SlidersHorizontal, Sparkles, Users, Wine, X } from "lucide-react";
+import { Cable, ChartLine, FileText, Heart, KeyRound, Lock, LogOut, Menu, Package, Radio, Receipt, ShieldCheck, SlidersHorizontal, Sparkles, Users, Wheat, Wine, X } from "lucide-react";
 import type { OptionLieu, OptionsLieu, SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
 import { useDeconnexion, useOptions } from "../session.tsx";
@@ -30,17 +30,20 @@ const MENU: Entree[] = [
   { id: "caisses-connectees", libelle: "Caisses connectées", icone: Cable, route: "/caisses-connectees", option: "caisses_connectees" },
   { id: "prives", libelle: "Événements privés", icone: Wine, route: "/prives", option: "evenements_prives" },
   { id: "stock", libelle: "Stock", icone: Package, route: "/stock", option: "stock" },
+  // Ingrédients à part de Stock, Achats regroupe factures, livraisons et prix fournisseurs (§15.172).
+  { id: "ingredients", libelle: "Ingrédients", icone: Wheat, route: "/ingredients", option: "stock" },
   { id: "hygiene", libelle: "Hygiène", icone: ShieldCheck, route: "/hygiene", option: "hygiene" },
   { id: "equipe", libelle: "Équipe", icone: Users, route: "/equipe" },
   { id: "clotures", libelle: "Clôtures", icone: Lock, route: "/clotures" },
   { id: "fidelite", libelle: "Fidélité", icone: Heart, route: "/fidelite", option: "fidelite" },
-  { id: "factures", libelle: "Factures", icone: FileText, route: "/factures", option: "factures" },
+  { id: "achats", libelle: "Achats", icone: FileText, route: "/achats" },
   { id: "parametres", libelle: "Paramètres", icone: SlidersHorizontal, route: "/parametres" },
 ];
 
 /** Entrées du menu pour les options du lieu : une option désactivée par FlaiX Expert disparaît du menu. */
 export function menuDuLieu(options: OptionsLieu): Entree[] {
-  return MENU.filter((e) => !e.option || options[e.option]);
+  // Achats : ses factures (option Factures) ou ses livraisons et prix fournisseurs (option Stock).
+  return MENU.filter((e) => (e.id === "achats" ? options.factures || options.stock : !e.option || options[e.option]));
 }
 
 export function Coquille({ session }: { session: SessionInfo }) {

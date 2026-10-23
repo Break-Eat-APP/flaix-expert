@@ -33,7 +33,8 @@ const CentreAlertes = lazy(() => import("./pages/alertes/CentreAlertes.tsx").the
 const EnDirect = lazy(() => import("./pages/direct/EnDirect.tsx").then((m) => ({ default: m.EnDirect })));
 const CoutsBuvette = lazy(() => import("./pages/parametres/CoutsBuvette.tsx").then((m) => ({ default: m.CoutsBuvette })));
 const Fidelite = lazy(() => import("./pages/fidelite/Fidelite.tsx").then((m) => ({ default: m.Fidelite })));
-const Factures = lazy(() => import("./pages/factures/Factures.tsx").then((m) => ({ default: m.Factures })));
+const Achats = lazy(() => import("./pages/achats/Achats.tsx").then((m) => ({ default: m.Achats })));
+const Ingredients = lazy(() => import("./pages/ingredients/Ingredients.tsx").then((m) => ({ default: m.Ingredients })));
 const Assistant = lazy(() => import("./pages/Assistant.tsx").then((m) => ({ default: m.Assistant })));
 const SupportFlaix = lazy(() => import("./pages/parametres/SupportFlaix.tsx").then((m) => ({ default: m.SupportFlaix })));
 const Notifications = lazy(() => import("./pages/parametres/Notifications.tsx").then((m) => ({ default: m.Notifications })));
@@ -114,7 +115,9 @@ function AppLieu() {
           <Route path="clotures" element={<Clotures />} />
           <Route path="fidelite" element={<Fidelite />} />
           <Route path="caisses-connectees" element={<CaissesConnectees />} />
-          <Route path="factures" element={<Factures />} />
+          <Route path="achats" element={<Achats />} />
+          <Route path="factures" element={<Navigate to="/achats?onglet=factures" replace />} />
+          <Route path="ingredients" element={<Ingredients />} />
           <Route path="parametres" element={<Parametres />} />
           <Route path="parametres/lieu" element={<Identite />} />
           <Route path="parametres/stands" element={<StandsCaisses />} />

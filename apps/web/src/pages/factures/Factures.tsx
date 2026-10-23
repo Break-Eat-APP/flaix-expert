@@ -24,7 +24,7 @@ const dateCourte = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${is
  * Factures fournisseurs (module 12b validé ; dossier §15.115) : la facture reçue (par la plateforme
  * agréée du lieu, ou sur papier) se saisit ici et se rapproche des livraisons du Stock.
  */
-export function Factures() {
+export function Factures({ integre = false }: { integre?: boolean }) {
   const etat = useQuery({ queryKey: ["factures"], queryFn: () => api.get<EtatFactures>("/factures"), refetchOnMount: "always" });
   const produits = useQuery({ queryKey: ["produits"], queryFn: () => api.get<Produit[]>("/produits") });
   const [filtre, setFiltre] = useState<Filtre>("a_traiter");
@@ -47,17 +47,27 @@ export function Factures() {
 
   return (
     <>
-      <EntetePage
-        titre="Factures"
-        description="Les factures des fournisseurs, rapprochées des livraisons du Stock."
-        actions={
-          !nouvelle && (
+      {integre ? (
+        !nouvelle && (
+          <div className="actions" style={{ justifyContent: "flex-end", marginBottom: 12 }}>
             <button className="btn" onClick={() => setNouvelle(true)}>
               <FilePlus2 size={15} /> Saisir une facture
             </button>
-          )
-        }
-      />
+          </div>
+        )
+      ) : (
+        <EntetePage
+          titre="Factures"
+          description="Les factures des fournisseurs, rapprochées des livraisons du Stock."
+          actions={
+            !nouvelle && (
+              <button className="btn" onClick={() => setNouvelle(true)}>
+                <FilePlus2 size={15} /> Saisir une facture
+              </button>
+            )
+          }
+        />
+      )}
       {nouvelle && (
         <FormulaireFacture
           produits={produits.data ?? []}

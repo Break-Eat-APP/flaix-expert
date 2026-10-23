@@ -5,11 +5,9 @@ import { Minus, PackagePlus, Plus, RotateCcw, Sparkles } from "lucide-react";
 import { formaterMontant, lireMontant, type EtatReserve, type Evenement, type LigneStock, type StockMatch } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
-import { StockIngredients } from "./StockIngredients.tsx";
-import { PrixFournisseurs } from "./PrixFournisseurs.tsx";
 import { RemiseAZero } from "./RemiseAZero.tsx";
 
-type Onglet = "mep" | "match" | "comptage" | "reserve" | "ingredients" | "fournisseurs";
+type Onglet = "mep" | "match" | "comptage" | "reserve";
 const ETAT = { a_venir: "à venir", ouvert: "en cours", clos: "clos" } as const;
 const dateCourte = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Paris" });
 const heure = new Intl.DateTimeFormat("fr-FR", { timeStyle: "short", timeZone: "Europe/Paris" });
@@ -45,7 +43,7 @@ export function Stock() {
     queryKey: ["stock", evenementId],
     queryFn: () => api.get<StockMatch | null>(`/stock${evenementId ? `?evenementId=${evenementId}` : ""}`),
     placeholderData: (avant) => avant,
-    enabled: onglet !== "reserve" && onglet !== "ingredients" && onglet !== "fournisseurs",
+    enabled: onglet !== "reserve",
   });
   const bouton = (id: Onglet, libelle: string) => (
     <button className={`onglet${onglet === id ? " actif" : ""}`} onClick={() => setOnglet(id)}>
@@ -77,16 +75,10 @@ export function Stock() {
         {bouton("mep", "2. Mise en place")}
         {bouton("match", "3. Pendant l'événement")}
         {bouton("comptage", "4. Comptage")}
-        {bouton("ingredients", "Ingrédients")}
-        {bouton("fournisseurs", "Prix fournisseurs")}
       </div>
       {PARCOURS[onglet] && <p className="stock-parcours">{PARCOURS[onglet]}</p>}
       {onglet === "reserve" ? (
         <Reserve />
-      ) : onglet === "fournisseurs" ? (
-        <PrixFournisseurs />
-      ) : onglet === "ingredients" ? (
-        evenements.isPending ? <Chargement /> : evenements.error ? <MessageErreur erreur={evenements.error} /> : <StockIngredients evenements={evenements.data!} evenementId={evenementId} choisir={setEvenementId} />
       ) : stock.isPending || evenements.isPending ? (
         <Chargement />
       ) : stock.error || evenements.error ? (
@@ -98,7 +90,7 @@ export function Stock() {
           </EtatVide>
         </Carte>
       ) : (
-        <VueMatch onglet={onglet as Exclude<Onglet, "reserve" | "ingredients" | "fournisseurs">} s={stock.data} evenements={evenements.data!} choisir={setEvenementId} standId={standId} choisirStand={setStandId} cle={evenementId} />
+        <VueMatch onglet={onglet as Exclude<Onglet, "reserve">} s={stock.data} evenements={evenements.data!} choisir={setEvenementId} standId={standId} choisirStand={setStandId} cle={evenementId} />
       )}
       <Regles>
         <ul>
@@ -108,8 +100,8 @@ export function Stock() {
           <li><strong>Pendant l'événement</strong> : <strong>réassort</strong> à quantité libre (« − » = retour en réserve d'un réassort saisi par erreur). <strong>Restant</strong> = reste précédent + mise en place + réassort − vendu (ventes lues en direct dans les caisses). Alerte « faible » à 15 % du départ, « rupture » à zéro.</li>
           <li><strong>Comptage</strong> : ce qu'on trouve au stand en fin d'événement. <strong>Écart</strong> = compté − restant attendu, valorisé au coût matière (jamais au prix de vente) : négatif = manquant (casse, coulage, vente non enregistrée), positif = surplus (souvent une erreur de comptage). Motif obligatoire au-delà de 3 % du départ. Le comptage se corrige jusqu'à la clôture de l'événement, puis il est figé ; une correction est inscrite au journal technique.</li>
           <li><strong>Clôture de l'événement</strong> : un événement qui a une mise en place ou un réassort ne se clôt qu'une fois chaque produit concerné compté (Clôtures → étape Restes).</li>
-          <li><strong>Prix fournisseurs</strong> : prix à l'unité (portion, kg, litre, pièce) de la dernière livraison chez chaque fournisseur, jamais au colis — sinon un fût de 50 L paraît toujours plus cher qu'un fût de 30 L. Le colis (« fût de 30 L ») se renseigne une fois par fournisseur ; il donne l'<strong>écoulement</strong> (contenance ÷ consommation moyenne des 5 derniers événements clos) et l'alerte de sur-conditionnement (le moins cher couvre plus de 1,5 événement).</li>
-          <li><strong>Ingrédients</strong> (onglet du même nom) : un ingrédient coché « suivre » dans Produits & prix se suit comme un produit, en kg, litres ou pièces. Le <strong>consommé</strong> vient des recettes des produits vendus (une pinte de 50 cl déduit 0,5 L du fût), figé à la clôture de l'événement. Un ingrédient non coché sert seulement au coût des recettes.</li>
+          <li><strong>Prix fournisseurs</strong> et <strong>livraisons</strong> : dans Achats, avec les factures des fournisseurs. Une livraison entre en réserve centrale.</li>
+          <li><strong>Ingrédients</strong> (page Ingrédients, dans le menu) : un ingrédient coché « suivre » dans Produits & prix se suit comme un produit, en kg, litres ou pièces. Le <strong>consommé</strong> vient des recettes des produits vendus (une pinte de 50 cl déduit 0,5 L du fût), figé à la clôture de l'événement. Un ingrédient non coché sert seulement au coût des recettes.</li>
         </ul>
       </Regles>
     </>
@@ -125,7 +117,7 @@ function VueMatch({
   choisirStand,
   cle,
 }: {
-  onglet: Exclude<Onglet, "reserve" | "ingredients" | "fournisseurs">;
+  onglet: Exclude<Onglet, "reserve">;
   s: StockMatch;
   evenements: Evenement[];
   choisir: (id: string) => void;
@@ -526,27 +518,12 @@ function Comptage({ s, stands, cle }: { s: StockMatch; stands: StockMatch["stand
 function Reserve() {
   const client = useQueryClient();
   const r = useQuery({ queryKey: ["reserve"], queryFn: () => api.get<EtatReserve>("/stock/reserve") });
-  const [livraison, setLivraison] = useState({ produitId: "", quantite: "", prix: "", fournisseur: "", date: aujourdhui() });
   const [inventaire, setInventaire] = useState<{ date: string; comptes: Record<string, string> } | null>(null);
   const apres = (e: EtatReserve) => {
     client.setQueryData(["reserve"], e);
     void client.invalidateQueries({ queryKey: ["stock"] });
     void client.invalidateQueries({ queryKey: ["produits"] });
   };
-  const livrer = useMutation({
-    mutationFn: () =>
-      api.post<EtatReserve>("/stock/livraisons", {
-        produitId: livraison.produitId,
-        quantite: Number.parseInt(livraison.quantite, 10),
-        prixUnitaire: lireMontant(livraison.prix),
-        fournisseur: livraison.fournisseur.trim() || null,
-        dateLivraison: livraison.date,
-      }),
-    onSuccess: (e) => {
-      apres(e);
-      setLivraison({ produitId: "", quantite: "", prix: "", fournisseur: "", date: livraison.date });
-    },
-  });
   const inventorier = useMutation({
     mutationFn: () =>
       api.post<EtatReserve>("/stock/inventaires", {
@@ -573,9 +550,6 @@ function Reserve() {
       </Carte>
     );
   }
-  const quantiteLivree = Number.parseInt(livraison.quantite, 10);
-  const prixLivre = lireMontant(livraison.prix);
-  const livraisonPrete = livraison.produitId && Number.isFinite(quantiteLivree) && quantiteLivree > 0 && prixLivre !== null && livraison.date;
   const valeurReserve = e.produits.reduce((s, p) => s + Math.max(p.solde, 0) * (p.coutUnitaire ?? 0), 0);
   const sansDepart = e.produits.filter((p) => p.inventaire === null).length;
 
@@ -662,47 +636,10 @@ function Reserve() {
         <MessageErreur erreur={inventorier.error} />
       </Carte>
 
-      <Carte titre="Livraison fournisseur" description="Elle entre en réserve et recalcule le coût matière du produit (coût moyen pondéré).">
-        <form
-          className="nouvelle-affectation"
-          style={{ marginTop: 0, paddingTop: 0, borderTop: 0 }}
-          onSubmit={(ev) => {
-            ev.preventDefault();
-            if (livraisonPrete) livrer.mutate();
-          }}
-        >
-          <label className="champ">
-            <span>Produit</span>
-            <select value={livraison.produitId} onChange={(ev) => setLivraison({ ...livraison, produitId: ev.target.value })} required>
-              <option value="">Choisir…</option>
-              {e.produits.map((p) => (
-                <option key={p.produitId} value={p.produitId}>
-                  {p.nom}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="champ">
-            <span>Quantité livrée</span>
-            <input type="text" inputMode="numeric" value={livraison.quantite} onChange={(ev) => setLivraison({ ...livraison, quantite: ev.target.value.replace(/\D/g, "").slice(0, 6) })} required />
-          </label>
-          <label className="champ">
-            <span>Prix d'achat unitaire HT (€)</span>
-            <input type="text" inputMode="decimal" value={livraison.prix} onChange={(ev) => setLivraison({ ...livraison, prix: ev.target.value })} placeholder="ex. 1,95" aria-invalid={livraison.prix.trim() !== "" && prixLivre === null} required />
-          </label>
-          <label className="champ">
-            <span>Fournisseur</span>
-            <input type="text" value={livraison.fournisseur} onChange={(ev) => setLivraison({ ...livraison, fournisseur: ev.target.value })} maxLength={120} />
-          </label>
-          <label className="champ">
-            <span>Date</span>
-            <input type="date" value={livraison.date} onChange={(ev) => setLivraison({ ...livraison, date: ev.target.value })} required />
-          </label>
-          <button className="btn" disabled={!livraisonPrete || livrer.isPending}>
-            <PackagePlus size={15} /> Enregistrer la livraison
-          </button>
-        </form>
-        <MessageErreur erreur={livrer.error} />
+      <Carte titre="Une livraison ?" description="Les livraisons des fournisseurs se saisissent dans Achats, avec leurs factures et les prix fournisseurs.">
+        <Link className="btn btn-fantome" to="/achats?onglet=livraisons">
+          <PackagePlus size={15} /> Saisir une livraison dans Achats
+        </Link>
       </Carte>
 
       {e.inventaires.length > 0 && (
