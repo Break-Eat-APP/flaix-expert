@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Box, CircleAlert, MessageCircleQuestion, PackagePlus, RefreshCw, X } from "lucide-react";
+import { Box, CircleAlert, Lock, MessageCircleQuestion, PackagePlus, RefreshCw, X } from "lucide-react";
 import { formaterMontant, regrouperParts, type EtatStand, type Evenement, type FinancesSoiree, type Kpi, type PlanStade, type SessionInfo, type SignalStand, type TableauDirect } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EtatVide, MessageErreur } from "../../composants/communs.tsx";
@@ -122,7 +122,13 @@ export function EnDirect({ session }: { session: SessionInfo }) {
           >
             <RefreshCw size={15} />
           </button>
-          <Link className="btn" to="/assistant">
+          {p.evenement && !session.support && (
+            // Raccourci vers Clôtures (§15.172) : caisses, tiroirs, coffre, stock, puis clore l'événement.
+            <Link className="btn btn-cloture" to="/clotures">
+              <Lock size={15} /> Clôturer la soirée
+            </Link>
+          )}
+          <Link className="btn btn-fantome" to="/assistant">
             <MessageCircleQuestion size={15} /> Demander à l'assistant
           </Link>
         </div>

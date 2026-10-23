@@ -196,6 +196,8 @@ describe("En direct", () => {
   it("le net en direct : ce qu'il reste à cette minute, le calcul en une ligne (§15.170)", async () => {
     monter(enDirect, [ouvert]);
     expect(await screen.findByText("Ce qu'il te reste, en direct")).toBeTruthy();
+    // Raccourci vers la clôture de la soirée (§15.172).
+    expect(screen.getByRole("link", { name: /Clôturer la soirée/ }).getAttribute("href")).toBe("/clotures");
     expect(screen.getByText(/En ce moment, il te reste 600/)).toBeTruthy();
     const calcul = document.querySelector(".reste-calcul")!.textContent!.replace(/\s+/g, " ");
     expect(calcul).toBe("1 200,00 € encaissés − 200,00 € TVA − 300,00 € marchandise − 100,00 € frais de la soirée = 600,00 € · 60 % du CA HT · avant impôt");
@@ -209,6 +211,7 @@ describe("En direct", () => {
     expect(await screen.findByText(/Prochain événement : FC Rouen – Orléans/)).toBeTruthy();
     expect(screen.queryByText("Les stands, maintenant")).toBeNull();
     expect(screen.getByText("Placer les stands")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /Clôturer la soirée/ })).toBeNull();
   });
 
   it("hors événement : ouvrir le prochain d'ici, après confirmation (§15.169)", async () => {
