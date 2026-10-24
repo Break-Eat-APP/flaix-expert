@@ -7,6 +7,11 @@ import {
   nomDeFichier,
   type FactureVente,
   type LigneRecapFacture,
+  alertesFacture,
+  cleArticle,
+  enUnites,
+  normaliserFournisseur,
+  type CorrespondanceArticle,
   ecartLigne,
   livraisonsCandidates,
   rapprocherFacture,
@@ -37,6 +42,7 @@ const Saisie = z
     numero: z.string().trim().min(1, "Le n° de facture est obligatoire.").max(60),
     dateFacture: Jour,
     echeance: Jour.nullable(),
+    totalAnnonce: z.number().int().min(0).max(1_000_000_000).nullable().default(null),
     lignes: z
       .array(
         z.object({
@@ -44,6 +50,8 @@ const Saisie = z
           libelle: z.string().trim().min(1, "Chaque ligne a un libellé.").max(160),
           quantite: z.number().int().min(1, "Quantité invalide.").max(1_000_000),
           prixUnitaire: z.number().int().min(0).max(10_000_000),
+          unitesParColis: z.number().int().min(1, "Unités par colis : 1 au moins.").max(10_000).default(1),
+          codeArticle: z.string().trim().max(60).nullish().transform((v) => (v ? v : null)),
         }),
       )
       .min(1, "Une facture a au moins une ligne.")
@@ -63,6 +71,8 @@ interface LigneFacture {
   quantite: number;
   prix_unitaire_centimes: number;
   livraison_id: string | null;
+  unites_par_colis: number;
+  code_article: string | null;
 }
 
 async function lireLivraisons(c: Client, lieuId: string): Promise<LivraisonCandidate[]> {
@@ -89,13 +99,14 @@ async function etat(c: Client, lieuId: string): Promise<EtatFactures> {
     date_paiement: string | null;
     createur: string;
     cree_le: Date;
+    total_annonce_centimes: number | null;
     fichier_nom: string | null;
     fichier_type: string | null;
     fichier_taille: number | null;
   }>(
     `SELECT f.id, f.fournisseur, f.numero, to_char(f.date_facture, 'YYYY-MM-DD') AS date_facture, to_char(f.echeance, 'YYYY-MM-DD') AS echeance,
             f.validee_le, uv.nom AS valideur, f.motif_validation, f.payee_le, up.nom AS payeur, to_char(f.date_paiement, 'YYYY-MM-DD') AS date_paiement,
-            uc.nom AS createur, f.cree_le, ff.nom AS fichier_nom, ff.type AS fichier_type, ff.taille AS fichier_taille
+            uc.nom AS createur, f.cree_le, f.total_annonce_centimes, ff.nom AS fichier_nom, ff.type AS fichier_type, ff.taille AS fichier_taille
        FROM facture_fournisseur f
        JOIN utilisateur uc ON uc.id = f.cree_par
        LEFT JOIN utilisateur uv ON uv.id = f.validee_par
@@ -105,7 +116,7 @@ async function etat(c: Client, lieuId: string): Promise<EtatFactures> {
     [lieuId],
   );
   const { rows: lignes } = await c.query<LigneFacture>(
-    "SELECT facture_id, id, ordre, produit_id, libelle, quantite, prix_unitaire_centimes, livraison_id FROM ligne_facture_fournisseur WHERE lieu_id = $1 ORDER BY ordre",
+    "SELECT facture_id, id, ordre, produit_id, libelle, quantite, prix_unitaire_centimes, livraison_id, unites_par_colis, code_article FROM ligne_facture_fournisseur WHERE lieu_id = $1 ORDER BY ordre",
     [lieuId],
   );
   const livraisons = await lireLivraisons(c, lieuId);
@@ -119,7 +130,8 @@ async function etat(c: Client, lieuId: string): Promise<EtatFactures> {
   const prises = new Set(lignes.map((l) => l.livraison_id).filter((x): x is string => !!x));
   const vues: FactureVue[] = factures.map((f) => {
     const ls = lignes.filter((l) => l.facture_id === f.id);
-    const saisies = ls.map((l) => ({ produitId: l.produit_id, quantite: l.quantite, prixUnitaire: l.prix_unitaire_centimes }));
+    // Rapprochement et écarts à l'unité vendue (quantité × colis, prix ÷ colis, §15.173) ; total en unités facturées.
+    const saisies = ls.map((l) => ({ produitId: l.produit_id, ...enUnites({ quantite: l.quantite, prixUnitaire: l.prix_unitaire_centimes, unitesParColis: l.unites_par_colis }) }));
     const propres = new Set(ls.map((l) => l.livraison_id).filter((x): x is string => !!x));
     const autres = new Set([...prises].filter((x) => !propres.has(x)));
     const rapproche = f.validee_le
@@ -134,6 +146,8 @@ async function etat(c: Client, lieuId: string): Promise<EtatFactures> {
         libelle: l.libelle,
         quantite: l.quantite,
         prixUnitaire: l.prix_unitaire_centimes,
+        unitesParColis: l.unites_par_colis,
+        codeArticle: l.code_article,
         livraison,
         livraisonChoisie: !!l.livraison_id,
         ecart: livraison ? ecartLigne(saisies[i]!, livraison) : null,
@@ -147,9 +161,19 @@ async function etat(c: Client, lieuId: string): Promise<EtatFactures> {
       numero: f.numero,
       dateFacture: f.date_facture,
       echeance: f.echeance,
-      totalHt: totalHtFacture(saisies),
+      totalHt: totalHtFacture(ls.map((l) => ({ quantite: l.quantite, prixUnitaire: l.prix_unitaire_centimes }))),
+      totalAnnonce: f.total_annonce_centimes,
       statut,
       lignes: vueLignes,
+      alertes: f.validee_le
+        ? []
+        : alertesFacture(
+            { totalAnnonce: f.total_annonce_centimes, lignes: vueLignes },
+            (produitId) =>
+              livraisons
+                .filter((x) => x.produitId === produitId && x.date <= f.date_facture && !rapproche.some((r) => r?.id === x.id))
+                .sort((a, b) => b.date.localeCompare(a.date)),
+          ),
       fichier: f.fichier_nom ? { nom: f.fichier_nom, type: f.fichier_type!, taille: f.fichier_taille! } : null,
       validation: f.validee_le ? { par: f.valideur!, le: f.validee_le.toISOString(), motif: f.motif_validation } : null,
       paiement: f.payee_le ? { par: f.payeur!, le: f.payee_le.toISOString(), date: f.date_paiement! } : null,
@@ -181,8 +205,27 @@ async function verifierProduits(c: Client, lieuId: string, ids: (string | null)[
 async function ecrireLignes(c: Client, lieuId: string, factureId: string, lignes: z.infer<typeof Saisie>["lignes"]) {
   for (const [i, l] of lignes.entries()) {
     await c.query(
-      "INSERT INTO ligne_facture_fournisseur (lieu_id, facture_id, ordre, produit_id, libelle, quantite, prix_unitaire_centimes) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-      [lieuId, factureId, i, l.produitId, l.libelle, l.quantite, l.prixUnitaire],
+      `INSERT INTO ligne_facture_fournisseur (lieu_id, facture_id, ordre, produit_id, libelle, quantite, prix_unitaire_centimes, unites_par_colis, code_article)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [lieuId, factureId, i, l.produitId, l.libelle, l.quantite, l.prixUnitaire, l.unitesParColis, l.codeArticle],
+    );
+  }
+}
+
+/**
+ * Correspondances apprises (§15.173) : chaque article d'une facture enregistrée avec un produit ou un colis est retenu
+ * pour ce fournisseur (par son code, sinon son libellé) et repris à la facture suivante. Le dernier choix l'emporte.
+ */
+async function apprendreCorrespondances(c: Client, lieuId: string, utilisateurId: string, fournisseur: string, lignes: z.infer<typeof Saisie>["lignes"]) {
+  const f = normaliserFournisseur(fournisseur);
+  if (!f) return;
+  for (const l of lignes.filter((x) => x.produitId || x.unitesParColis > 1)) {
+    await c.query(
+      `INSERT INTO correspondance_article_fournisseur (lieu_id, fournisseur, cle, libelle, produit_id, unites_par_colis, modifiee_par)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (lieu_id, fournisseur, cle) DO UPDATE
+         SET libelle = EXCLUDED.libelle, produit_id = EXCLUDED.produit_id, unites_par_colis = EXCLUDED.unites_par_colis, modifiee_par = EXCLUDED.modifiee_par, modifiee_le = now()`,
+      [lieuId, f, cleArticle(l.codeArticle, l.libelle), l.libelle, l.produitId, l.unitesParColis, utilisateurId],
     );
   }
 }
@@ -207,10 +250,11 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
       ]);
       if (existe[0]) throw doublon();
       const { rows } = await c.query<{ id: string }>(
-        "INSERT INTO facture_fournisseur (lieu_id, fournisseur, numero, date_facture, echeance, cree_par) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
-        [auth.lieuId, f.fournisseur, f.numero, f.dateFacture, f.echeance, auth.utilisateurId],
+        "INSERT INTO facture_fournisseur (lieu_id, fournisseur, numero, date_facture, echeance, total_annonce_centimes, cree_par) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+        [auth.lieuId, f.fournisseur, f.numero, f.dateFacture, f.echeance, f.totalAnnonce, auth.utilisateurId],
       );
       await ecrireLignes(c, auth.lieuId, rows[0]!.id, f.lignes);
+      await apprendreCorrespondances(c, auth.lieuId, auth.utilisateurId, f.fournisseur, f.lignes);
       await inscrireJet(c, {
         lieuId: auth.lieuId,
         type: "facture_saisie",
@@ -233,17 +277,19 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
         [auth.lieuId, f.fournisseur, f.numero, id],
       );
       if (existe[0]) throw doublon();
-      await c.query("UPDATE facture_fournisseur SET fournisseur = $3, numero = $4, date_facture = $5, echeance = $6 WHERE lieu_id = $1 AND id = $2", [
+      await c.query("UPDATE facture_fournisseur SET fournisseur = $3, numero = $4, date_facture = $5, echeance = $6, total_annonce_centimes = $7 WHERE lieu_id = $1 AND id = $2", [
         auth.lieuId,
         id,
         f.fournisseur,
         f.numero,
         f.dateFacture,
         f.echeance,
+        f.totalAnnonce,
       ]);
       // Les lignes sont réécrites (une facture non validée n'a encore rien de figé) ; les choix de livraison repartent de zéro.
       await c.query("DELETE FROM ligne_facture_fournisseur WHERE lieu_id = $1 AND facture_id = $2", [auth.lieuId, id]);
       await ecrireLignes(c, auth.lieuId, id, f.lignes);
+      await apprendreCorrespondances(c, auth.lieuId, auth.utilisateurId, f.fournisseur, f.lignes);
       await inscrireJet(c, { lieuId: auth.lieuId, type: "facture_modifiee", utilisateurId: auth.utilisateurId, details: { facture: id, fournisseur: f.fournisseur, numero: f.numero } });
       return etat(c, auth.lieuId);
     });
@@ -284,6 +330,19 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
       );
       await inscrireJet(c, { lieuId: auth.lieuId, type: "facture_piece_jointe", utilisateurId: auth.utilisateurId, details: { facture: id, nom: f.nom, taille: contenu.length } });
       return etat(c, auth.lieuId);
+    });
+  });
+
+  // Correspondances apprises (§15.173), pour remplir une facture importée d'un fichier.
+  app.get("/api/factures/correspondances", async (req): Promise<CorrespondanceArticle[]> => {
+    const auth = await exigerDirecteur(req, base);
+    return base.transaction(contexte(auth), async (c) => {
+      const { rows } = await c.query<CorrespondanceArticle>(
+        `SELECT fournisseur, cle, libelle, produit_id AS "produitId", unites_par_colis AS "unitesParColis"
+           FROM correspondance_article_fournisseur WHERE lieu_id = $1 ORDER BY fournisseur, libelle`,
+        [auth.lieuId],
+      );
+      return rows;
     });
   });
 
@@ -353,23 +412,33 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
   app.post("/api/factures/:id/validation", async (req): Promise<EtatFactures> => {
     const auth = await exigerDirecteur(req, base);
     const { id } = ParamId.parse(req.params);
-    const { motif, entrerEnReserve } = corps(
-      z.object({ motif: z.string().trim().max(500).nullish().transform((v) => (v ? v : null)), entrerEnReserve: z.boolean().default(false) }),
+    const { motif, entrerEnReserve, alertesVerifiees } = corps(
+      z.object({
+        motif: z.string().trim().max(500).nullish().transform((v) => (v ? v : null)),
+        entrerEnReserve: z.boolean().default(false),
+        alertesVerifiees: z.boolean().default(false),
+      }),
       req,
     );
     return base.transaction(contexte(auth), async (c) => {
       await factureModifiable(c, auth.lieuId, id);
       let f = (await etat(c, auth.lieuId)).factures.find((x) => x.id === id)!;
+      // Alertes (§15.173) : FlaiX Expert signale, le directeur tranche — il valide en connaissance de cause.
+      const alertes = f.alertes.map((a) => a.titre);
+      if (alertes.length && !alertesVerifiees) {
+        throw new ErreurMetier(400, `${alertes.length} alerte${alertes.length > 1 ? "s" : ""} sur cette facture : vérifie-les, puis coche « J'ai vérifié » pour valider.`);
+      }
       // Entrée en réserve (§15.172) : chaque produit de la facture sans livraison rapprochée devient une livraison, au prix
       // et à la date de la facture, puis lui est rapproché. Un produit fabriqué (avec une recette) ne se livre pas.
       const entrees: string[] = [];
       if (entrerEnReserve) {
         for (const l of f.lignes.filter((x) => x.produitId && !x.livraison)) {
           if (await aUneRecette(c, auth.lieuId, l.produitId!)) continue;
+          const u = enUnites(l);
           const livraison = await enregistrerLivraison(c, auth.lieuId, auth.utilisateurId, {
             produitId: l.produitId!,
-            quantite: l.quantite,
-            prixUnitaire: l.prixUnitaire,
+            quantite: u.quantite,
+            prixUnitaire: u.prixUnitaire,
             fournisseur: f.fournisseur,
             dateLivraison: f.dateFacture,
           });
@@ -395,7 +464,7 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
         lieuId: auth.lieuId,
         type: "facture_validee",
         utilisateurId: auth.utilisateurId,
-        details: { facture: id, fournisseur: f.fournisseur, numero: f.numero, statut_avant: f.statut, motif, total_ht: f.totalHt, entrees_en_reserve: entrees },
+        details: { facture: id, fournisseur: f.fournisseur, numero: f.numero, statut_avant: f.statut, motif, total_ht: f.totalHt, entrees_en_reserve: entrees, alertes_verifiees: alertes },
       });
       return etat(c, auth.lieuId);
     });

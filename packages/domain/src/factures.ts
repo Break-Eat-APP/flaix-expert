@@ -118,6 +118,9 @@ export interface LigneFactureVue {
   libelle: string;
   quantite: number;
   prixUnitaire: Centimes;
+  /** Unités vendues par unité facturée (§15.173) : 24 pour un colis de 24 canettes. */
+  unitesParColis: number;
+  codeArticle: string | null;
   livraison: LivraisonCandidate | null;
   /** Le rapprochement a été choisi par le directeur (sinon : proposé automatiquement). */
   livraisonChoisie: boolean;
@@ -133,8 +136,12 @@ export interface FactureVue {
   dateFacture: string;
   echeance: string | null;
   totalHt: Centimes;
+  /** Total HT écrit sur la facture (§15.173) ; null : non saisi. */
+  totalAnnonce: Centimes | null;
   statut: StatutFacture;
   lignes: LigneFactureVue[];
+  /** Ce qui paraît faux avant validation (§15.173) ; vide une fois validée. */
+  alertes: import("./factures-import.ts").AlerteFacture[];
   fichier: { nom: string; type: string; taille: number } | null;
   validation: { par: string; le: string; motif: string | null } | null;
   paiement: { par: string; le: string; date: string } | null;

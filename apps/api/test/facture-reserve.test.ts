@@ -5,7 +5,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
-import type { EtatFactures, EtatReserve, Produit } from "@flaix/domain";
+import type { CorrespondanceArticle, EtatFactures, EtatReserve, Produit } from "@flaix/domain";
 import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { MOT_DE_PASSE_TEST, basesDeTest, creerLieuDeTest } from "./aide.ts";
@@ -31,7 +31,8 @@ const saisir = async (numero: string) =>
       dateFacture: "2026-10-20",
       echeance: null,
       lignes: [
-        { produitId: canette.id, libelle: "Canette 33 cl x24", quantite: 24, prixUnitaire: 60 },
+        // Un colis de 24 canettes à 14,40 € HT : 24 canettes à 0,60 € en réserve (§15.173).
+        { produitId: canette.id, libelle: "Canette 33 cl x24", codeArticle: "CAN33", quantite: 1, prixUnitaire: 1_440, unitesParColis: 24 },
         { produitId: null, libelle: "Frais de livraison", quantite: 1, prixUnitaire: 1_500 },
       ],
     })
@@ -73,5 +74,25 @@ describe("facture validée, produits entrés en réserve", () => {
     expect(reserve.mouvements[0]).toMatchObject({ type: "livraison", produit: "Canette", quantite: 24, prixUnitaire: 60, fournisseur: "Boissons du Nord", dateLivraison: "2026-10-20" });
     const { rows } = await proprietaire.pool.query("SELECT details FROM journal_technique WHERE lieu_id = $1 AND type = 'facture_validee'", [lieuId]);
     expect(rows[0].details.entrees_en_reserve).toEqual(["Canette 33 cl x24"]);
+  });
+
+  it("correspondance apprise ; [F] colis oublié : alerte, validation refusée sans « J'ai vérifié », acceptée avec", async () => {
+    const corr = (await appel<CorrespondanceArticle[]>("GET", "/api/factures/correspondances")).corps;
+    expect(corr).toEqual([{ fournisseur: "boissons du nord", cle: "code:can33", libelle: "Canette 33 cl x24", produitId: canette.id, unitesParColis: 24 }]);
+    const r = await appel<EtatFactures>("POST", "/api/factures", {
+      fournisseur: "Boissons du Nord",
+      numero: "F-2",
+      dateFacture: "2026-10-22",
+      echeance: null,
+      totalAnnonce: 2_880,
+      lignes: [{ produitId: canette.id, libelle: "Canette 33 cl x24", quantite: 2, prixUnitaire: 1_440 }],
+    });
+    const f = r.corps.factures.find((x) => x.numero === "F-2")!;
+    // Colis oublié : 2 « canettes » à 14,40 € au lieu de 48 à 0,60 € — le prix à l'unité saute aussi.
+    expect(f.alertes.map((a) => a.type)).toEqual(["colis", "prix"]);
+    expect((await appel("POST", `/api/factures/${f.id}/validation`, { entrerEnReserve: true })).statut).toBe(400);
+    expect((await appel("POST", `/api/factures/${f.id}/validation`, { entrerEnReserve: true, alertesVerifiees: true })).statut).toBe(200);
+    const { rows } = await proprietaire.pool.query("SELECT details FROM journal_technique WHERE lieu_id = $1 AND type = 'facture_validee' AND details->>'numero' = 'F-2'", [lieuId]);
+    expect(rows[0].details.alertes_verifiees).toHaveLength(2);
   });
 });
