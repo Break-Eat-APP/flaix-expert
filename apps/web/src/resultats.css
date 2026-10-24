@@ -216,6 +216,7 @@
 .surveiller li.encore { background: var(--violet-soft); }
 .surveiller li svg { flex: none; margin-top: 1px; }
 .prochain-match { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 6px; margin-bottom: 0; }
+.prochain-match > * { position: relative; z-index: 1; }
 .prochain-match::after { content: ""; position: absolute; right: -50px; bottom: -50px; width: 170px; height: 170px; border-radius: 50%; background: var(--violet-soft); pointer-events: none; }
 .prochain-etiquette { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--violet); }
 .prochain-match h3 { margin: 4px 0 0; font-family: "Raleway", "Plus Jakarta Sans", sans-serif; font-size: 22px; }
