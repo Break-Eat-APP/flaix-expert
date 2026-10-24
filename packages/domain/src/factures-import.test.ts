@@ -21,6 +21,12 @@ describe("factures automatisées (§15.173)", () => {
     expect(l.erreurs[0]!.message).toContain("non entière");
   });
 
+  it("en-têtes avec ponctuation (« P.U. HT », « Qté. ») sans colonne de montant", () => {
+    const l = lireFactureExport("Réf.;Désignation;Qté.;P.U. HT\nEV;Evian 50 cl;10;0,45");
+    expect(l.manquants).toEqual([]);
+    expect(l.lignes[0]).toMatchObject({ codeArticle: "EV", quantite: 10, prixUnitaire: 45 });
+  });
+
   it("[F] colonnes introuvables : dites, rien n'est lu", () => {
     expect(lireFactureExport("A;B\n1;2").manquants).toEqual(["désignation", "quantité", "prix unitaire ou montant"]);
   });

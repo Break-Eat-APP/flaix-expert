@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, FilePlus2, Paperclip } from "lucide-react";
+import { Download, FilePlus2, FileSpreadsheet, Paperclip } from "lucide-react";
 import {
+  cleArticle,
+  colisDevine,
+  correspondanceExacte,
+  lireFactureExport,
+  normaliserFournisseur,
+  suggererCorrespondance,
+  type CorrespondanceArticle,
   LIBELLES_STATUT_FACTURE,
   formaterMontant,
   jourParis,
@@ -15,6 +22,7 @@ import {
 } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
+import { lireFichierVentes } from "../caisses-connectees/fichiers.ts";
 
 type Filtre = "a_traiter" | "toutes" | "validee" | "payee";
 const PUCE: Record<StatutFacture, string> = { recue: "", rapprochee: "puce-vert", ecart: "puce-rouge", validee: "puce-violet", payee: "puce-vert" };
@@ -190,8 +198,9 @@ function DetailFacture({ f, produits, fournisseurs }: { f: FactureVue; produits:
   });
   const sansLivraison = f.lignes.filter((l) => l.produitId && !l.livraison).length;
   const [entrer, setEntrer] = useState(true);
+  const [verifie, setVerifie] = useState(false);
   const valider = useMutation({
-    mutationFn: () => api.post<EtatFactures>(`/factures/${f.id}/validation`, { motif: motif || null, entrerEnReserve: entrer && sansLivraison > 0 }),
+    mutationFn: () => api.post<EtatFactures>(`/factures/${f.id}/validation`, { motif: motif || null, entrerEnReserve: entrer && sansLivraison > 0, alertesVerifiees: verifie }),
     onSuccess: (r) => {
       maj(r);
       for (const cle of ["reserve", "stock", "produits", "fournisseurs"]) void client.invalidateQueries({ queryKey: [cle] });
@@ -239,7 +248,10 @@ function DetailFacture({ f, produits, fournisseurs }: { f: FactureVue; produits:
             {f.lignes.map((l) => (
               <tr key={l.id}>
                 <td style={{ whiteSpace: "normal" }}>{l.libelle}</td>
-                <td className="d chiffre">{l.quantite}</td>
+                <td className="d chiffre">
+                  {l.quantite}
+                  {l.unitesParColis > 1 && <div className="discret" style={{ fontSize: 11.5 }}>× {l.unitesParColis} = {l.quantite * l.unitesParColis} unités</div>}
+                </td>
                 <td className="d chiffre">{formaterMontant(l.prixUnitaire)}</td>
                 <td style={{ whiteSpace: "normal" }}>
                   {!l.produitId ? (
@@ -318,6 +330,24 @@ function DetailFacture({ f, produits, fournisseurs }: { f: FactureVue; produits:
       </div>
       <MessageErreur erreur={deposer.error} />
 
+      {!figee && f.alertes.length > 0 && (
+        <div className="message message-alerte" style={{ marginTop: 10 }}>
+          <strong>
+            {f.alertes.length} point{f.alertes.length > 1 ? "s" : ""} à vérifier avant de valider
+          </strong>
+          <ul style={{ margin: "6px 0 8px", paddingLeft: 18 }}>
+            {f.alertes.map((a, i) => (
+              <li key={i}>
+                <strong>{a.titre}</strong> — {a.detail}
+              </li>
+            ))}
+          </ul>
+          <label className="case">
+            <input type="checkbox" checked={verifie} onChange={(ev) => setVerifie(ev.target.checked)} />
+            <span>J'ai vérifié : la facture est juste, je peux la valider (sinon : « Modifier la saisie »)</span>
+          </label>
+        </div>
+      )}
       {!figee && sansLivraison > 0 && (
         <label className="case" style={{ marginTop: 10 }}>
           <input type="checkbox" checked={entrer} onChange={(ev) => setEntrer(ev.target.checked)} />
@@ -338,7 +368,7 @@ function DetailFacture({ f, produits, fournisseurs }: { f: FactureVue; produits:
               style={{ flex: 1, minWidth: 240 }}
             />
           )}
-          <button className="btn" disabled={valider.isPending || (motifRequis && motif.trim().length < 5)} onClick={() => valider.mutate()}>
+          <button className="btn" disabled={valider.isPending || (motifRequis && motif.trim().length < 5) || (f.alertes.length > 0 && !verifie)} onClick={() => valider.mutate()}>
             Valider la facture
           </button>
         </div>
@@ -380,8 +410,13 @@ interface LigneSaisie {
   libelle: string;
   quantite: string;
   prix: string;
+  /** Unités vendues par unité facturée (§15.173). */
+  colis: string;
+  code: string;
+  /** D'où vient le produit d'une ligne importée : correspondance apprise, même nom, ressemblance. */
+  origine?: "appris" | "exact" | "suggere";
 }
-const LIGNE_VIDE: LigneSaisie = { produitId: "", libelle: "", quantite: "", prix: "" };
+const LIGNE_VIDE: LigneSaisie = { produitId: "", libelle: "", quantite: "", prix: "", colis: "1", code: "" };
 
 function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produits: Produit[]; fournisseurs: string[]; facture?: FactureVue; fermer: (id?: string) => void }) {
   const client = useQueryClient();
@@ -390,15 +425,75 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
     numero: facture?.numero ?? "",
     dateFacture: facture?.dateFacture ?? jourParis(new Date()),
     echeance: facture?.echeance ?? "",
+    totalAnnonce: facture?.totalAnnonce != null ? montantPourSaisie(facture.totalAnnonce) : "",
   });
+  const correspondances = useQuery({ queryKey: ["correspondances-fournisseurs"], queryFn: () => api.get<CorrespondanceArticle[]>("/factures/correspondances") });
+  const [import_, setImport] = useState<{ message: string; erreurs: string[] } | null>(null);
+  const [erreurImport, setErreurImport] = useState<unknown>(null);
   const [lignes, setLignes] = useState<LigneSaisie[]>(
-    facture?.lignes.map((l) => ({ produitId: l.produitId ?? "", libelle: l.libelle, quantite: String(l.quantite), prix: montantPourSaisie(l.prixUnitaire) })) ?? [{ ...LIGNE_VIDE }],
+    facture?.lignes.map((l) => ({
+      produitId: l.produitId ?? "",
+      libelle: l.libelle,
+      quantite: String(l.quantite),
+      prix: montantPourSaisie(l.prixUnitaire),
+      colis: String(l.unitesParColis),
+      code: l.codeArticle ?? "",
+    })) ?? [{ ...LIGNE_VIDE }],
   );
-  const lues = lignes.map((l) => ({ produitId: l.produitId || null, libelle: l.libelle.trim(), quantite: Number(l.quantite), prixUnitaire: lireMontant(l.prix) }));
-  const valides = lues.every((l) => l.libelle && Number.isInteger(l.quantite) && l.quantite > 0 && l.prixUnitaire !== null);
+  const lues = lignes.map((l) => ({
+    produitId: l.produitId || null,
+    libelle: l.libelle.trim(),
+    quantite: Number(l.quantite),
+    prixUnitaire: lireMontant(l.prix),
+    unitesParColis: Number(l.colis || "1"),
+    codeArticle: l.code.trim() || null,
+  }));
+  const valides = lues.every((l) => l.libelle && Number.isInteger(l.quantite) && l.quantite > 0 && l.prixUnitaire !== null && Number.isInteger(l.unitesParColis) && l.unitesParColis >= 1);
+  const totalAnnonce = s.totalAnnonce.trim() ? lireMontant(s.totalAnnonce) : null;
+  const totalLignes = valides ? totalHtFacture(lues as { quantite: number; prixUnitaire: number }[]) : 0;
+
+  /**
+   * Remplir depuis l'export Excel ou CSV de la facture (§15.173) : chaque ligne reprend le produit et le colis déjà
+   * retenus pour ce fournisseur, sinon le produit du même nom, sinon le plus ressemblant ; le colis est lu dans le
+   * fichier (PCB) ou deviné dans le libellé (« x24 »). Tout reste modifiable avant d'enregistrer.
+   */
+  const importer = async (fichier: File) => {
+    setErreurImport(null);
+    try {
+      const lu = lireFactureExport((await lireFichierVentes(fichier)).contenu);
+      if (lu.manquants.length) throw new Error(`Colonnes introuvables dans le fichier : ${lu.manquants.join(", ")}.`);
+      const four = normaliserFournisseur(s.fournisseur);
+      const appris = new Map((correspondances.data ?? []).filter((c) => c.fournisseur === four).map((c) => [c.cle, c]));
+      const nouvelles: LigneSaisie[] = lu.lignes.map((l) => {
+        const c = appris.get(cleArticle(l.codeArticle, l.libelle));
+        const exact = c ? null : correspondanceExacte(l.libelle, produits);
+        const proche = c || exact ? null : suggererCorrespondance(l.libelle, produits);
+        const produitId = c?.produitId ?? exact?.id ?? proche?.id ?? "";
+        return {
+          produitId,
+          libelle: l.libelle,
+          quantite: String(l.quantite),
+          prix: montantPourSaisie(l.prixUnitaire),
+          colis: String(c?.unitesParColis ?? l.unitesParColis ?? colisDevine(l.libelle) ?? 1),
+          code: l.codeArticle ?? "",
+          origine: c ? "appris" : exact ? "exact" : proche ? "suggere" : undefined,
+        };
+      });
+      if (!nouvelles.length) throw new Error("Aucune ligne d'article lue dans ce fichier.");
+      setLignes(nouvelles);
+      const reconnues = nouvelles.filter((l) => l.produitId).length;
+      setImport({
+        message: `${nouvelles.length} ligne${nouvelles.length > 1 ? "s" : ""} lue${nouvelles.length > 1 ? "s" : ""}, ${reconnues} reliée${reconnues > 1 ? "s" : ""} à un produit${four ? "" : " (saisis le fournisseur avant l'import pour reprendre ses correspondances)"}. Vérifie les produits « proposés » et les colis, puis enregistre.`,
+        erreurs: lu.erreurs.map((e) => `Ligne ${e.ligne} : ${e.message}`),
+      });
+    } catch (e) {
+      setErreurImport(e);
+      setImport(null);
+    }
+  };
   const enregistrer = useMutation({
     mutationFn: () => {
-      const corps = { ...s, echeance: s.echeance || null, lignes: lues };
+      const corps = { ...s, echeance: s.echeance || null, totalAnnonce, lignes: lues.map(({ unitesParColis, ...l }) => ({ ...l, unitesParColis: unitesParColis || 1 })) };
       return facture ? api.put<EtatFactures>(`/factures/${facture.id}`, corps) : api.post<EtatFactures>("/factures", corps);
     },
     onSuccess: (r) => {
@@ -432,7 +527,40 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
           <span>Échéance (facultatif)</span>
           <input type="date" value={s.echeance} onChange={(ev) => setS({ ...s, echeance: ev.target.value })} />
         </label>
+        <label className="champ">
+          <span>Total HT écrit sur la facture (facultatif)</span>
+          <input type="text" inputMode="decimal" value={s.totalAnnonce} onChange={(ev) => setS({ ...s, totalAnnonce: ev.target.value })} placeholder="contrôle des lignes" />
+        </label>
       </div>
+      <div className="import-facture">
+        <label className="btn btn-fantome" style={{ cursor: "pointer" }}>
+          <FileSpreadsheet size={15} /> Remplir depuis un fichier Excel ou CSV
+          <input
+            type="file"
+            accept=".xlsx,.xls,.xlsm,.csv,.txt"
+            style={{ display: "none" }}
+            onChange={(ev) => {
+              const fichier = ev.target.files?.[0];
+              if (fichier) void importer(fichier);
+              ev.target.value = "";
+            }}
+          />
+        </label>
+        <span className="discret">L'export de la facture depuis le site du fournisseur : les lignes se remplissent, avec les produits et colis déjà connus.</span>
+      </div>
+      {import_ && (
+        <div className="message message-info">
+          {import_.message}
+          {import_.erreurs.length > 0 && (
+            <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+              {import_.erreurs.slice(0, 8).map((e) => (
+                <li key={e}>{e}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      <MessageErreur erreur={erreurImport} />
       <div className="scroll-x" style={{ marginTop: 14 }}>
         <table className="tableau">
           <thead>
@@ -440,6 +568,7 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
               <th>Produit</th>
               <th>Libellé sur la facture</th>
               <th>Quantité</th>
+              <th title="Unités vendues dans une unité facturée : 24 pour un colis de 24 canettes">Unités / colis</th>
               <th>Prix unitaire HT (€)</th>
               <th />
             </tr>
@@ -452,7 +581,7 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
                     value={l.produitId}
                     onChange={(ev) => {
                       const p = produits.find((x) => x.id === ev.target.value);
-                      maj(i, { produitId: ev.target.value, libelle: l.libelle || p?.nom || "" });
+                      maj(i, { produitId: ev.target.value, libelle: l.libelle || p?.nom || "", origine: undefined });
                     }}
                     aria-label={`Produit de la ligne ${i + 1}`}
                   >
@@ -463,12 +592,19 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
                       </option>
                     ))}
                   </select>
+                  {l.origine && l.produitId && (
+                    <div className={`origine-ligne origine-${l.origine}`}>{l.origine === "appris" ? "déjà relié pour ce fournisseur" : l.origine === "exact" ? "même nom" : "proposé : à vérifier"}</div>
+                  )}
                 </td>
                 <td>
                   <input type="text" value={l.libelle} onChange={(ev) => maj(i, { libelle: ev.target.value })} maxLength={160} aria-label={`Libellé de la ligne ${i + 1}`} />
                 </td>
                 <td>
                   <input type="text" inputMode="numeric" value={l.quantite} onChange={(ev) => maj(i, { quantite: ev.target.value.replace(/\D/g, "") })} style={{ width: 90 }} aria-label={`Quantité de la ligne ${i + 1}`} />
+                </td>
+                <td>
+                  <input type="text" inputMode="numeric" value={l.colis} onChange={(ev) => maj(i, { colis: ev.target.value.replace(/\D/g, "").slice(0, 5) })} style={{ width: 70 }} aria-label={`Unités par colis de la ligne ${i + 1}`} />
+                  {Number(l.colis) > 1 && Number(l.quantite) > 0 && <div className="discret" style={{ fontSize: 11.5 }}>= {Number(l.quantite) * Number(l.colis)} unités</div>}
                 </td>
                 <td>
                   <input type="text" inputMode="decimal" value={l.prix} onChange={(ev) => maj(i, { prix: ev.target.value })} style={{ width: 110 }} aria-label={`Prix unitaire HT de la ligne ${i + 1}`} />
@@ -489,7 +625,12 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
         <button className="btn btn-fantome" onClick={() => setLignes([...lignes, { ...LIGNE_VIDE }])}>
           Ajouter une ligne
         </button>
-        <span className="chiffre">Total HT : {formaterMontant(valides ? totalHtFacture(lues as { quantite: number; prixUnitaire: number }[]) : 0)}</span>
+        <span className="chiffre">
+          Total HT : {formaterMontant(totalLignes)}
+          {totalAnnonce !== null && valides && Math.abs(totalAnnonce - totalLignes) > 2 && (
+            <strong style={{ color: "var(--red)", marginLeft: 8 }}>≠ {formaterMontant(totalAnnonce)} écrit sur la facture</strong>
+          )}
+        </span>
       </div>
       <div className="actions" style={{ justifyContent: "flex-start", marginTop: 12 }}>
         <button className="btn" disabled={!valides || !s.fournisseur.trim() || !s.numero.trim() || enregistrer.isPending} onClick={() => enregistrer.mutate()}>

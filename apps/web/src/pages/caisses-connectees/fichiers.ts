@@ -105,14 +105,14 @@ export async function lireFichierVentes(f: File, feuille?: string): Promise<Fich
   // ou du HTML (exports de nombreux logiciels) : la bibliothèque le lit tel quel, l'aperçu dira si les colonnes y sont.
   const debut = new Uint8Array(await f.slice(0, 2).arrayBuffer());
   if (/\.(xlsx|xlsm)$/i.test(f.name) && !(debut[0] === 0x50 && debut[1] === 0x4b)) {
-    throw new Error("Ce fichier ne s'ouvre pas : choisis l'export de la caisse au format Excel (.xlsx, .xls) ou CSV.");
+    throw new Error("Ce fichier ne s'ouvre pas : choisis un fichier Excel (.xlsx, .xls) ou CSV.");
   }
   const X = await import("xlsx");
   let classeur;
   try {
     classeur = X.read(await f.arrayBuffer(), { type: "array", cellNF: true, dense: true });
   } catch {
-    throw new Error("Ce fichier ne s'ouvre pas : choisis l'export de la caisse au format Excel (.xlsx, .xls) ou CSV.");
+    throw new Error("Ce fichier ne s'ouvre pas : choisis un fichier Excel (.xlsx, .xls) ou CSV.");
   }
   const feuilles = classeur.SheetNames;
   const lues = new Map<string, string[][]>();

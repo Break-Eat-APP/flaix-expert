@@ -15,11 +15,12 @@ import { normaliserFournisseur } from "./factures.ts";
 
 export type ChampFacture = "code" | "libelle" | "quantite" | "prixUnitaire" | "montant" | "colis";
 
+// En-têtes comparés sans accents ni ponctuation (« P.U. HT » devient « p u ht »).
 const ALIAS_FACTURE: [ChampFacture, RegExp][] = [
-  ["code", /^(code|code article|ref|ref\.|reference|ref article|reference article|article n|n article|ean|gencod|code ean|sku|code produit)$/],
+  ["code", /^(code|code article|ref|reference|ref article|reference article|article n|n article|ean|gencod|code ean|sku|code produit)$/],
   ["libelle", /^(designation|libelle|article|produit|description|libelle article|nom|intitule|denomination)$/],
-  ["quantite", /^(qte|qte\.|quantite|quantites|qty|quantity|nb|nombre|nb colis|qte colis|qte cde|qte livree|quantite livree|quantite facturee|qte facturee)$/],
-  ["prixUnitaire", /^(pu|p\.u\.|pu ht|p\.u\. ht|prix|prix ht|prix unitaire|prix unitaire ht|prix u\. ht|prix net|prix net ht|tarif|tarif ht|unit price)$/],
+  ["quantite", /^(qte|quantite|quantites|qty|quantity|nb|nombre|nb colis|qte colis|qte cde|qte livree|quantite livree|quantite facturee|qte facturee)$/],
+  ["prixUnitaire", /^(pu|p u|pu ht|p u ht|prix|prix ht|prix unitaire|prix unitaire ht|prix u ht|prix net|prix net ht|tarif|tarif ht|unit price)$/],
   ["montant", /^(montant|montant ht|total|total ht|total ligne|montant net|montant net ht|net ht|amount)$/],
   ["colis", /^(pcb|colisage|conditionnement|uvc|uvc par colis|unites par colis|nb unites|unites|par colis|contenance colis)$/],
 ];
@@ -29,7 +30,7 @@ export type ColonnesFacture = Partial<Record<ChampFacture, number>>;
 export function devinerColonnesFacture(entetes: readonly string[]): ColonnesFacture {
   const c: ColonnesFacture = {};
   entetes.forEach((e, i) => {
-    const n = sansAccents(e).replace(/\s+/g, " ").trim();
+    const n = sansAccents(e);
     for (const [champ, re] of ALIAS_FACTURE) if (c[champ] === undefined && re.test(n)) c[champ] = i;
   });
   return c;

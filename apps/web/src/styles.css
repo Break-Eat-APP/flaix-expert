@@ -844,3 +844,9 @@ details.inventaire summary { cursor: pointer; font-size: 13px; }
 .colonnes-reconnues { background: var(--green-soft); border-radius: 14px; padding: 12px 14px; font-size: 13px; }
 .colonnes-reconnues ul { margin: 8px 0 10px; padding-left: 18px; columns: 2; font-size: 12.5px; }
 @media (max-width: 700px) { .colonnes-reconnues ul { columns: 1; } }
+
+/* Factures automatisées (§15.173) */
+.import-facture { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.origine-ligne { font-size: 11px; margin-top: 3px; }
+.origine-appris, .origine-exact { color: #1f7a4d; }
+.origine-suggere { color: #8a5a00; font-weight: 600; }
