@@ -4,6 +4,12 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-10-25 : correspondances fournisseurs à l'écran, Résultats au design de la 2e maquette (§15.174)
+
+Achats › Correspondances (corriger, retirer) ; Résultats : « Bonsoir Rémi », cloche, chiffres comparés, courbe et
+catégories, ce qui se vend le mieux, à surveiller, prochain match, barre Soir de match. Pas vu à l'écran (mémoire du
+poste) : à regarder en ligne.
+
 ## 2026-10-24 : factures automatisées — import Excel/CSV, colis, correspondances, alertes (§15.173)
 
 Saisie d'une facture remplie depuis l'export du fournisseur ; colis (quantité × colis en réserve) ; correspondances

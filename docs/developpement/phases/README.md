@@ -1,6 +1,6 @@
 # Dossier de développement par phase — FlaiX Expert
 
-> Généré le 2026-10-24 par `node infra/outils/phases-word.cjs` depuis le dépôt. Un document par phase, en Markdown (ici) et en Word (`word/`). Règles du projet : [`AGENTS.md`](../../../AGENTS.md).
+> Généré le 2026-10-25 par `node infra/outils/phases-word.cjs` depuis le dépôt. Un document par phase, en Markdown (ici) et en Word (`word/`). Règles du projet : [`AGENTS.md`](../../../AGENTS.md).
 
 | Phase | Document | Décision | État |
 |---|---|---|---|
@@ -79,3 +79,4 @@
 | 72 | [Les chiffres de la soirée ; événements privés dans Résultats ; Click & Collect par fichier](PHASE_72_LES_CHIFFRES_DE_LA_SOIREE_EVENEMENTS_PRIVES_DANS_RESULTATS_CLICK_COLLE.md) · [Word](word/PHASE_72_LES_CHIFFRES_DE_LA_SOIREE_EVENEMENTS_PRIVES_DANS_RESULTATS_CLICK_COLLE.docx) | §15.171 | livrée |
 | 73 | [Achats, Ingrédients à part, raccourci de clôture ; facture qui entre en réserve ; export pour le comptable](PHASE_73_ACHATS_INGREDIENTS_A_PART_RACCOURCI_DE_CLOTURE_FACTURE_QUI_ENTRE_EN_RE.md) · [Word](word/PHASE_73_ACHATS_INGREDIENTS_A_PART_RACCOURCI_DE_CLOTURE_FACTURE_QUI_ENTRE_EN_RE.docx) | §15.172 | livrée |
 | 74 | [Factures automatisées : import Excel ou CSV, colis, correspondances apprises, alertes](PHASE_74_FACTURES_AUTOMATISEES_IMPORT_EXCEL_OU_CSV_COLIS_CORRESPONDANCES_APPRIS.md) · [Word](word/PHASE_74_FACTURES_AUTOMATISEES_IMPORT_EXCEL_OU_CSV_COLIS_CORRESPONDANCES_APPRIS.docx) | §15.173 | livrée |
+| 75 | [Correspondances fournisseurs à l'écran ; Résultats au design de la 2e maquette](PHASE_75_CORRESPONDANCES_FOURNISSEURS_A_LECRAN_RESULTATS_AU_DESIGN_DE_LA_2E_MAQ.md) · [Word](word/PHASE_75_CORRESPONDANCES_FOURNISSEURS_A_LECRAN_RESULTATS_AU_DESIGN_DE_LA_2E_MAQ.docx) | §15.174 | livrée |

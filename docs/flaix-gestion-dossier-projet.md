@@ -5603,3 +5603,31 @@ faites (§15.151).
 conversion, alertes) ; serveur 3 (colis de 24 entré en réserve à 0,60 €, correspondance apprise, colis oublié : alerte
 et validation refusée sans « J'ai vérifié ») ; écrans 2 (import CSV : appris, même nom, proposé ; alertes à cocher) ;
 écrans 104 au total ; types et construction. Vu dans le navigateur en local (formulaire de saisie).
+
+### 15.174 Correspondances fournisseurs à l'écran ; Résultats au design de la 2e maquette (2026-10-25)
+
+**Demande de Rémi** (2026-10-25, sur la liste des points à revoir) : « un écran pour corriger les correspondances
+fournisseurs » : *« fait »* ; « la page Résultats au design de ta 2e maquette » : *« fait »* ; point L'Addition :
+*« annule »* (retiré de la liste) ; exclusion antivirus des dossiers Docker : *« ok fait »*.
+
+**Réalisation** (sans migration) :
+- **Achats › Correspondances** : ce que FlaiX Expert a appris des factures, par fournisseur (article, code, produit,
+  unités par colis) ; produit et colis corrigés sur place, article retiré (la prochaine facture le redemandera) ; vaut
+  pour les factures suivantes, jamais pour celles déjà enregistrées. Routes PUT et DELETE
+  `/api/factures/correspondances`, journal `correspondance_fournisseur_modifiee`.
+- **Résultats, vue d'ensemble** (maquette « Bonsoir Rémi », image du 2026-10-19) : en-tête « Bonjour / Bonsoir » et prénom
+  (18 h, heure de Paris), cloche du centre d'alertes avec son nombre (remplace le bandeau) ; « Bilan de …, samedi 3
+  octobre » ; à côté du choix de l'événement, la pastille « Comparé à … » (ouvre Ventes pour en changer) et le bouton
+  « Rapport de soirée » (événement clos) ; quatre chiffres avec leur évolution en pastille, la valeur du match précédent
+  et la petite courbe, la marge brute dans la carte du CA ; la courbe de la soirée et son moment le plus fort (« fait
+  34 % de la soirée »), l'anneau des catégories et ses tuiles ; en bas, « Ce qui se vend le mieux » (initiale, barre,
+  CA), « À surveiller » (colorées par niveau) et « Prochain match » (date, dans combien de jours, chiffre attendu et
+  produit le plus attendu d'après la Prévision, « Préparer le stock », « Voir la prévision ») ; barre « Soir de match »
+  (En direct, en rouge pendant un événement ; Assistant si l'option est active ; Caisses). « Ce qu'il te reste » garde
+  sa place en tête (demande de Rémi, §15.170), « Les chiffres de la soirée » suit. La colonne de droite disparaît.
+  Pas de recherche dans l'en-tête (la maquette en montrait une) : à faire si Rémi la veut.
+
+**Tests** : serveur (correspondance corrigée puis retirée, journal, 404) ; écrans (correspondances ; vue d'ensemble :
+bilan, rapport de soirée, comparaison, évolution, à surveiller, prochain match et prévision) ; écrans 106 au total,
+lancés par dossier (la mémoire du poste fait tomber la suite d'un bloc) ; types et construction. **Pas vu dans le
+navigateur** : la fenêtre était masquée et le serveur local ne démarrait pas faute de mémoire — à regarder en ligne.
