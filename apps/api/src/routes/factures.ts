@@ -184,6 +184,15 @@ async function etat(c: Client, lieuId: string): Promise<EtatFactures> {
   return { factures: vues.reverse(), fournisseurs: noms.map((n) => n.nom) };
 }
 
+async function listerCorrespondances(c: Client, lieuId: string): Promise<CorrespondanceArticle[]> {
+  const { rows } = await c.query<CorrespondanceArticle>(
+    `SELECT fournisseur, cle, libelle, produit_id AS "produitId", unites_par_colis AS "unitesParColis"
+       FROM correspondance_article_fournisseur WHERE lieu_id = $1 ORDER BY fournisseur, lower(libelle)`,
+    [lieuId],
+  );
+  return rows;
+}
+
 async function factureModifiable(c: Client, lieuId: string, id: string) {
   const { rows } = await c.query<{ validee_le: Date | null; fournisseur: string; numero: string }>(
     "SELECT validee_le, fournisseur, numero FROM facture_fournisseur WHERE lieu_id = $1 AND id = $2 FOR UPDATE",
@@ -336,13 +345,56 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
   // Correspondances apprises (§15.173), pour remplir une facture importée d'un fichier.
   app.get("/api/factures/correspondances", async (req): Promise<CorrespondanceArticle[]> => {
     const auth = await exigerDirecteur(req, base);
+    return base.transaction(contexte(auth), (c) => listerCorrespondances(c, auth.lieuId));
+  });
+
+  // Corriger une correspondance apprise (§15.174) : produit, colis ; journalisé.
+  const CleCorrespondance = z.object({ fournisseur: z.string().min(1).max(120), cle: z.string().min(5).max(200) });
+  app.put("/api/factures/correspondances", async (req): Promise<CorrespondanceArticle[]> => {
+    const auth = await exigerDirecteur(req, base);
+    const d = corps(
+      CleCorrespondance.extend({ produitId: z.string().uuid().nullable(), unitesParColis: z.number().int().min(1, "Unités par colis : 1 au moins.").max(10_000) }),
+      req,
+    );
     return base.transaction(contexte(auth), async (c) => {
-      const { rows } = await c.query<CorrespondanceArticle>(
-        `SELECT fournisseur, cle, libelle, produit_id AS "produitId", unites_par_colis AS "unitesParColis"
-           FROM correspondance_article_fournisseur WHERE lieu_id = $1 ORDER BY fournisseur, libelle`,
-        [auth.lieuId],
+      await verifierProduits(c, auth.lieuId, [d.produitId]);
+      const { rows } = await c.query<{ libelle: string; produit_id: string | null; unites_par_colis: number }>(
+        "SELECT libelle, produit_id, unites_par_colis FROM correspondance_article_fournisseur WHERE lieu_id = $1 AND fournisseur = $2 AND cle = $3 FOR UPDATE",
+        [auth.lieuId, d.fournisseur, d.cle],
       );
-      return rows;
+      const avant = rows[0];
+      if (!avant) throw introuvable("Correspondance");
+      await c.query(
+        "UPDATE correspondance_article_fournisseur SET produit_id = $4, unites_par_colis = $5, modifiee_par = $6, modifiee_le = now() WHERE lieu_id = $1 AND fournisseur = $2 AND cle = $3",
+        [auth.lieuId, d.fournisseur, d.cle, d.produitId, d.unitesParColis, auth.utilisateurId],
+      );
+      await inscrireJet(c, {
+        lieuId: auth.lieuId,
+        type: "correspondance_fournisseur_modifiee",
+        utilisateurId: auth.utilisateurId,
+        details: { fournisseur: d.fournisseur, article: avant.libelle, avant: { produitId: avant.produit_id, unitesParColis: avant.unites_par_colis }, apres: { produitId: d.produitId, unitesParColis: d.unitesParColis } },
+      });
+      return listerCorrespondances(c, auth.lieuId);
+    });
+  });
+
+  // Retirer une correspondance : la prochaine facture de cet article redemandera son produit et son colis.
+  app.delete("/api/factures/correspondances", async (req): Promise<CorrespondanceArticle[]> => {
+    const auth = await exigerDirecteur(req, base);
+    const d = CleCorrespondance.parse(req.query);
+    return base.transaction(contexte(auth), async (c) => {
+      const { rows } = await c.query<{ libelle: string }>(
+        "DELETE FROM correspondance_article_fournisseur WHERE lieu_id = $1 AND fournisseur = $2 AND cle = $3 RETURNING libelle",
+        [auth.lieuId, d.fournisseur, d.cle],
+      );
+      if (!rows[0]) throw introuvable("Correspondance");
+      await inscrireJet(c, {
+        lieuId: auth.lieuId,
+        type: "correspondance_fournisseur_modifiee",
+        utilisateurId: auth.utilisateurId,
+        details: { fournisseur: d.fournisseur, article: rows[0].libelle, retiree: true },
+      });
+      return listerCorrespondances(c, auth.lieuId);
     });
   });
 

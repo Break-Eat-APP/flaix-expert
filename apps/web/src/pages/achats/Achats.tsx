@@ -3,9 +3,10 @@ import { EntetePage } from "../../composants/communs.tsx";
 import { useOptions } from "../../session.tsx";
 import { Factures } from "../factures/Factures.tsx";
 import { PrixFournisseurs } from "../stock/PrixFournisseurs.tsx";
+import { Correspondances } from "./Correspondances.tsx";
 import { Livraisons } from "./Livraisons.tsx";
 
-type Onglet = "factures" | "livraisons" | "fournisseurs";
+type Onglet = "factures" | "correspondances" | "livraisons" | "fournisseurs";
 
 /**
  * Achats (§15.172, choix de Rémi du 2026-10-23) : tout ce qui touche aux fournisseurs au même endroit — leurs factures,
@@ -16,7 +17,12 @@ export function Achats() {
   const options = useOptions();
   const [params, setParams] = useSearchParams();
   const onglets: [Onglet, string][] = [
-    ...(options.factures ? ([["factures", "Factures"]] as [Onglet, string][]) : []),
+    ...(options.factures
+      ? ([
+          ["factures", "Factures"],
+          ["correspondances", "Correspondances"],
+        ] as [Onglet, string][])
+      : []),
     ...(options.stock
       ? ([
           ["livraisons", "Livraisons"],
@@ -37,6 +43,7 @@ export function Achats() {
         ))}
       </div>
       {onglet === "factures" && <Factures integre />}
+      {onglet === "correspondances" && <Correspondances />}
       {onglet === "livraisons" && <Livraisons />}
       {onglet === "fournisseurs" && <PrixFournisseurs />}
     </>

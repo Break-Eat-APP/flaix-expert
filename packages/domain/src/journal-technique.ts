@@ -64,6 +64,7 @@ export const TYPES_JET = {
   facture_validee: "Facture fournisseur validée",
   facture_payee: "Facture fournisseur marquée payée",
   factures_exportees: "Factures d'une période exportées pour le comptable",
+  correspondance_fournisseur_modifiee: "Correspondance d'un article fournisseur modifiée ou retirée",
   verification_editeur: "Vérification d'intégrité par FlaiX Expert (éditeur)",
   ingredient_cree: "Ingrédient créé",
   ingredient_modifie: "Ingrédient modifié (prix : coûts des recettes recalculés)",

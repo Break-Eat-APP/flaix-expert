@@ -95,4 +95,20 @@ describe("facture validée, produits entrés en réserve", () => {
     const { rows } = await proprietaire.pool.query("SELECT details FROM journal_technique WHERE lieu_id = $1 AND type = 'facture_validee' AND details->>'numero' = 'F-2'", [lieuId]);
     expect(rows[0].details.alertes_verifiees).toHaveLength(2);
   });
+
+  it("correspondance corrigée puis retirée (§15.174) : journalisée ; [F] inconnue : 404", async () => {
+    const c = { fournisseur: "boissons du nord", cle: "code:can33" };
+    const r = await serveur.inject({ method: "PUT", url: "/api/factures/correspondances", headers: { ...EN_TETES, cookie }, payload: { ...c, produitId: canette.id, unitesParColis: 12 } });
+    expect(r.statusCode).toBe(200);
+    expect((r.json() as CorrespondanceArticle[]).find((x) => x.cle === c.cle)).toMatchObject({ unitesParColis: 12 });
+    const d = await serveur.inject({ method: "DELETE", url: `/api/factures/correspondances?fournisseur=${encodeURIComponent(c.fournisseur)}&cle=${encodeURIComponent(c.cle)}`, headers: { ...EN_TETES, cookie }, payload: {} });
+    expect(d.statusCode).toBe(200);
+    // Reste celle apprise par son libellé (facture F-2 sans code article).
+    expect((d.json() as CorrespondanceArticle[]).map((x) => x.cle)).toEqual(["lib:canette 33 cl x24"]);
+    const { rows } = await proprietaire.pool.query("SELECT details FROM journal_technique WHERE lieu_id = $1 AND type = 'correspondance_fournisseur_modifiee'", [lieuId]);
+    expect(rows).toHaveLength(2);
+    expect(rows.map((x) => x.details.retiree ?? false)).toContain(true);
+    const inconnue = await serveur.inject({ method: "PUT", url: "/api/factures/correspondances", headers: { ...EN_TETES, cookie }, payload: { ...c, produitId: null, unitesParColis: 1 } });
+    expect(inconnue.statusCode).toBe(404);
+  });
 });
