@@ -77,6 +77,7 @@ const PHASES = [
   { n: 71, titre: "Rapport de stock par événement ; « Ce qu'il te reste » en clair ; le net en direct", dossier: "§15.170", commits: ["26cf6ab", "631ca41", "5a7f287"] },
   { n: 72, titre: "Les chiffres de la soirée ; événements privés dans Résultats ; Click & Collect par fichier", dossier: "§15.171", commits: ["b75c773", "2561df7"] },
   { n: 73, titre: "Achats, Ingrédients à part, raccourci de clôture ; facture qui entre en réserve ; export pour le comptable", dossier: "§15.172", commits: ["8aa91c8", "e521638", "e3f7ec6", "269beca"] },
+  { n: 74, titre: "Factures automatisées : import Excel ou CSV, colis, correspondances apprises, alertes", dossier: "§15.173", commits: ["6d19641", "1c6a401"] },
 ];
 
 module.exports = { PHASES };

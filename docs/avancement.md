@@ -2,6 +2,12 @@
 
 Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au soir sont faits et testés (centre d'alertes et rupture poussée, prix fournisseurs, back-office niveau 2, prévision), plus le temps de prise de commande ; tout est commité depuis le 2026-10-05 (consigne « sans commit » levée par Rémi). Pour reprendre : lire ce fichier, puis le dossier §15.138 à §15.143.
 
+## 2026-10-24 : factures automatisées — import Excel/CSV, colis, correspondances, alertes (§15.173)
+
+Saisie d'une facture remplie depuis l'export du fournisseur ; colis (quantité × colis en réserve) ; correspondances
+article → produit apprises par fournisseur ; alertes (total, colis oublié, prix, quantité) que le directeur coche avant
+de valider. Migration 0057. **À voir avec Rémi** : lecture des PDF par IA (service, coût, confidentialité).
+
 ## 2026-10-23 : Achats, Ingrédients à part, facture → réserve, export pour le comptable (§15.172)
 
 « Clôturer la soirée » dans En direct ; menu Achats (Factures, Livraisons, Prix fournisseurs) et page Ingrédients,

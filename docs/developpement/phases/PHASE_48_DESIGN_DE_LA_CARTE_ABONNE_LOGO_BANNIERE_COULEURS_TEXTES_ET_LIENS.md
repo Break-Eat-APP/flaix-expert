@@ -1,6 +1,6 @@
 # Phase 48 — Design de la carte abonné : logo, bannière, couleurs, textes et liens
 
-> FlaiX Expert · dossier de développement · généré le 2026-10-23 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-10-24 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|

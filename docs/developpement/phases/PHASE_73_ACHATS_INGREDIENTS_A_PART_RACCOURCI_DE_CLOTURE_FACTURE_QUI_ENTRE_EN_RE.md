@@ -1,6 +1,6 @@
 # Phase 73 — Achats, Ingrédients à part, raccourci de clôture ; facture qui entre en réserve ; export pour le comptable
 
-> FlaiX Expert · dossier de développement · généré le 2026-10-23 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-10-24 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|
@@ -108,6 +108,7 @@ suite du serveur relancée fichier par fichier ; types et construction. Vu dans 
 - **facture validée, produits entrés en réserve**
   - [F] sans la case : un produit sans livraison demande un motif, rien n'entre en réserve
   - avec la case : 24 canettes entrent en réserve au prix et à la date de la facture, ligne rapprochée, facture validée
+  - correspondance apprise ; [F] colis oublié : alerte, validation refusée sans « J'ai vérifié », acceptée avec
 
 ### `apps/api/test/export-factures.test.ts`
 
