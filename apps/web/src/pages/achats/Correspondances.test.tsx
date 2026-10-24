@@ -21,7 +21,7 @@ afterEach(() => {
 
 describe("correspondances fournisseurs à l'écran", () => {
   it("par fournisseur ; colis corrigé ; article retiré", async () => {
-    const serveur = vi.fn(async (url: string) => (url === "/api/produits" ? reponse([{ id: "coca", nom: "Coca 33 cl", actif: true }]) : reponse(APPRIS)));
+    const serveur = vi.fn(async (url: string, _init?: RequestInit) => (url === "/api/produits" ? reponse([{ id: "coca", nom: "Coca 33 cl", actif: true }]) : reponse(APPRIS)));
     vi.stubGlobal("fetch", serveur);
     render(
       <MemoryRouter>

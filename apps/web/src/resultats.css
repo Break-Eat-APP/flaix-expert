@@ -176,3 +176,60 @@
 .budget-attention { color: #8a5a00; font-weight: 700; }
 .budget-depasse { color: #b4262b; font-weight: 700; }
 .famille-categorie { width: auto; font-size: 11px; padding: 2px 6px; margin-left: 4px; border-radius: 8px; }
+
+/* Résultats au design de la 2e maquette (§15.174) */
+.bilan-de { margin: -6px 0 12px; color: var(--muted); font-size: 14px; }
+.bilan-de strong { color: var(--ink); }
+.pastille-comparaison { border: 1px solid var(--violet); color: var(--violet); background: var(--surface); border-radius: 999px; padding: 8px 14px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.chiffre-cle .chiffre-haut, .prochain-match .chiffre-haut { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.chiffre-cle .chiffre-bas { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: 2px; }
+.chiffre-cle .chiffre-bas .sous { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+.chiffre-cle.mis-en-avant .chiffre-bas .sous { color: rgba(255, 255, 255, 0.88); }
+.chiffre-cle .chiffre-bas svg { width: 46%; max-width: 110px; flex: none; height: 30px; margin: 0; }
+.badge-evolution { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.badge-evolution.hausse { background: #e3f6ec; color: #1f7a4d; }
+.badge-evolution.baisse { background: #fde8e9; color: #b4262b; }
+.chiffre-cle.mis-en-avant .badge-evolution { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.ensemble-rangee { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 18px; align-items: stretch; }
+.ensemble-trois { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: stretch; }
+@media (max-width: 1100px) { .ensemble-rangee, .ensemble-trois { grid-template-columns: minmax(0, 1fr); } }
+.btn-rond { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--onglets); color: var(--ink); }
+.anneau-tuiles .anneau-conteneur { flex-direction: column; align-items: center; }
+.anneau-tuiles .leg-liste { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.anneau-tuiles .leg-ligne { background: var(--onglets); grid-template-columns: 10px minmax(0, 1fr) auto; }
+.anneau-tuiles .leg-ligne .v { display: none; }
+.meilleurs { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.meilleurs li { display: flex; align-items: center; gap: 12px; }
+.meilleurs .avatar { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-weight: 800; color: var(--violet); }
+.meilleur-corps { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.meilleur-ligne { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; }
+.meilleur-ligne strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.meilleurs .barre { height: 6px; border-radius: 99px; background: var(--onglets); overflow: hidden; }
+.meilleurs .barre i { display: block; height: 100%; border-radius: 99px; background: var(--violet); }
+.badge-points { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #fde8e9; color: #b4262b; }
+.badge-points.violet { background: var(--violet-soft); color: var(--violet); }
+.surveiller { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.surveiller li { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; font-size: 13px; line-height: 1.4; }
+.surveiller li > span { display: grid; gap: 2px; min-width: 0; }
+.surveiller li.forte { background: #fde8e9; color: #8d1d22; }
+.surveiller li.normale { background: #fff4dc; color: #7a4f00; }
+.surveiller li.encore { background: var(--violet-soft); }
+.surveiller li svg { flex: none; margin-top: 1px; }
+.prochain-match { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 6px; margin-bottom: 0; }
+.prochain-match::after { content: ""; position: absolute; right: -50px; bottom: -50px; width: 170px; height: 170px; border-radius: 50%; background: var(--violet-soft); pointer-events: none; }
+.prochain-etiquette { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--violet); }
+.prochain-match h3 { margin: 4px 0 0; font-family: "Raleway", "Plus Jakarta Sans", sans-serif; font-size: 22px; }
+.prochain-tuiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0; position: relative; z-index: 1; }
+.prochain-tuiles > div { background: var(--onglets); border-radius: 14px; padding: 10px 12px; display: grid; gap: 4px; min-width: 0; }
+.prochain-tuiles span { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prochain-tuiles strong { font-size: 19px; font-variant-numeric: tabular-nums; }
+.prochain-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; position: relative; z-index: 1; }
+.cloche { position: relative; display: inline-grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--surface); color: var(--ink); box-shadow: var(--ombre); }
+.cloche-nombre { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: var(--red); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.barre-soir { position: sticky; bottom: 14px; z-index: 5; display: flex; align-items: center; gap: 6px; width: fit-content; margin: 20px auto 0; padding: 7px; border-radius: 999px; background: var(--surface); box-shadow: 0 10px 30px rgba(28, 23, 48, 0.14); }
+.barre-soir-titre { font-size: 11.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 0 10px 0 12px; }
+.barre-soir a { padding: 9px 16px; border-radius: 999px; font-size: 13.5px; font-weight: 700; color: var(--ink); text-decoration: none; }
+.barre-soir a:hover { background: var(--onglets); }
+.barre-soir a.en-cours { background: var(--red); color: #fff; }
+.barre-soir .point { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #fff; margin-right: 4px; vertical-align: 1px; }
+

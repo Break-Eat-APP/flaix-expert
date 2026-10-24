@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
+import { ArrowUpRight } from "lucide-react";
 import {
   estIdPeriode,
   estJour,
@@ -12,25 +13,22 @@ import {
   margeParVente,
   margesParCategorie,
   pistesMarges,
-  rangHeure,
-  regrouperParts,
   reperesMarges,
   variation,
-  type Evenement,
   type FinancesSoiree,
   type ProduitVendu,
   type Resultats,
   type StatsMatch,
 } from "@flaix/domain";
-import { api, formaterDateHeure } from "../../api.ts";
+import { api } from "../../api.ts";
 import { Carte, Chargement, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
-import { Anneau, CourbeHeures, Duo, MiniCourbe, Nuage, euros, eurosAxe } from "./graphiques.tsx";
+import { Duo, Nuage, euros, eurosAxe } from "./graphiques.tsx";
 import { VueFinances } from "./Finances.tsx";
 import { VuePertes } from "./Pertes.tsx";
 import { EtatCibleMarge } from "../../composants/cibles.tsx";
 import { ResteSoiree } from "./ResteSoiree.tsx";
-import { ChiffresSoiree } from "./ChiffresSoiree.tsx";
 import { VuePrives } from "./Prives.tsx";
+import { BilanDe, VueEnsemble } from "./Ensemble.tsx";
 
 type Vue = "ensemble" | "ventes" | "finances" | "marges" | "pertes" | "rapports" | "prives";
 const VUES: [Vue, string][] = [
@@ -42,7 +40,6 @@ const VUES: [Vue, string][] = [
   ["rapports", "Rapports de soirée"],
   ["prives", "Événements privés"],
 ];
-const COULEURS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--c5)"];
 const dateCourte = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "Europe/Paris" });
 const court = (e: { id?: string; libelle: string; debut: string }) => (e.id && estIdPeriode(e.id) ? e.libelle : `${e.libelle} · ${dateCourte.format(new Date(e.debut))}`);
 /** Date courte d'un événement, ou bornes d'une période (« 1 sept. – 30 sept. »). */
@@ -53,14 +50,6 @@ function quand(e: { id: string; debut: string }): string {
   return du === au ? f(du) : `${f(du)} – ${f(au)}`;
 }
 const pourcent = (v: number, d = 1) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d })} %`;
-
-/** Évolution écrite en toutes lettres : jamais un pourcentage inventé quand la comparaison manque. */
-function Evolution({ actuel, avant, comparaison }: { actuel: number | null; avant: number | null | undefined; comparaison: Evenement | null }) {
-  if (!comparaison) return <span className="variation neutre">aucun événement de comparaison</span>;
-  const v = variation(actuel, avant);
-  if (v === null) return <span className="variation neutre">pas de comparaison possible</span>;
-  return <span className={`variation ${v >= 0 ? "hausse" : "baisse"}`}>{pourcent(v)} vs {estIdPeriode(comparaison.id) ? "période précédente" : quand(comparaison)}</span>;
-}
 
 /**
  * Résultats (dossier §15.103) : tout vient du journal de caisse ; une donnée manquante est
@@ -101,6 +90,7 @@ export function Tableaux() {
 
   return (
     <>
+      <BilanDe d={d} />
       <div className="en-ligne" style={{ justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
         <div className="onglets" style={{ marginBottom: 0 }}>
           {VUES.map(([id, libelle]) => (
@@ -139,6 +129,16 @@ export function Tableaux() {
           ) : (
             <ChoixPeriode periode={periode} changer={setPeriode} />
           )}
+          {d.comparaison && (
+            <button type="button" className="pastille-comparaison" onClick={() => setVue("ventes")} title="Choisir l'événement de comparaison (onglet Ventes)">
+              Comparé à {d.periode ? "la période précédente" : court(d.comparaison)}
+            </button>
+          )}
+          {!d.periode && e.etat === "clos" && (
+            <Link className="btn" to={`/rapport-soiree/${e.id}`}>
+              Rapport de soirée <ArrowUpRight size={15} />
+            </Link>
+          )}
         </div>
       </div>
       {d.periode && (
@@ -148,48 +148,14 @@ export function Tableaux() {
         </p>
       )}
 
-      <div className="resultats-grille">
-        <div className="resultats-colonne">
-          {vue === "ensemble" && <VueEnsemble d={d} voirFinances={() => setVue("finances")} />}
+      <div className="resultats-colonne">
+          {vue === "ensemble" && <VueEnsemble d={d} haut={<ResteEnBref d={d} voirFinances={() => setVue("finances")} />} />}
           {vue === "ventes" && <VueVentes d={d} autres={autres} choisir={setComparaisonId} />}
           {vue === "finances" && (d.periode ? <VueFinances periode={{ du: d.periode.du, au: d.periode.au }} s={d.actuel!} /> : <VueFinances evenementId={e.id} s={d.actuel!} />)}
           {vue === "marges" && <VueMarges s={d.actuel!} />}
           {vue === "pertes" && (d.periode ? <VuePertes periode={{ du: d.periode.du, au: d.periode.au }} /> : <VuePertes evenementId={e.id} />)}
           {vue === "prives" && <VuePrives periode={d.periode ? { du: d.periode.du, au: d.periode.au } : undefined} />}
           {vue === "rapports" && <VueRapports d={d} choisir={(id) => { setEvenementId(id); setComparaisonId(null); }} />}
-        </div>
-        <aside className="resultats-panneau">
-          <Carte titre="À surveiller">
-            {d.alertes.length === 0 ? (
-              <div className="discret" style={{ fontSize: 12.5 }}>Rien à signaler sur {enPeriode ? "cette période" : "cet événement"}.</div>
-            ) : (
-              <div className="alertes-liste">
-                {d.alertes.map((a) => (
-                  <div key={a.titre} className={`alerte-ligne${a.niveau === "forte" ? " forte" : ""}`}>
-                    <strong>{a.titre}</strong>
-                    <span>{a.detail}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Carte>
-          <Carte titre="Prochains événements" actions={d.prochains.length > 0 ? <Link className="btn-lien" to="/prevision">Prévision</Link> : undefined}>
-            {d.prochains.length === 0 ? (
-              <div className="discret" style={{ fontSize: 12.5 }}>
-                Aucun événement à venir. <Link to="/parametres/saison">Préparer la saison</Link>
-              </div>
-            ) : (
-              <div className="alertes-liste">
-                {d.prochains.map((p) => (
-                  <div key={p.id} className="alerte-ligne">
-                    <strong>{p.libelle}</strong>
-                    <span>{formaterDateHeure(p.debut)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Carte>
-        </aside>
       </div>
 
       <Regles>
@@ -210,17 +176,6 @@ export function Tableaux() {
   );
 }
 
-/** Heures de la soirée (union des deux événements, dans l'ordre de la soirée) et CA de chaque événement par heure. */
-function seriesHeures(a: StatsMatch, b: StatsMatch | null) {
-  const toutes = [...new Set([...a.parHeure, ...(b?.parHeure ?? [])].map((h) => h.heure))].sort((x, y) => rangHeure(x) - rangHeure(y));
-  if (toutes.length === 0) return { heures: [], actuel: [], avant: null };
-  const de = rangHeure(toutes[0]!), a2 = rangHeure(toutes.at(-1)!);
-  const plage: number[] = [];
-  for (let h = de; h <= a2; h++) plage.push(h % 24);
-  const valeur = (s: StatsMatch, h: number) => s.parHeure.find((x) => x.heure === h)?.ca ?? 0;
-  return { heures: plage.map((h) => `${h} h`), actuel: plage.map((h) => valeur(a, h)), avant: b ? plage.map((h) => valeur(b, h)) : null };
-}
-
 /** « Ce qu'il te reste » en tête de l'accueil (§15.154) : le chiffre que le logiciel doit donner avant tout. */
 function ResteEnBref({ d, voirFinances }: { d: Resultats; voirFinances: () => void }) {
   const cle = d.periode ? `${d.periode.du}:${d.periode.au}` : d.evenement!.id;
@@ -237,110 +192,6 @@ function ResteEnBref({ d, voirFinances }: { d: Resultats; voirFinances: () => vo
         </button>
       }
     />
-  );
-}
-
-function VueEnsemble({ d, voirFinances }: { d: Resultats; voirFinances: () => void }) {
-  const a = d.actuel!, p = d.precedent, c = d.comparaison;
-  const heuresA = [...a.parHeure].sort((x, y) => rangHeure(x.heure) - rangHeure(y.heure));
-  const chiffres = [
-    { etiquette: "Chiffre d'affaires TTC", valeur: euros(a.caTtc), actuel: a.caTtc, avant: p?.caTtc, serie: heuresA.map((h) => h.ca) },
-    { etiquette: "Tickets", valeur: a.tickets.toLocaleString("fr-FR"), actuel: a.tickets, avant: p?.tickets, serie: heuresA.map((h) => h.tickets) },
-    { etiquette: "Panier moyen", valeur: a.panierMoyen === null ? "—" : euros(a.panierMoyen), actuel: a.panierMoyen, avant: p?.panierMoyen, serie: heuresA.map((h) => (h.tickets > 0 ? h.ca / h.tickets : 0)) },
-    {
-      etiquette: "CA par spectateur",
-      valeur: a.caParSpectateur === null ? "Affluence manquante" : euros(a.caParSpectateur),
-      actuel: a.caParSpectateur,
-      avant: p?.caParSpectateur,
-      serie: a.spectateurs ? heuresA.map((h) => h.ca) : [],
-    },
-  ];
-  const series = seriesHeures(a, p);
-  const parts = regrouperParts(a.parCategorie).map((x, i) => ({ nom: x.nom, v: x.ca, couleur: x.autres ? "var(--gris-graph)" : COULEURS[i]! }));
-  const meilleurs = [...a.produits].filter((x) => x.caTtc > 0).sort((x, y) => y.caTtc - x.caTtc).slice(0, 7);
-  const maxCa = meilleurs[0]?.caTtc ?? 1;
-
-  return (
-    <>
-      <ResteEnBref d={d} voirFinances={voirFinances} />
-      <div className="chiffres">
-        {chiffres.map((k, i) => (
-          <div key={k.etiquette} className={`chiffre-cle${i === 0 ? " mis-en-avant" : ""}`}>
-            <span className="etiquette">{k.etiquette}</span>
-            <span className="valeur" style={k.actuel === null ? { fontSize: 16, paddingBlock: 5 } : undefined}>
-              {k.valeur}
-            </span>
-            {k.actuel === null && k.etiquette === "CA par spectateur" ? (
-              <span className="variation neutre">
-                <Link to="/parametres/saison">Saisir l'affluence</Link>
-              </span>
-            ) : (
-              <Evolution actuel={k.actuel} avant={k.avant} comparaison={c} />
-            )}
-            <MiniCourbe serie={k.serie} clair={i === 0} />
-          </div>
-        ))}
-      </div>
-
-      <ChiffresSoiree d={d} />
-
-      <Carte
-        titre="Chiffre d'affaires par heure"
-        actions={
-          <div className="leg-inline">
-            <span>
-              <i className="trait" />
-              {court(d.evenement!)}
-            </span>
-            {c && (
-              <span>
-                <i className="trait tirets" />
-                {court(c)}
-              </span>
-            )}
-          </div>
-        }
-      >
-        <div className="graphe-defile">
-          <CourbeHeures heures={series.heures} actuel={series.actuel} avant={series.avant} libelleActuel={quand(d.evenement!)} libelleAvant={c ? quand(c) : null} />
-        </div>
-      </Carte>
-
-      <div className="deux">
-        <Carte titre="Ventes par catégorie" description="Part du CA TTC">
-          {parts.length ? <Anneau parts={parts} centre={{ valeur: euros(a.caTtc), libelle: d.periode ? "CA TTC de la période" : "CA TTC de l'événement" }} /> : <EtatVide titre="Aucune vente" />}
-        </Carte>
-        <Carte titre={d.periode ? "Meilleurs produits de la période" : "Meilleurs produits de l'événement"}>
-          <div className="scroll-x">
-            <table className="tableau">
-              <thead>
-                <tr>
-                  <th>Produit</th>
-                  <th className="d">Vendus</th>
-                  <th className="d">CA TTC</th>
-                  <th className="d">Marge / vente</th>
-                </tr>
-              </thead>
-              <tbody>
-                {meilleurs.map((x) => (
-                  <tr key={x.produitId}>
-                    <td>{x.nom}</td>
-                    <td className="d chiffre">{x.quantite}</td>
-                    <td className="d chiffre">
-                      <span className="db">
-                        <i style={{ width: `${(x.caTtc / maxCa) * 100}%` }} />
-                      </span>
-                      {euros(x.caTtc)}
-                    </td>
-                    <td className="d chiffre">{margeParVente(x) === null ? <span className="cout-manquant">coût manquant</span> : euros(Math.round(margeParVente(x)!))}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Carte>
-      </div>
-    </>
   );
 }
 

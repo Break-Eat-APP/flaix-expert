@@ -75,7 +75,49 @@ describe("Résultats sur une période", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Le mois dernier" }));
     await screen.findByText(/Bilan du 1er au 30 septembre 2026/);
     await waitFor(() => expect(serveur.mock.calls.some(([url]) => /du=\d{4}-\d{2}-01&au=\d{4}-\d{2}-\d{2}/.test(url as string))).toBe(true));
-    expect(screen.getAllByText(/vs période précédente/).length).toBeGreaterThan(0);
-    expect(screen.getByText("Meilleurs produits de la période")).toBeTruthy();
+    // Design de la 2e maquette (§15.174) : comparaison dite en pastille et sous chaque chiffre.
+    expect(screen.getByRole("button", { name: "Comparé à la période précédente" })).toBeTruthy();
+    expect(screen.getAllByText(/à la période précédente/).length).toBeGreaterThan(1);
+    expect(screen.getByText("Ce qui se vend le mieux")).toBeTruthy();
   });
 });
+
+describe("Vue d'ensemble au design de la 2e maquette (§15.174)", () => {
+  it("bilan, rapport de soirée, chiffres comparés, à surveiller, prochain match et sa prévision", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.startsWith("/api/prevision")) return reponse(200, { prevision: { ca: { bas: 1_700_000, median: 1_980_000, haut: 2_200_000 }, produits: [{ produit: "Bière", ventes: { bas: 300, median: 420, haut: 500 } }] } });
+        if (!url.startsWith("/api/resultats")) return reponse(404, { erreur: "Inconnu" });
+        const r: Resultats = {
+          matchs: [gap],
+          evenement: evenement("gap", "Gap", gap.debut),
+          comparaison: evenement("rouen", "Rouen", "2026-08-29T18:00:00Z"),
+          actuel: stats("gap", 1_400),
+          precedent: stats("rouen", 700),
+          alertes: [{ niveau: "forte", titre: "Rupture : bière blonde", detail: "Bar Nord, 21 h 12" }],
+          prochains: [{ id: "orl", libelle: "FC Rouen – Orléans", debut: new Date(Date.now() + 8 * 86_400_000).toISOString() }],
+          periode: null,
+        };
+        return reponse(200, r);
+      }),
+    );
+    render(
+      <MemoryRouter>
+        <QueryClientProvider client={new QueryClient()}>
+          <Tableaux />
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("Gap", { selector: ".bilan-de strong" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Rapport de soirée/ }).getAttribute("href")).toBe("/rapport-soiree/gap");
+    expect(screen.getByRole("button", { name: /Comparé à Rouen/ })).toBeTruthy();
+    expect(screen.getAllByText("+100 %").length).toBeGreaterThan(0); // 14,00 € contre 7,00 €
+    expect(screen.getByText("Rupture : bière blonde")).toBeTruthy();
+    expect(screen.getByText("FC Rouen – Orléans")).toBeTruthy();
+    expect(screen.getByText("dans 8 jours")).toBeTruthy();
+    expect(await screen.findByText(/≈ 19\s800,00\s€/)).toBeTruthy();
+    expect(screen.getByText("≈ 420")).toBeTruthy();
+  });
+});
+

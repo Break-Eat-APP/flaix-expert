@@ -1,9 +1,10 @@
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BellRing, CheckCircle2, Radio } from "lucide-react";
+import { Bell, CheckCircle2, Radio } from "lucide-react";
 import type { CentreAlertes, Evenement, Lieu, Produit, SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
 import { Carte, Chargement, EntetePage, MessageErreur } from "../composants/communs.tsx";
+import { useOptions } from "../session.tsx";
 import { Tableaux } from "./resultats/Tableaux.tsx";
 
 /**
@@ -18,6 +19,7 @@ export function Resultats({ session }: { session: SessionInfo }) {
   const evenements = useQuery({ queryKey: ["evenements"], queryFn: () => api.get<Evenement[]>("/evenements") });
   // Centre d'alertes (§15.140) : chargé à part, il ne retarde jamais l'affichage des résultats.
   const alertes = useQuery({ queryKey: ["alertes"], queryFn: () => api.get<CentreAlertes>("/alertes") });
+  const options = useOptions();
 
   if (lieu.isPending || stands.isPending || produits.isPending || evenements.isPending) return <Chargement />;
   const erreur = lieu.error ?? stands.error ?? produits.error ?? evenements.error;
@@ -67,6 +69,11 @@ export function Resultats({ session }: { session: SessionInfo }) {
       lien: "/parametres/saison",
     },
   ];
+  // « Bonsoir Rémi » (2e maquette, §15.174) : bonjour jusqu'à 18 h, heure de Paris.
+  const heure = Number(new Intl.DateTimeFormat("fr-FR", { hour: "numeric", hourCycle: "h23", timeZone: "Europe/Paris" }).format(new Date()));
+  const salut = heure >= 18 || heure < 5 ? "Bonsoir" : "Bonjour";
+  const prenom = session.utilisateur.nom.trim().split(/\s+/)[0] ?? "";
+  const nbAlertes = alertes.data?.alertes.length ?? 0;
   const faites = etapes.filter((e) => e.fait).length;
   const miseEnRouteTerminee = faites === etapes.length;
 
@@ -74,13 +81,19 @@ export function Resultats({ session }: { session: SessionInfo }) {
     <>
       <EntetePage
         fil={session.lieu.nom}
-        titre="Résultats"
+        titre={session.support ? "Résultats" : `${salut} ${prenom}`}
         description={
           session.support
             ? `Support FlaiX Expert, en lecture seule : ${session.utilisateur.nom}.`
             : miseEnRouteTerminee || session.formation
-              ? `Bonjour ${session.utilisateur.nom}.`
-            : `Bonjour ${session.utilisateur.nom}. Ton espace démarre vide : tu construis toi-même ta configuration, étape par étape.`
+              ? "Résultats de tes événements terminés."
+              : "Ton espace démarre vide : tu construis toi-même ta configuration, étape par étape."
+        }
+        actions={
+          <Link to="/alertes" className="cloche" aria-label={`Centre d'alertes : ${nbAlertes} alerte${nbAlertes > 1 ? "s" : ""}`} title="Centre d'alertes">
+            <Bell size={18} />
+            {nbAlertes > 0 && <span className="cloche-nombre">{nbAlertes}</span>}
+          </Link>
         }
       />
       {enCours && (
@@ -89,20 +102,6 @@ export function Resultats({ session }: { session: SessionInfo }) {
           <span style={{ minWidth: 0 }}>
             <strong>{enCours.libelle} : événement en cours</strong>
             <span className="discret"> — CA, caisses et ruptures en direct</span>
-          </span>
-        </Link>
-      )}
-      {alertes.data && alertes.data.alertes.length > 0 && (
-        <Link to="/alertes" className="carte direct-accroche">
-          <BellRing size={18} />
-          <span style={{ minWidth: 0 }}>
-            <strong>
-              Centre d'alertes : {alertes.data.alertes.length} alerte{alertes.data.alertes.length > 1 ? "s" : ""}
-            </strong>
-            <span className="discret">
-              {" "}
-              — {alertes.data.alertes.filter((a) => a.niveau === "forte").length || "aucune"} forte{alertes.data.alertes.filter((a) => a.niveau === "forte").length > 1 ? "s" : ""} · prix, marges, stock, fournisseurs
-            </span>
           </span>
         </Link>
       )}
@@ -126,6 +125,16 @@ export function Resultats({ session }: { session: SessionInfo }) {
         </Carte>
       )}
       <Tableaux />
+      {!session.support && (
+        <nav className="barre-soir" aria-label="Soir de match">
+          <span className="barre-soir-titre">Soir de match</span>
+          <Link to="/direct" className={enCours ? "en-cours" : ""}>
+            {enCours && <span className="point" />} En direct
+          </Link>
+          {options.assistant && <Link to="/assistant">Assistant</Link>}
+          <Link to="/caisses">Caisses</Link>
+        </nav>
+      )}
     </>
   );
 }
