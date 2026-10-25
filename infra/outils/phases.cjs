@@ -79,7 +79,7 @@ const PHASES = [
   { n: 73, titre: "Achats, Ingrédients à part, raccourci de clôture ; facture qui entre en réserve ; export pour le comptable", dossier: "§15.172", commits: ["8aa91c8", "e521638", "e3f7ec6", "269beca"] },
   { n: 74, titre: "Factures automatisées : import Excel ou CSV, colis, correspondances apprises, alertes", dossier: "§15.173", commits: ["6d19641", "1c6a401"] },
   { n: 75, titre: "Correspondances fournisseurs à l'écran ; Résultats au design de la 2e maquette", dossier: "§15.174", commits: ["6fb8776", "d2d5506", "ee26b84"] },
-  { n: 76, titre: "Audit des phases 67 à 75 et corrections ; dossier de reprise à jour", dossier: "§15.175", commits: ["0ff2657"] },
+  { n: 76, titre: "Audit des phases 67 à 75 et corrections ; dossier de reprise à jour", dossier: "§15.175", commits: ["0ff2657", "117a10d", "96c1e51"] },
 ];
 
 module.exports = { PHASES };
