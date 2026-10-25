@@ -7,7 +7,7 @@
 | Dates | 2026-10-25 |
 | Décision | dossier projet §15.174 |
 | État | livrée, tests au vert au moment du commit |
-| Commits | 2 |
+| Commits | 3 |
 
 ## 1. Ce qui a été décidé, et pourquoi
 
@@ -36,38 +36,39 @@ fournisseurs » : *« fait »* ; « la page Résultats au design de ta 2e maquet
 
 **Tests** : serveur (correspondance corrigée puis retirée, journal, 404) ; écrans (correspondances ; vue d'ensemble :
 bilan, rapport de soirée, comparaison, évolution, à surveiller, prochain match et prévision) ; écrans 106 au total,
-lancés par dossier (la mémoire du poste fait tomber la suite d'un bloc) ; types et construction. **Pas vu dans le
-navigateur** : la fenêtre était masquée et le serveur local ne démarrait pas faute de mémoire — à regarder en ligne.
+lancés par dossier (la mémoire du poste fait tomber la suite d'un bloc) ; types et construction. Vu dans le navigateur
+le 2026-10-25 seulement (fenêtre masquée et serveur local en panne de mémoire avant) : voir §15.175.
 
 ## 2. Ce qui a été construit — commits
 
 - [`6fb8776`](https://github.com/Break-Eat-APP/flaix-expert/commit/6fb87761e08be3995b5f2c966a9d00ba9bb9673d) — 2026-10-25 — Achats › Correspondances : corriger ou retirer les articles appris des factures (§15.174)
 - [`d2d5506`](https://github.com/Break-Eat-APP/flaix-expert/commit/d2d5506c0ef61be624c5605ce051ee76ded362df) — 2026-10-25 — Résultats au design de la 2e maquette : bonsoir, cloche, chiffres comparés, courbe et catégories, à surveiller, prochain match, barre Soir de match (§15.174)
+- [`ee26b84`](https://github.com/Break-Eat-APP/flaix-expert/commit/ee26b84632220d5394a3345504efb728a103c47f) — 2026-10-25 — Résultats : contenu de « Prochain match » au-dessus du cercle décoratif
 
 ## 3. Fichiers, par couche
 
 ### Tests
 
-- `apps/api/test/facture-reserve.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/d2d5506c0ef61be624c5605ce051ee76ded362df/apps/api/test/facture-reserve.test.ts)
+- `apps/api/test/facture-reserve.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/ee26b84632220d5394a3345504efb728a103c47f/apps/api/test/facture-reserve.test.ts)
 
 ### Moteur de calcul (packages/domain)
 
-- `packages/domain/src/journal-technique.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/d2d5506c0ef61be624c5605ce051ee76ded362df/packages/domain/src/journal-technique.ts)
+- `packages/domain/src/journal-technique.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/ee26b84632220d5394a3345504efb728a103c47f/packages/domain/src/journal-technique.ts)
 
 ### Serveur (apps/api)
 
-- `apps/api/src/routes/factures.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/d2d5506c0ef61be624c5605ce051ee76ded362df/apps/api/src/routes/factures.ts)
+- `apps/api/src/routes/factures.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/ee26b84632220d5394a3345504efb728a103c47f/apps/api/src/routes/factures.ts)
 
 ### Écrans (apps/web)
 
-- `apps/web/src/pages/achats/Achats.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/d2d5506c0ef61be624c5605ce051ee76ded362df/apps/web/src/pages/achats/Achats.tsx)
-- `apps/web/src/pages/achats/Correspondances.test.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/d2d5506c0ef61be624c5605ce051ee76ded362df/apps/web/src/pages/achats/Correspondances.test.tsx)
-- `apps/web/src/pages/achats/Correspondances.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/d2d5506c0ef61be624c5605ce051ee76ded362df/apps/web/src/pages/achats/Correspondances.tsx)
-- `apps/web/src/pages/Resultats.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/d2d5506c0ef61be624c5605ce051ee76ded362df/apps/web/src/pages/Resultats.tsx)
-- `apps/web/src/pages/resultats/Ensemble.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/d2d5506c0ef61be624c5605ce051ee76ded362df/apps/web/src/pages/resultats/Ensemble.tsx)
-- `apps/web/src/pages/resultats/Tableaux.test.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/d2d5506c0ef61be624c5605ce051ee76ded362df/apps/web/src/pages/resultats/Tableaux.test.tsx)
-- `apps/web/src/pages/resultats/Tableaux.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/d2d5506c0ef61be624c5605ce051ee76ded362df/apps/web/src/pages/resultats/Tableaux.tsx)
-- `apps/web/src/resultats.css` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/d2d5506c0ef61be624c5605ce051ee76ded362df/apps/web/src/resultats.css)
+- `apps/web/src/pages/achats/Achats.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/ee26b84632220d5394a3345504efb728a103c47f/apps/web/src/pages/achats/Achats.tsx)
+- `apps/web/src/pages/achats/Correspondances.test.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/ee26b84632220d5394a3345504efb728a103c47f/apps/web/src/pages/achats/Correspondances.test.tsx)
+- `apps/web/src/pages/achats/Correspondances.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/ee26b84632220d5394a3345504efb728a103c47f/apps/web/src/pages/achats/Correspondances.tsx)
+- `apps/web/src/pages/Resultats.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/ee26b84632220d5394a3345504efb728a103c47f/apps/web/src/pages/Resultats.tsx)
+- `apps/web/src/pages/resultats/Ensemble.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/ee26b84632220d5394a3345504efb728a103c47f/apps/web/src/pages/resultats/Ensemble.tsx)
+- `apps/web/src/pages/resultats/Tableaux.test.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/ee26b84632220d5394a3345504efb728a103c47f/apps/web/src/pages/resultats/Tableaux.test.tsx)
+- `apps/web/src/pages/resultats/Tableaux.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/ee26b84632220d5394a3345504efb728a103c47f/apps/web/src/pages/resultats/Tableaux.tsx)
+- `apps/web/src/resultats.css` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/ee26b84632220d5394a3345504efb728a103c47f/apps/web/src/resultats.css)
 
 ## 4. Tests créés dans cette phase
 

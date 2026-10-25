@@ -101,6 +101,10 @@
 - **statut et total**
   - rapprochée seulement si chaque ligne produit l'est ; un écart l'emporte ; frais divers ignorés
   - total HT = Σ quantité × prix unitaire
+- **récapitulatif pour le comptable (§15.172, audit §15.175)**
+  - Excel français : « ; », virgule décimale, dates jj/mm/aaaa, BOM ; champ avec « ; » entre guillemets
+  - [F] un fournisseur ou un n° qui commence par = + - @ n'est jamais une formule pour Excel
+  - nom de fichier sans caractère interdit
 
 ## 5. Pour reprendre ou vérifier cette phase
 

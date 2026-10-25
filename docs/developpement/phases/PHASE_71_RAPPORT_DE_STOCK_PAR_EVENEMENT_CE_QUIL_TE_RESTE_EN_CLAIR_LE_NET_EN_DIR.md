@@ -7,7 +7,7 @@
 | Dates | 2026-10-21 |
 | Décision | dossier projet §15.170 |
 | État | livrée, tests au vert au moment du commit |
-| Commits | 3 |
+| Commits | 4 |
 
 ## 1. Ce qui a été décidé, et pourquoi
 
@@ -52,37 +52,40 @@ relancée fichier par fichier ; types et construction.
 - [`26cf6ab`](https://github.com/Break-Eat-APP/flaix-expert/commit/26cf6abde2c89c15296ae8d56e5f36ecaf1a8eab) — 2026-10-21 — Ce qu'il te reste en clair, en tête de Résultats et en direct (§15.170)
 - [`631ca41`](https://github.com/Break-Eat-APP/flaix-expert/commit/631ca4169ff7bf5861b65ede39c043de7f7782d4) — 2026-10-21 — Événement privé : rapport de stock, à sortir puis sorti de la réserve, au coût d'achat (§15.170)
 - [`5a7f287`](https://github.com/Break-Eat-APP/flaix-expert/commit/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c) — 2026-10-21 — Rapport de soirée : stock de la soirée stand par stand (§15.170) ; test des cibles après la clôture
+- [`7b2ecfb`](https://github.com/Break-Eat-APP/flaix-expert/commit/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119) — 2026-10-21 — Tests du conditionnement et de l'équipe adaptés à Résultats limité aux événements terminés ; calcul du reste sans coupure
 
 ## 3. Fichiers, par couche
 
 ### Tests
 
-- `apps/api/test/finances.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/api/test/finances.test.ts)
-- `apps/api/test/rapport-soiree.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/api/test/rapport-soiree.test.ts)
-- `apps/api/test/sortie-stock-prive.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/api/test/sortie-stock-prive.test.ts)
-- `packages/domain/src/rapport-soiree.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/packages/domain/src/rapport-soiree.test.ts)
+- `apps/api/test/conditionnement.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/api/test/conditionnement.test.ts)
+- `apps/api/test/equipe.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/api/test/equipe.test.ts)
+- `apps/api/test/finances.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/api/test/finances.test.ts)
+- `apps/api/test/rapport-soiree.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/api/test/rapport-soiree.test.ts)
+- `apps/api/test/sortie-stock-prive.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/api/test/sortie-stock-prive.test.ts)
+- `packages/domain/src/rapport-soiree.test.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/packages/domain/src/rapport-soiree.test.ts)
 
 ### Moteur de calcul (packages/domain)
 
-- `packages/domain/src/evenements-prives.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/packages/domain/src/evenements-prives.ts)
-- `packages/domain/src/rapport-soiree.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/packages/domain/src/rapport-soiree.ts)
+- `packages/domain/src/evenements-prives.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/packages/domain/src/evenements-prives.ts)
+- `packages/domain/src/rapport-soiree.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/packages/domain/src/rapport-soiree.ts)
 
 ### Serveur (apps/api)
 
-- `apps/api/src/routes/evenements-prives.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/api/src/routes/evenements-prives.ts)
-- `apps/api/src/routes/rapport-soiree.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/api/src/routes/rapport-soiree.ts)
+- `apps/api/src/routes/evenements-prives.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/api/src/routes/evenements-prives.ts)
+- `apps/api/src/routes/rapport-soiree.ts` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/api/src/routes/rapport-soiree.ts)
 
 ### Écrans (apps/web)
 
-- `apps/web/src/pages/direct/EnDirect.test.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/web/src/pages/direct/EnDirect.test.tsx)
-- `apps/web/src/pages/direct/EnDirect.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/web/src/pages/direct/EnDirect.tsx)
-- `apps/web/src/pages/prives/EvenementPrive.test.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/web/src/pages/prives/EvenementPrive.test.tsx)
-- `apps/web/src/pages/prives/EvenementPrive.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/web/src/pages/prives/EvenementPrive.tsx)
-- `apps/web/src/pages/resultats/RapportSoiree.test.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/web/src/pages/resultats/RapportSoiree.test.tsx)
-- `apps/web/src/pages/resultats/RapportSoiree.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/web/src/pages/resultats/RapportSoiree.tsx)
-- `apps/web/src/pages/resultats/ResteSoiree.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/web/src/pages/resultats/ResteSoiree.tsx)
-- `apps/web/src/pages/resultats/Tableaux.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/web/src/pages/resultats/Tableaux.tsx)
-- `apps/web/src/resultats.css` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c/apps/web/src/resultats.css)
+- `apps/web/src/pages/direct/EnDirect.test.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/web/src/pages/direct/EnDirect.test.tsx)
+- `apps/web/src/pages/direct/EnDirect.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/web/src/pages/direct/EnDirect.tsx)
+- `apps/web/src/pages/prives/EvenementPrive.test.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/web/src/pages/prives/EvenementPrive.test.tsx)
+- `apps/web/src/pages/prives/EvenementPrive.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/web/src/pages/prives/EvenementPrive.tsx)
+- `apps/web/src/pages/resultats/RapportSoiree.test.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/web/src/pages/resultats/RapportSoiree.test.tsx)
+- `apps/web/src/pages/resultats/RapportSoiree.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/web/src/pages/resultats/RapportSoiree.tsx)
+- `apps/web/src/pages/resultats/ResteSoiree.tsx` — créé — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/web/src/pages/resultats/ResteSoiree.tsx)
+- `apps/web/src/pages/resultats/Tableaux.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/web/src/pages/resultats/Tableaux.tsx)
+- `apps/web/src/resultats.css` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119/apps/web/src/resultats.css)
 
 ## 4. Tests créés dans cette phase
 

@@ -103,7 +103,13 @@ Chaque phase a sa fiche (décision, commits, fichiers par couche, tests) dans
   `facture-reserve` 5, `export-factures` 2, `formation` 10, `formation-complements` 2, `conformite-base` 15).
 - Écrans : 106 tests en 29 fichiers, verts dossier par dossier.
 
-Résumé de la dernière exécution complète : _complété à la fin de l'audit (§ 9)._
+Résumé de la dernière exécution complète (2026-10-25, après les corrections) :
+
+| Suite | Fichiers | Tests | Résultat |
+|---|---|---|---|
+| Moteur (`packages/domain`) | 42 | 285 | tous verts, d'un seul bloc |
+| Serveur (`apps/api`, contre PostgreSQL) | 51 | 416 | tous verts ; 3 fichiers (`conditionnement`, `evenements-prives`, `rapport-soiree`) tombés pendant la suite sur des erreurs de l'environnement (fichier temporaire illisible, module npm introuvable, transformation interrompue — poste à court de mémoire), verts relancés seuls |
+| Écrans (`apps/web`) | 29 | 106 | tous verts, dossier par dossier |
 
 ## 8. Pour l'auditeur suivant (Codex)
 

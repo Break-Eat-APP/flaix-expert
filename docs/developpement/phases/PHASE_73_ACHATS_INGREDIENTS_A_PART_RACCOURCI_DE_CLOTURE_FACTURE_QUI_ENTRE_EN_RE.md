@@ -110,6 +110,7 @@ suite du serveur relancée fichier par fichier ; types et construction. Vu dans 
   - avec la case : 24 canettes entrent en réserve au prix et à la date de la facture, ligne rapprochée, facture validée
   - correspondance apprise ; [F] colis oublié : alerte, validation refusée sans « J'ai vérifié », acceptée avec
   - correspondance corrigée puis retirée (§15.174) : journalisée ; [F] inconnue : 404
+  - audit §15.175 — produit retiré sur une facture : la correspondance apprise suit ; [F] quantité × colis au-delà d'un mouvement : refusée clairement
 
 ### `apps/api/test/export-factures.test.ts`
 

@@ -5,6 +5,25 @@
 
 ## 2026-10-25
 
+### [`117a10d`](https://github.com/Break-Eat-APP/flaix-expert/commit/117a10d6b54087eba2d604665aa913c496274350) — Audit des phases 67 à 75 : rapport, guide de reprise, carte du code, consigne Codex, sommaire de la documentation (§15.175)
+
+- modifié : `CHANGELOG.md`
+- créé : `docs/README.md`
+- créé : `docs/audits/AUDIT_2026-10-25_claude-phases-67-75.docx`
+- créé : `docs/audits/AUDIT_2026-10-25_claude-phases-67-75.md`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/CODEX_AUDIT_PROMPT.md`
+- modifié : `docs/developpement/GUIDE_DE_REPRISE.docx`
+- modifié : `docs/developpement/GUIDE_DE_REPRISE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `docs/points-a-revoir.md`
+- modifié : `infra/outils/carte-du-code-intro.md`
+- créé : `infra/outils/guide-word.cjs`
+- modifié : `infra/outils/journal-developpement.cjs`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`0ff2657`](https://github.com/Break-Eat-APP/flaix-expert/commit/0ff265774c65cdde7f72d140c99b0eaaed28b3c6) — Audit des phases 67 à 75 : corrections (§15.175) *(phase 76)*
 
 - modifié : `apps/api/src/routes/factures.ts`
