@@ -74,11 +74,12 @@ const PHASES = [
   { n: 68, titre: "En direct à part, au design des maquettes ; Résultats pour les événements terminés", dossier: "§15.167", commits: ["25fcf2a", "a34efbd", "f73a1b3"] },
   { n: 69, titre: "Exports de L'Addition lus seuls ; annuler un import de caisse connectée", dossier: "§15.168", commits: ["b54f0f6"] },
   { n: 70, titre: "Décor fixe, stock dans l'ordre, ouverture depuis En direct, stock des événements privés, marge par catégorie", dossier: "§15.169", commits: ["074b283", "9a05031", "47bddbf", "600c400", "61ad9fb"] },
-  { n: 71, titre: "Rapport de stock par événement ; « Ce qu'il te reste » en clair ; le net en direct", dossier: "§15.170", commits: ["26cf6ab", "631ca41", "5a7f287"] },
+  { n: 71, titre: "Rapport de stock par événement ; « Ce qu'il te reste » en clair ; le net en direct", dossier: "§15.170", commits: ["26cf6ab", "631ca41", "5a7f287", "7b2ecfb"] },
   { n: 72, titre: "Les chiffres de la soirée ; événements privés dans Résultats ; Click & Collect par fichier", dossier: "§15.171", commits: ["b75c773", "2561df7"] },
   { n: 73, titre: "Achats, Ingrédients à part, raccourci de clôture ; facture qui entre en réserve ; export pour le comptable", dossier: "§15.172", commits: ["8aa91c8", "e521638", "e3f7ec6", "269beca"] },
   { n: 74, titre: "Factures automatisées : import Excel ou CSV, colis, correspondances apprises, alertes", dossier: "§15.173", commits: ["6d19641", "1c6a401"] },
-  { n: 75, titre: "Correspondances fournisseurs à l'écran ; Résultats au design de la 2e maquette", dossier: "§15.174", commits: ["6fb8776", "d2d5506"] },
+  { n: 75, titre: "Correspondances fournisseurs à l'écran ; Résultats au design de la 2e maquette", dossier: "§15.174", commits: ["6fb8776", "d2d5506", "ee26b84"] },
+  { n: 76, titre: "Audit des phases 67 à 75 et corrections ; dossier de reprise à jour", dossier: "§15.175", commits: ["0ff2657"] },
 ];
 
 module.exports = { PHASES };

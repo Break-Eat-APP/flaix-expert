@@ -2,7 +2,8 @@
 
 > Copie le bloc ci-dessous et envoie-le à Codex, ouvert sur une copie du dépôt `Break-Eat-APP/flaix-expert`.
 > **Audit complet** : laisse « toutes les phases ». **Audit d'une phase** : remplace `[PHASE]` par son numéro et son titre (voir `docs/developpement/JOURNAL_DES_PHASES.md`).
-> **Audit du 2026-10 (conseillé)** : remplace `[PHASE]` par « phases 33 à 48 (construites depuis le premier audit Codex, phase 32) » ; la revue de Claude du 2026-10-05 est dans `docs/audits/AUDIT_2026-10-05_revue-claude-phases-39-48.md` (à recouper, pas à recopier).
+> **Audit conseillé (2026-10-25)** : remplace `[PHASE]` par « phases 67 à 76 (§15.166 à §15.175, migrations 0054 à 0058, construites depuis le 2026-10-19) ». La revue de Claude du 2026-10-25 est dans `docs/audits/AUDIT_2026-10-25_claude-phases-67-75.md` (à recouper, pas à recopier : ses défauts A1 à A7 sont dits corrigés, vérifie-le ; ses points ouverts O1 à O15 sont à confirmer ou contredire ; son § 8 liste les fichiers à regarder en priorité).
+> Audit précédent : phases 33 à 48 (`docs/audits/AUDIT_2026-10-05_codex-phases-33-48.md`).
 
 ---
 
@@ -14,11 +15,13 @@ tu ne déploies rien. Tu écris seulement ton rapport.
 ## À lire d'abord
 AGENTS.md (règles et invariants), docs/avancement.md, docs/developpement/JOURNAL_DES_PHASES.md,
 docs/developpement/CARTE_DU_CODE.md, docs/decisions-architecture-production.md,
-docs/conformite/dossier-conformite-flaix-expert.md. Le raisonnement de chaque décision est dans
-docs/flaix-gestion-dossier-projet.md (section §15.x indiquée pour chaque phase).
+docs/conformite/dossier-conformite-flaix-expert.md, docs/developpement/GUIDE_DE_REPRISE.md (§ 4 :
+les dix principes à ne jamais casser ; § 6 bis : ce qui a été construit depuis la phase 66). Le
+raisonnement de chaque décision est dans docs/flaix-gestion-dossier-projet.md (section §15.x indiquée
+pour chaque phase).
 
 ## Périmètre
-[PHASE] — ou toutes les phases (0 à 48).
+[PHASE] — ou toutes les phases (0 à 76).
 
 ## Stack
 pnpm monorepo, TypeScript strict. packages/domain : moteur pur partagé par le serveur et la
@@ -29,8 +32,10 @@ db/migrations : PostgreSQL (sécurité par ligne, droits, déclencheurs d'écrit
 1. Exécution : `pnpm install`, `pnpm db:up`, `pnpm test`, `pnpm typecheck`. Donne les chiffres
    exacts (tests passés / échoués) et les erreurs telles quelles. Sur un poste à peu de mémoire
    (6 Go : Node peut tomber, « out of memory » ou ERR_WORKER_INIT_FAILED), lance les tests du
-   serveur un fichier à la fois : `pnpm --filter @flaix/api test:un-par-un` ; distingue un échec
-   de test d'un arrêt de Node faute de mémoire.
+   serveur un fichier à la fois : `pnpm --filter @flaix/api test:un-par-un`, et ceux des écrans
+   dossier par dossier (`cd apps/web && ./node_modules/.bin/vitest run src/pages/<dossier>
+   --pool=forks --maxWorkers=1`) ; distingue un échec de test d'un arrêt de Node faute de mémoire
+   (« Worker exited unexpectedly »).
 2. Inaltérabilité : aucune table d'encaissement ou de journal ne doit accepter UPDATE / DELETE /
    TRUNCATE, même pour le propriétaire (cherche dans db/migrations les tables oubliées). Les
    corrections sont-elles toujours des opérations inverses tracées ?
@@ -63,6 +68,19 @@ db/migrations : PostgreSQL (sécurité par ligne, droits, déclencheurs d'écrit
     personnelle inutile dans les journaux, rien de bloquant après un enregistrement.
 14. Session du support FlaiX Expert (§15.142) : peut-elle écrire quoi que ce soit, voir un autre
     lieu, ou rester ouverte après le retrait de l'autorisation ?
+15. Fichiers déposés par l'utilisateur (exports de caisse, factures Excel ou CSV, pièces jointes) :
+    lecture robuste (en-têtes, séparateurs, encodages, lignes de total, quantités au poids), taille
+    bornée, aucune donnée sensible gardée (la colonne « URL Ticket » de L'Addition ne doit jamais
+    être lue ni stockée).
+16. Fichiers produits pour l'extérieur (export du comptable : zip, CSV pour Excel, PDF des factures
+    de vente) : injection de formules dans le CSV, noms de fichiers, mémoire du serveur, contenu
+    fidèle au contenu scellé de la facture.
+17. Stock : chaque écriture (livraison née d'une facture, sortie d'un événement privé, annulation
+    d'un import de ventes) respecte-t-elle les bornes et l'écriture seule ? La conversion à l'unité
+    vendue (quantité × colis, prix ÷ colis) est-elle la même au rapprochement, aux écarts et à
+    l'entrée en réserve ?
+18. Options du lieu : un écran ou une route s'affiche-t-il, ou écrit-il, quand l'option dont il
+    dépend est coupée (optionDeLaRoute dans packages/domain/src/editeur.ts) ?
 
 ## Format du rapport
 Fichier docs/audits/AUDIT_AAAA-MM-JJ_<sujet>.md :

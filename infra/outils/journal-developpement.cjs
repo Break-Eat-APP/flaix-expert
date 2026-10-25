@@ -70,6 +70,19 @@ const CLES = [
   ["Stade en direct", "apps/web/src/pages/resultats/modeles-plan.ts", ["placeStand"]],
   ["Stade en direct", "apps/web/src/pages/resultats/decors3d.ts", ["construireDecor"]],
   ["Remise à zéro du stock", "apps/api/src/routes/stock.ts", ["/api/stock/remise-a-zero"]],
+  ["En direct", "packages/domain/src/direct.ts", ["tableauDirect", "parQuartDHeure", "cumulJusque"]],
+  ["En direct", "apps/api/src/routes/direct.ts", ["/api/direct"]],
+  ["Résultats", "packages/domain/src/caisses-externes.ts", ["evenementTermine"]],
+  ["Chiffres de la soirée", "packages/domain/src/chiffres-soiree.ts", ["chiffresSoiree", "devinerFamille"]],
+  ["Chiffres de la soirée", "apps/api/src/routes/resultats.ts", ["chiffresDeSoiree", "minutesPersonnel"]],
+  ["Caisses connectées", "apps/api/src/routes/caisses-externes.ts", ["/api/caisses-externes/:id/imports/:importId/annulation"]],
+  ["Événements privés", "apps/api/src/routes/evenements-prives.ts", ["sortirDeLaReserve", "sortieStockDe"]],
+  ["Rapport de soirée", "packages/domain/src/rapport-soiree.ts", ["bilanDeStock"]],
+  ["Factures automatisées", "packages/domain/src/factures-import.ts", ["lireFactureExport", "colisDevine", "cleArticle", "enUnites", "alertesFacture"]],
+  ["Factures automatisées", "apps/api/src/routes/factures.ts", ["apprendreCorrespondances", "/api/factures/:id/validation", "/api/factures/correspondances", "/api/factures/export"]],
+  ["Factures automatisées", "apps/api/src/routes/stock.ts", ["enregistrerLivraison"]],
+  ["Export pour le comptable", "packages/domain/src/factures.ts", ["csvRecapFactures", "nomDeFichier"]],
+  ["Export pour le comptable", "apps/api/src/pdf-facture.ts", ["pdfFactureVente"]],
 ];
 
 const commitsTous = git("log", "--reverse", "--date=short", "--pretty=format:%H|%h|%ad|%s").trim().split("\n").map((l) => {

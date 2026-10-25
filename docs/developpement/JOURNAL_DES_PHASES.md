@@ -76,11 +76,12 @@
 | 68 | [En direct à part, au design des maquettes ; Résultats pour les événements terminés](#phase-68) | §15.167 | [`25fcf2a`](https://github.com/Break-Eat-APP/flaix-expert/commit/25fcf2a9fbdb17a911700a253ddad814aae2e521) [`a34efbd`](https://github.com/Break-Eat-APP/flaix-expert/commit/a34efbd946d10f3234fd45df50937f0e1854d6a1) [`f73a1b3`](https://github.com/Break-Eat-APP/flaix-expert/commit/f73a1b3f3be51fca8848cf9fe133baae0b0da3c5) | livrée |
 | 69 | [Exports de L'Addition lus seuls ; annuler un import de caisse connectée](#phase-69) | §15.168 | [`b54f0f6`](https://github.com/Break-Eat-APP/flaix-expert/commit/b54f0f6ad4044e68fdc3dd6356ac658d21a65f27) | livrée |
 | 70 | [Décor fixe, stock dans l'ordre, ouverture depuis En direct, stock des événements privés, marge par catégorie](#phase-70) | §15.169 | [`074b283`](https://github.com/Break-Eat-APP/flaix-expert/commit/074b283ae3a9fde1d8411b92289eff4ce5e71948) [`9a05031`](https://github.com/Break-Eat-APP/flaix-expert/commit/9a05031b459346df960660f5dcaca687b489e418) [`47bddbf`](https://github.com/Break-Eat-APP/flaix-expert/commit/47bddbf9e7b0928298b7dfb6f0d49b24cebdb383) [`600c400`](https://github.com/Break-Eat-APP/flaix-expert/commit/600c4009e628aa1904f49a623979a1b2407c3e1b) [`61ad9fb`](https://github.com/Break-Eat-APP/flaix-expert/commit/61ad9fb0be474eec24bf32ef9adec9ee93409520) | livrée |
-| 71 | [Rapport de stock par événement ; « Ce qu'il te reste » en clair ; le net en direct](#phase-71) | §15.170 | [`26cf6ab`](https://github.com/Break-Eat-APP/flaix-expert/commit/26cf6abde2c89c15296ae8d56e5f36ecaf1a8eab) [`631ca41`](https://github.com/Break-Eat-APP/flaix-expert/commit/631ca4169ff7bf5861b65ede39c043de7f7782d4) [`5a7f287`](https://github.com/Break-Eat-APP/flaix-expert/commit/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c) | livrée |
+| 71 | [Rapport de stock par événement ; « Ce qu'il te reste » en clair ; le net en direct](#phase-71) | §15.170 | [`26cf6ab`](https://github.com/Break-Eat-APP/flaix-expert/commit/26cf6abde2c89c15296ae8d56e5f36ecaf1a8eab) [`631ca41`](https://github.com/Break-Eat-APP/flaix-expert/commit/631ca4169ff7bf5861b65ede39c043de7f7782d4) [`5a7f287`](https://github.com/Break-Eat-APP/flaix-expert/commit/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c) [`7b2ecfb`](https://github.com/Break-Eat-APP/flaix-expert/commit/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119) | livrée |
 | 72 | [Les chiffres de la soirée ; événements privés dans Résultats ; Click & Collect par fichier](#phase-72) | §15.171 | [`b75c773`](https://github.com/Break-Eat-APP/flaix-expert/commit/b75c773ad922e56cf75d3242082deacdab2974fe) [`2561df7`](https://github.com/Break-Eat-APP/flaix-expert/commit/2561df7f117e010bf0e3b91c63dab590e20f6c74) | livrée |
 | 73 | [Achats, Ingrédients à part, raccourci de clôture ; facture qui entre en réserve ; export pour le comptable](#phase-73) | §15.172 | [`8aa91c8`](https://github.com/Break-Eat-APP/flaix-expert/commit/8aa91c88b0c11f747157cebe5e896453830b0192) [`e521638`](https://github.com/Break-Eat-APP/flaix-expert/commit/e5216385a9821425c1f4cd3d1907dbbc722975e1) [`e3f7ec6`](https://github.com/Break-Eat-APP/flaix-expert/commit/e3f7ec6be880641bcce20da04181cc78089235e5) [`269beca`](https://github.com/Break-Eat-APP/flaix-expert/commit/269beca65504c00298d03bbdb4703904021cbda3) | livrée |
 | 74 | [Factures automatisées : import Excel ou CSV, colis, correspondances apprises, alertes](#phase-74) | §15.173 | [`6d19641`](https://github.com/Break-Eat-APP/flaix-expert/commit/6d19641b46c8fb27480bdcddd60bea2ed1ed0859) [`1c6a401`](https://github.com/Break-Eat-APP/flaix-expert/commit/1c6a4011332a8a16e9894b4d6fb8fef2f3d3f5a9) | livrée |
-| 75 | [Correspondances fournisseurs à l'écran ; Résultats au design de la 2e maquette](#phase-75) | §15.174 | [`6fb8776`](https://github.com/Break-Eat-APP/flaix-expert/commit/6fb87761e08be3995b5f2c966a9d00ba9bb9673d) [`d2d5506`](https://github.com/Break-Eat-APP/flaix-expert/commit/d2d5506c0ef61be624c5605ce051ee76ded362df) | livrée |
+| 75 | [Correspondances fournisseurs à l'écran ; Résultats au design de la 2e maquette](#phase-75) | §15.174 | [`6fb8776`](https://github.com/Break-Eat-APP/flaix-expert/commit/6fb87761e08be3995b5f2c966a9d00ba9bb9673d) [`d2d5506`](https://github.com/Break-Eat-APP/flaix-expert/commit/d2d5506c0ef61be624c5605ce051ee76ded362df) [`ee26b84`](https://github.com/Break-Eat-APP/flaix-expert/commit/ee26b84632220d5394a3345504efb728a103c47f) | livrée |
+| 76 | [Audit des phases 67 à 75 et corrections ; dossier de reprise à jour](#phase-76) | §15.175 | [`0ff2657`](https://github.com/Break-Eat-APP/flaix-expert/commit/0ff265774c65cdde7f72d140c99b0eaaed28b3c6) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -2539,6 +2540,7 @@
   - [`26cf6ab`](https://github.com/Break-Eat-APP/flaix-expert/commit/26cf6abde2c89c15296ae8d56e5f36ecaf1a8eab) 2026-10-21 — Ce qu'il te reste en clair, en tête de Résultats et en direct (§15.170)
   - [`631ca41`](https://github.com/Break-Eat-APP/flaix-expert/commit/631ca4169ff7bf5861b65ede39c043de7f7782d4) 2026-10-21 — Événement privé : rapport de stock, à sortir puis sorti de la réserve, au coût d'achat (§15.170)
   - [`5a7f287`](https://github.com/Break-Eat-APP/flaix-expert/commit/5a7f287fe7f4342bb5fda2ced64471b1fe6d5e3c) 2026-10-21 — Rapport de soirée : stock de la soirée stand par stand (§15.170) ; test des cibles après la clôture
+  - [`7b2ecfb`](https://github.com/Break-Eat-APP/flaix-expert/commit/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119) 2026-10-21 — Tests du conditionnement et de l'équipe adaptés à Résultats limité aux événements terminés ; calcul du reste sans coupure
 - **Moteur de calcul (packages/domain)** :
   - [`packages/domain/src/evenements-prives.ts`](../../packages/domain/src/evenements-prives.ts) — modifié
   - [`packages/domain/src/rapport-soiree.ts`](../../packages/domain/src/rapport-soiree.ts) — modifié
@@ -2556,6 +2558,8 @@
   - [`apps/web/src/pages/resultats/Tableaux.tsx`](../../apps/web/src/pages/resultats/Tableaux.tsx) — modifié
   - [`apps/web/src/resultats.css`](../../apps/web/src/resultats.css) — modifié
 - **Tests** :
+  - [`apps/api/test/conditionnement.test.ts`](../../apps/api/test/conditionnement.test.ts) — modifié
+  - [`apps/api/test/equipe.test.ts`](../../apps/api/test/equipe.test.ts) — modifié
   - [`apps/api/test/finances.test.ts`](../../apps/api/test/finances.test.ts) — modifié
   - [`apps/api/test/rapport-soiree.test.ts`](../../apps/api/test/rapport-soiree.test.ts) — modifié
   - [`apps/api/test/sortie-stock-prive.test.ts`](../../apps/api/test/sortie-stock-prive.test.ts) — modifié
@@ -2669,6 +2673,7 @@
 - **Commits** :
   - [`6fb8776`](https://github.com/Break-Eat-APP/flaix-expert/commit/6fb87761e08be3995b5f2c966a9d00ba9bb9673d) 2026-10-25 — Achats › Correspondances : corriger ou retirer les articles appris des factures (§15.174)
   - [`d2d5506`](https://github.com/Break-Eat-APP/flaix-expert/commit/d2d5506c0ef61be624c5605ce051ee76ded362df) 2026-10-25 — Résultats au design de la 2e maquette : bonsoir, cloche, chiffres comparés, courbe et catégories, à surveiller, prochain match, barre Soir de match (§15.174)
+  - [`ee26b84`](https://github.com/Break-Eat-APP/flaix-expert/commit/ee26b84632220d5394a3345504efb728a103c47f) 2026-10-25 — Résultats : contenu de « Prochain match » au-dessus du cercle décoratif
 - **Moteur de calcul (packages/domain)** :
   - [`packages/domain/src/journal-technique.ts`](../../packages/domain/src/journal-technique.ts) — modifié
 - **Serveur (apps/api)** :
@@ -2684,6 +2689,29 @@
   - [`apps/web/src/resultats.css`](../../apps/web/src/resultats.css) — modifié
 - **Tests** :
   - [`apps/api/test/facture-reserve.test.ts`](../../apps/api/test/facture-reserve.test.ts) — modifié
+
+<a id="phase-76"></a>
+## Phase 76 — Audit des phases 67 à 75 et corrections ; dossier de reprise à jour
+
+- **Dates** : 2026-10-25
+- **Décision et raisonnement** : dossier projet §15.175
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`0ff2657`](https://github.com/Break-Eat-APP/flaix-expert/commit/0ff265774c65cdde7f72d140c99b0eaaed28b3c6) 2026-10-25 — Audit des phases 67 à 75 : corrections (§15.175)
+- **Migrations (base)** :
+  - [`db/migrations/0058_formation_famille_correspondances.sql`](../../db/migrations/0058_formation_famille_correspondances.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/factures.ts`](../../packages/domain/src/factures.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/factures.ts`](../../apps/api/src/routes/factures.ts) — modifié
+  - [`apps/api/src/serveur.ts`](../../apps/api/src/serveur.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/factures/Factures.tsx`](../../apps/web/src/pages/factures/Factures.tsx) — modifié
+  - [`apps/web/src/pages/resultats/Tableaux.tsx`](../../apps/web/src/pages/resultats/Tableaux.tsx) — modifié
+- **Tests** :
+  - [`apps/api/test/facture-reserve.test.ts`](../../apps/api/test/facture-reserve.test.ts) — modifié
+  - [`apps/api/test/formation-complements.test.ts`](../../apps/api/test/formation-complements.test.ts) — créé
+  - [`packages/domain/src/factures.test.ts`](../../packages/domain/src/factures.test.ts) — modifié
 
 ## Commits non rattachés à une phase
 
@@ -2739,8 +2767,8 @@
 - [`ae2f50c`](https://github.com/Break-Eat-APP/flaix-expert/commit/ae2f50caf0414ccc14dec418675ad6ff375ba219) 2026-10-19 — Dossier §15.168, avancement, phase 69
 - [`2a4d4c6`](https://github.com/Break-Eat-APP/flaix-expert/commit/2a4d4c6b38045a311997aa6d333f27e8997dd5b1) 2026-10-19 — Dossier §15.169, avancement, phase 70
 - [`a7604fb`](https://github.com/Break-Eat-APP/flaix-expert/commit/a7604fbe00cae0cae470341386c243a616990348) 2026-10-21 — Dossier §15.170, avancement, phase 71
-- [`7b2ecfb`](https://github.com/Break-Eat-APP/flaix-expert/commit/7b2ecfb000f4ad94d101e6fd902f1fdc634d5119) 2026-10-21 — Tests du conditionnement et de l'équipe adaptés à Résultats limité aux événements terminés ; calcul du reste sans coupure
 - [`8374f5c`](https://github.com/Break-Eat-APP/flaix-expert/commit/8374f5c7da70c6e77793c3a576aa08cf36464246) 2026-10-21 — Chiffres de la soirée : encadré corrigé ; dossier §15.171, avancement, phase 72
 - [`dc56ef7`](https://github.com/Break-Eat-APP/flaix-expert/commit/dc56ef7b36729412decccd2148c78ff858591969) 2026-10-23 — Dossier §15.172, avancement, phase 73
 - [`f5e1a3b`](https://github.com/Break-Eat-APP/flaix-expert/commit/f5e1a3bc1273ad0b6ac9e846763629f035689358) 2026-10-24 — Dossier §15.173, avancement, phase 74
 - [`5a3a5f4`](https://github.com/Break-Eat-APP/flaix-expert/commit/5a3a5f4e860c59daae1bb171d91fc960e0f4b94f) 2026-10-24 — Points à revoir avec Rémi : liste tenue à jour (docs/points-a-revoir.md)
+- [`8b41a40`](https://github.com/Break-Eat-APP/flaix-expert/commit/8b41a400933fd6aeffd0ce0fa3d554387057636b) 2026-10-25 — Dossier §15.174, avancement, phase 75, points à revoir à jour

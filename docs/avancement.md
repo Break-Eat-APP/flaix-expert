@@ -4,6 +4,13 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-10-25 : audit des phases 67 à 75, corrections, dossier de reprise à jour (§15.175)
+
+Rapport `docs/audits/AUDIT_2026-10-25_claude-phases-67-75.md` : sept défauts corrigés (mode formation, migration 0058 ;
+borne quantité × colis ; produits fabriqués ; injection de formule dans le CSV ; correspondance désapprise ; export
+borné ; options du lieu), quinze points ouverts. Guide de reprise, carte du code, consigne Codex et fiches de phase à
+jour. **Prochaine étape : audit de Codex** avec `docs/developpement/CODEX_AUDIT_PROMPT.md` (phases 67 à 76).
+
 ## 2026-10-25 : correspondances fournisseurs à l'écran, Résultats au design de la 2e maquette (§15.174)
 
 Achats › Correspondances (corriger, retirer) ; Résultats : « Bonsoir Rémi », cloche, chiffres comparés, courbe et
