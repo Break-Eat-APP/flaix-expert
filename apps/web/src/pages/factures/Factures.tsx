@@ -23,6 +23,7 @@ import {
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 import { lireFichierVentes } from "../caisses-connectees/fichiers.ts";
+import { useOptions } from "../../session.tsx";
 
 type Filtre = "a_traiter" | "toutes" | "validee" | "payee";
 const PUCE: Record<StatutFacture, string> = { recue: "", rapprochee: "puce-vert", ecart: "puce-rouge", validee: "puce-violet", payee: "puce-vert" };
@@ -196,7 +197,9 @@ function DetailFacture({ f, produits, fournisseurs }: { f: FactureVue; produits:
     mutationFn: (x: { ligneId: string; livraisonId: string | null }) => api.put<EtatFactures>(`/factures/${f.id}/lignes/${x.ligneId}/livraison`, { livraisonId: x.livraisonId }),
     onSuccess: maj,
   });
-  const sansLivraison = f.lignes.filter((l) => l.produitId && !l.livraison).length;
+  // Produits qui entreraient en réserve : ni déjà rapprochés, ni fabriqués (recette) ; seulement avec l'option Stock.
+  const stockActif = useOptions().stock !== false;
+  const sansLivraison = stockActif ? f.lignes.filter((l) => l.produitId && !l.livraison && !l.produitFabrique).length : 0;
   const [entrer, setEntrer] = useState(true);
   const [verifie, setVerifie] = useState(false);
   const valider = useMutation({

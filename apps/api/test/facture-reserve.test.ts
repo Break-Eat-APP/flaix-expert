@@ -111,4 +111,29 @@ describe("facture validée, produits entrés en réserve", () => {
     const inconnue = await serveur.inject({ method: "PUT", url: "/api/factures/correspondances", headers: { ...EN_TETES, cookie }, payload: { ...c, produitId: null, unitesParColis: 1 } });
     expect(inconnue.statusCode).toBe(404);
   });
+
+  it("audit §15.175 — produit retiré sur une facture : la correspondance apprise suit ; [F] quantité × colis au-delà d'un mouvement : refusée clairement", async () => {
+    await appel("POST", "/api/factures", {
+      fournisseur: "Boissons du Nord",
+      numero: "F-3",
+      dateFacture: "2026-10-23",
+      echeance: null,
+      lignes: [{ produitId: null, libelle: "Canette 33 cl x24", quantite: 1, prixUnitaire: 1_440 }],
+    });
+    const corr = (await appel<CorrespondanceArticle[]>("GET", "/api/factures/correspondances")).corps;
+    expect(corr.find((x) => x.cle === "lib:canette 33 cl x24")).toMatchObject({ produitId: null, unitesParColis: 1 });
+
+    const r = await appel<EtatFactures>("POST", "/api/factures", {
+      fournisseur: "Boissons du Nord",
+      numero: "F-4",
+      dateFacture: "2026-10-24",
+      echeance: null,
+      lignes: [{ produitId: canette.id, libelle: "Canette 33 cl x24", codeArticle: "CAN33", quantite: 5_000, prixUnitaire: 1_440, unitesParColis: 24 }],
+    });
+    const f = r.corps.factures.find((x) => x.numero === "F-4")!;
+    const v = await appel<{ erreur: string }>("POST", `/api/factures/${f.id}/validation`, { entrerEnReserve: true, alertesVerifiees: true });
+    expect(v.statut).toBe(400);
+    expect(v.corps.erreur).toContain("120000 unités");
+  });
 });
+

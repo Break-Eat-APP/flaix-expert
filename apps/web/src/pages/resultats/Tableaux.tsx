@@ -21,6 +21,7 @@ import {
   type StatsMatch,
 } from "@flaix/domain";
 import { api } from "../../api.ts";
+import { useOptions } from "../../session.tsx";
 import { Carte, Chargement, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 import { Duo, Nuage, euros, eurosAxe } from "./graphiques.tsx";
 import { VueFinances } from "./Finances.tsx";
@@ -57,6 +58,9 @@ const pourcent = (v: number, d = 1) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toL
  */
 export function Tableaux() {
   const [vue, setVue] = useState<Vue>("ensemble");
+  // Onglet Événements privés seulement avec l'option du lieu (audit §15.175).
+  const options = useOptions();
+  const vues = VUES.filter(([id]) => id !== "prives" || options.evenements_prives !== false);
   const [evenementId, setEvenementId] = useState<string | null>(null);
   const [comparaisonId, setComparaisonId] = useState<string | null>(null);
   // Bilan d'un événement, ou d'une période « du … au … » (§15.133).
@@ -93,7 +97,7 @@ export function Tableaux() {
       <BilanDe d={d} />
       <div className="en-ligne" style={{ justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
         <div className="onglets" style={{ marginBottom: 0 }}>
-          {VUES.map(([id, libelle]) => (
+          {vues.map(([id, libelle]) => (
             <button key={id} className={`onglet${vue === id ? " actif" : ""}`} onClick={() => setVue(id)}>
               {libelle}
             </button>

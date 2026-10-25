@@ -27,7 +27,6 @@ import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { ParamId, contexte, corps } from "./outils.ts";
-import { aUneRecette } from "./recettes.ts";
 import { enregistrerLivraison } from "./stock.ts";
 import { pdfFactureVente } from "../pdf-facture.ts";
 
@@ -120,6 +119,8 @@ async function etat(c: Client, lieuId: string): Promise<EtatFactures> {
     [lieuId],
   );
   const livraisons = await lireLivraisons(c, lieuId);
+  const { rows: recettes } = await c.query<{ produit_id: string }>("SELECT DISTINCT produit_id FROM recette_ligne WHERE lieu_id = $1", [lieuId]);
+  const fabriques = new Set(recettes.map((r) => r.produit_id));
   const { rows: noms } = await c.query<{ nom: string }>(
     `SELECT DISTINCT btrim(fournisseur) AS nom FROM stock_mouvement WHERE lieu_id = $1 AND type = 'livraison' AND fournisseur IS NOT NULL
      UNION SELECT DISTINCT btrim(fournisseur) FROM facture_fournisseur WHERE lieu_id = $1 ORDER BY 1`,
@@ -148,6 +149,7 @@ async function etat(c: Client, lieuId: string): Promise<EtatFactures> {
         prixUnitaire: l.prix_unitaire_centimes,
         unitesParColis: l.unites_par_colis,
         codeArticle: l.code_article,
+        produitFabrique: !!l.produit_id && fabriques.has(l.produit_id),
         livraison,
         livraisonChoisie: !!l.livraison_id,
         ecart: livraison ? ecartLigne(saisies[i]!, livraison) : null,
@@ -228,6 +230,13 @@ async function ecrireLignes(c: Client, lieuId: string, factureId: string, lignes
 async function apprendreCorrespondances(c: Client, lieuId: string, utilisateurId: string, fournisseur: string, lignes: z.infer<typeof Saisie>["lignes"]) {
   const f = normaliserFournisseur(fournisseur);
   if (!f) return;
+  for (const l of lignes.filter((x) => !x.produitId && x.unitesParColis <= 1)) {
+    // Produit retiré et colis remis à 1 sur la facture : la correspondance apprise suit ce dernier choix (audit §15.175).
+    await c.query(
+      "UPDATE correspondance_article_fournisseur SET produit_id = NULL, unites_par_colis = 1, modifiee_par = $4, modifiee_le = now() WHERE lieu_id = $1 AND fournisseur = $2 AND cle = $3",
+      [lieuId, f, cleArticle(l.codeArticle, l.libelle), utilisateurId],
+    );
+  }
   for (const l of lignes.filter((x) => x.produitId || x.unitesParColis > 1)) {
     await c.query(
       `INSERT INTO correspondance_article_fournisseur (lieu_id, fournisseur, cle, libelle, produit_id, unites_par_colis, modifiee_par)
@@ -238,6 +247,11 @@ async function apprendreCorrespondances(c: Client, lieuId: string, utilisateurId
     );
   }
 }
+
+/** Plafond d'un mouvement de stock (contrainte `stock_mouvement.quantite` de la migration 0008). */
+const QUANTITE_MAX_MOUVEMENT = 100_000;
+/** Plafond des pièces jointes d'un export (en mémoire sur le serveur) : au-delà, une période plus courte. */
+const EXPORT_PIECES_MAX = 150 * 1024 * 1024;
 
 const doublon = () => new ErreurMetier(409, "Cette facture (même fournisseur, même n°) est déjà enregistrée.");
 
@@ -410,7 +424,12 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
     const fichiers: Record<string, Uint8Array> = {};
     const recap: LigneRecapFacture[] = [];
     await base.transaction(contexte(auth), async (c) => {
-      for (const f of (await etat(c, auth.lieuId)).factures.filter((x) => x.dateFacture >= du && x.dateFacture <= au)) {
+      const achats = (await etat(c, auth.lieuId)).factures.filter((x) => x.dateFacture >= du && x.dateFacture <= au);
+      const poids = achats.reduce((s, x) => s + (x.fichier?.taille ?? 0), 0);
+      if (poids > EXPORT_PIECES_MAX) {
+        throw new ErreurMetier(413, `Pièces jointes trop lourdes pour un seul fichier (${Math.round(poids / 1024 / 1024)} Mo) : choisis une période plus courte.`);
+      }
+      for (const f of achats) {
         let piece: string | null = null;
         if (f.fichier) {
           const { rows } = await c.query<{ contenu: Buffer }>("SELECT contenu FROM fichier_facture WHERE lieu_id = $1 AND facture_id = $2", [auth.lieuId, f.id]);
@@ -484,9 +503,13 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
       // et à la date de la facture, puis lui est rapproché. Un produit fabriqué (avec une recette) ne se livre pas.
       const entrees: string[] = [];
       if (entrerEnReserve) {
-        for (const l of f.lignes.filter((x) => x.produitId && !x.livraison)) {
-          if (await aUneRecette(c, auth.lieuId, l.produitId!)) continue;
+        for (const l of f.lignes.filter((x) => x.produitId && !x.livraison && !x.produitFabrique)) {
           const u = enUnites(l);
+          // Un mouvement de stock compte au plus 100 000 unités (contrainte de la base) : quantité × colis au-delà, c'est
+          // presque toujours un colis ou une quantité mal saisis (audit §15.175).
+          if (u.quantite > QUANTITE_MAX_MOUVEMENT) {
+            throw new ErreurMetier(400, `« ${l.libelle} » : ${l.quantite} × ${l.unitesParColis} = ${u.quantite} unités, plus qu'une livraison ne peut en compter (${QUANTITE_MAX_MOUVEMENT}). Vérifie la quantité ou le colis.`);
+          }
           const livraison = await enregistrerLivraison(c, auth.lieuId, auth.utilisateurId, {
             produitId: l.produitId!,
             quantite: u.quantite,

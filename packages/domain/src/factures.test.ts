@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ecartLigne, rapprocherFacture, statutRapprochement, totalHtFacture, type LivraisonCandidate } from "./factures.ts";
+import { csvRecapFactures, ecartLigne, nomDeFichier, rapprocherFacture, statutRapprochement, totalHtFacture, type LivraisonCandidate } from "./factures.ts";
 
 const liv = (x: Partial<LivraisonCandidate>): LivraisonCandidate => ({ id: "l1", produitId: "biere", fournisseur: "Brasserie du Sud", date: "2026-09-10", quantite: 240, prixUnitaire: 125, ...x });
 
@@ -86,5 +86,28 @@ describe("statut et total", () => {
   });
   it("total HT = Σ quantité × prix unitaire", () => {
     expect(totalHtFacture([{ quantite: 240, prixUnitaire: 125 }, { quantite: 1, prixUnitaire: 1500 }])).toBe(31500);
+  });
+});
+
+describe("récapitulatif pour le comptable (§15.172, audit §15.175)", () => {
+  const ligne = { type: "Achat" as const, date: "2026-10-20", numero: "F-1", tiers: "Metro", ht: 123_456, tva: null, ttc: null, statut: "Payée", payeeLe: "2026-10-22", piece: "achats/x.pdf" };
+  const lignesDe = (csv: string) => csv.slice(1).trim().split("\r\n");
+
+  it("Excel français : « ; », virgule décimale, dates jj/mm/aaaa, BOM ; champ avec « ; » entre guillemets", () => {
+    const csv = csvRecapFactures([ligne, { ...ligne, type: "Vente", tiers: "Durand; fils", ht: 5_000, tva: 1_000, ttc: 6_000, piece: null }]);
+    expect(csv.charCodeAt(0)).toBe(0xfeff);
+    const l = lignesDe(csv);
+    expect(l[1]).toBe("Achat;20/10/2026;F-1;Metro;1234,56;;;Payée;22/10/2026;achats/x.pdf");
+    expect(l[2]).toBe('Vente;20/10/2026;F-1;"Durand; fils";50,00;10,00;60,00;Payée;22/10/2026;aucune pièce jointe');
+  });
+
+  it("[F] un fournisseur ou un n° qui commence par = + - @ n'est jamais une formule pour Excel", () => {
+    const l = lignesDe(csvRecapFactures([{ ...ligne, tiers: '=HYPERLINK("http://x")', numero: "+33" }]))[1]!;
+    expect(l).toContain(";'+33;");
+    expect(l).toContain(`"'=HYPERLINK(""http://x"")"`);
+  });
+
+  it("nom de fichier sans caractère interdit", () => {
+    expect(nomDeFichier('Metro: F/12 "x" ?')).toBe("Metro- F-12 -x- -");
   });
 });

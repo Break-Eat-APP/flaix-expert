@@ -121,6 +121,8 @@ export interface LigneFactureVue {
   /** Unités vendues par unité facturée (§15.173) : 24 pour un colis de 24 canettes. */
   unitesParColis: number;
   codeArticle: string | null;
+  /** Produit fabriqué (il a une recette) : il ne se livre pas, la validation ne le fait pas entrer en réserve. */
+  produitFabrique: boolean;
   livraison: LivraisonCandidate | null;
   /** Le rapprochement a été choisi par le directeur (sinon : proposé automatiquement). */
   livraisonChoisie: boolean;
@@ -184,10 +186,12 @@ export const nomDeFichier = (s: string) => s.replace(/[\\/:*?"<>|\u0000-\u001f]/
 export function csvRecapFactures(lignes: readonly LigneRecapFacture[]): string {
   const montant = (c: Centimes | null) => (c === null ? "" : (c / 100).toFixed(2).replace(".", ","));
   const champ = (v: string) => (/[;"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  // Un texte saisi qui commence par = + - @ serait lu par Excel comme une formule (injection) : précédé d'une apostrophe.
+  const texte = (v: string) => (/^[=+\-@\t\r]/.test(v) ? `'${v}` : v);
   const date = (iso: string | null) => (iso ? iso.split("-").reverse().join("/") : "");
   const tri = [...lignes].sort((a, b) => a.date.localeCompare(b.date) || a.type.localeCompare(b.type) || a.numero.localeCompare(b.numero));
   const corps = tri.map((l) =>
-    [l.type, date(l.date), l.numero, l.tiers, montant(l.ht), montant(l.tva), montant(l.ttc), l.statut, date(l.payeeLe), l.piece ?? "aucune pièce jointe"].map(champ).join(";"),
+    [l.type, date(l.date), texte(l.numero), texte(l.tiers), montant(l.ht), montant(l.tva), montant(l.ttc), l.statut, date(l.payeeLe), l.piece ?? "aucune pièce jointe"].map(champ).join(";"),
   );
   return "\uFEFF" + ["Type;Date;Numéro;Fournisseur ou client;HT;TVA;TTC;Statut;Payée le;Pièce", ...corps].join("\r\n") + "\r\n";
 }
