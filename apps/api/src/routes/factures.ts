@@ -326,6 +326,14 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
     return base.transaction(contexte(auth), async (c) => {
       await factureModifiable(c, auth.lieuId, id);
       if (livraisonId) {
+        // Une livraison de ce lieu et du produit de la ligne, rien d'autre ; même réponse dans tous les cas (audit Codex P1-1, §15.176).
+        const { rows: valable } = await c.query(
+          `SELECT 1 FROM ligne_facture_fournisseur l
+             JOIN stock_mouvement m ON m.lieu_id = l.lieu_id AND m.produit_id = l.produit_id
+            WHERE l.lieu_id = $1 AND l.facture_id = $2 AND l.id = $3 AND m.id = $4 AND m.type = 'livraison'`,
+          [auth.lieuId, id, ligneId, livraisonId],
+        );
+        if (!valable[0]) throw new ErreurMetier(404, "Livraison introuvable pour le produit de cette ligne.");
         const { rows } = await c.query("SELECT 1 FROM ligne_facture_fournisseur WHERE lieu_id = $1 AND livraison_id = $2 AND id <> $3", [auth.lieuId, livraisonId, ligneId]);
         if (rows[0]) throw new ErreurMetier(409, "Cette livraison est déjà rapprochée d'une autre ligne de facture.");
       }
