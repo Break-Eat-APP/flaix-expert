@@ -240,3 +240,13 @@ Le PostgreSQL de développement a été démarré via Docker Compose sur le port
 4. Rendre la prise des relances wallet atomique entre plusieurs instances.
 5. Ajouter les tests de bornes et de concurrence, puis effectuer la recette Apple / Google réelle.
 
+## 9. Suivi des corrections
+
+Ajouté par Claude après le rapport (le texte de l'audit ci-dessus n'est pas modifié).
+
+| Point | État | Commit |
+|---|---|---|
+| P1-1 livraison d'une facture | Corrigé le 2026-11-01 : route, migration 0059, `facture-livraison-lieu.test.ts` | `dca4c8f` |
+| P1-2 dépendances | Corrigé le 2026-11-01 : `pnpm audit --prod` sans alerte | `dca4c8f` |
+| P2-1, P2-2, P2-3, P3-1, P3-2, P3-3 | Ouverts : `docs/points-a-revoir.md`, points 10 et 20 | — |
+

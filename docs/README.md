@@ -9,7 +9,7 @@
    pour ajouter une fonctionnalité, la mise en ligne, ce qui a été construit récemment.
 2. [`../AGENTS.md`](../AGENTS.md) et [`../CLAUDE.md`](../CLAUDE.md) — règles du projet.
 3. [`flaix-gestion-dossier-projet.md`](flaix-gestion-dossier-projet.md) — **la source de vérité** : chaque décision prise avec Rémi (ses mots,
-   le raisonnement, ce qui a été construit et testé), section par section (§15.93 → §15.175).
+   le raisonnement, ce qui a été construit et testé), section par section (§15.93 → §15.176).
 4. [`avancement.md`](avancement.md) et [`points-a-revoir.md`](points-a-revoir.md) — où en est le projet, ce qui attend Rémi, les développements suivants.
 
 ## Le dossier, rangé par usage
@@ -17,7 +17,7 @@
 | Dossier ou fichier | Contenu |
 |---|---|
 | [`developpement/`](developpement/) | Suivi du développement : guide de reprise (Markdown et Word), [carte du code](developpement/CARTE_DU_CODE.md) (où est quoi, ligne exacte des fonctions clés), [journal des phases](developpement/JOURNAL_DES_PHASES.md), [une fiche par phase](developpement/phases/README.md) en Markdown et en Word (`phases/word/`), [consigne d'audit pour Codex](developpement/CODEX_AUDIT_PROMPT.md). Généré en partie par `node infra/outils/journal-developpement.cjs` et `node infra/outils/phases-word.cjs`. |
-| [`audits/`](audits/README.md) | Rapports d'audit du code (Claude, Codex) et suivi de leurs corrections ; le plus récent : [`AUDIT_2026-10-25_claude-phases-67-75.md`](audits/AUDIT_2026-10-25_claude-phases-67-75.md). |
+| [`audits/`](audits/README.md) | Rapports d'audit du code (Claude, Codex) et suivi de leurs corrections ; le plus récent : [`AUDIT_2026-10-26_codex-systeme-phases-67-76.md`](audits/AUDIT_2026-10-26_codex-systeme-phases-67-76.md). |
 | [`flaix-gestion-dossier-projet.md`](flaix-gestion-dossier-projet.md) | Dossier projet complet (cadrage, modules, décisions, §15 : journal des décisions de développement). |
 | [`decisions-architecture-production.md`](decisions-architecture-production.md) | Choix d'architecture validés, questions ouvertes, incident Docker du poste de Rémi. |
 | [`guide-serveur-test-ovh.md`](guide-serveur-test-ovh.md) | Le serveur de test OVH : installation, ce que Rémi règle lui-même (sauvegardes, IA, Brevo, wallet). |

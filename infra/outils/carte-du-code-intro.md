@@ -10,7 +10,7 @@
 | `packages/domain/src` | Moteur de calcul **pur** (aucune base, aucun réseau), partagé par le serveur ET la tablette. | Montants en **centimes entiers**, taux en **points de base** (1000 = 10 %), emballages en **millimes**, températures en **dixièmes de degré**. Un calcul fait foi ici et seulement ici. |
 | `apps/api/src` | Serveur Fastify : droits, règles, accès à PostgreSQL. | Toute requête métier passe par `base.transaction(contexte(auth), …)` : la sécurité par ligne isole les lieux. |
 | `apps/web/src` | Écrans React (directeur, caisse sur tablette, téléphone, back-office `/editeur`). | Jamais de règle métier dupliquée : l'écran appelle le moteur ou le serveur. |
-| `db/migrations` | Schéma PostgreSQL versionné (`0001` → `0058`). | Une migration appliquée **ne se modifie jamais**. Droits, sécurité par ligne, déclencheurs d'écriture seule et fonctions du mode formation y sont définis. |
+| `db/migrations` | Schéma PostgreSQL versionné (`0001` → `0059`). | Une migration appliquée **ne se modifie jamais**. Droits, sécurité par ligne, déclencheurs d'écriture seule et fonctions du mode formation y sont définis. |
 | `apps/api/test`, `packages/domain/src/*.test.ts`, `apps/web/src/**/*.test.tsx` | Tests contre la vraie base, tests du moteur, tests des écrans (serveur simulé). | Les tests **[F]** provoquent la fraude et vérifient que la base la refuse. |
 | `infra/` | Docker local, scripts du serveur OVH (`vps/deployer.sh`, `vps/flaix-admin.sh`), outils (logo, icônes, journal, fiches de phase). | Les secrets restent sur le serveur, jamais dans le dépôt. |
 | `docs/` | Dossier projet, décisions d'architecture, conformité, questions à l'expert-comptable, guide du serveur, suivi du développement. | Décision écrite avant code. |

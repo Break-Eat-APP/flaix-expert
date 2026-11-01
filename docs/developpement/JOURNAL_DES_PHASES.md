@@ -81,7 +81,8 @@
 | 73 | [Achats, Ingrédients à part, raccourci de clôture ; facture qui entre en réserve ; export pour le comptable](#phase-73) | §15.172 | [`8aa91c8`](https://github.com/Break-Eat-APP/flaix-expert/commit/8aa91c88b0c11f747157cebe5e896453830b0192) [`e521638`](https://github.com/Break-Eat-APP/flaix-expert/commit/e5216385a9821425c1f4cd3d1907dbbc722975e1) [`e3f7ec6`](https://github.com/Break-Eat-APP/flaix-expert/commit/e3f7ec6be880641bcce20da04181cc78089235e5) [`269beca`](https://github.com/Break-Eat-APP/flaix-expert/commit/269beca65504c00298d03bbdb4703904021cbda3) | livrée |
 | 74 | [Factures automatisées : import Excel ou CSV, colis, correspondances apprises, alertes](#phase-74) | §15.173 | [`6d19641`](https://github.com/Break-Eat-APP/flaix-expert/commit/6d19641b46c8fb27480bdcddd60bea2ed1ed0859) [`1c6a401`](https://github.com/Break-Eat-APP/flaix-expert/commit/1c6a4011332a8a16e9894b4d6fb8fef2f3d3f5a9) | livrée |
 | 75 | [Correspondances fournisseurs à l'écran ; Résultats au design de la 2e maquette](#phase-75) | §15.174 | [`6fb8776`](https://github.com/Break-Eat-APP/flaix-expert/commit/6fb87761e08be3995b5f2c966a9d00ba9bb9673d) [`d2d5506`](https://github.com/Break-Eat-APP/flaix-expert/commit/d2d5506c0ef61be624c5605ce051ee76ded362df) [`ee26b84`](https://github.com/Break-Eat-APP/flaix-expert/commit/ee26b84632220d5394a3345504efb728a103c47f) | livrée |
-| 76 | [Audit des phases 67 à 75 et corrections ; dossier de reprise à jour](#phase-76) | §15.175 | [`0ff2657`](https://github.com/Break-Eat-APP/flaix-expert/commit/0ff265774c65cdde7f72d140c99b0eaaed28b3c6) [`117a10d`](https://github.com/Break-Eat-APP/flaix-expert/commit/117a10d6b54087eba2d604665aa913c496274350) [`96c1e51`](https://github.com/Break-Eat-APP/flaix-expert/commit/96c1e51e9c1b4b2d1125ac7bf39dd48eecb80265) | livrée |
+| 76 | [Audit des phases 67 à 75 et corrections ; dossier de reprise à jour](#phase-76) | §15.175 | [`0ff2657`](https://github.com/Break-Eat-APP/flaix-expert/commit/0ff265774c65cdde7f72d140c99b0eaaed28b3c6) [`117a10d`](https://github.com/Break-Eat-APP/flaix-expert/commit/117a10d6b54087eba2d604665aa913c496274350) [`96c1e51`](https://github.com/Break-Eat-APP/flaix-expert/commit/96c1e51e9c1b4b2d1125ac7bf39dd48eecb80265) [`050b9bc`](https://github.com/Break-Eat-APP/flaix-expert/commit/050b9bced66b5ed084dcbcbc2b16fbab497a4114) | livrée |
+| 77 | [Audit de Codex : livraison d'une facture limitée à son lieu, dépendances corrigées](#phase-77) | §15.176 | [`dca4c8f`](https://github.com/Break-Eat-APP/flaix-expert/commit/dca4c8fd30c535d1dcda32289bf075c9fa2a8fad) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -2700,6 +2701,7 @@
   - [`0ff2657`](https://github.com/Break-Eat-APP/flaix-expert/commit/0ff265774c65cdde7f72d140c99b0eaaed28b3c6) 2026-10-25 — Audit des phases 67 à 75 : corrections (§15.175)
   - [`117a10d`](https://github.com/Break-Eat-APP/flaix-expert/commit/117a10d6b54087eba2d604665aa913c496274350) 2026-10-25 — Audit des phases 67 à 75 : rapport, guide de reprise, carte du code, consigne Codex, sommaire de la documentation (§15.175)
   - [`96c1e51`](https://github.com/Break-Eat-APP/flaix-expert/commit/96c1e51e9c1b4b2d1125ac7bf39dd48eecb80265) 2026-10-25 — Audit : résultats des tests ; fiches de phase et versions Word régénérées
+  - [`050b9bc`](https://github.com/Break-Eat-APP/flaix-expert/commit/050b9bced66b5ed084dcbcbc2b16fbab497a4114) 2026-10-25 — Phase 76 : commits de l'audit rattachés
 - **Migrations (base)** :
   - [`db/migrations/0058_formation_famille_correspondances.sql`](../../db/migrations/0058_formation_famille_correspondances.sql) — créé
 - **Moteur de calcul (packages/domain)** :
@@ -2815,6 +2817,26 @@
   - [`docs/flaix-gestion-dossier-projet.md`](../../docs/flaix-gestion-dossier-projet.md) — modifié
   - [`docs/points-a-revoir.md`](../../docs/points-a-revoir.md) — modifié
   - [`docs/README.md`](../../docs/README.md) — créé
+
+<a id="phase-77"></a>
+## Phase 77 — Audit de Codex : livraison d'une facture limitée à son lieu, dépendances corrigées
+
+- **Dates** : 2026-11-01
+- **Décision et raisonnement** : dossier projet §15.176
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`dca4c8f`](https://github.com/Break-Eat-APP/flaix-expert/commit/dca4c8fd30c535d1dcda32289bf075c9fa2a8fad) 2026-11-01 — Audit Codex (P1) : livraison d'une facture limitée à son lieu et son produit ; dépendances corrigées (§15.176)
+- **Migrations (base)** :
+  - [`db/migrations/0059_livraison_facture_du_lieu.sql`](../../db/migrations/0059_livraison_facture_du_lieu.sql) — créé
+- **Serveur (apps/api)** :
+  - [`apps/api/package.json`](../../apps/api/package.json) — modifié
+  - [`apps/api/src/routes/factures.ts`](../../apps/api/src/routes/factures.ts) — modifié
+- **Tests** :
+  - [`apps/api/test/facture-livraison-lieu.test.ts`](../../apps/api/test/facture-livraison-lieu.test.ts) — créé
+- **Documentation** :
+  - [`docs/audits/AUDIT_2026-10-26_codex-systeme-phases-67-76.md`](../../docs/audits/AUDIT_2026-10-26_codex-systeme-phases-67-76.md) — créé
+- **Autres** :
+  - [`pnpm-lock.yaml`](../../pnpm-lock.yaml) — modifié
 
 ## Commits non rattachés à une phase
 

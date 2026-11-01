@@ -1,6 +1,6 @@
 # Dossier de développement par phase — FlaiX Expert
 
-> Généré le 2026-10-25 par `node infra/outils/phases-word.cjs` depuis le dépôt. Un document par phase, en Markdown (ici) et en Word (`word/`). Règles du projet : [`AGENTS.md`](../../../AGENTS.md).
+> Généré le 2026-11-01 par `node infra/outils/phases-word.cjs` depuis le dépôt. Un document par phase, en Markdown (ici) et en Word (`word/`). Règles du projet : [`AGENTS.md`](../../../AGENTS.md).
 
 | Phase | Document | Décision | État |
 |---|---|---|---|
@@ -81,3 +81,4 @@
 | 74 | [Factures automatisées : import Excel ou CSV, colis, correspondances apprises, alertes](PHASE_74_FACTURES_AUTOMATISEES_IMPORT_EXCEL_OU_CSV_COLIS_CORRESPONDANCES_APPRIS.md) · [Word](word/PHASE_74_FACTURES_AUTOMATISEES_IMPORT_EXCEL_OU_CSV_COLIS_CORRESPONDANCES_APPRIS.docx) | §15.173 | livrée |
 | 75 | [Correspondances fournisseurs à l'écran ; Résultats au design de la 2e maquette](PHASE_75_CORRESPONDANCES_FOURNISSEURS_A_LECRAN_RESULTATS_AU_DESIGN_DE_LA_2E_MAQ.md) · [Word](word/PHASE_75_CORRESPONDANCES_FOURNISSEURS_A_LECRAN_RESULTATS_AU_DESIGN_DE_LA_2E_MAQ.docx) | §15.174 | livrée |
 | 76 | [Audit des phases 67 à 75 et corrections ; dossier de reprise à jour](PHASE_76_AUDIT_DES_PHASES_67_A_75_ET_CORRECTIONS_DOSSIER_DE_REPRISE_A_JOUR.md) · [Word](word/PHASE_76_AUDIT_DES_PHASES_67_A_75_ET_CORRECTIONS_DOSSIER_DE_REPRISE_A_JOUR.docx) | §15.175 | livrée |
+| 77 | [Audit de Codex : livraison d'une facture limitée à son lieu, dépendances corrigées](PHASE_77_AUDIT_DE_CODEX_LIVRAISON_DUNE_FACTURE_LIMITEE_A_SON_LIEU_DEPENDANCES_C.md) · [Word](word/PHASE_77_AUDIT_DE_CODEX_LIVRAISON_DUNE_FACTURE_LIMITEE_A_SON_LIEU_DEPENDANCES_C.docx) | §15.176 | livrée |

@@ -4,6 +4,12 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-11-01 : audit de Codex, les deux points bloquants corrigés (§15.176)
+
+Une ligne de facture ne se relie plus qu'à une livraison de son lieu et de son produit (migration 0059) ; `zod`, `fastify`
+et leurs dépendances à jour, `pnpm audit --prod` sans alerte. Restent les points P2 et P3 de Codex. **Lecture des factures
+PDF : pas encore construite**, elle attend la clé Mistral de Rémi et des exemples de factures.
+
 ## 2026-10-25 : audit des phases 67 à 75, corrections, dossier de reprise à jour (§15.175)
 
 Rapport `docs/audits/AUDIT_2026-10-25_claude-phases-67-75.md` : sept défauts corrigés (mode formation, migration 0058 ;

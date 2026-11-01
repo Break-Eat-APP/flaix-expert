@@ -5671,3 +5671,24 @@ phases 67 à 76 et quatre vérifications nouvelles : fichiers déposés, fichier
 
 **Vu dans le navigateur** (local, 2026-10-25) : la vue d'ensemble de Résultats au design de la 2e maquette ; corrigé à
 l'essai : le cercle décoratif de « Prochain match » passait par-dessus son bouton (`ee26b84`).
+
+### 15.176 Audit de Codex du 2026-10-26 : les deux points bloquants corrigés (2026-11-01)
+
+**Contexte** : rapport indépendant `docs/audits/AUDIT_2026-10-26_codex-systeme-phases-67-76.md` (commit audité `050b9bc`).
+Rémi, le 2026-11-01 : « ok » pour corriger d'abord les deux points bloquants, avant la lecture des factures PDF.
+
+**Corrigé** :
+- **P1-1 — isolement des lieux** (vérifié dans le code avant correction) : `PUT /api/factures/:id/lignes/:ligneId/livraison`
+  acceptait tout identifiant, et `livraison_id` ne référençait que `stock_mouvement (id)`. La route exige désormais une
+  **livraison du lieu et du produit de la ligne** (même réponse 404 sinon, rien ne révèle ce qui existe ailleurs) ;
+  migration 0059 : clé étrangère composée `(lieu_id, livraison_id)`. Si des lignes déjà enregistrées pointaient ailleurs,
+  la clé resterait « non validée » avec un avertissement, sans toucher aux factures figées. Test
+  `facture-livraison-lieu.test.ts` (3, dont 2 [F] : la route, puis la base attaquée directement).
+- **P1-2 — dépendances** : `zod` 4.6.7 (faille haute : épuisement de la mémoire), `fastify` 5.12.7, `@fastify/rate-limit`
+  11.2.1, `fast-uri` et `ip-address` à leurs versions corrigées. `pnpm audit --prod` : plus aucune alerte.
+
+**Restent ouverts** (points 10 et 20 de `docs/points-a-revoir.md`) : P2-1 auteur de l'annulation d'un import, fourni à la fonction
+au lieu d'être lu dans la session ; P2-2 relances wallet sans réservation atomique ; P2-3 recette Apple et Google réelle ;
+P3-1 somme des lignes d'un événement privé au-delà de 100 000 unités ; P3-2 compteur de ventes d'une caisse externe ; P3-3
+export du comptable entièrement en mémoire.
+
