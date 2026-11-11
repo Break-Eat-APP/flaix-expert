@@ -1,6 +1,6 @@
 # Phase 70 — Décor fixe, stock dans l'ordre, ouverture depuis En direct, stock des événements privés, marge par catégorie
 
-> FlaiX Expert · dossier de développement · généré le 2026-11-01 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-11-11 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|
@@ -107,6 +107,7 @@ résultats 17) ; types et construction. Vu dans le navigateur en local : Stock e
   - rien ne sort avant la clôture, ni à la main
   - clôture : 12 canettes et 15 L de fût sortent ; la pinte ne sort pas en produit ; la location rien
   - une seule sortie par produit et par événement privé
+  - [F] plusieurs lignes du même produit au-delà de 100 000 unités : ajout et clôture refusés avec le nom du produit, rien ne sort (audit Codex du 2026-10-26, P3-1)
 
 ## 5. Pour reprendre ou vérifier cette phase
 

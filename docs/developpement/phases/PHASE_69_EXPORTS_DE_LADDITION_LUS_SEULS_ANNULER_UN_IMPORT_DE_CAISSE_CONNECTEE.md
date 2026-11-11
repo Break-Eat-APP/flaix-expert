@@ -1,6 +1,6 @@
 # Phase 69 — Exports de L'Addition lus seuls ; annuler un import de caisse connectée
 
-> FlaiX Expert · dossier de développement · généré le 2026-11-01 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-11-11 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|
@@ -93,6 +93,7 @@ réimporter le fichier, puis valider les rapprochements proposés dans Correspon
 - **annuler un import de caisse connectée**
   - mauvaises colonnes (produit « Paiements », prix « Qte », ticket « ID Receipt ») : import absurde, puis annulé
   - réimport du même fichier sans colonnes choisies : les colonnes reconnues l'emportent sur le mauvais choix gardé ; produits par leur nom
+  - [F] l'annulation est signée par l'utilisateur de la session, jamais par un autre (audit Codex du 2026-10-26, P2-1)
 
 ## 5. Pour reprendre ou vérifier cette phase
 

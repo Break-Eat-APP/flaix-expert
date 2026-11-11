@@ -1,6 +1,6 @@
 # Points à revoir avec Rémi
 
-Liste tenue à jour à la fin de chaque séance (dernière mise à jour : 2026-11-01). Chaque point dit **qui** doit agir :
+Liste tenue à jour à la fin de chaque séance (dernière mise à jour : 2026-11-11). Chaque point dit **qui** doit agir :
 **Rémi** (compte, clé, test, décision) ou **Claude** (développement, une fois la décision prise). Rien de secret ici :
 les clés et mots de passe ne passent jamais par Claude.
 
@@ -28,7 +28,6 @@ les clés et mots de passe ne passent jamais par Claude.
 | 17 | **Passage en production** : base neuve, reprise de la seule configuration (lieu, stands, caisses, produits, catégories, tarifs, recettes, emballages, équipe, réglages), jamais les données de test. Outil de reprise à préparer et tester avant la bascule, faite avec Rémi. | À préparer. |
 | 18 | **Conformité de la caisse** (pièces du dossier structuré), avec Rémi. | À traiter ensemble. |
 | 19 | **Points ouverts de l'audit du 2026-10-25** (O1 à O15 : charge des écrans, minutes de personnel en double, lecture d'un classeur de facture à plusieurs feuilles…) | À trier. |
-| 20 | **Audit de Codex, durcissements** : P2-1 auteur de l'annulation d'un import lu dans la session ; P2-2 relances wallet avec réservation atomique ; P3-1 somme d'un événement privé au-delà de 100 000 unités ; P3-2 compteur de ventes d'une caisse externe ; P3-3 export du comptable en flux. | À faire avant l'exploitation réelle. |
 
 ## 3. Faits récemment
 
@@ -41,3 +40,4 @@ les clés et mots de passe ne passent jamais par Claude.
 | Audit des phases 67 à 75 : sept défauts corrigés, dossier de reprise à jour | 2026-10-25 | §15.175 |
 | Mode formation : famille des catégories et correspondances fournisseurs recopiées (migration 0058) | 2026-10-25 | §15.175 |
 | Audit de Codex du 2026-10-26 : isolement d'une livraison de facture et dépendances corrigés (migration 0059) | 2026-11-01 | §15.176 |
+| Audit de Codex : auteur d'une annulation, relances wallet, clôture d'un événement privé, compteur d'une caisse connectée, export en flux (migration 0060) | 2026-11-11 | §15.177 |

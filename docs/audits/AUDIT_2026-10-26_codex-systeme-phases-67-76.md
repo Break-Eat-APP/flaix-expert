@@ -248,5 +248,10 @@ Ajouté par Claude après le rapport (le texte de l'audit ci-dessus n'est pas mo
 |---|---|---|
 | P1-1 livraison d'une facture | Corrigé le 2026-11-01 : route, migration 0059, `facture-livraison-lieu.test.ts` | `dca4c8f` |
 | P1-2 dépendances | Corrigé le 2026-11-01 : `pnpm audit --prod` sans alerte | `dca4c8f` |
-| P2-1, P2-2, P2-3, P3-1, P3-2, P3-3 | Ouverts : `docs/points-a-revoir.md`, points 10 et 20 | — |
+| P2-1 auteur de l'annulation d'un import | Corrigé le 2026-11-11 : `utilisateur_courant()`, migration 0060 | `ace2a94` |
+| P2-2 relances wallet | Corrigé le 2026-11-11 : `prendre_relances_wallet` (`SKIP LOCKED`), test à deux relanceurs | `ace2a94` |
+| P2-3 recette Apple et Google réelle | Ouvert : avec Rémi, `docs/points-a-revoir.md`, point 10 | — |
+| P3-1 somme d'un événement privé | Corrigé le 2026-11-11 : contrôle avant clôture et à l'ajout, message lisible | `ace2a94`, `12aef8f` |
+| P3-2 compteur d'une caisse connectée | Corrigé le 2026-11-11 : hors annulations | `ace2a94` |
+| P3-3 export en mémoire | Corrigé le 2026-11-11 : zip envoyé en flux, une pièce à la fois | `ace2a94` |
 

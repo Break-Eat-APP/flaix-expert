@@ -4,6 +4,12 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-11-11 : audit de Codex, les durcissements (§15.177)
+
+Auteur d'une annulation d'import lu dans la session, relances wallet réservées d'un coup, clôture d'un événement privé
+contrôlée avant coup, compteur d'une caisse connectée sans les annulations, export du comptable en flux (migration 0060).
+Reste la recette réelle des cartes Wallet avec Rémi. **Lecture des factures PDF** : attend toujours la clé Mistral.
+
 ## 2026-11-01 : audit de Codex, les deux points bloquants corrigés (§15.176)
 
 Une ligne de facture ne se relie plus qu'à une livraison de son lieu et de son produit (migration 0059) ; `zod`, `fastify`

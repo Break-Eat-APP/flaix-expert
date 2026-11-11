@@ -1,6 +1,6 @@
 # Phase 76 — Audit des phases 67 à 75 et corrections ; dossier de reprise à jour
 
-> FlaiX Expert · dossier de développement · généré le 2026-11-01 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-11-11 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|

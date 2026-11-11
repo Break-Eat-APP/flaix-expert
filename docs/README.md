@@ -9,7 +9,7 @@
    pour ajouter une fonctionnalité, la mise en ligne, ce qui a été construit récemment.
 2. [`../AGENTS.md`](../AGENTS.md) et [`../CLAUDE.md`](../CLAUDE.md) — règles du projet.
 3. [`flaix-gestion-dossier-projet.md`](flaix-gestion-dossier-projet.md) — **la source de vérité** : chaque décision prise avec Rémi (ses mots,
-   le raisonnement, ce qui a été construit et testé), section par section (§15.93 → §15.176).
+   le raisonnement, ce qui a été construit et testé), section par section (§15.93 → §15.177).
 4. [`avancement.md`](avancement.md) et [`points-a-revoir.md`](points-a-revoir.md) — où en est le projet, ce qui attend Rémi, les développements suivants.
 
 ## Le dossier, rangé par usage

@@ -5692,3 +5692,30 @@ au lieu d'être lu dans la session ; P2-2 relances wallet sans réservation atom
 P3-1 somme des lignes d'un événement privé au-delà de 100 000 unités ; P3-2 compteur de ventes d'une caisse externe ; P3-3
 export du comptable entièrement en mémoire.
 
+### 15.177 Audit de Codex du 2026-10-26 : les durcissements (2026-11-11)
+
+**Contexte** : Rémi, le 2026-11-11 : « vas-y avance sur les points de Codex ». Cinq des six points restants se corrigent
+dans le code ; le sixième (P2-3) est une recette avec les vrais comptes Apple et Google, à faire avec Rémi.
+
+**Corrigé** (migration 0060) :
+- **P2-1 — auteur d'une annulation d'import** : `annuler_import_ventes_externes(p_import)` n'a plus de paramètre d'auteur ;
+  la fonction inscrit `utilisateur_courant()` et refuse de s'exécuter sans utilisateur dans la session. L'ancienne forme à
+  deux paramètres est supprimée. Test [F] dans `annulation-import.test.ts`.
+- **P2-2 — relances wallet** : `relances_wallet_dues` (simple lecture) est remplacée par `prendre_relances_wallet` :
+  `UPDATE … FROM (SELECT … FOR UPDATE SKIP LOCKED)` repousse d'une heure le prochain essai des relances prises. Un autre
+  passage ou un autre serveur ne les voit plus ; réussie, la relance est effacée ; en échec, son prochain essai est
+  recalculé comme avant ; serveur arrêté en route, elle redevient due une heure plus tard. Test [F] dans `wallet.test.ts` :
+  deux relanceurs en même temps, Google lent, une seule mise à jour envoyée.
+- **P3-1 — clôture d'un événement privé** : `exigerSortiePossible` contrôle, avant de passer l'événement à « clôturé », la
+  somme par produit (plafond 100 000 unités, migration 0008) et par ingrédient suivi (10⁹ millièmes, migration 0023), avec
+  un message qui nomme le produit. Le test a montré un second cas : au même prix, un ajout s'additionne à la ligne
+  existante, et au-delà de 100 000 la base refusait sans explication ; refus lisible aussi. Test [F] dans
+  `sortie-stock-prive.test.ts`.
+- **P3-2 — compteur d'une caisse connectée** : ventes, première et dernière vente hors annulations, comme la liste des
+  imports et les résultats ; l'écran dit « hors annulations ». Test [F] dans `caisses-externes.test.ts`.
+- **P3-3 — export pour le comptable** : le zip part en flux (`fflate` `Zip` + `ZipDeflate`, `PassThrough` de Node) ;
+  chaque pièce est lue dans sa propre transaction, ajoutée, puis l'envoi attend que le navigateur l'ait lue. Le refus
+  « trop lourd » et le journal se font avant tout envoi. Une pièce retirée entre-temps reste au récapitulatif, sans pièce.
+
+**Reste** : P2-3, recette réelle des cartes Wallet (`docs/points-a-revoir.md`, point 10).
+

@@ -1,6 +1,6 @@
 # Phase 47 — Carte abonné dans Apple Wallet et Google Wallet
 
-> FlaiX Expert · dossier de développement · généré le 2026-11-01 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-11-11 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|
@@ -159,6 +159,7 @@
 - **relance des envois en échec (audit Codex du 2026-10-05)**
   - Google en panne : carte notée, renvoyée à l'heure prévue, relance effacée ; abandon après 12 essais
   - une panne du modèle de carte Google est aussi relancée
+  - [F] deux relanceurs en même temps : la carte n'est envoyée qu'une fois ; prise sans suite, elle revient une heure après (audit Codex du 2026-10-26, P2-2)
 - **lien renouvelé et option**
   - renouveler le lien rend l'ancien inutilisable ; la carte Apple déjà installée reste à jour
   - option Fidélité retirée par FlaiX Expert : cartes barrées et inactives, page fermée ; rendue : cartes valables (audit Codex P1)
