@@ -95,9 +95,15 @@ describe("événement privé : sortie de la réserve centrale à la clôture", (
     ).rejects.toThrow(/unique|duplicate|doublon/i);
   });
 
-  it("[F] plusieurs lignes du même produit au-delà de 100 000 unités : clôture refusée avec le nom du produit, rien ne sort (audit Codex du 2026-10-26, P3-1)", async () => {
+  it("[F] plusieurs lignes du même produit au-delà de 100 000 unités : ajout et clôture refusés avec le nom du produit, rien ne sort (audit Codex du 2026-10-26, P3-1)", async () => {
     let grand = (await appel<EvenementPrive>("POST", "/api/evenements-prives", { nom: "Salon géant", debut: "2026-10-25T19:00:00.000Z" })).corps;
-    await appel("POST", `/api/evenements-prives/${grand.id}/lignes`, { produitId: canette.id, quantite: 60_000 });
+    grand = (await appel<EvenementPrive>("POST", `/api/evenements-prives/${grand.id}/lignes`, { produitId: canette.id, quantite: 60_000 })).corps;
+    // Au même prix, la quantité s'ajoute à la ligne : au-delà du plafond, refus lisible.
+    const trop = await appel<{ erreur: string }>("POST", `/api/evenements-prives/${grand.id}/lignes`, { produitId: canette.id, quantite: 60_000 });
+    expect(trop.statut).toBe(400);
+    expect(trop.corps.erreur).toContain("« Canette »");
+    // À un autre prix (remise consentie), une seconde ligne du même produit.
+    await appel("PATCH", `/api/evenements-prives/${grand.id}/lignes/${grand.lignes[0]!.id}`, { prixTtc: 350 });
     grand = (await appel<EvenementPrive>("POST", `/api/evenements-prives/${grand.id}/lignes`, { produitId: canette.id, quantite: 60_000 })).corps;
     expect(grand.lignes.filter((l) => l.produitId === canette.id).reduce((s, l) => s + l.quantite, 0)).toBe(120_000);
     const r = await appel<{ erreur: string }>("POST", `/api/evenements-prives/${grand.id}/cloture`);

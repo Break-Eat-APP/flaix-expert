@@ -373,6 +373,7 @@ export async function routesEvenementsPrives(app: FastifyInstance, { base }: { b
         if (p.prix === null || p.taux === null) throw new ErreurMetier(400, `« ${p.nom} » n'a pas de prix en vigueur.`);
         // Même produit au même prix : la quantité s'ajoute à la ligne existante.
         const deja = e.lignes.find((l) => l.produitId === d.produitId && l.prixTtc === p.prix);
+        if (deja && deja.quantite + d.quantite > SORTIE_PRODUIT_MAX) throw new ErreurMetier(400, `« ${p.nom} » : ${SORTIE_PRODUIT_MAX.toLocaleString("fr-FR")} au plus sur une ligne.`);
         if (deja) await c.query("UPDATE evenement_prive_ligne SET quantite = quantite + $3 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, deja.id, d.quantite]);
         else
           await c.query("INSERT INTO evenement_prive_ligne (lieu_id, evenement_id, produit_id, libelle, quantite, prix_ttc_centimes, taux_tva_pb) VALUES ($1, $2, $3, $4, $5, $6, $7)", [
