@@ -2,7 +2,8 @@
  * Annuler l'import d'une caisse connectée (dossier §15.168), contre la vraie base : un import fait avec de mauvaises
  * colonnes (produit « - », montant absurde) s'annule, ses ventes et articles sont retirés, le relevé et l'annulation
  * restent au journal ; le bon fichier se réimporte alors ; les colonnes reconnues dans le fichier l'emportent sur celles
- * du mauvais import ; une annulation ne se fait qu'une fois ; hors annulation, les articles restent en écriture seule.
+ * du mauvais import ; une annulation ne se fait qu'une fois ; hors annulation, les articles restent en écriture seule ;
+ * l'auteur inscrit est l'utilisateur de la session (audit Codex du 2026-10-26, P2-1).
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
@@ -78,5 +79,18 @@ describe("annuler un import de caisse connectée", () => {
       ["HOTDOG", "HD-289", 1_380],
       ["BOX HOTDOG", "HD-3060", 990],
     ]);
+  });
+
+  it("[F] l'annulation est signée par l'utilisateur de la session, jamais par un autre (audit Codex du 2026-10-26, P2-1)", async () => {
+    const importId = (await appel<ImportDeVentes[]>("GET", `/api/caisses-externes/${caisse}/imports`)).corps.find((i) => i.annule === null)!.id;
+    const autre = await creerLieuDeTest(proprietaire);
+    const ctx = { lieuId: lieu.lieuId, utilisateurId: lieu.utilisateurId };
+    // L'ancienne forme, qui recevait l'auteur en paramètre, n'existe plus.
+    await expect(app.transaction(ctx, (c) => c.query("SELECT * FROM annuler_import_ventes_externes($1, $2)", [importId, autre.utilisateurId]))).rejects.toThrow(/does not exist|n'existe pas/);
+    // Sans utilisateur dans la session : refusé.
+    await expect(app.transaction({ lieuId: lieu.lieuId }, (c) => c.query("SELECT * FROM annuler_import_ventes_externes($1)", [importId]))).rejects.toThrow(/sans utilisateur/);
+    await app.transaction(ctx, (c) => c.query("SELECT * FROM annuler_import_ventes_externes($1)", [importId]));
+    const { rows } = await proprietaire.pool.query("SELECT par FROM import_ventes_externes_annule WHERE import_id = $1", [importId]);
+    expect(rows).toEqual([{ par: lieu.utilisateurId }]);
   });
 });

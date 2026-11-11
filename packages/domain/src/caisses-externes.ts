@@ -397,6 +397,7 @@ export interface CaisseExterne {
   systeme: SystemeCaisse;
   /** Colonnes retenues au dernier import : reprises à l'import suivant. */
   colonnes: ColonnesExport | null;
+  /** Ventes importées hors annulations (même définition que les imports et les résultats), et leurs dates extrêmes. */
   ventes: number;
   premiereVente: string | null;
   derniereVente: string | null;

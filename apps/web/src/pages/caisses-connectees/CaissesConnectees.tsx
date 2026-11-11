@@ -243,7 +243,7 @@ function Importer({ caisse }: { caisse: CaisseExterne }) {
       {caisse.dernierImport && (
         <p className="discret" style={{ marginTop: 0 }}>
           Dernier import : {caisse.dernierImport.fichier}, le {formaterDateHeure(caisse.dernierImport.le)} par {caisse.dernierImport.par} — {caisse.dernierImport.ventesAjoutees} ventes ajoutées.{" "}
-          {caisse.ventes} ventes en tout{caisse.premiereVente ? ` du ${formaterDateHeure(caisse.premiereVente)} au ${formaterDateHeure(caisse.derniereVente!)}` : ""}.
+          {caisse.ventes} ventes en tout, hors annulations{caisse.premiereVente ? ` du ${formaterDateHeure(caisse.premiereVente)} au ${formaterDateHeure(caisse.derniereVente!)}` : ""}.
         </p>
       )}
       <input

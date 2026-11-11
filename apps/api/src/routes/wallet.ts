@@ -260,9 +260,11 @@ export async function mettreAJourCartes(base: Base, ctx: Contexte, lieuId: strin
 /**
  * Relance des cartes dont l'envoi à Apple ou à Google a échoué passagèrement (audit Codex du 2026-10-05) : lancée
  * toutes les 5 minutes par le serveur. Abandon journalisé après 12 essais. Rend le nombre de relances traitées.
+ * Une relance prise et non menée à terme (serveur arrêté en route) redevient due une heure plus tard (migration 0060).
  */
 export async function relancerCartes(base: Base, log: FastifyBaseLogger): Promise<number> {
-  const { rows: dues } = await base.transaction({}, (c) => c.query<{ lieu_id: string; cible: string }>("SELECT * FROM relances_wallet_dues($1)", [500]));
+  // Prises d'un seul coup (audit Codex du 2026-10-26, P2-2) : un autre passage, ou un autre serveur, ne les voit plus.
+  const { rows: dues } = await base.transaction({}, (c) => c.query<{ lieu_id: string; cible: string }>("SELECT * FROM prendre_relances_wallet($1)", [500]));
   const parLieu = new Map<string, string[]>();
   for (const d of dues) parLieu.set(d.lieu_id, [...(parLieu.get(d.lieu_id) ?? []), d.cible]);
   for (const [lieuId, cibles] of parLieu) {

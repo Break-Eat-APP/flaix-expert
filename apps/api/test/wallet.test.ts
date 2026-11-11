@@ -447,6 +447,38 @@ describe("relance des envois en échec (audit Codex du 2026-10-05)", () => {
     expect(google.find((g) => g.ressource === "loyaltyClass")!.contenu).toMatchObject({ programName: "Carte Relance" });
     expect((await proprietaire.pool.query("SELECT 1 FROM wallet_relance WHERE lieu_id = $1", [lieuId])).rows).toEqual([]);
   });
+
+  it("[F] deux relanceurs en même temps : la carte n'est envoyée qu'une fois ; prise sans suite, elle revient une heure après (audit Codex du 2026-10-26, P2-2)", async () => {
+    const { rows } = await proprietaire.pool.query<{ lieu_id: string }>("SELECT lieu_id FROM abonne_fidelite WHERE id = $1", [abonneId]);
+    const lieuId = rows[0]!.lieu_id;
+    const due = () =>
+      proprietaire.pool.query("INSERT INTO wallet_relance (lieu_id, cible, essais, prochain_essai, cause) VALUES ($1, $2, 1, now() - interval '1 second', 'google 503')", [lieuId, abonneId]);
+    // Google lent : les deux passages se chevauchent.
+    definirMiseAJourGoogle(async (ressource, id, contenu) => {
+      google.push({ ressource, id, contenu });
+      await new Promise((fini) => setTimeout(fini, 50));
+      return 200;
+    });
+    await due();
+    google.length = 0;
+    const traitees = await Promise.all([relancerCartes(app, serveur.log), relancerCartes(app, serveur.log)]);
+    expect(traitees.sort()).toEqual([0, 1]);
+    expect(google.filter((g) => g.ressource === "loyaltyObject")).toHaveLength(1);
+    expect((await proprietaire.pool.query("SELECT 1 FROM wallet_relance WHERE lieu_id = $1", [lieuId])).rows).toEqual([]);
+
+    // Prise par un passage qui s'arrête en route : personne d'autre ne la reprend avant une heure.
+    await due();
+    const prendre = async () => (await app.transaction({}, (c) => c.query<{ lieu_id: string; cible: string }>("SELECT * FROM prendre_relances_wallet(500)"))).rows.filter((r) => r.lieu_id === lieuId);
+    expect(await prendre()).toEqual([{ lieu_id: lieuId, cible: abonneId }]);
+    expect(await prendre()).toEqual([]);
+    const { rows: plusTard } = await proprietaire.pool.query("SELECT prochain_essai > now() + interval '55 minutes' AS reportee FROM wallet_relance WHERE lieu_id = $1", [lieuId]);
+    expect(plusTard).toEqual([{ reportee: true }]);
+    await proprietaire.pool.query("DELETE FROM wallet_relance WHERE lieu_id = $1", [lieuId]);
+    definirMiseAJourGoogle(async (ressource, id, contenu) => {
+      google.push({ ressource, id, contenu });
+      return 200;
+    });
+  });
 });
 
 describe("lien renouvelé et option", () => {

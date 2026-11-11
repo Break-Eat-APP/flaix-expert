@@ -89,6 +89,9 @@ describe("caisses connectées", () => {
     const suite = EXPORT.replace("T-002;05/10/2026 21:05;Bar Sud;Bière 50 cl;BIE50;1;7,00;7,00;20;Carte;", "T-002;05/10/2026 21:05;Bar Sud;Bière 50 cl;BIE50;1;7,00;7,00;20;Carte;Annulée") + "\nT-005;05/10/2026 22:30;Bar Nord;Bière 50 cl;BIE50;1;7,00;7,00;20;Carte;";
     const r = await appel<{ ajoutees: number; deja: number; annulationsReportees: number }>("POST", `/api/caisses-externes/${caisse}/import`, { fichier: "ventes-suite.csv", contenu: suite });
     expect(r.corps).toMatchObject({ ajoutees: 1, deja: 3, annulationsReportees: 1 });
+    // [F] Le compteur de la caisse suit la même définition que les imports et les résultats : 4 importées, T-002 annulée
+    // (audit Codex du 2026-10-26, P3-2).
+    expect((await appel<CaisseExterne[]>("GET", "/api/caisses-externes")).corps[0]!.ventes).toBe(3);
   });
 
   it("[F] colonnes obligatoires introuvables : refusé avec la liste ; colonnes choisies à l'écran : import accepté", async () => {

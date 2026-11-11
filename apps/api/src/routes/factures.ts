@@ -1,6 +1,7 @@
+import { PassThrough } from "node:stream";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { strToU8, zipSync } from "fflate";
+import { Zip, ZipDeflate, strToU8 } from "fflate";
 import {
   LIBELLES_STATUT_FACTURE,
   csvRecapFactures,
@@ -250,8 +251,26 @@ async function apprendreCorrespondances(c: Client, lieuId: string, utilisateurId
 
 /** Plafond d'un mouvement de stock (contrainte `stock_mouvement.quantite` de la migration 0008). */
 const QUANTITE_MAX_MOUVEMENT = 100_000;
-/** Plafond des pièces jointes d'un export (en mémoire sur le serveur) : au-delà, une période plus courte. */
+/** Plafond des pièces jointes d'un export (taille du fichier téléchargé) : au-delà, une période plus courte. */
 const EXPORT_PIECES_MAX = 150 * 1024 * 1024;
+
+/**
+ * Ajoute un fichier à l'archive envoyée en flux (audit Codex du 2026-10-26, P3-3), puis attend que le navigateur ait lu
+ * ce qui précède : le serveur ne garde en mémoire qu'une pièce à la fois. Rend faux si le téléchargement est interrompu.
+ */
+async function ajouterAuZip(zip: Zip, sortie: PassThrough, nom: string, contenu: Uint8Array): Promise<boolean> {
+  if (sortie.destroyed) return false;
+  const fichier = new ZipDeflate(nom, { level: 6 });
+  zip.add(fichier);
+  fichier.push(contenu, true);
+  if (sortie.writableNeedDrain) {
+    await new Promise<void>((fini) => {
+      sortie.once("drain", fini);
+      sortie.once("close", fini);
+    });
+  }
+  return !sortie.destroyed;
+}
 
 const doublon = () => new ErreurMetier(409, "Cette facture (même fournisseur, même n°) est déjà enregistrée.");
 
@@ -429,24 +448,13 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
       .object({ du: Jour, au: Jour })
       .refine((p) => p.du <= p.au, "La date de début doit précéder celle de fin.")
       .parse(req.query);
-    const fichiers: Record<string, Uint8Array> = {};
-    const recap: LigneRecapFacture[] = [];
-    await base.transaction(contexte(auth), async (c) => {
+    // D'abord ce qui part dans l'archive (refus éventuel avant tout envoi) et le journal ; les pièces sont lues ensuite,
+    // une à une, pendant l'envoi.
+    const { achats, ventes } = await base.transaction(contexte(auth), async (c) => {
       const achats = (await etat(c, auth.lieuId)).factures.filter((x) => x.dateFacture >= du && x.dateFacture <= au);
       const poids = achats.reduce((s, x) => s + (x.fichier?.taille ?? 0), 0);
       if (poids > EXPORT_PIECES_MAX) {
         throw new ErreurMetier(413, `Pièces jointes trop lourdes pour un seul fichier (${Math.round(poids / 1024 / 1024)} Mo) : choisis une période plus courte.`);
-      }
-      for (const f of achats) {
-        let piece: string | null = null;
-        if (f.fichier) {
-          const { rows } = await c.query<{ contenu: Buffer }>("SELECT contenu FROM fichier_facture WHERE lieu_id = $1 AND facture_id = $2", [auth.lieuId, f.id]);
-          const ext = f.fichier.nom.includes(".") ? f.fichier.nom.slice(f.fichier.nom.lastIndexOf(".")).toLowerCase() : f.fichier.type === "application/pdf" ? ".pdf" : ".jpg";
-          piece = `achats/${nomDeFichier(`${f.dateFacture} ${f.fournisseur} ${f.numero}`)}${ext}`;
-          if (fichiers[piece]) piece = piece.replace(ext, ` (${f.id.slice(0, 8)})${ext}`);
-          fichiers[piece] = new Uint8Array(rows[0]!.contenu);
-        }
-        recap.push({ type: "Achat", date: f.dateFacture, numero: f.numero, tiers: f.fournisseur, ht: f.totalHt, tva: null, ttc: null, statut: f.statut === "validee" ? "Validée — à payer" : LIBELLES_STATUT_FACTURE[f.statut], payeeLe: f.paiement?.date ?? null, piece });
       }
       const { rows: ventes } = await c.query<{ numero: string; contenu: FactureVente; jour: string; regle_le: string | null }>(
         `SELECT fv.numero, fv.contenu, to_char(fv.emise_le AT TIME ZONE 'Europe/Paris', 'YYYY-MM-DD') AS jour, to_char(ep.regle_le, 'YYYY-MM-DD') AS regle_le
@@ -455,19 +463,53 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
           ORDER BY fv.annee, fv.sequence`,
         [auth.lieuId, du, au],
       );
+      await inscrireJet(c, { lieuId: auth.lieuId, type: "factures_exportees", utilisateurId: auth.utilisateurId, details: { du, au, achats: achats.length, ventes: ventes.length } });
+      return { achats, ventes };
+    });
+
+    const sortie = new PassThrough();
+    const zip = new Zip((erreur, morceau, final) => {
+      if (erreur) return void sortie.destroy(erreur);
+      sortie.write(morceau);
+      if (final) sortie.end();
+    });
+    const remplir = async () => {
+      const recap: LigneRecapFacture[] = [];
+      const noms = new Set<string>();
+      for (const f of achats) {
+        let piece: string | null = null;
+        if (f.fichier) {
+          const { rows } = await base.transaction(contexte(auth), (c) =>
+            c.query<{ contenu: Buffer }>("SELECT contenu FROM fichier_facture WHERE lieu_id = $1 AND facture_id = $2", [auth.lieuId, f.id]),
+          );
+          // Pièce retirée entre-temps : la facture reste au récapitulatif, sans pièce.
+          if (rows[0]) {
+            const ext = f.fichier.nom.includes(".") ? f.fichier.nom.slice(f.fichier.nom.lastIndexOf(".")).toLowerCase() : f.fichier.type === "application/pdf" ? ".pdf" : ".jpg";
+            piece = `achats/${nomDeFichier(`${f.dateFacture} ${f.fournisseur} ${f.numero}`)}${ext}`;
+            if (noms.has(piece)) piece = piece.replace(ext, ` (${f.id.slice(0, 8)})${ext}`);
+            noms.add(piece);
+            if (!(await ajouterAuZip(zip, sortie, piece, new Uint8Array(rows[0].contenu)))) return;
+          }
+        }
+        recap.push({ type: "Achat", date: f.dateFacture, numero: f.numero, tiers: f.fournisseur, ht: f.totalHt, tva: null, ttc: null, statut: f.statut === "validee" ? "Validée — à payer" : LIBELLES_STATUT_FACTURE[f.statut], payeeLe: f.paiement?.date ?? null, piece });
+      }
       for (const v of ventes) {
         const piece = `ventes/${nomDeFichier(v.numero)}.pdf`;
-        fichiers[piece] = await pdfFactureVente(v.contenu);
+        if (!(await ajouterAuZip(zip, sortie, piece, await pdfFactureVente(v.contenu)))) return;
         recap.push({ type: "Vente", date: v.jour, numero: v.numero, tiers: v.contenu.client.nom, ht: v.contenu.totalHt, tva: v.contenu.totalTva, ttc: v.contenu.totalTtc, statut: v.regle_le ? "Payée" : "À encaisser", payeeLe: v.regle_le, piece });
       }
-      await inscrireJet(c, { lieuId: auth.lieuId, type: "factures_exportees", utilisateurId: auth.utilisateurId, details: { du, au, achats: recap.filter((r) => r.type === "Achat").length, ventes: ventes.length } });
+      if (!(await ajouterAuZip(zip, sortie, "recapitulatif.csv", strToU8(csvRecapFactures(recap))))) return;
+      zip.end();
+    };
+    remplir().catch((erreur: unknown) => {
+      req.log.error({ err: erreur }, "export des factures interrompu");
+      zip.terminate();
+      sortie.destroy(erreur instanceof Error ? erreur : new Error(String(erreur)));
     });
-    fichiers["recapitulatif.csv"] = strToU8(csvRecapFactures(recap));
-    const zip = zipSync(fichiers, { level: 6 });
     return rep
       .header("content-type", "application/zip")
       .header("content-disposition", `attachment; filename="factures-${du}-au-${au}.zip"`)
-      .send(Buffer.from(zip));
+      .send(sortie);
   });
 
   app.get("/api/factures/:id/fichier", async (req, rep) => {

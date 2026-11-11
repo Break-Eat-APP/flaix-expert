@@ -70,9 +70,9 @@ async function listerCaisses(c: Client, lieuId: string): Promise<CaisseExterne[]
     imp_erreurs: number | null;
   }>(
     `SELECT k.id, k.nom, k.systeme, k.colonnes,
-            (SELECT count(*)::int FROM vente_externe v WHERE v.lieu_id = k.lieu_id AND v.caisse_externe_id = k.id) AS ventes,
-            (SELECT min(v.horodatage) FROM vente_externe v WHERE v.lieu_id = k.lieu_id AND v.caisse_externe_id = k.id) AS premiere,
-            (SELECT max(v.horodatage) FROM vente_externe v WHERE v.lieu_id = k.lieu_id AND v.caisse_externe_id = k.id) AS derniere,
+            (SELECT count(*)::int FROM vente_externe v WHERE v.lieu_id = k.lieu_id AND v.caisse_externe_id = k.id AND NOT v.annulee) AS ventes,
+            (SELECT min(v.horodatage) FROM vente_externe v WHERE v.lieu_id = k.lieu_id AND v.caisse_externe_id = k.id AND NOT v.annulee) AS premiere,
+            (SELECT max(v.horodatage) FROM vente_externe v WHERE v.lieu_id = k.lieu_id AND v.caisse_externe_id = k.id AND NOT v.annulee) AS derniere,
             i.id AS imp_id, i.le AS imp_le, u.nom AS imp_par, i.fichier AS imp_fichier, i.lignes_lues AS imp_lues, i.ventes_ajoutees AS imp_ajoutees,
             i.ventes_deja AS imp_deja, jsonb_array_length(i.erreurs) AS imp_erreurs
        FROM caisse_externe k
@@ -380,7 +380,7 @@ export async function routesCaissesExternes(app: FastifyInstance, { base }: { ba
       if (!imp[0]) throw introuvable("Import");
       const { rows: deja } = await c.query("SELECT 1 FROM import_ventes_externes_annule WHERE import_id = $1", [importId]);
       if (deja[0]) throw new ErreurMetier(409, "Cet import est déjà annulé.");
-      const { rows } = await c.query<{ ventes: number; montant: string }>("SELECT * FROM annuler_import_ventes_externes($1, $2)", [importId, auth.utilisateurId]);
+      const { rows } = await c.query<{ ventes: number; montant: string }>("SELECT * FROM annuler_import_ventes_externes($1)", [importId]);
       await inscrireJet(c, {
         lieuId: auth.lieuId,
         type: "caisse_externe_import_annule",

@@ -139,6 +139,34 @@ async function fraisDe(c: Client, lieuId: string, id: string): Promise<FraisPriv
   return rows;
 }
 
+/** Plafonds d'un mouvement de réserve (migrations 0008 et 0023) : produit en unités, ingrédient en millièmes. */
+const SORTIE_PRODUIT_MAX = 100_000;
+const SORTIE_INGREDIENT_MAX_MILLI = 1_000_000_000;
+
+/**
+ * Avant la clôture (audit Codex du 2026-10-26, P3-1) : chaque ligne est plafonnée, mais plusieurs lignes du même produit
+ * sortent en un seul mouvement. Une somme au-delà du plafond est refusée ici, avec le nom du produit, plutôt que par la
+ * base au moment de clôturer.
+ */
+async function exigerSortiePossible(c: Client, lieuId: string, id: string): Promise<void> {
+  const { rows } = await c.query<{ nom: string }>(
+    `SELECT p.nom FROM evenement_prive_ligne l JOIN produit p ON p.lieu_id = l.lieu_id AND p.id = l.produit_id
+      WHERE l.lieu_id = $1 AND l.evenement_id = $2
+        AND NOT EXISTS (SELECT 1 FROM recette_ligne r JOIN ingredient g ON g.lieu_id = r.lieu_id AND g.id = r.ingredient_id
+                         WHERE r.lieu_id = $1 AND r.produit_id = l.produit_id AND g.suivi_stock)
+      GROUP BY p.id, p.nom HAVING sum(l.quantite) > $3
+     UNION ALL
+     SELECT g.nom FROM evenement_prive_ligne l
+       JOIN recette_ligne r ON r.lieu_id = l.lieu_id AND r.produit_id = l.produit_id
+       JOIN ingredient g ON g.lieu_id = r.lieu_id AND g.id = r.ingredient_id AND g.suivi_stock
+      WHERE l.lieu_id = $1 AND l.evenement_id = $2
+      GROUP BY g.id, g.nom HAVING sum(l.quantite::bigint * r.quantite_milli) > $4
+     LIMIT 1`,
+    [lieuId, id, SORTIE_PRODUIT_MAX, SORTIE_INGREDIENT_MAX_MILLI],
+  );
+  if (rows[0]) throw new ErreurMetier(400, `« ${rows[0].nom} » : quantité trop élevée pour sortir de la réserve en une fois. Vérifie les consommations avant de clôturer.`);
+}
+
 /**
  * Clôture d'un événement privé : ses produits du catalogue sortent de la réserve centrale (§15.169). Un produit dont la
  * recette utilise un ingrédient suivi sort ses ingrédients (la pinte sort 0,5 L du fût), les autres sortent eux-mêmes ;
@@ -410,6 +438,7 @@ export async function routesEvenementsPrives(app: FastifyInstance, { base }: { b
     return base.transaction(contexte(auth), async (c) => {
       const e = await exigerPrevu(c, auth.lieuId, id);
       if (e.lignes.length === 0) throw new ErreurMetier(400, "Aucune consommation : rien à clôturer.");
+      await exigerSortiePossible(c, auth.lieuId, id);
       for (const l of e.lignes.filter((x) => x.produitId !== null)) {
         await c.query("UPDATE evenement_prive_ligne SET cout_unitaire = $3 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, l.id, l.coutUnitaire]);
       }
