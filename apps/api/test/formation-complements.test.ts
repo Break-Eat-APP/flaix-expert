@@ -6,7 +6,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
-import type { Categorie, CorrespondanceArticle, Produit, SessionInfo } from "@flaix/domain";
+import type { Categorie, CorrespondanceArticle, Ingredient, Produit, SessionInfo } from "@flaix/domain";
 import type { Base } from "../src/base.ts";
 import { construireServeur } from "../src/serveur.ts";
 import { MOT_DE_PASSE_TEST, basesDeTest, creerLieuDeTest } from "./aide.ts";
@@ -17,6 +17,7 @@ let serveur: FastifyInstance;
 let cookie = "";
 let snacking: Categorie;
 let croque: Produit;
+let pain: Ingredient;
 
 const EN_TETES = { "content-type": "application/json", origin: "http://localhost:5173" };
 async function appel<T = unknown>(method: "GET" | "POST" | "PUT" | "PATCH", url: string, payload?: unknown) {
@@ -36,13 +37,17 @@ beforeAll(async () => {
   snacking = (await appel<Categorie[]>("POST", "/api/categories", { nom: "Spécialités" })).corps.find((c) => c.nom === "Spécialités")!;
   await appel("PATCH", `/api/categories/${snacking.id}`, { famille: "nourriture" });
   croque = (await appel<Produit[]>("POST", "/api/produits", { nom: "Croque", prixTtc: 600, tauxTva: 1000, coutMatiere: 150, categorieId: snacking.id })).corps[0]!;
-  // Une facture enregistrée apprend « CRQ chez Metro = Croque, colis de 12 ».
+  pain = (await appel<Ingredient[]>("POST", "/api/ingredients", { nom: "Pain de mie", unite: "piece", prix: 20 })).corps.find((i) => i.nom === "Pain de mie")!;
+  // Une facture enregistrée apprend « CRQ chez Metro = Croque, colis de 12 » et « PAI = pain de mie, 50 pièces » (§15.179).
   await appel("POST", "/api/factures", {
     fournisseur: "Metro",
     numero: "M-1",
     dateFacture: "2026-10-20",
     echeance: null,
-    lignes: [{ produitId: croque.id, libelle: "Croque x12", codeArticle: "CRQ", quantite: 2, prixUnitaire: 1_800, unitesParColis: 12 }],
+    lignes: [
+      { produitId: croque.id, libelle: "Croque x12", codeArticle: "CRQ", quantite: 2, prixUnitaire: 1_800, unitesParColis: 12 },
+      { produitId: null, libelle: "Pain de mie x50", codeArticle: "PAI", quantite: 1, prixUnitaire: 900, ingredientId: pain.id, ingredientMilliParUnite: 50_000 },
+    ],
   });
 });
 
@@ -63,7 +68,12 @@ describe("mode formation : famille et correspondances recopiées", () => {
     const croqueFormation = produits.find((p) => p.nom === "Croque")!;
     expect(croqueFormation.id).not.toBe(croque.id);
     const corr = (await appel<CorrespondanceArticle[]>("GET", "/api/factures/correspondances")).corps;
-    expect(corr).toEqual([{ fournisseur: "metro", cle: "code:crq", libelle: "Croque x12", produitId: croqueFormation.id, unitesParColis: 12 }]);
+    const painFormation = (await appel<Ingredient[]>("GET", "/api/ingredients")).corps.find((i) => i.nom === "Pain de mie")!;
+    expect(painFormation.id).not.toBe(pain.id);
+    expect(corr).toEqual([
+      { fournisseur: "metro", cle: "code:crq", libelle: "Croque x12", produitId: croqueFormation.id, unitesParColis: 12, ingredientId: null, ingredientMilliParUnite: null },
+      { fournisseur: "metro", cle: "code:pai", libelle: "Pain de mie x50", produitId: null, unitesParColis: 1, ingredientId: painFormation.id, ingredientMilliParUnite: 50_000 },
+    ]);
   });
 
   it("[F] corriger une correspondance en formation : refusé, comme toute configuration", async () => {

@@ -78,7 +78,7 @@ describe("facture validée, produits entrés en réserve", () => {
 
   it("correspondance apprise ; [F] colis oublié : alerte, validation refusée sans « J'ai vérifié », acceptée avec", async () => {
     const corr = (await appel<CorrespondanceArticle[]>("GET", "/api/factures/correspondances")).corps;
-    expect(corr).toEqual([{ fournisseur: "boissons du nord", cle: "code:can33", libelle: "Canette 33 cl x24", produitId: canette.id, unitesParColis: 24 }]);
+    expect(corr).toEqual([{ fournisseur: "boissons du nord", cle: "code:can33", libelle: "Canette 33 cl x24", produitId: canette.id, unitesParColis: 24, ingredientId: null, ingredientMilliParUnite: null }]);
     const r = await appel<EtatFactures>("POST", "/api/factures", {
       fournisseur: "Boissons du Nord",
       numero: "F-2",

@@ -121,6 +121,10 @@ export interface LigneFactureVue {
   /** Unités vendues par unité facturée (§15.173) : 24 pour un colis de 24 canettes. */
   unitesParColis: number;
   codeArticle: string | null;
+  /** Ingrédient acheté (§15.179) : la ligne fait son prix et, s'il est suivi, son stock ; jamais avec un produit. */
+  ingredientId: string | null;
+  /** Quantité d'ingrédient par unité facturée, en millièmes de son unité (carton de 32 pièces : 32 000). */
+  ingredientMilliParUnite: number | null;
   /** Produit fabriqué (il a une recette) : il ne se livre pas, la validation ne le fait pas entrer en réserve. */
   produitFabrique: boolean;
   livraison: LivraisonCandidate | null;

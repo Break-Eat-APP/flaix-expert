@@ -152,6 +152,17 @@ export interface CorrespondanceArticle {
   libelle: string;
   produitId: string | null;
   unitesParColis: number;
+  /** Ingrédient de l'article (§15.179) et sa quantité par unité facturée, en millièmes de son unité. */
+  ingredientId: string | null;
+  ingredientMilliParUnite: number | null;
+}
+
+/**
+ * Ligne de facture ramenée à l'ingrédient (§15.179) : quantité reçue (millièmes de son unité) et prix total HT. Le prix
+ * d'une unité d'ingrédient se déduit des deux (`prixUnitaireLivraison`).
+ */
+export function enIngredient(l: { quantite: number; prixUnitaire: Centimes; ingredientMilliParUnite: number }): { quantiteMilli: number; prixTotal: Centimes } {
+  return { quantiteMilli: l.quantite * l.ingredientMilliParUnite, prixTotal: l.quantite * l.prixUnitaire };
 }
 
 /** Ligne de facture ramenée à l'unité vendue : quantité × colis, prix ÷ colis (arrondi au centime). */
@@ -187,7 +198,7 @@ const mediane = (v: readonly number[]) => {
  * `historique` : livraisons antérieures du produit, hors celles de cette facture, de la plus récente à la plus ancienne.
  */
 export function alertesFacture(
-  f: { totalAnnonce: Centimes | null; lignes: readonly { id: string; produitId: string | null; libelle: string; quantite: number; prixUnitaire: Centimes; unitesParColis: number }[] },
+  f: { totalAnnonce: Centimes | null; lignes: readonly { id: string; produitId: string | null; ingredientId?: string | null; libelle: string; quantite: number; prixUnitaire: Centimes; unitesParColis: number }[] },
   historique: (produitId: string) => readonly { quantite: number; prixUnitaire: Centimes }[],
 ): AlerteFacture[] {
   const alertes: AlerteFacture[] = [];
@@ -197,7 +208,8 @@ export function alertesFacture(
   }
   for (const l of f.lignes) {
     const devine = colisDevine(l.libelle);
-    if (l.unitesParColis === 1 && devine && devine > 1) {
+    // Un ingrédient se compte dans son unité (pièce, L, kg) : le colis ne le concerne pas.
+    if (!l.ingredientId && l.unitesParColis === 1 && devine && devine > 1) {
       alertes.push({ ligneId: l.id, type: "colis", titre: `« ${l.libelle} » : colis de ${devine} ?`, detail: `Le libellé parle de ${devine} unités, la ligne en compte 1 par colis : ${l.quantite} entreraient en réserve au lieu de ${l.quantite * devine}.` });
     }
     if (!l.produitId) continue;

@@ -70,6 +70,7 @@ export const TYPES_JET = {
   ingredient_modifie: "Ingrédient modifié (prix : coûts des recettes recalculés)",
   recette_modifiee: "Recette d'un produit modifiée",
   ingredient_livre: "Livraison d'un ingrédient (prix moyen et recettes recalculés)",
+  ingredient_prix_facture: "Prix d'un ingrédient non suivi en stock, repris d'une facture validée (recettes recalculées)",
   comptage_ingredient_corrige: "Comptage d'un ingrédient corrigé",
   inventaire_ingredients_valide: "Inventaire des ingrédients de la réserve validé",
   option_modifiee: "Option du lieu activée ou désactivée par FlaiX Expert",

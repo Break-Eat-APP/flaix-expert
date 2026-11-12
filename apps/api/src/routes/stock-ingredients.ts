@@ -318,6 +318,47 @@ async function etatReserve(c: Client, lieuId: string): Promise<EtatReserveIngred
   return { ingredients, inventaires: [...inventaires.values()], mouvements: await lireMouvements(c, lieuId) };
 }
 
+/**
+ * Livraison d'un ingrédient suivi en stock (saisie à la main, ou facture fournisseur validée, §15.179) : entrée en
+ * réserve, prix devenu coût moyen pondéré, coûts des recettes recalculés, journal. Rend le prix avant et après.
+ */
+export async function enregistrerLivraisonIngredient(
+  c: Client,
+  lieuId: string,
+  utilisateurId: string,
+  d: { ingredientId: string; quantiteMilli: number; prixTotal: number; fournisseur: string | null; dateLivraison: string },
+): Promise<{ nom: string; prixAvant: number | null; prixApres: number }> {
+  await ingredientSuivi(c, lieuId, d.ingredientId);
+  await verrouiller(c, `reserve-ingredient:${d.ingredientId}`);
+  const g = (await reserveParIngredient(c, lieuId)).find((x) => x.ingredientId === d.ingredientId)!;
+  // Le prix de l'ingrédient devient le coût moyen pondéré ; les recettes qui l'utilisent suivent.
+  const nouveau = cump(g.solde, g.prix, d.quantiteMilli, prixUnitaireLivraison(d.prixTotal, d.quantiteMilli));
+  await c.query(
+    `INSERT INTO ingredient_mouvement (lieu_id, type, ingredient_id, quantite_milli, prix_total_centimes, fournisseur, date_livraison, prix_avant_centimes, prix_apres_centimes, par)
+     VALUES ($1, 'livraison', $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [lieuId, d.ingredientId, d.quantiteMilli, d.prixTotal, d.fournisseur, d.dateLivraison, g.prix, nouveau, utilisateurId],
+  );
+  await c.query("UPDATE ingredient SET prix_centimes = $3 WHERE lieu_id = $1 AND id = $2", [lieuId, d.ingredientId, nouveau]);
+  const recalcules = nouveau !== g.prix ? await recalculerCoutsRecettes(c, lieuId, d.ingredientId) : [];
+  await inscrireJet(c, {
+    lieuId,
+    type: "ingredient_livre",
+    utilisateurId,
+    details: {
+      ingredient: g.nom,
+      quantite: formaterQuantiteStock(d.quantiteMilli, g.unite),
+      prixTotal: formaterMontant(d.prixTotal),
+      fournisseur: d.fournisseur,
+      date: d.dateLivraison,
+      soldeReserveAvant: formaterQuantiteStock(g.solde, g.unite),
+      prixAvant: g.prix,
+      prixApres: nouveau,
+      produits_recalcules: recalcules,
+    },
+  });
+  return { nom: g.nom, prixAvant: g.prix, prixApres: nouveau };
+}
+
 export async function routesStockIngredients(app: FastifyInstance, { base }: { base: Base }) {
   app.get("/api/stock/ingredients", async (req): Promise<StockIngredientsMatch | null> => {
     const auth = await exigerDirecteur(req, base);
@@ -436,34 +477,7 @@ export async function routesStockIngredients(app: FastifyInstance, { base }: { b
     const auth = await exigerDirecteur(req, base);
     const d = corps(Livraison, req);
     const resultat = await base.transaction(contexte(auth), async (c) => {
-      await ingredientSuivi(c, auth.lieuId, d.ingredientId);
-      await verrouiller(c, `reserve-ingredient:${d.ingredientId}`);
-      const g = (await reserveParIngredient(c, auth.lieuId)).find((x) => x.ingredientId === d.ingredientId)!;
-      // Le prix de l'ingrédient devient le coût moyen pondéré ; les recettes qui l'utilisent suivent.
-      const nouveau = cump(g.solde, g.prix, d.quantiteMilli, prixUnitaireLivraison(d.prixTotal, d.quantiteMilli));
-      await c.query(
-        `INSERT INTO ingredient_mouvement (lieu_id, type, ingredient_id, quantite_milli, prix_total_centimes, fournisseur, date_livraison, prix_avant_centimes, prix_apres_centimes, par)
-         VALUES ($1, 'livraison', $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [auth.lieuId, d.ingredientId, d.quantiteMilli, d.prixTotal, d.fournisseur, d.dateLivraison, g.prix, nouveau, auth.utilisateurId],
-      );
-      await c.query("UPDATE ingredient SET prix_centimes = $3 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, d.ingredientId, nouveau]);
-      const recalcules = nouveau !== g.prix ? await recalculerCoutsRecettes(c, auth.lieuId, d.ingredientId) : [];
-      await inscrireJet(c, {
-        lieuId: auth.lieuId,
-        type: "ingredient_livre",
-        utilisateurId: auth.utilisateurId,
-        details: {
-          ingredient: g.nom,
-          quantite: formaterQuantiteStock(d.quantiteMilli, g.unite),
-          prixTotal: formaterMontant(d.prixTotal),
-          fournisseur: d.fournisseur,
-          date: d.dateLivraison,
-          soldeReserveAvant: formaterQuantiteStock(g.solde, g.unite),
-          prixAvant: g.prix,
-          prixApres: nouveau,
-          produits_recalcules: recalcules,
-        },
-      });
+      await enregistrerLivraisonIngredient(c, auth.lieuId, auth.utilisateurId, d);
       return etatReserve(c, auth.lieuId);
     });
     rep.code(201);

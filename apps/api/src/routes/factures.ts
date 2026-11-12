@@ -10,8 +10,10 @@ import {
   type LigneRecapFacture,
   alertesFacture,
   cleArticle,
+  enIngredient,
   enUnites,
   normaliserFournisseur,
+  prixUnitaireLivraison,
   type CorrespondanceArticle,
   ecartLigne,
   livraisonsCandidates,
@@ -29,6 +31,8 @@ import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
 import { ParamId, contexte, corps } from "./outils.ts";
 import { enregistrerLivraison } from "./stock.ts";
+import { enregistrerLivraisonIngredient } from "./stock-ingredients.ts";
+import { recalculerCoutsRecettes } from "./recettes.ts";
 import { pdfFactureVente } from "../pdf-facture.ts";
 
 /**
@@ -52,7 +56,12 @@ const Saisie = z
           prixUnitaire: z.number().int().min(0).max(10_000_000),
           unitesParColis: z.number().int().min(1, "Unités par colis : 1 au moins.").max(10_000).default(1),
           codeArticle: z.string().trim().max(60).nullish().transform((v) => (v ? v : null)),
-        }),
+          // Ingrédient acheté (§15.179) et sa quantité par unité facturée, en millièmes de son unité.
+          ingredientId: z.string().uuid().nullable().default(null),
+          ingredientMilliParUnite: z.number().int().min(1, "Quantité d'ingrédient invalide.").max(100_000_000).nullable().default(null),
+        })
+        .refine((l) => !(l.produitId && l.ingredientId), "Une ligne se relie à un produit ou à un ingrédient, pas aux deux.")
+        .refine((l) => (l.ingredientId === null) === (l.ingredientMilliParUnite === null), "Indique la quantité d'ingrédient contenue dans une unité facturée."),
       )
       .min(1, "Une facture a au moins une ligne.")
       .max(300),
@@ -73,6 +82,8 @@ interface LigneFacture {
   livraison_id: string | null;
   unites_par_colis: number;
   code_article: string | null;
+  ingredient_id: string | null;
+  ingredient_milli_par_unite: number | null;
 }
 
 async function lireLivraisons(c: Client, lieuId: string): Promise<LivraisonCandidate[]> {
@@ -116,7 +127,7 @@ async function etat(c: Client, lieuId: string): Promise<EtatFactures> {
     [lieuId],
   );
   const { rows: lignes } = await c.query<LigneFacture>(
-    "SELECT facture_id, id, ordre, produit_id, libelle, quantite, prix_unitaire_centimes, livraison_id, unites_par_colis, code_article FROM ligne_facture_fournisseur WHERE lieu_id = $1 ORDER BY ordre",
+    "SELECT facture_id, id, ordre, produit_id, libelle, quantite, prix_unitaire_centimes, livraison_id, unites_par_colis, code_article, ingredient_id, ingredient_milli_par_unite FROM ligne_facture_fournisseur WHERE lieu_id = $1 ORDER BY ordre",
     [lieuId],
   );
   const livraisons = await lireLivraisons(c, lieuId);
@@ -150,6 +161,8 @@ async function etat(c: Client, lieuId: string): Promise<EtatFactures> {
         prixUnitaire: l.prix_unitaire_centimes,
         unitesParColis: l.unites_par_colis,
         codeArticle: l.code_article,
+        ingredientId: l.ingredient_id,
+        ingredientMilliParUnite: l.ingredient_milli_par_unite,
         produitFabrique: !!l.produit_id && fabriques.has(l.produit_id),
         livraison,
         livraisonChoisie: !!l.livraison_id,
@@ -189,7 +202,8 @@ async function etat(c: Client, lieuId: string): Promise<EtatFactures> {
 
 async function listerCorrespondances(c: Client, lieuId: string): Promise<CorrespondanceArticle[]> {
   const { rows } = await c.query<CorrespondanceArticle>(
-    `SELECT fournisseur, cle, libelle, produit_id AS "produitId", unites_par_colis AS "unitesParColis"
+    `SELECT fournisseur, cle, libelle, produit_id AS "produitId", unites_par_colis AS "unitesParColis",
+            ingredient_id AS "ingredientId", ingredient_milli_par_unite AS "ingredientMilliParUnite"
        FROM correspondance_article_fournisseur WHERE lieu_id = $1 ORDER BY fournisseur, lower(libelle)`,
     [lieuId],
   );
@@ -214,12 +228,19 @@ async function verifierProduits(c: Client, lieuId: string, ids: (string | null)[
   if (rows.length !== voulus.length) throw new ErreurMetier(404, "Produit introuvable.");
 }
 
+async function verifierIngredients(c: Client, lieuId: string, ids: (string | null)[]) {
+  const voulus = [...new Set(ids.filter((x): x is string => !!x))];
+  if (!voulus.length) return;
+  const { rows } = await c.query("SELECT id FROM ingredient WHERE lieu_id = $1 AND id = ANY($2::uuid[])", [lieuId, voulus]);
+  if (rows.length !== voulus.length) throw new ErreurMetier(404, "Ingrédient introuvable.");
+}
+
 async function ecrireLignes(c: Client, lieuId: string, factureId: string, lignes: z.infer<typeof Saisie>["lignes"]) {
   for (const [i, l] of lignes.entries()) {
     await c.query(
-      `INSERT INTO ligne_facture_fournisseur (lieu_id, facture_id, ordre, produit_id, libelle, quantite, prix_unitaire_centimes, unites_par_colis, code_article)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [lieuId, factureId, i, l.produitId, l.libelle, l.quantite, l.prixUnitaire, l.unitesParColis, l.codeArticle],
+      `INSERT INTO ligne_facture_fournisseur (lieu_id, facture_id, ordre, produit_id, libelle, quantite, prix_unitaire_centimes, unites_par_colis, code_article, ingredient_id, ingredient_milli_par_unite)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [lieuId, factureId, i, l.produitId, l.libelle, l.quantite, l.prixUnitaire, l.unitesParColis, l.codeArticle, l.ingredientId, l.ingredientMilliParUnite],
     );
   }
 }
@@ -231,20 +252,22 @@ async function ecrireLignes(c: Client, lieuId: string, factureId: string, lignes
 async function apprendreCorrespondances(c: Client, lieuId: string, utilisateurId: string, fournisseur: string, lignes: z.infer<typeof Saisie>["lignes"]) {
   const f = normaliserFournisseur(fournisseur);
   if (!f) return;
-  for (const l of lignes.filter((x) => !x.produitId && x.unitesParColis <= 1)) {
-    // Produit retiré et colis remis à 1 sur la facture : la correspondance apprise suit ce dernier choix (audit §15.175).
+  const relie = (x: (typeof lignes)[number]) => !!x.produitId || !!x.ingredientId || x.unitesParColis > 1;
+  for (const l of lignes.filter((x) => !relie(x))) {
+    // Produit ou ingrédient retiré et colis remis à 1 : la correspondance apprise suit ce dernier choix (audit §15.175).
     await c.query(
-      "UPDATE correspondance_article_fournisseur SET produit_id = NULL, unites_par_colis = 1, modifiee_par = $4, modifiee_le = now() WHERE lieu_id = $1 AND fournisseur = $2 AND cle = $3",
+      "UPDATE correspondance_article_fournisseur SET produit_id = NULL, unites_par_colis = 1, ingredient_id = NULL, ingredient_milli_par_unite = NULL, modifiee_par = $4, modifiee_le = now() WHERE lieu_id = $1 AND fournisseur = $2 AND cle = $3",
       [lieuId, f, cleArticle(l.codeArticle, l.libelle), utilisateurId],
     );
   }
-  for (const l of lignes.filter((x) => x.produitId || x.unitesParColis > 1)) {
+  for (const l of lignes.filter(relie)) {
     await c.query(
-      `INSERT INTO correspondance_article_fournisseur (lieu_id, fournisseur, cle, libelle, produit_id, unites_par_colis, modifiee_par)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO correspondance_article_fournisseur (lieu_id, fournisseur, cle, libelle, produit_id, unites_par_colis, ingredient_id, ingredient_milli_par_unite, modifiee_par)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        ON CONFLICT (lieu_id, fournisseur, cle) DO UPDATE
-         SET libelle = EXCLUDED.libelle, produit_id = EXCLUDED.produit_id, unites_par_colis = EXCLUDED.unites_par_colis, modifiee_par = EXCLUDED.modifiee_par, modifiee_le = now()`,
-      [lieuId, f, cleArticle(l.codeArticle, l.libelle), l.libelle, l.produitId, l.unitesParColis, utilisateurId],
+         SET libelle = EXCLUDED.libelle, produit_id = EXCLUDED.produit_id, unites_par_colis = EXCLUDED.unites_par_colis, ingredient_id = EXCLUDED.ingredient_id,
+             ingredient_milli_par_unite = EXCLUDED.ingredient_milli_par_unite, modifiee_par = EXCLUDED.modifiee_par, modifiee_le = now()`,
+      [lieuId, f, cleArticle(l.codeArticle, l.libelle), l.libelle, l.produitId, l.unitesParColis, l.ingredientId, l.ingredientMilliParUnite, utilisateurId],
     );
   }
 }
@@ -285,6 +308,7 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
     const f = corps(Saisie, req);
     return base.transaction(contexte(auth), async (c) => {
       await verifierProduits(c, auth.lieuId, f.lignes.map((l) => l.produitId));
+      await verifierIngredients(c, auth.lieuId, f.lignes.map((l) => l.ingredientId));
       const { rows: existe } = await c.query("SELECT 1 FROM facture_fournisseur WHERE lieu_id = $1 AND lower(btrim(fournisseur)) = lower($2) AND btrim(numero) = $3", [
         auth.lieuId,
         f.fournisseur,
@@ -314,6 +338,7 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
     return base.transaction(contexte(auth), async (c) => {
       await factureModifiable(c, auth.lieuId, id);
       await verifierProduits(c, auth.lieuId, f.lignes.map((l) => l.produitId));
+      await verifierIngredients(c, auth.lieuId, f.lignes.map((l) => l.ingredientId));
       const { rows: existe } = await c.query(
         "SELECT 1 FROM facture_fournisseur WHERE lieu_id = $1 AND id <> $4 AND lower(btrim(fournisseur)) = lower($2) AND btrim(numero) = $3",
         [auth.lieuId, f.fournisseur, f.numero, id],
@@ -394,26 +419,39 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
   app.put("/api/factures/correspondances", async (req): Promise<CorrespondanceArticle[]> => {
     const auth = await exigerDirecteur(req, base);
     const d = corps(
-      CleCorrespondance.extend({ produitId: z.string().uuid().nullable(), unitesParColis: z.number().int().min(1, "Unités par colis : 1 au moins.").max(10_000) }),
+      CleCorrespondance.extend({
+        produitId: z.string().uuid().nullable(),
+        unitesParColis: z.number().int().min(1, "Unités par colis : 1 au moins.").max(10_000),
+        ingredientId: z.string().uuid().nullable().default(null),
+        ingredientMilliParUnite: z.number().int().min(1, "Quantité d'ingrédient invalide.").max(100_000_000).nullable().default(null),
+      })
+        .refine((x) => !(x.produitId && x.ingredientId), "Un article se relie à un produit ou à un ingrédient, pas aux deux.")
+        .refine((x) => (x.ingredientId === null) === (x.ingredientMilliParUnite === null), "Indique la quantité d'ingrédient contenue dans une unité facturée."),
       req,
     );
     return base.transaction(contexte(auth), async (c) => {
       await verifierProduits(c, auth.lieuId, [d.produitId]);
-      const { rows } = await c.query<{ libelle: string; produit_id: string | null; unites_par_colis: number }>(
-        "SELECT libelle, produit_id, unites_par_colis FROM correspondance_article_fournisseur WHERE lieu_id = $1 AND fournisseur = $2 AND cle = $3 FOR UPDATE",
+      await verifierIngredients(c, auth.lieuId, [d.ingredientId]);
+      const { rows } = await c.query<{ libelle: string; produit_id: string | null; unites_par_colis: number; ingredient_id: string | null; ingredient_milli_par_unite: number | null }>(
+        "SELECT libelle, produit_id, unites_par_colis, ingredient_id, ingredient_milli_par_unite FROM correspondance_article_fournisseur WHERE lieu_id = $1 AND fournisseur = $2 AND cle = $3 FOR UPDATE",
         [auth.lieuId, d.fournisseur, d.cle],
       );
       const avant = rows[0];
       if (!avant) throw introuvable("Correspondance");
       await c.query(
-        "UPDATE correspondance_article_fournisseur SET produit_id = $4, unites_par_colis = $5, modifiee_par = $6, modifiee_le = now() WHERE lieu_id = $1 AND fournisseur = $2 AND cle = $3",
-        [auth.lieuId, d.fournisseur, d.cle, d.produitId, d.unitesParColis, auth.utilisateurId],
+        "UPDATE correspondance_article_fournisseur SET produit_id = $4, unites_par_colis = $5, ingredient_id = $7, ingredient_milli_par_unite = $8, modifiee_par = $6, modifiee_le = now() WHERE lieu_id = $1 AND fournisseur = $2 AND cle = $3",
+        [auth.lieuId, d.fournisseur, d.cle, d.produitId, d.unitesParColis, auth.utilisateurId, d.ingredientId, d.ingredientMilliParUnite],
       );
       await inscrireJet(c, {
         lieuId: auth.lieuId,
         type: "correspondance_fournisseur_modifiee",
         utilisateurId: auth.utilisateurId,
-        details: { fournisseur: d.fournisseur, article: avant.libelle, avant: { produitId: avant.produit_id, unitesParColis: avant.unites_par_colis }, apres: { produitId: d.produitId, unitesParColis: d.unitesParColis } },
+        details: {
+          fournisseur: d.fournisseur,
+          article: avant.libelle,
+          avant: { produitId: avant.produit_id, unitesParColis: avant.unites_par_colis, ingredientId: avant.ingredient_id, ingredientMilliParUnite: avant.ingredient_milli_par_unite },
+          apres: { produitId: d.produitId, unitesParColis: d.unitesParColis, ingredientId: d.ingredientId, ingredientMilliParUnite: d.ingredientMilliParUnite },
+        },
       });
       return listerCorrespondances(c, auth.lieuId);
     });
@@ -568,6 +606,29 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
             dateLivraison: f.dateFacture,
           });
           await c.query("UPDATE ligne_facture_fournisseur SET livraison_id = $3 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, l.id, livraison]);
+          entrees.push(l.libelle);
+        }
+        // Ingrédients achetés (§15.179) : suivi en stock, livraison (réserve, coût moyen pondéré) ; sinon, le prix de la
+        // facture devient son prix. Les recettes qui l'utilisent suivent : la marge des produits vendus aussi.
+        for (const l of f.lignes.filter((x) => x.ingredientId && x.ingredientMilliParUnite)) {
+          const { quantiteMilli, prixTotal } = enIngredient({ quantite: l.quantite, prixUnitaire: l.prixUnitaire, ingredientMilliParUnite: l.ingredientMilliParUnite! });
+          const { rows: g } = await c.query<{ nom: string; suivi: boolean; prix: number | null }>(
+            "SELECT nom, suivi_stock AS suivi, prix_centimes AS prix FROM ingredient WHERE lieu_id = $1 AND id = $2",
+            [auth.lieuId, l.ingredientId],
+          );
+          if (g[0]!.suivi) {
+            await enregistrerLivraisonIngredient(c, auth.lieuId, auth.utilisateurId, { ingredientId: l.ingredientId!, quantiteMilli, prixTotal, fournisseur: f.fournisseur, dateLivraison: f.dateFacture });
+          } else {
+            const prix = prixUnitaireLivraison(prixTotal, quantiteMilli);
+            await c.query("UPDATE ingredient SET prix_centimes = $3 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, l.ingredientId, prix]);
+            const recalcules = prix !== g[0]!.prix ? await recalculerCoutsRecettes(c, auth.lieuId, l.ingredientId!) : [];
+            await inscrireJet(c, {
+              lieuId: auth.lieuId,
+              type: "ingredient_prix_facture",
+              utilisateurId: auth.utilisateurId,
+              details: { ingredient: g[0]!.nom, facture: id, fournisseur: f.fournisseur, numero: f.numero, prixAvant: g[0]!.prix, prixApres: prix, produits_recalcules: recalcules },
+            });
+          }
           entrees.push(l.libelle);
         }
         if (entrees.length) f = (await etat(c, auth.lieuId)).factures.find((x) => x.id === id)!;
