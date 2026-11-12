@@ -4,7 +4,7 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
-## 2026-11-13 : gouvernance appliquée ; audit de Codex du 2026-11-12 corrigé (§15.181)
+## 2026-11-12 : gouvernance appliquée ; audit de Codex du 2026-11-12 corrigé (§15.181)
 
 Registres créés (bugs et incidents, sécurité, tests, mise en ligne, `.env.example`). Corrigés : total HT des fichiers Excel,
 feuille d'une facture dans un classeur, colonne « Col/Pack », bornes des lignes d'ingrédient, avoir refusé, compteur de

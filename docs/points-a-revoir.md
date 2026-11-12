@@ -1,6 +1,6 @@
 # Points à revoir avec Rémi
 
-Liste tenue à jour à la fin de chaque séance (dernière mise à jour : 2026-11-13). Chaque point dit **qui** doit agir :
+Liste tenue à jour à la fin de chaque séance (dernière mise à jour : 2026-11-12). Chaque point dit **qui** doit agir :
 **Rémi** (compte, clé, test, décision) ou **Claude** (développement, une fois la décision prise). Rien de secret ici :
 les clés et mots de passe ne passent jamais par Claude.
 
@@ -46,4 +46,4 @@ les clés et mots de passe ne passent jamais par Claude.
 | Factures PDF fabriquées par un logiciel lues sans IA : Relais d'Or, Montaner Pietrini (CDB), total contrôlé, PDF joint | 2026-11-12 | §15.178 |
 | Ligne de facture reliée à un ingrédient (prix, réserve, coût des recettes) ; à l'import, le sûr rempli et le ressemblant proposé (migration 0061) | 2026-11-12 | §15.179 |
 | Copie du catalogue entre lieux d'un même client (back-office) ; recette avec ingrédient créé sur place et marge en direct (migration 0062) | 2026-11-12 | §15.180 |
-| Gouvernance appliquée (registres) ; audit Codex du 2026-11-12 corrigé : total Excel, feuille, Col/Pack, bornes ingrédients, avoir, compteur de recettes (migration 0063) | 2026-11-13 | §15.181 |
+| Gouvernance appliquée (registres) ; audit Codex du 2026-11-12 corrigé : total Excel, feuille, Col/Pack, bornes ingrédients, avoir, compteur de recettes (migration 0063) | 2026-11-12 | §15.181 |

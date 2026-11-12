@@ -5843,10 +5843,10 @@ factures, achats : 17). À l'écran, en local : « Hot dog complet » créé dep
 
 **Reste** : changer de lieu dans l'application pour un directeur de plusieurs lieux (aujourd'hui, le premier seulement).
 
-### 15.181 Gouvernance appliquée ; audit de Codex du 2026-11-12 corrigé (2026-11-13)
+### 15.181 Gouvernance appliquée ; audit de Codex du 2026-11-12 corrigé (2026-11-12)
 
 **Contexte** : Rémi a remis sa gouvernance (2026-11-11), adaptée à FlaiX Expert (`docs/gouvernance/GOUVERNANCE_FLAIX_EXPERT.md`,
-2026-11-12). Le 2026-11-13 : « à partir de maintenant, tu vas mettre à jour les documents à chaque fois que tu développes du
+2026-11-12). Le 2026-11-12 : « à partir de maintenant, tu vas mettre à jour les documents à chaque fois que tu développes du
 code […] et oui, tu peux lancer » (registre des bugs, correction des points de Codex, documents manquants). Rapport :
 `docs/audits/AUDIT_2026-11-12_codex-phases-79-81-calculs-imports-stock-wallets.md` (aucun P1 ; six P2, trois P3).
 

@@ -1,6 +1,6 @@
 # FlaiX Expert — stratégie de tests
 
-Tenu selon la gouvernance (`GOUVERNANCE_FLAIX_EXPERT.md`, § 14). Créé le 2026-11-13.
+Tenu selon la gouvernance (`GOUVERNANCE_FLAIX_EXPERT.md`, § 14). Créé le 2026-11-12.
 
 ## 1. Les trois niveaux
 

@@ -138,17 +138,17 @@ FlaiX Expert a déjà sa documentation : elle est gardée telle quelle, sans dou
 | Architecture | `docs/decisions-architecture-production.md`, `docs/developpement/CARTE_DU_CODE.md` | en place |
 | Document technique central | `docs/flaix-gestion-dossier-projet.md`, `docs/developpement/GUIDE_DE_REPRISE.md` | en place |
 | Règles de développement | `AGENTS.md`, `CLAUDE.md`, ce document | en place |
-| Sécurité | `docs/gouvernance/SECURITE.md` | en place (2026-11-13) |
-| Tests | `docs/gouvernance/TESTS.md` | en place (2026-11-13) |
+| Sécurité | `docs/gouvernance/SECURITE.md` | en place (2026-11-12) |
+| Tests | `docs/gouvernance/TESTS.md` | en place (2026-11-12) |
 | Feuille de route et statut des phases | `docs/avancement.md`, `docs/points-a-revoir.md`, `docs/developpement/JOURNAL_DES_PHASES.md` | en place |
 | Historique des changements | `CHANGELOG.md` (produit automatiquement) | en place |
-| Bugs et incidents | `docs/gouvernance/BUGS_ET_INCIDENTS.md` | en place (2026-11-13) |
-| Mise en ligne, retour arrière, procédures | `docs/gouvernance/MISE_EN_LIGNE.md`, `docs/guide-serveur-test-ovh.md`, `infra/vps/` | en place (2026-11-13) |
+| Bugs et incidents | `docs/gouvernance/BUGS_ET_INCIDENTS.md` | en place (2026-11-12) |
+| Mise en ligne, retour arrière, procédures | `docs/gouvernance/MISE_EN_LIGNE.md`, `docs/guide-serveur-test-ovh.md`, `infra/vps/` | en place (2026-11-12) |
 | Décisions d'architecture | `docs/decisions-architecture-production.md` (§ 10 et suivants) | en place |
 | Compte rendu de chaque tâche | une section §15.x du dossier projet + la fiche de phase `docs/developpement/phases/` | en place |
 | Conformité fiscale | `docs/conformite/dossier-conformite-flaix-expert.md` | en place |
 | Audits | `docs/audits/` | en place |
-| Variables d'environnement | `.env.example` | en place (2026-11-13) |
+| Variables d'environnement | `.env.example` | en place (2026-11-12) |
 
 ---
 
@@ -321,7 +321,7 @@ réel vérifié, jamais une architecture rêvée.
 
 # 9. BUGS, INCIDENTS ET PROBLÈMES RÉCURRENTS
 
-Registre : `docs/gouvernance/BUGS_ET_INCIDENTS.md` (créé le 2026-11-13, avec les bugs corrigés depuis le 2026-10-26).
+Registre : `docs/gouvernance/BUGS_ET_INCIDENTS.md` (créé le 2026-11-12, avec les bugs corrigés depuis le 2026-10-26).
 
 ## 9.1 Fiche d'un bug
 
@@ -796,7 +796,7 @@ valider par Rémi les règles structurantes ; mettre à jour la version et l'his
 
 Les règles marquées [proposée] et les points « À confirmer » attendent la validation de Rémi.
 
-**Appliquée depuis le 2026-11-13** : registres `BUGS_ET_INCIDENTS.md`, `SECURITE.md`, `TESTS.md`, `MISE_EN_LIGNE.md` et
+**Appliquée depuis le 2026-11-12** : registres `BUGS_ET_INCIDENTS.md`, `SECURITE.md`, `TESTS.md`, `MISE_EN_LIGNE.md` et
 `.env.example` créés. **Reste à faire** : tester une restauration de sauvegarde ; décider de la règle de mise en ligne en
 production, du serveur de test séparé et de l'outil de suivi des erreurs.
 

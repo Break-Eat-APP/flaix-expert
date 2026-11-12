@@ -235,14 +235,14 @@ Ajouté par Claude après le rapport (le texte de l'audit ci-dessus n'est pas mo
 
 | Point | Registre | État | Commit |
 |---|---|---|---|
-| P2-1 total HT Excel/CSV | BUG-2026-012 | Corrigé le 2026-11-13 | `f25f529` |
-| P2-2 feuille du classeur | BUG-2026-013 | Corrigé le 2026-11-13 | `f25f529` |
+| P2-1 total HT Excel/CSV | BUG-2026-012 | Corrigé le 2026-11-12 | `f25f529` |
+| P2-2 feuille du classeur | BUG-2026-013 | Corrigé le 2026-11-12 | `f25f529` |
 | P2-3 arrondi colis → unités | BUG-2026-014 | Écart calculé et tracé au journal ; règle à valider par Rémi | `04780c0` |
-| P2-4 bornes des ingrédients | BUG-2026-015 | Corrigé le 2026-11-13 | `d54be5a` |
+| P2-4 bornes des ingrédients | BUG-2026-015 | Corrigé le 2026-11-12 | `d54be5a` |
 | P2-5 avoir CDB | BUG-2026-016 | Corrigé : refusé avec la raison | `d54be5a` |
 | P2-6 recette Wallet réelle | BUG-2026-017 | Ouvert : avec Rémi | — |
 | P3-1 PDF réels dans les tests | BUG-2026-018 | Ouvert | — |
-| P3-2 colonne « Col/Pack » | BUG-2026-019 | Corrigé le 2026-11-13 | `f25f529` |
+| P3-2 colonne « Col/Pack » | BUG-2026-019 | Corrigé le 2026-11-12 | `f25f529` |
 | P3-3 compteur de recettes | BUG-2026-020 | Corrigé, migration 0063 | `d54be5a` |
 
 Question métier soulevée (§ 2) : la réserve ne se met à jour qu'à la **validation** de la facture, case « entrer en réserve »

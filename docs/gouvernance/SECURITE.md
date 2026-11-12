@@ -1,6 +1,6 @@
 # FlaiX Expert — règles et contrôles de sécurité
 
-Tenu selon la gouvernance (`GOUVERNANCE_FLAIX_EXPERT.md`, § 12). Créé le 2026-11-13. Ce document dit **ce qui est en place
+Tenu selon la gouvernance (`GOUVERNANCE_FLAIX_EXPERT.md`, § 12). Créé le 2026-11-12. Ce document dit **ce qui est en place
 et où**, et ce qui reste à faire ; toute règle ou tout contrôle qui change le met à jour.
 
 ## 1. Isolement des lieux (le plus important)

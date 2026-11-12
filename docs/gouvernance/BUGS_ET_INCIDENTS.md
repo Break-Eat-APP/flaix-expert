@@ -1,6 +1,6 @@
 # FlaiX Expert — registre des bugs et incidents
 
-Tenu selon la gouvernance (`GOUVERNANCE_FLAIX_EXPERT.md`, § 9). Créé le 2026-11-13. Chaque bug a un identifiant stable
+Tenu selon la gouvernance (`GOUVERNANCE_FLAIX_EXPERT.md`, § 9). Créé le 2026-11-12. Chaque bug a un identifiant stable
 `BUG-2026-NNN` ; il n'est jamais supprimé, seulement clos. Gravité : `SEV-0` (vente perdue ou altérée, journal cassé,
 clôture fausse, accès entre lieux, fuite) à `SEV-4` (mineur). Statuts : OUVERT, EN COURS, CORRIGÉ (dans le code et
 testé), VÉRIFIÉ (contrôlé en ligne), CLOS, ACCEPTÉ (risque assumé, décision écrite).

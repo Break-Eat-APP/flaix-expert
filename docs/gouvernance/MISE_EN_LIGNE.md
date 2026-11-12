@@ -1,6 +1,6 @@
 # FlaiX Expert — mise en ligne, sauvegardes et retour arrière
 
-Tenu selon la gouvernance (`GOUVERNANCE_FLAIX_EXPERT.md`, § 16). Créé le 2026-11-13. Le détail de l'installation du
+Tenu selon la gouvernance (`GOUVERNANCE_FLAIX_EXPERT.md`, § 16). Créé le 2026-11-12. Le détail de l'installation du
 serveur est dans `docs/guide-serveur-test-ovh.md` et `infra/vps/`.
 
 ## 1. Environnements

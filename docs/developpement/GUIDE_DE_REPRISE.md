@@ -1,6 +1,6 @@
 # Guide de reprise — pour un développeur qui arrive sur FlaiX Expert
 
-> Écrit le 2026-10-19, **mis à jour le 2026-11-13 : phase 82, migration `0063`**. À relire en premier ; il dit où aller pour
+> Écrit le 2026-10-19, **mis à jour le 2026-11-12 : phase 82, migration `0063`**. À relire en premier ; il dit où aller pour
 > tout le reste. Ce qui a été construit depuis la phase 66 est résumé au § 6 bis.
 
 ## 1. Le projet en cinq minutes
