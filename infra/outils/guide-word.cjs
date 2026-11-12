@@ -16,6 +16,7 @@ const audits = fs
   .sort();
 const documents = [
   { md: path.join(racine, "docs", "developpement", "GUIDE_DE_REPRISE.md"), enTete: "FlaiX Expert — guide de reprise pour un développeur" },
+  { md: path.join(racine, "docs", "gouvernance", "GOUVERNANCE_FLAIX_EXPERT.md"), enTete: "FlaiX Expert — gouvernance du développement" },
   ...(audits.length ? [{ md: path.join(racine, "docs", "audits", audits.at(-1)), enTete: `FlaiX Expert — ${audits.at(-1).replace(/\.md$/, "")}` }] : []),
 ];
 

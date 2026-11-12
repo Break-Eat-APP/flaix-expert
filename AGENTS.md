@@ -10,6 +10,8 @@ Statut : **version de test** sur `flaixexpert.flaixlabs.com` ; la production att
 
 ## À lire avant tout travail (dans cet ordre)
 
+0. [`docs/gouvernance/GOUVERNANCE_FLAIX_EXPERT.md`](docs/gouvernance/GOUVERNANCE_FLAIX_EXPERT.md) — la gouvernance du développement : règles permanentes, workflow avant et après chaque tâche, bugs, sécurité, tests, mise en ligne et passation.
+
 1. [`docs/avancement.md`](docs/avancement.md) — où on en est, ce qui est en cours, ce qui reste.
 2. [`docs/developpement/JOURNAL_DES_PHASES.md`](docs/developpement/JOURNAL_DES_PHASES.md) — chaque phase : décision, commits GitHub, fichiers.
 3. [`docs/developpement/CARTE_DU_CODE.md`](docs/developpement/CARTE_DU_CODE.md) — où trouver quoi, ligne exacte des fonctions clés.
