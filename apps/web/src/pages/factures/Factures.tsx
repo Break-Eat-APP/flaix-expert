@@ -6,9 +6,11 @@ import {
   colisDevine,
   correspondanceExacte,
   lireFactureExport,
+  lireFacturePdf,
   normaliserFournisseur,
   suggererCorrespondance,
   type CorrespondanceArticle,
+  type LigneFactureLue,
   LIBELLES_STATUT_FACTURE,
   formaterMontant,
   jourParis,
@@ -23,6 +25,7 @@ import {
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 import { lireFichierVentes } from "../caisses-connectees/fichiers.ts";
+import { textePdf } from "./pdf-texte.ts";
 import { useOptions } from "../../session.tsx";
 
 type Filtre = "a_traiter" | "toutes" | "validee" | "payee";
@@ -211,12 +214,7 @@ function DetailFacture({ f, produits, fournisseurs }: { f: FactureVue; produits:
   });
   const payer = useMutation({ mutationFn: () => api.post<EtatFactures>(`/factures/${f.id}/paiement`, { datePaiement }), onSuccess: maj });
   const deposer = useMutation({
-    mutationFn: async (fichier: File) => {
-      const octets = new Uint8Array(await fichier.arrayBuffer());
-      let binaire = "";
-      for (let i = 0; i < octets.length; i += 0x8000) binaire += String.fromCharCode(...octets.subarray(i, i + 0x8000));
-      return api.post<EtatFactures>(`/factures/${f.id}/fichier`, { nom: fichier.name, type: fichier.type, contenu: btoa(binaire) });
-    },
+    mutationFn: async (fichier: File) => api.post<EtatFactures>(`/factures/${f.id}/fichier`, await pieceJointe(fichier)),
     onSuccess: maj,
   });
   const figee = f.statut === "validee" || f.statut === "payee";
@@ -408,6 +406,16 @@ function DetailFacture({ f, produits, fournisseurs }: { f: FactureVue; produits:
   );
 }
 
+/** Pièce jointe d'une facture, telle que l'attend le serveur (contenu en base 64). */
+async function pieceJointe(fichier: File) {
+  const octets = new Uint8Array(await fichier.arrayBuffer());
+  let binaire = "";
+  for (let i = 0; i < octets.length; i += 0x8000) binaire += String.fromCharCode(...octets.subarray(i, i + 0x8000));
+  return { nom: fichier.name, type: fichier.type || "application/pdf", contenu: btoa(binaire) };
+}
+
+const estPdf = (f: File) => f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+
 interface LigneSaisie {
   produitId: string;
   libelle: string;
@@ -433,6 +441,8 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
   const correspondances = useQuery({ queryKey: ["correspondances-fournisseurs"], queryFn: () => api.get<CorrespondanceArticle[]>("/factures/correspondances") });
   const [import_, setImport] = useState<{ message: string; erreurs: string[] } | null>(null);
   const [erreurImport, setErreurImport] = useState<unknown>(null);
+  /** Facture PDF lue : jointe à la facture à l'enregistrement, sans avoir à la redéposer. */
+  const [pdfLu, setPdfLu] = useState<File | null>(null);
   const [lignes, setLignes] = useState<LigneSaisie[]>(
     facture?.lignes.map((l) => ({
       produitId: l.produitId ?? "",
@@ -456,37 +466,69 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
   const totalLignes = valides ? totalHtFacture(lues as { quantite: number; prixUnitaire: number }[]) : 0;
 
   /**
-   * Remplir depuis l'export Excel ou CSV de la facture (§15.173) : chaque ligne reprend le produit et le colis déjà
-   * retenus pour ce fournisseur, sinon le produit du même nom, sinon le plus ressemblant ; le colis est lu dans le
-   * fichier (PCB) ou deviné dans le libellé (« x24 »). Tout reste modifiable avant d'enregistrer.
+   * Lignes lues dans un fichier (§15.173) : chaque ligne reprend le produit et le colis déjà retenus pour ce fournisseur,
+   * sinon le produit du même nom, sinon le plus ressemblant ; le colis est lu dans le fichier (PCB) ou deviné dans le
+   * libellé (« x24 »). Tout reste modifiable avant d'enregistrer.
    */
+  const remplir = (lues: readonly LigneFactureLue[], fournisseur: string) => {
+    const four = normaliserFournisseur(fournisseur);
+    const appris = new Map((correspondances.data ?? []).filter((c) => c.fournisseur === four).map((c) => [c.cle, c]));
+    const nouvelles: LigneSaisie[] = lues.map((l) => {
+      const c = appris.get(cleArticle(l.codeArticle, l.libelle));
+      const exact = c ? null : correspondanceExacte(l.libelle, produits);
+      const proche = c || exact ? null : suggererCorrespondance(l.libelle, produits);
+      const produitId = c?.produitId ?? exact?.id ?? proche?.id ?? "";
+      return {
+        produitId,
+        libelle: l.libelle,
+        quantite: String(l.quantite),
+        prix: montantPourSaisie(l.prixUnitaire),
+        colis: String(c?.unitesParColis ?? l.unitesParColis ?? colisDevine(l.libelle) ?? 1),
+        code: l.codeArticle ?? "",
+        origine: c ? "appris" : exact ? "exact" : proche ? "suggere" : undefined,
+      };
+    });
+    if (!nouvelles.length) throw new Error("Aucune ligne d'article lue dans ce fichier.");
+    setLignes(nouvelles);
+    const reconnues = nouvelles.filter((l) => l.produitId).length;
+    return `${nouvelles.length} ligne${nouvelles.length > 1 ? "s" : ""} lue${nouvelles.length > 1 ? "s" : ""}, ${reconnues} reliée${reconnues > 1 ? "s" : ""} à un produit${four ? "" : " (saisis le fournisseur avant l'import pour reprendre ses correspondances)"}`;
+  };
+
+  /**
+   * Facture PDF fabriquée par le logiciel du fournisseur (§15.178) : fournisseur, n°, date, total HT et lignes lus dans le
+   * texte du PDF ; le PDF sera joint à la facture. Un PDF scanné ou d'une mise en page inconnue n'est pas deviné.
+   */
+  const importerPdf = async (fichier: File) => {
+    const morceaux = await textePdf(fichier);
+    if (!morceaux.length) throw new Error("Ce PDF ne contient pas de texte (facture scannée ou photographiée) : saisis les lignes à la main, ou utilise l'export Excel du fournisseur.");
+    const f = lireFacturePdf(morceaux);
+    if (!f) throw new Error("La mise en page de ce fournisseur n'est pas encore reconnue (reconnues : Relais d'Or, Montaner Pietrini). Utilise l'export Excel du fournisseur, ou saisis les lignes à la main.");
+    // Un fournisseur déjà connu sous un nom voisin garde son nom : ses correspondances s'appliquent.
+    const fournisseur = fournisseurs.find((x) => normaliserFournisseur(x) === normaliserFournisseur(f.fournisseur)) ?? f.fournisseur;
+    setS({
+      ...s,
+      fournisseur,
+      numero: f.numero ?? s.numero,
+      dateFacture: f.date ?? s.dateFacture,
+      totalAnnonce: f.totalHt !== null ? montantPourSaisie(f.totalHt) : s.totalAnnonce,
+    });
+    const lu = remplir(f.lignes, fournisseur);
+    setPdfLu(fichier);
+    setImport({
+      message: `Facture n° ${f.numero ?? "?"} de ${fournisseur} : ${lu}. Le PDF sera joint à la facture. Vérifie les produits « proposés » et les colis, puis enregistre.`,
+      erreurs: f.remarques,
+    });
+  };
+
+  /** Remplir depuis l'export Excel ou CSV de la facture (§15.173), ou depuis la facture PDF (§15.178). */
   const importer = async (fichier: File) => {
     setErreurImport(null);
     try {
+      if (estPdf(fichier)) return await importerPdf(fichier);
       const lu = lireFactureExport((await lireFichierVentes(fichier)).contenu);
       if (lu.manquants.length) throw new Error(`Colonnes introuvables dans le fichier : ${lu.manquants.join(", ")}.`);
-      const four = normaliserFournisseur(s.fournisseur);
-      const appris = new Map((correspondances.data ?? []).filter((c) => c.fournisseur === four).map((c) => [c.cle, c]));
-      const nouvelles: LigneSaisie[] = lu.lignes.map((l) => {
-        const c = appris.get(cleArticle(l.codeArticle, l.libelle));
-        const exact = c ? null : correspondanceExacte(l.libelle, produits);
-        const proche = c || exact ? null : suggererCorrespondance(l.libelle, produits);
-        const produitId = c?.produitId ?? exact?.id ?? proche?.id ?? "";
-        return {
-          produitId,
-          libelle: l.libelle,
-          quantite: String(l.quantite),
-          prix: montantPourSaisie(l.prixUnitaire),
-          colis: String(c?.unitesParColis ?? l.unitesParColis ?? colisDevine(l.libelle) ?? 1),
-          code: l.codeArticle ?? "",
-          origine: c ? "appris" : exact ? "exact" : proche ? "suggere" : undefined,
-        };
-      });
-      if (!nouvelles.length) throw new Error("Aucune ligne d'article lue dans ce fichier.");
-      setLignes(nouvelles);
-      const reconnues = nouvelles.filter((l) => l.produitId).length;
       setImport({
-        message: `${nouvelles.length} ligne${nouvelles.length > 1 ? "s" : ""} lue${nouvelles.length > 1 ? "s" : ""}, ${reconnues} reliée${reconnues > 1 ? "s" : ""} à un produit${four ? "" : " (saisis le fournisseur avant l'import pour reprendre ses correspondances)"}. Vérifie les produits « proposés » et les colis, puis enregistre.`,
+        message: `${remplir(lu.lignes, s.fournisseur)}. Vérifie les produits « proposés » et les colis, puis enregistre.`,
         erreurs: lu.erreurs.map((e) => `Ligne ${e.ligne} : ${e.message}`),
       });
     } catch (e) {
@@ -495,9 +537,11 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
     }
   };
   const enregistrer = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const corps = { ...s, echeance: s.echeance || null, totalAnnonce, lignes: lues.map(({ unitesParColis, ...l }) => ({ ...l, unitesParColis: unitesParColis || 1 })) };
-      return facture ? api.put<EtatFactures>(`/factures/${facture.id}`, corps) : api.post<EtatFactures>("/factures", corps);
+      const r = facture ? await api.put<EtatFactures>(`/factures/${facture.id}`, corps) : await api.post<EtatFactures>("/factures", corps);
+      const id = facture?.id ?? r.factures.find((x) => x.numero === s.numero.trim())?.id;
+      return pdfLu && id ? api.post<EtatFactures>(`/factures/${id}/fichier`, await pieceJointe(pdfLu)) : r;
     },
     onSuccess: (r) => {
       client.setQueryData(["factures"], r);
@@ -537,10 +581,10 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
       </div>
       <div className="import-facture">
         <label className="btn btn-fantome" style={{ cursor: "pointer" }}>
-          <FileSpreadsheet size={15} /> Remplir depuis un fichier Excel ou CSV
+          <FileSpreadsheet size={15} /> Remplir depuis la facture (PDF, Excel ou CSV)
           <input
             type="file"
-            accept=".xlsx,.xls,.xlsm,.csv,.txt"
+            accept=".pdf,application/pdf,.xlsx,.xls,.xlsm,.csv,.txt"
             style={{ display: "none" }}
             onChange={(ev) => {
               const fichier = ev.target.files?.[0];
@@ -549,7 +593,7 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
             }}
           />
         </label>
-        <span className="discret">L'export de la facture depuis le site du fournisseur : les lignes se remplissent, avec les produits et colis déjà connus.</span>
+        <span className="discret">La facture PDF du fournisseur (Relais d'Or, Montaner Pietrini) ou son export Excel : les lignes se remplissent, avec les produits et colis déjà connus.</span>
       </div>
       {import_ && (
         <div className="message message-info">

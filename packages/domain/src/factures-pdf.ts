@@ -89,6 +89,7 @@ function terminer(f: Omit<FacturePdfLue, "remarques">, remarques: string[], rest
   if (f.totalHt !== null && Math.abs(somme - f.totalHt) > 2) {
     remarques.unshift(`Attention : les lignes lues font ${(somme / 100).toFixed(2).replace(".", ",")} € HT, la facture annonce ${(f.totalHt / 100).toFixed(2).replace(".", ",")} € : une ligne n'a pas été lue, compare avec le PDF.`);
   }
+  if (f.totalHt === null) remarques.unshift("Attention : total HT introuvable dans le PDF, les lignes n'ont pas pu être contrôlées : compare avec la facture.");
   return { ...f, remarques };
 }
 
@@ -102,7 +103,9 @@ function lireRelaisDor(lignes: readonly LignePdf[]): FacturePdfLue {
   const fournisseur = tout.map((t) => /^Relais d'Or [A-ZÉ][a-zé]+/.exec(t)?.[0]).find(Boolean) ?? "Relais d'Or";
   const numero = tout.map((t) => /FACTURE\s+N°\s*(\d+)/.exec(t)?.[1]).find(Boolean) ?? null;
   const d = tout.map((t) => /Date\s*:\s*(\d{2})\/(\d{2})\/(\d{2,4})/.exec(t)).find(Boolean);
-  const totaux = tout.map((t) => /TOTAL H\.T\s+([\d.]+,\d{2})\s+EUR/.exec(t)?.[1]).filter(Boolean);
+  // Le total de la facture porte « EUR » ; à défaut, le dernier « TOTAL H.T » (chaque commande a le sien, avant).
+  const enEuros = tout.map((t) => /TOTAL H\.T\s+([\d.]+,\d{2})\s+EUR/.exec(t)?.[1]).filter(Boolean);
+  const totaux = enEuros.length ? enEuros : tout.map((t) => /TOTAL H\.T\s+([\d.]+,\d{2})/.exec(t)?.[1]).filter(Boolean);
   const reste = { centimes: 0 };
   const remarques: string[] = [];
   const lues: LigneFactureLue[] = [];
