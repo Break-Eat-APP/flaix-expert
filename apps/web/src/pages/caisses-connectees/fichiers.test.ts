@@ -68,4 +68,19 @@ describe("fichiers d'export", () => {
   it("fichier illisible : message clair", async () => {
     await expect(lireFichierVentes(new File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 1, 2, 3])], "abime.xlsx"))).rejects.toThrow(/ne s'ouvre pas/);
   });
+
+  it("[F] facture fournisseur à trois feuilles (garde, synthèse des ventes, lignes) : la feuille des lignes est lue avec les règles d'une facture (BUG-2026-013)", async () => {
+    const f = classeur("xlsx", {
+      Garde: X.utils.aoa_to_sheet([["Facture F-12 — Metro"], ["Client : Les Spartiates"]]),
+      Synthese: feuilleVentes(),
+      Lignes: X.utils.aoa_to_sheet([
+        ["Désignation", "Qté", "Prix unitaire HT", "Montant HT"],
+        ["Coca 33 cl x24", 2, 14.4, 28.8],
+        ["Total HT", "", "", 28.8],
+      ]),
+    });
+    expect((await lireFichierVentes(f, undefined, "facture")).feuille).toBe("Lignes");
+    // Avec les règles d'un export de caisse, c'est la synthèse des ventes qui serait prise.
+    expect((await lireFichierVentes(f)).feuille).toBe("Synthese");
+  });
 });

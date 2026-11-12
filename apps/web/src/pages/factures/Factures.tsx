@@ -480,6 +480,8 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
   const correspondances = useQuery({ queryKey: ["correspondances-fournisseurs"], queryFn: () => api.get<CorrespondanceArticle[]>("/factures/correspondances") });
   const [import_, setImport] = useState<{ message: string; erreurs: string[] } | null>(null);
   const [erreurImport, setErreurImport] = useState<unknown>(null);
+  /** Classeur importé à plusieurs feuilles : la feuille lue, et les autres pour en choisir une (BUG-2026-013). */
+  const [classeur, setClasseur] = useState<{ fichier: File; feuilles: string[]; feuille: string } | null>(null);
   /** Facture PDF lue : jointe à la facture à l'enregistrement, sans avoir à la redéposer. */
   const [pdfLu, setPdfLu] = useState<File | null>(null);
   const [lignes, setLignes] = useState<LigneSaisie[]>(
@@ -595,15 +597,30 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
   };
 
   /** Remplir depuis l'export Excel ou CSV de la facture (§15.173), ou depuis la facture PDF (§15.178). */
-  const importer = async (fichier: File) => {
+  const importer = async (fichier: File, feuille?: string) => {
     setErreurImport(null);
     try {
-      if (estPdf(fichier)) return await importerPdf(fichier);
-      const lu = lireFactureExport((await lireFichierVentes(fichier)).contenu);
-      if (lu.manquants.length) throw new Error(`Colonnes introuvables dans le fichier : ${lu.manquants.join(", ")}.`);
+      if (estPdf(fichier)) {
+        setClasseur(null);
+        return await importerPdf(fichier);
+      }
+      // La feuille de la facture est cherchée avec les règles d'une facture, pas celles d'un export de caisse (BUG-2026-013).
+      const fichierLu = await lireFichierVentes(fichier, feuille, "facture");
+      setClasseur(fichierLu.feuilles.length > 1 && fichierLu.feuille ? { fichier, feuilles: fichierLu.feuilles, feuille: fichierLu.feuille } : null);
+      const lu = lireFactureExport(fichierLu.contenu);
+      if (lu.manquants.length) throw new Error(`Colonnes introuvables dans ${fichierLu.feuille ? `la feuille « ${fichierLu.feuille} »` : "le fichier"} : ${lu.manquants.join(", ")}.`);
+      // Total HT écrit dans le fichier : il sert au contrôle des lignes (BUG-2026-012) ; un total déjà saisi est gardé.
+      if (lu.totalHt !== null && !s.totalAnnonce.trim()) setS({ ...s, totalAnnonce: montantPourSaisie(lu.totalHt) });
+      const somme = lu.lignes.reduce((t, l) => t + l.quantite * l.prixUnitaire, 0);
+      const controle =
+        lu.totalHt === null
+          ? "Le fichier ne donne pas de total HT : recopie celui de la facture pour contrôler les lignes."
+          : Math.abs(somme - lu.totalHt) > 2
+            ? `Attention : les lignes lues font ${formaterMontant(somme)} HT, le fichier annonce ${formaterMontant(lu.totalHt)} : une ligne manque ou est en double, compare avec la facture.`
+            : `Total HT du fichier (${formaterMontant(lu.totalHt)}) : les lignes retombent juste.`;
       setImport({
         message: `${remplir(lu.lignes, s.fournisseur)}. Accepte ou non les propositions, vérifie les colis, puis enregistre.`,
-        erreurs: lu.erreurs.map((e) => `Ligne ${e.ligne} : ${e.message}`),
+        erreurs: [controle, ...lu.erreurs.map((e) => `Ligne ${e.ligne} : ${e.message}`)],
       });
     } catch (e) {
       setErreurImport(e);
@@ -669,6 +686,18 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
         </label>
         <span className="discret">La facture PDF du fournisseur (Relais d'Or, Montaner Pietrini) ou son export Excel : les lignes se remplissent, avec les produits et colis déjà connus.</span>
       </div>
+      {classeur && (
+        <label className="champ" style={{ maxWidth: 360, marginTop: 8 }}>
+          <span>Feuille du classeur</span>
+          <select value={classeur.feuille} onChange={(ev) => void importer(classeur.fichier, ev.target.value)} aria-label="Feuille du classeur à lire">
+            {classeur.feuilles.map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {import_ && (
         <div className="message message-info">
           {import_.message}

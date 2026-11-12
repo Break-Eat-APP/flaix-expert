@@ -22,7 +22,7 @@ const ALIAS_FACTURE: [ChampFacture, RegExp][] = [
   ["quantite", /^(qte|quantite|quantites|qty|quantity|nb|nombre|nb colis|qte colis|qte cde|qte livree|quantite livree|quantite facturee|qte facturee)$/],
   ["prixUnitaire", /^(pu|p u|pu ht|p u ht|prix|prix ht|prix unitaire|prix unitaire ht|prix u ht|prix net|prix net ht|tarif|tarif ht|unit price)$/],
   ["montant", /^(montant|montant ht|total|total ht|total ligne|montant net|montant net ht|net ht|amount)$/],
-  ["colis", /^(pcb|colisage|conditionnement|uvc|uvc par colis|unites par colis|nb unites|unites|par colis|contenance colis)$/],
+  ["colis", /^(pcb|colisage|conditionnement|uvc|uvc par colis|unites par colis|nb unites|unites|par colis|contenance colis|col pack|colpack|colis pack)$/],
 ];
 
 export type ColonnesFacture = Partial<Record<ChampFacture, number>>;
@@ -54,9 +54,16 @@ export interface LectureFacture {
   erreurs: { ligne: number; message: string }[];
   /** Il faut au moins un libellé, une quantité et un prix ou un montant. */
   manquants: string[];
+  /**
+   * Total HT écrit dans le fichier (ligne « Total HT », la dernière si plusieurs sous-totaux), pour contrôler la somme des
+   * lignes (BUG-2026-012) ; null : le fichier n'en a pas.
+   */
+  totalHt: Centimes | null;
 }
 
 const TOTAL = /^(sous[ -]?)?totaux?\b|^total\b|^net a payer|^tva\b|^remise globale/;
+/** Ligne du total hors taxes (« Total HT », « Total H.T. », « Montant total HT ») ; pas TTC, TVA ni net à payer. */
+const TOTAL_HT = /^(montant )?total( general)? h ?t\b|^total hors taxes?\b/;
 
 /**
  * Lit un export de facture (une ligne par article) : en-têtes cherchés dans les 20 premières lignes, prix unitaire
@@ -79,11 +86,19 @@ export function lireFactureExport(texte: string): LectureFacture {
     ...(colonnes.quantite === undefined ? ["quantité"] : []),
     ...(colonnes.prixUnitaire === undefined && colonnes.montant === undefined ? ["prix unitaire ou montant"] : []),
   ];
-  const lecture: LectureFacture = { entetes, colonnes, lignes: [], erreurs: [], manquants };
+  const lecture: LectureFacture = { entetes, colonnes, lignes: [], erreurs: [], manquants, totalHt: null };
   if (manquants.length) return lecture;
   for (const { numero, champs } of toutes.slice(k + 1)) {
     const champ = (f: ChampFacture) => (colonnes[f] === undefined ? "" : (champs[colonnes[f]!] ?? "").trim());
     const libelle = champ("libelle");
+    // Total HT : son libellé peut être dans n'importe quelle colonne ; sa valeur, dans celle du montant, sinon la dernière
+    // case chiffrée de la ligne.
+    if (champs.some((v) => TOTAL_HT.test(sansAccents(v)))) {
+      const chiffres = champs.map((v) => (v.trim() ? lireMontantExport(v) : null)).filter((x): x is Centimes => x !== null);
+      const valeur = (champ("montant") ? lireMontantExport(champ("montant")) : null) ?? chiffres.at(-1) ?? null;
+      if (valeur !== null) lecture.totalHt = valeur;
+      continue;
+    }
     if (!libelle && !champ("quantite")) continue; // ligne vide
     if (TOTAL.test(sansAccents(libelle))) continue;
     const quantiteBrute = Number(champ("quantite").replace(/\s/g, "").replace(",", "."));

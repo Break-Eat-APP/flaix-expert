@@ -61,4 +61,24 @@ describe("factures automatisées (§15.173)", () => {
     expect(proposerPourArticle("Steak haché VBF bou. 8x150g (4,8 kg)", c)?.id).toBe("s");
     expect(proposerPourArticle("Sac poubelle noir 20x130L x5", c)).toBeNull();
   });
+
+  it("total HT du fichier lu (le dernier, après les sous-totaux) ; absent : null ; colonne « Col/Pack » reconnue (BUG-2026-012, BUG-2026-019)", () => {
+    const avecTotal = [
+      "Désignation;Qté;Col/Pack;Prix unitaire HT;Montant HT",
+      "Coca 33 cl x24;2;24;14,40;28,80",
+      "Eau 50 cl;10;;0,45;4,50",
+      "Sous-total HT;;;;33,30",
+      "Total HT;;;;33,30",
+      "TVA 5,5 %;;;;1,83",
+      "Total TTC;;;;35,13",
+    ].join("\n");
+    const lu = lireFactureExport(avecTotal);
+    expect(lu.totalHt).toBe(3_330);
+    expect(lu.lignes.map((l) => [l.libelle, l.quantite, l.unitesParColis])).toEqual([
+      ["Coca 33 cl x24", 2, 24],
+      ["Eau 50 cl", 10, null],
+    ]);
+    // [F] Un total TTC n'est jamais pris pour le total HT.
+    expect(lireFactureExport(avecTotal.replace("Total HT;;;;33,30\n", "").replace("Sous-total HT;;;;33,30\n", "")).totalHt).toBeNull();
+  });
 });

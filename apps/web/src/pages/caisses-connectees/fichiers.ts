@@ -1,5 +1,5 @@
 import type { CellObject, WorkSheet } from "xlsx";
-import { champsManquants, devinerColonnes } from "@flaix/domain";
+import { champsManquants, devinerColonnes, devinerColonnesFacture } from "@flaix/domain";
 
 /*
  * Fichiers d'export d'une caisse (dossier §15.150) : CSV, ou classeur Excel (.xlsx, .xlsm, l'ancien .xls) et OpenDocument
@@ -78,18 +78,33 @@ function lignesDeLaFeuille(X: Xlsx, ws: WorkSheet): string[][] {
 }
 
 /**
+ * Feuille à lire : un export de ventes de caisse (n° de ticket, date, produit, quantité, montant) ou une facture
+ * fournisseur (désignation, quantité, prix ou montant) — les règles ne sont pas les mêmes (BUG-2026-013).
+ */
+export type RegleFeuille = "ventes" | "facture";
+
+/** Nombre de colonnes reconnues sur une ligne d'en-têtes ; null s'il en manque une indispensable. */
+function scoreVentes(entetes: readonly string[]): number | null {
+  const c = devinerColonnes(entetes);
+  return champsManquants(c).length ? null : Object.keys(c).length;
+}
+function scoreFacture(entetes: readonly string[]): number | null {
+  const c = devinerColonnesFacture(entetes);
+  return c.libelle === undefined || c.quantite === undefined || (c.prixUnitaire === undefined && c.montant === undefined) ? null : Object.keys(c).length;
+}
+
+/**
  * Feuille des ventes d'un classeur à plusieurs feuilles (L'Addition : « Accueil », « SalesDocumentLines »…) : celle dont
  * les en-têtes (parmi ses 20 premières lignes) donnent toutes les colonnes nécessaires, la plus complète, puis la plus
  * longue ; aucune : null.
  */
-function meilleureFeuille(feuilles: readonly string[], lire: (nom: string) => string[][]): string | null {
+function meilleureFeuille(feuilles: readonly string[], lire: (nom: string) => string[][], regle: RegleFeuille = "ventes"): string | null {
   let meilleure: { nom: string; score: number; lignes: number } | null = null;
   for (const nom of feuilles) {
     const lignes = lire(nom);
     for (const l of lignes.slice(0, 20)) {
-      const c = devinerColonnes(l);
-      if (champsManquants(c).length) continue;
-      const score = Object.keys(c).length;
+      const score = regle === "ventes" ? scoreVentes(l) : scoreFacture(l);
+      if (score === null) continue;
       if (!meilleure || score > meilleure.score || (score === meilleure.score && lignes.length > meilleure.lignes)) meilleure = { nom, score, lignes: lignes.length };
     }
   }
@@ -109,7 +124,7 @@ function sansAdresses(lignes: string[][]): string[][] {
 /**
  * Lit le fichier choisi : un CSV tel quel ; un classeur, sa feuille demandée ou la première qui contient des données.
  */
-export async function lireFichierVentes(f: File, feuille?: string): Promise<FichierLu> {
+export async function lireFichierVentes(f: File, feuille?: string, regle: RegleFeuille = "ventes"): Promise<FichierLu> {
   if (/\.(csv|txt)$/i.test(f.name)) return { contenu: await lireFichierTexte(f), feuilles: [], feuille: null };
   // Un .xlsx est une archive zip (« PK ») : autre chose est un fichier abîmé ou mal nommé. Un « .xls » peut être du texte
   // ou du HTML (exports de nombreux logiciels) : la bibliothèque le lit tel quel, l'aperçu dira si les colonnes y sont.
@@ -127,7 +142,7 @@ export async function lireFichierVentes(f: File, feuille?: string): Promise<Fich
   const feuilles = classeur.SheetNames;
   const lues = new Map<string, string[][]>();
   const lire = (nom: string) => lues.get(nom) ?? lues.set(nom, lignesDeLaFeuille(X, classeur.Sheets[nom]!)).get(nom)!;
-  const choisie = feuille && feuilles.includes(feuille) ? feuille : (meilleureFeuille(feuilles, lire) ?? feuilles.find((n) => lire(n).length > 1) ?? feuilles[0]);
+  const choisie = feuille && feuilles.includes(feuille) ? feuille : (meilleureFeuille(feuilles, lire, regle) ?? feuilles.find((n) => lire(n).length > 1) ?? feuilles[0]);
   if (!choisie) throw new Error("Ce classeur ne contient aucune feuille.");
   return { contenu: enCsv(sansAdresses(lire(choisie))), feuilles, feuille: choisie };
 }
