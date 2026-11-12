@@ -93,6 +93,8 @@ et validation refusée sans « J'ai vérifié ») ; écrans 2 (import CSV : appr
   - colis devinés dans un libellé ; clé d'article ; conversion à l'unité
   - alertes : total, colis oublié, prix et quantité inhabituels ; rien quand tout est normal
   - proposition pour un article : ressemblance, sinon tous les mots du nom dans le libellé ; [F] rien d'approchant : null
+  - total HT du fichier lu (le dernier, après les sous-totaux) ; absent : null ; colonne « Col/Pack » reconnue (BUG-2026-012, BUG-2026-019)
+  - écart d'arrondi d'une entrée en réserve : colis de 3 à 10,00 € → 1 centime ; colis qui se divise juste → 0 (BUG-2026-014)
 
 ## 5. Pour reprendre ou vérifier cette phase
 

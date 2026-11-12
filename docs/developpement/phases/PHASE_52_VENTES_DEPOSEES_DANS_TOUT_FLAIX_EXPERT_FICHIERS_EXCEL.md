@@ -96,6 +96,7 @@ choisie, fichier abîmé) ; tous les tests des modules branchés repassés sans 
   - classeur Excel (.xlsx) : dates et heures relues telles qu'affichées, puis lues comme un export de caisse
   - ancien format Excel (.xls) ; plusieurs feuilles : la première avec des données, ou celle demandée
   - fichier illisible : message clair
+  - [F] facture fournisseur à trois feuilles (garde, synthèse des ventes, lignes) : la feuille des lignes est lue avec les règles d'une facture (BUG-2026-013)
 
 ## 5. Pour reprendre ou vérifier cette phase
 

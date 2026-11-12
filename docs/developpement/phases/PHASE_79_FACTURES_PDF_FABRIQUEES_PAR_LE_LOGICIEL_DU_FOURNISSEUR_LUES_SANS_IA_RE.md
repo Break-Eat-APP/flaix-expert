@@ -283,6 +283,7 @@ d'octobre des Spartiates) :
   - Montaner Pietrini (CDB) : colis, produits offerts déduits, suite de désignation, consignes écartées, frais de gestion, arrondis ; total exact
   - [F] une ligne illisible ou absente : la lecture le signale au lieu de se taire
   - [F] total introuvable : contrôle impossible, dit ; à défaut de « EUR », le dernier « TOTAL H.T » fait foi
+  - [F] avoir Montaner Pietrini (article négatif) : refusé avec la raison, aucune ligne remplie (BUG-2026-016)
   - [F] mise en page inconnue ou PDF scanné (sans texte) : pas de lecture devinée
 
 ## 5. Pour reprendre ou vérifier cette phase

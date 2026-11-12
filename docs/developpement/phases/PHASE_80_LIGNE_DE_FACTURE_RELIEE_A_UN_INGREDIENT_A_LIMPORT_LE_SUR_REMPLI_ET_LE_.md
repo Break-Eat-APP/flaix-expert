@@ -196,7 +196,7 @@ de Rémi la liaison des 27 produits L'Addition et les recettes (hot dog, box hot
 ### `apps/api/test/facture-ingredient.test.ts`
 
 - **facture fournisseur : ligne reliée à un ingrédient**
-  - [F] produit et ingrédient à la fois, quantité d'ingrédient absente, ingrédient d'un autre lieu : refusés
+  - [F] produit et ingrédient à la fois, quantité d'ingrédient absente, quantités ou montants hors bornes, ingrédient d'un autre lieu : refusés
   - enregistrée : la ligne garde l'ingrédient et sa quantité ; pas d'alerte de colis pour un ingrédient
   - validée avec entrée en réserve : 64 saucisses en réserve au prix de la facture, pain au prix de la facture, coût du hot dog recalculé
   - l'article est retenu : correspondance vers l'ingrédient et sa quantité, reprise à la facture suivante

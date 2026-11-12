@@ -1,6 +1,6 @@
 # Points à revoir avec Rémi
 
-Liste tenue à jour à la fin de chaque séance (dernière mise à jour : 2026-11-12). Chaque point dit **qui** doit agir :
+Liste tenue à jour à la fin de chaque séance (dernière mise à jour : 2026-11-13). Chaque point dit **qui** doit agir :
 **Rémi** (compte, clé, test, décision) ou **Claude** (développement, une fois la décision prise). Rien de secret ici :
 les clés et mots de passe ne passent jamais par Claude.
 
@@ -24,6 +24,7 @@ les clés et mots de passe ne passent jamais par Claude.
 |---|---|---|
 | 11 | **Lecture des PDF scannés par IA** : le même bouton passera la facture scannée à Mistral, qui rendra la même forme de lecture que les PDF fabriqués (§15.178). Ajouter aussi les mises en page des autres fournisseurs de Rémi au fil des factures reçues. |
 | 12 | **Changer de lieu dans l'application** : un directeur de plusieurs lieux n'accède aujourd'hui qu'au premier (la copie du catalogue se fait depuis le back-office, §15.180). | À faire. |
+| 21 | **Règles à valider par Rémi (audit Codex 2026-11-12)** : (1) écart d'arrondi colis → unités de quelques centimes, tracé au journal (BUG-2026-014) ; (2) la réserve ne bouge qu'à la validation de la facture, pas au dépôt. | À décider. |
 | 13 | **Adresse e-mail de dépôt des factures** : transférer une facture par e-mail pour qu'elle s'importe seule. Pour l'instant : dépôt direct dans FlaiX Expert. | Plus tard. |
 | 14 | **Pilote automatique de la soirée** : files d'attente estimées au rythme des tablettes ; anticipation de la mi-temps (réassort poussé au téléphone, « Prévenir le stand ») ; mise en place calculée seule (affluence, adversaire, historique). Le net en direct est fait (§15.170). | À faire, dans cet ordre. |
 | 17 | **Passage en production** : base neuve, reprise de la seule configuration (lieu, stands, caisses, produits, catégories, tarifs, recettes, emballages, équipe, réglages), jamais les données de test. Outil de reprise à préparer et tester avant la bascule, faite avec Rémi. | À préparer. |
@@ -45,3 +46,4 @@ les clés et mots de passe ne passent jamais par Claude.
 | Factures PDF fabriquées par un logiciel lues sans IA : Relais d'Or, Montaner Pietrini (CDB), total contrôlé, PDF joint | 2026-11-12 | §15.178 |
 | Ligne de facture reliée à un ingrédient (prix, réserve, coût des recettes) ; à l'import, le sûr rempli et le ressemblant proposé (migration 0061) | 2026-11-12 | §15.179 |
 | Copie du catalogue entre lieux d'un même client (back-office) ; recette avec ingrédient créé sur place et marge en direct (migration 0062) | 2026-11-12 | §15.180 |
+| Gouvernance appliquée (registres) ; audit Codex du 2026-11-12 corrigé : total Excel, feuille, Col/Pack, bornes ingrédients, avoir, compteur de recettes (migration 0063) | 2026-11-13 | §15.181 |

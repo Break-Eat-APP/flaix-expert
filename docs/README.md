@@ -11,7 +11,7 @@
    règles permanentes, workflow avant et après chaque tâche, bugs, sécurité, tests, mise en ligne, passation.
    [`../AGENTS.md`](../AGENTS.md) et [`../CLAUDE.md`](../CLAUDE.md) — règles du projet pour les agents.
 3. [`flaix-gestion-dossier-projet.md`](flaix-gestion-dossier-projet.md) — **la source de vérité** : chaque décision prise avec Rémi (ses mots,
-   le raisonnement, ce qui a été construit et testé), section par section (§15.93 → §15.180).
+   le raisonnement, ce qui a été construit et testé), section par section (§15.93 → §15.181).
 4. [`avancement.md`](avancement.md) et [`points-a-revoir.md`](points-a-revoir.md) — où en est le projet, ce qui attend Rémi, les développements suivants.
 
 ## Le dossier, rangé par usage
@@ -19,7 +19,7 @@
 | Dossier ou fichier | Contenu |
 |---|---|
 | [`developpement/`](developpement/) | Suivi du développement : guide de reprise (Markdown et Word), [carte du code](developpement/CARTE_DU_CODE.md) (où est quoi, ligne exacte des fonctions clés), [journal des phases](developpement/JOURNAL_DES_PHASES.md), [une fiche par phase](developpement/phases/README.md) en Markdown et en Word (`phases/word/`), [consigne d'audit pour Codex](developpement/CODEX_AUDIT_PROMPT.md). Généré en partie par `node infra/outils/journal-developpement.cjs` et `node infra/outils/phases-word.cjs`. |
-| [`gouvernance/`](gouvernance/GOUVERNANCE_FLAIX_EXPERT.md) | Gouvernance du développement de FlaiX Expert (adaptée de la gouvernance de Rémi du 2026-11-11), et ses registres : bugs et incidents, sécurité, tests, mise en ligne (à créer). |
+| [`gouvernance/`](gouvernance/GOUVERNANCE_FLAIX_EXPERT.md) | Gouvernance du développement de FlaiX Expert (adaptée de la gouvernance de Rémi du 2026-11-11), et ses registres : [bugs et incidents](gouvernance/BUGS_ET_INCIDENTS.md), [sécurité](gouvernance/SECURITE.md), [tests](gouvernance/TESTS.md), [mise en ligne et retour arrière](gouvernance/MISE_EN_LIGNE.md). |
 | [`audits/`](audits/README.md) | Rapports d'audit du code (Claude, Codex) et suivi de leurs corrections ; le plus récent : [`AUDIT_2026-10-26_codex-systeme-phases-67-76.md`](audits/AUDIT_2026-10-26_codex-systeme-phases-67-76.md). |
 | [`flaix-gestion-dossier-projet.md`](flaix-gestion-dossier-projet.md) | Dossier projet complet (cadrage, modules, décisions, §15 : journal des décisions de développement). |
 | [`decisions-architecture-production.md`](decisions-architecture-production.md) | Choix d'architecture validés, questions ouvertes, incident Docker du poste de Rémi. |

@@ -4,6 +4,12 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-11-13 : gouvernance appliquée ; audit de Codex du 2026-11-12 corrigé (§15.181)
+
+Registres créés (bugs et incidents, sécurité, tests, mise en ligne, `.env.example`). Corrigés : total HT des fichiers Excel,
+feuille d'une facture dans un classeur, colonne « Col/Pack », bornes des lignes d'ingrédient, avoir refusé, compteur de
+recettes (migration 0063) ; écart d'arrondi tracé (règle à valider). Restent : recette Wallet réelle, PDF réels en tests.
+
 ## 2026-11-12 : catalogue copié d'un lieu à l'autre ; composer un produit simplement (§15.180)
 
 Back-office : copier le catalogue d'un autre lieu du même client (directeur commun), sans rien écraser (migration 0062).

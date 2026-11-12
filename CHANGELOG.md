@@ -5,6 +5,146 @@
 
 ## 2026-11-12
 
+### [`04780c0`](https://github.com/Break-Eat-APP/flaix-expert/commit/04780c07ec93fcd7722d2c526fba2684e73800da) — Audit Codex 2026-11-12 : écart d'arrondi colis → unités calculé et inscrit au journal de la validation (BUG-2026-014) *(phase 82)*
+
+- modifié : `apps/api/src/routes/factures.ts`
+- modifié : `packages/domain/src/factures-import.test.ts`
+- modifié : `packages/domain/src/factures-import.ts`
+
+### [`f25f529`](https://github.com/Break-Eat-APP/flaix-expert/commit/f25f529e74d6983de9df153293e37022f0b105dc) — Audit Codex 2026-11-12 : total HT lu dans le fichier Excel/CSV et contrôlé (BUG-2026-012), feuille de facture choisie avec les règles d'une facture et choix de la feuille à l'écran (BUG-2026-013), colonne « Col/Pack » reconnue (BUG-2026-019) *(phase 82)*
+
+- modifié : `apps/web/src/pages/caisses-connectees/fichiers.test.ts`
+- modifié : `apps/web/src/pages/caisses-connectees/fichiers.ts`
+- modifié : `apps/web/src/pages/factures/Factures.tsx`
+- modifié : `packages/domain/src/factures-import.test.ts`
+- modifié : `packages/domain/src/factures-import.ts`
+
+### [`d54be5a`](https://github.com/Break-Eat-APP/flaix-expert/commit/d54be5a3b1f5b344c6f652165f090fe57d0ab3be) — Audit Codex 2026-11-12 : lignes d'ingrédient bornées dès la saisie (BUG-2026-015), avoir Montaner Pietrini refusé avec la raison (BUG-2026-016), copie de catalogue : recettes réellement ajoutées comptées (BUG-2026-020, migration 0063) *(phase 82)*
+
+- modifié : `apps/api/src/routes/factures.ts`
+- modifié : `apps/api/test/catalogue-copie.test.ts`
+- modifié : `apps/api/test/facture-ingredient.test.ts`
+- modifié : `apps/web/src/pages/factures/Factures.tsx`
+- créé : `db/migrations/0063_copie_catalogue_compte_recettes.sql`
+- modifié : `packages/domain/src/factures-pdf.test.ts`
+- modifié : `packages/domain/src/factures-pdf.ts`
+
+### [`d9483cf`](https://github.com/Break-Eat-APP/flaix-expert/commit/d9483cfb4a0d2e2ea86ac96827f09acede224df9) — Registre des bugs et incidents (gouvernance § 9) : bugs corrigés depuis le 2026-10-26 et points ouverts de l'audit Codex du 2026-11-12 (rapport ajouté) *(phase 82)*
+
+- créé : `docs/audits/AUDIT_2026-11-12_codex-phases-79-81-calculs-imports-stock-wallets.docx`
+- créé : `docs/audits/AUDIT_2026-11-12_codex-phases-79-81-calculs-imports-stock-wallets.md`
+- créé : `docs/gouvernance/BUGS_ET_INCIDENTS.md`
+
+### [`c4c1540`](https://github.com/Break-Eat-APP/flaix-expert/commit/c4c1540f8cf12d3340388e582cf3d04166c9f6fa) — Gouvernance du développement de FlaiX Expert (docs/gouvernance/) : la gouvernance de Rémi du 2026-11-11 adaptée à FlaiX Expert — mêmes règles et même structure, ventes, caisse, journaux et conformité ; correspondance avec la documentation existante ; citée par CLAUDE.md, AGENTS.md et le sommaire ; version Word *(phase 82)*
+
+- modifié : `AGENTS.md`
+- modifié : `CLAUDE.md`
+- modifié : `docs/README.md`
+- modifié : `docs/developpement/GUIDE_DE_REPRISE.docx`
+- créé : `docs/gouvernance/GOUVERNANCE_FLAIX_EXPERT.docx`
+- créé : `docs/gouvernance/GOUVERNANCE_FLAIX_EXPERT.md`
+- modifié : `infra/outils/guide-word.cjs`
+
+### [`76b440c`](https://github.com/Break-Eat-APP/flaix-expert/commit/76b440c39af43b9e8df84fe865f16b205b6fed1d) — Dossier : copie du catalogue entre lieux, recette simplifiée (§15.180, phase 81) *(phase 81)*
+
+- modifié : `CHANGELOG.md`
+- modifié : `docs/README.md`
+- modifié : `docs/audits/AUDIT_2026-10-26_codex-systeme-phases-67-76.docx`
+- modifié : `docs/avancement.md`
+- modifié : `docs/developpement/CARTE_DU_CODE.md`
+- modifié : `docs/developpement/GUIDE_DE_REPRISE.docx`
+- modifié : `docs/developpement/GUIDE_DE_REPRISE.md`
+- modifié : `docs/developpement/JOURNAL_DES_PHASES.md`
+- modifié : `docs/developpement/phases/PHASE_80_LIGNE_DE_FACTURE_RELIEE_A_UN_INGREDIENT_A_LIMPORT_LE_SUR_REMPLI_ET_LE_.md`
+- créé : `docs/developpement/phases/PHASE_81_CATALOGUE_COPIE_DUN_LIEU_A_LAUTRE_DU_MEME_CLIENT_COMPOSER_UN_PRODUIT_S.md`
+- modifié : `docs/developpement/phases/README.md`
+- modifié : `docs/developpement/phases/word/PHASE_00_SOCLE_DE_PRODUCTION_ET_CONFIGURATION_DUN_LIEU_VIDE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_01_MATCHS_CAISSE_MES_CAISSES_JOURNAL_DES_TICKETS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_02_RETOUR_DE_DEMONSTRATION_ORGANISATION_EN_6_ENTREES_MAQUETTES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_03_VENTE_SANS_RESEAU_LA_TABLETTE_SCELLE_LE_SERVEUR_VERIFIE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_04_SERVEUR_DE_TEST_OVH.docx`
+- modifié : `docs/developpement/phases/word/PHASE_05_COMPTES_DES_CAISSIERES_ET_TABLETTES_ENREGISTREES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_06_TICKET_CLIENT_SUR_DEMANDE_ET_DUPLICATA.docx`
+- modifié : `docs/developpement/phases/word/PHASE_07_CLOTURE_DU_MATCH_Z_DES_TIROIRS_RECTIFICATION_SIGNEE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_08_RESULTATS_SUR_LES_VRAIES_VENTES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_09_EQUIPE_FICHES_PLANNING_MASSE_SALARIALE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_10_STOCK_RESERVE_LIVRAISONS_AU_CUMP_MISE_EN_PLACE_COMPTAGE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_11_REMONTEES_AU_COFFRE_ET_Z_DU_COFFRE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_12_CLOTURES_MENSUELLE_ET_ANNUELLE_TOTAL_PERPETUEL.docx`
+- modifié : `docs/developpement/phases/word/PHASE_13_EXERCICE_PAR_LIEU_SAUVEGARDES_CHIFFREES_HORS_SERVEUR.docx`
+- modifié : `docs/developpement/phases/word/PHASE_14_MODE_FORMATION_FACTICE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_15_EXPORT_POUR_LEXPERT_COMPTABLE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_16_CLICK_COLLECT_MOTEUR_DE_PRIX_ET_CATALOGUE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_17_VUE_TELEPHONE_EN_DIRECT.docx`
+- modifié : `docs/developpement/phases/word/PHASE_18_COUTS_PAR_BUVETTE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_19_FIDELITE_PARTIE_GESTION.docx`
+- modifié : `docs/developpement/phases/word/PHASE_20_FACTURES_FOURNISSEURS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_21_BACK_OFFICE_EDITEUR_NIVEAU_1.docx`
+- modifié : `docs/developpement/phases/word/PHASE_22_DECISIONS_DU_2026_10_01_ET_RECETTES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_23_OPTIONS_PAR_LIEU_APPLICATION_INSTALLABLE_LOGO.docx`
+- modifié : `docs/developpement/phases/word/PHASE_24_ADRESSE_DU_SITE_FLAIXEXPERT_FLAIXLABS_COM.docx`
+- modifié : `docs/developpement/phases/word/PHASE_25_MARQUE_FLAIX_EXPERT_LIEUX_ET_DIRECTEURS_DEPUIS_LE_BACK_OFFICE_MOTS_DE_.docx`
+- modifié : `docs/developpement/phases/word/PHASE_26_CLICK_COLLECT_NEUTRE_EXPORT_COMPTABLE_DANS_LA_BASE_ASSIETTE_DE_LA_COMM.docx`
+- modifié : `docs/developpement/phases/word/PHASE_27_STOCK_DES_INGREDIENTS_AU_CHOIX_BIERE_PRESSION.docx`
+- modifié : `docs/developpement/phases/word/PHASE_28_LOGO_OFFICIEL_V2.docx`
+- modifié : `docs/developpement/phases/word/PHASE_29_DOSSIER_DE_CONFORMITE_V0_1.docx`
+- modifié : `docs/developpement/phases/word/PHASE_30_FIDELITE_A_LA_CAISSE_CODE_PROMO_ET_POINTS_DANS_LE_TICKET_SCELLE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_31_SUIVI_DU_DEVELOPPEMENT_ET_PREPARATION_DE_LAUDIT_CODEX.docx`
+- modifié : `docs/developpement/phases/word/PHASE_32_PREMIER_AUDIT_CODEX_ET_CORRECTIONS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_33_CAISSE_AUTOMATIQUE_SELON_LA_DATE_CLOTURE_PAR_LE_DIRECTEUR_EVENEMENT_PA.docx`
+- modifié : `docs/developpement/phases/word/PHASE_34_RAPPORT_DE_SOIREE_FIGE_A_LA_CLOTURE_IMPRIMABLE_ET_EN_PDF.docx`
+- modifié : `docs/developpement/phases/word/PHASE_35_CIBLES_DE_MARGE_ET_GESTION_FINANCIERE_DE_LA_SOIREE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_36_BILAN_SUR_UNE_PERIODE_DU_AU.docx`
+- modifié : `docs/developpement/phases/word/PHASE_37_BRIEF_DE_FIN_DE_SOIREE_EN_NOTIFICATION_SUR_LE_TELEPHONE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_38_ASSISTANT_POSE_TA_QUESTION_ET_BRIEF_REFORMULE_PAR_MISTRAL.docx`
+- modifié : `docs/developpement/phases/word/PHASE_39_REVENUE_ENGINE_OU_JE_PERDS_DE_LARGENT.docx`
+- modifié : `docs/developpement/phases/word/PHASE_40_TEMPS_DE_PRISE_DE_COMMANDE_PAR_CAISSE_ET_PAR_STAND.docx`
+- modifié : `docs/developpement/phases/word/PHASE_41_CENTRE_DALERTES_ET_RUPTURE_DE_STOCK_POUSSEE_SUR_LE_TELEPHONE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_42_COMPARAISON_DES_PRIX_ENTRE_FOURNISSEURS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_43_BACK_OFFICE_NIVEAU_2_SUPPORT_SUR_AUTORISATION_DU_LIEU.docx`
+- modifié : `docs/developpement/phases/word/PHASE_44_PREVISION_DU_PROCHAIN_EVENEMENT.docx`
+- modifié : `docs/developpement/phases/word/PHASE_45_IA_OVHCLOUD_SEUL_COMME_MOTEUR_DE_LANGAGE_DE_LAGENT.docx`
+- modifié : `docs/developpement/phases/word/PHASE_46_E_MAILS_PAR_BREVO_RAPPORT_DE_SOIREE_ET_RECTIFICATIONS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_47_CARTE_ABONNE_DANS_APPLE_WALLET_ET_GOOGLE_WALLET.docx`
+- modifié : `docs/developpement/phases/word/PHASE_48_DESIGN_DE_LA_CARTE_ABONNE_LOGO_BANNIERE_COULEURS_TEXTES_ET_LIENS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_49_AUDITS_DU_2026_10_05_CLAUDE_PUIS_CODEX_ET_CORRECTIONS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_50_COMPTEUR_DE_CONSOMMATION_DE_LIA_DANS_LE_BACK_OFFICE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_51_CAISSES_CONNECTEES_VENTES_DUNE_CAISSE_EXTERNE_IMPORTEES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_52_VENTES_DEPOSEES_DANS_TOUT_FLAIX_EXPERT_FICHIERS_EXCEL.docx`
+- modifié : `docs/developpement/phases/word/PHASE_53_CAISSES_CONNECTEES_CORRESPONDANCES_AUTOMATIQUES_ET_SUGGEREES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_54_NOUVEAU_STYLE_ARRONDI_EPURE_TOUJOURS_CLAIR.docx`
+- modifié : `docs/developpement/phases/word/PHASE_55_CE_QUIL_TE_RESTE_ET_MES_FRAIS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_56_CONDITIONNEMENT_DE_CHAQUE_PRODUIT.docx`
+- modifié : `docs/developpement/phases/word/PHASE_57_HYGIENE_ET_HACCP.docx`
+- modifié : `docs/developpement/phases/word/PHASE_58_ALLERGENES_DE_CHAQUE_PRODUIT.docx`
+- modifié : `docs/developpement/phases/word/PHASE_59_STOCK_DES_EMBALLAGES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_60_HYGIENE_SUR_LA_TABLETTE_DES_CAISSIERES_PHOTOS_DETIQUETTES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_61_EVENEMENTS_PRIVES.docx`
+- modifié : `docs/developpement/phases/word/PHASE_62_PRODUITS_PRIX_PLUS_CLAIR_SECTION_ACTIVE_ALLERGENES_COCHABLES_EMBALLAGE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_63_LE_STADE_EN_DIRECT_STANDS_EN_3D_EN_COULEUR_ALERTES_AU_CLIC.docx`
+- modifié : `docs/developpement/phases/word/PHASE_64_LE_STADE_EN_DIRECT_SANS_FILE_DATTENTE_ALERTES_UTILES_PENDANT_LES_VENTE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_65_LE_LIEU_EN_3D_QUATRE_DECORS_STANDS_POSES_A_LA_MAIN.docx`
+- modifié : `docs/developpement/phases/word/PHASE_66_REMETTRE_LE_STOCK_A_ZERO_SUPPRIMER_UN_EVENEMENT_A_VENIR.docx`
+- modifié : `docs/developpement/phases/word/PHASE_67_LE_TABLEAU_EN_DIRECT_DAPRES_LA_MAQUETTE_AVEC_LE_LIEU_EN_3D.docx`
+- modifié : `docs/developpement/phases/word/PHASE_68_EN_DIRECT_A_PART_AU_DESIGN_DES_MAQUETTES_RESULTATS_POUR_LES_EVENEMENTS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_69_EXPORTS_DE_LADDITION_LUS_SEULS_ANNULER_UN_IMPORT_DE_CAISSE_CONNECTEE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_70_DECOR_FIXE_STOCK_DANS_LORDRE_OUVERTURE_DEPUIS_EN_DIRECT_STOCK_DES_EVEN.docx`
+- modifié : `docs/developpement/phases/word/PHASE_71_RAPPORT_DE_STOCK_PAR_EVENEMENT_CE_QUIL_TE_RESTE_EN_CLAIR_LE_NET_EN_DIR.docx`
+- modifié : `docs/developpement/phases/word/PHASE_72_LES_CHIFFRES_DE_LA_SOIREE_EVENEMENTS_PRIVES_DANS_RESULTATS_CLICK_COLLE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_73_ACHATS_INGREDIENTS_A_PART_RACCOURCI_DE_CLOTURE_FACTURE_QUI_ENTRE_EN_RE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_74_FACTURES_AUTOMATISEES_IMPORT_EXCEL_OU_CSV_COLIS_CORRESPONDANCES_APPRIS.docx`
+- modifié : `docs/developpement/phases/word/PHASE_75_CORRESPONDANCES_FOURNISSEURS_A_LECRAN_RESULTATS_AU_DESIGN_DE_LA_2E_MAQ.docx`
+- modifié : `docs/developpement/phases/word/PHASE_76_AUDIT_DES_PHASES_67_A_75_ET_CORRECTIONS_DOSSIER_DE_REPRISE_A_JOUR.docx`
+- modifié : `docs/developpement/phases/word/PHASE_77_AUDIT_DE_CODEX_LIVRAISON_DUNE_FACTURE_LIMITEE_A_SON_LIEU_DEPENDANCES_C.docx`
+- modifié : `docs/developpement/phases/word/PHASE_78_AUDIT_DE_CODEX_DURCISSEMENTS_ANNULATION_RELANCES_WALLET_EVENEMENT_PRIV.docx`
+- modifié : `docs/developpement/phases/word/PHASE_79_FACTURES_PDF_FABRIQUEES_PAR_LE_LOGICIEL_DU_FOURNISSEUR_LUES_SANS_IA_RE.docx`
+- modifié : `docs/developpement/phases/word/PHASE_80_LIGNE_DE_FACTURE_RELIEE_A_UN_INGREDIENT_A_LIMPORT_LE_SUR_REMPLI_ET_LE_.docx`
+- créé : `docs/developpement/phases/word/PHASE_81_CATALOGUE_COPIE_DUN_LIEU_A_LAUTRE_DU_MEME_CLIENT_COMPOSER_UN_PRODUIT_S.docx`
+- modifié : `docs/flaix-gestion-dossier-projet.md`
+- modifié : `docs/points-a-revoir.md`
+- modifié : `infra/outils/carte-du-code-intro.md`
+- modifié : `infra/outils/phases.cjs`
+
 ### [`e550426`](https://github.com/Break-Eat-APP/flaix-expert/commit/e5504267fa3a38624bf30c5ce2a7906d98a62c43) — Recette d'un produit (§15.180) : créer un ingrédient sans quitter le produit, marge par portion en direct, exemples du hot dog (complet, saucisse et pain à part, box) *(phase 81)*
 
 - modifié : `apps/web/src/pages/parametres/Produits.tsx`

@@ -138,17 +138,17 @@ FlaiX Expert a déjà sa documentation : elle est gardée telle quelle, sans dou
 | Architecture | `docs/decisions-architecture-production.md`, `docs/developpement/CARTE_DU_CODE.md` | en place |
 | Document technique central | `docs/flaix-gestion-dossier-projet.md`, `docs/developpement/GUIDE_DE_REPRISE.md` | en place |
 | Règles de développement | `AGENTS.md`, `CLAUDE.md`, ce document | en place |
-| Sécurité | `docs/gouvernance/SECURITE.md` | **à créer** |
-| Tests | `docs/gouvernance/TESTS.md` (aujourd'hui : `README.md` § Tests) | **à créer** |
+| Sécurité | `docs/gouvernance/SECURITE.md` | en place (2026-11-13) |
+| Tests | `docs/gouvernance/TESTS.md` | en place (2026-11-13) |
 | Feuille de route et statut des phases | `docs/avancement.md`, `docs/points-a-revoir.md`, `docs/developpement/JOURNAL_DES_PHASES.md` | en place |
 | Historique des changements | `CHANGELOG.md` (produit automatiquement) | en place |
-| Bugs et incidents | `docs/gouvernance/BUGS_ET_INCIDENTS.md` | **à créer** |
-| Mise en ligne, retour arrière, procédures | `docs/gouvernance/MISE_EN_LIGNE.md` (aujourd'hui : `docs/guide-serveur-test-ovh.md`, `infra/vps/`) | **à créer** |
+| Bugs et incidents | `docs/gouvernance/BUGS_ET_INCIDENTS.md` | en place (2026-11-13) |
+| Mise en ligne, retour arrière, procédures | `docs/gouvernance/MISE_EN_LIGNE.md`, `docs/guide-serveur-test-ovh.md`, `infra/vps/` | en place (2026-11-13) |
 | Décisions d'architecture | `docs/decisions-architecture-production.md` (§ 10 et suivants) | en place |
 | Compte rendu de chaque tâche | une section §15.x du dossier projet + la fiche de phase `docs/developpement/phases/` | en place |
 | Conformité fiscale | `docs/conformite/dossier-conformite-flaix-expert.md` | en place |
 | Audits | `docs/audits/` | en place |
-| Variables d'environnement | `.env.example` | **à créer** |
+| Variables d'environnement | `.env.example` | en place (2026-11-13) |
 
 ---
 
@@ -321,8 +321,7 @@ réel vérifié, jamais une architecture rêvée.
 
 # 9. BUGS, INCIDENTS ET PROBLÈMES RÉCURRENTS
 
-Registre : `docs/gouvernance/BUGS_ET_INCIDENTS.md` (**à créer**, en y reprenant les bugs déjà corrigés et décrits dans le
-dossier projet et les audits).
+Registre : `docs/gouvernance/BUGS_ET_INCIDENTS.md` (créé le 2026-11-13, avec les bugs corrigés depuis le 2026-10-26).
 
 ## 9.1 Fiche d'un bug
 
@@ -589,7 +588,7 @@ coup le contrôle de santé et les écrans touchés.
 - Préférer une version publiée depuis plusieurs semaines à la toute dernière [proposée] ; seules les dépendances listées
   dans `pnpm-workspace.yaml` (`allowBuilds`) peuvent lancer un script à l'installation.
 - `pnpm audit --prod` après toute mise à jour ; une mise à jour majeure ne s'accepte pas sans tests.
-- Chaque variable d'environnement est décrite dans `.env.example` (**à créer**), jamais avec sa valeur.
+- Chaque variable d'environnement est décrite dans `.env.example`, jamais avec sa valeur.
 - Un agent ne demande jamais à Rémi de coller un secret dans la conversation.
 
 ---
@@ -613,15 +612,15 @@ en ligne sur le serveur de test. Si elle doit poser une question essentielle à 
 ```text
 /
 ├── CLAUDE.md, AGENTS.md, README.md, CHANGELOG.md
-├── .env.example                          (à créer)
+├── .env.example
 ├── docs/
 │   ├── README.md                         sommaire de la documentation
 │   ├── gouvernance/
 │   │   ├── GOUVERNANCE_FLAIX_EXPERT.md   ce document
-│   │   ├── BUGS_ET_INCIDENTS.md          (à créer)
-│   │   ├── SECURITE.md                   (à créer)
-│   │   ├── TESTS.md                      (à créer)
-│   │   └── MISE_EN_LIGNE.md              (à créer)
+│   │   ├── BUGS_ET_INCIDENTS.md          registre des bugs et incidents
+│   │   ├── SECURITE.md                   contrôles de sécurité en place
+│   │   ├── TESTS.md                      stratégie de tests
+│   │   └── MISE_EN_LIGNE.md              mise en ligne, sauvegardes, retour arrière
 │   ├── flaix-gestion-dossier-projet.md   décisions et comptes rendus (§15.x)
 │   ├── decisions-architecture-production.md
 │   ├── avancement.md, points-a-revoir.md
@@ -797,9 +796,9 @@ valider par Rémi les règles structurantes ; mettre à jour la version et l'his
 
 Les règles marquées [proposée] et les points « À confirmer » attendent la validation de Rémi.
 
-**À faire pour appliquer cette gouvernance :** créer `BUGS_ET_INCIDENTS.md` (avec les bugs déjà corrigés), `SECURITE.md`,
-`TESTS.md`, `MISE_EN_LIGNE.md` et `.env.example` ; tester une restauration de sauvegarde ; décider de la règle de mise en
-ligne en production, du serveur de test séparé et de l'outil de suivi des erreurs.
+**Appliquée depuis le 2026-11-13** : registres `BUGS_ET_INCIDENTS.md`, `SECURITE.md`, `TESTS.md`, `MISE_EN_LIGNE.md` et
+`.env.example` créés. **Reste à faire** : tester une restauration de sauvegarde ; décider de la règle de mise en ligne en
+production, du serveur de test séparé et de l'outil de suivi des erreurs.
 
 ---
 

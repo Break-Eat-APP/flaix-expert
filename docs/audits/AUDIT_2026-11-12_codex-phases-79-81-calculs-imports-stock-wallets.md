@@ -6,7 +6,7 @@
 
 ## 1. Verdict exécutif
 
-Le système est globalement cohérent et les corrections de l'audit précédent sont présentes : la contrainte de lieu sur les livraisons de facture, l'auteur de l'annulation d'import et la prise concurrente des relances wallet sont bien renforcés. Les tests et le typecheck passent.
+Le système est globalement cohérent et les corrections de l'audit précédent sont présentes : la contrainte de lieu sur les livraisons de facture, l'auteur de l'annulation d'import et la prise concurrente des relances wallet sont bien renforcés. Le typecheck et les tests ciblés passent ; la suite API complète lancée fichier par fichier n'est pas entièrement verte à cause d'un problème d'état/isolement de la base de test décrit en P3-4.
 
 Le verdict n'est toutefois pas « tout est automatique et exact au centime ».
 
@@ -67,6 +67,7 @@ Ne sont pas entrés automatiquement :
 | Tests domaine | OK — 43 fichiers, 292 tests |
 | Tests API ciblés factures/ingrédients/wallets/éditeur/recettes | OK — 8 fichiers, 72 tests |
 | Tests web ciblés import fichiers + écran factures | OK — 2 fichiers, 6 tests |
+| Suite API complète `test:un-par-un` | **Échec de la suite** : `wallet.test.ts` 18/22 après l'exécution séquentielle ; `wallet.test.ts` isolé repasse ensuite 22/22 |
 | `pnpm audit --prod --json` | OK — 0 vulnérabilité signalée |
 | Migrations | OK — base de développement annoncée à jour, migration 0062 comprise |
 | Tests externes Apple/APNs/Google réels | Non vérifiés |
@@ -178,6 +179,20 @@ L'écran parle de `Col/Pack`, mais l'alias facture reconnaît `PCB`, `colisage`,
 
 `db/migrations/0062_copie_catalogue.sql` calcule `n_rec` sur les recettes source compatibles, pas sur les lignes réellement insérées. Si le produit cible avait déjà une recette, la copie n'écrase rien mais le nombre retourné peut annoncer une recette « copiée » alors qu'aucune ligne n'a été ajoutée. Impact limité à la restitution du résultat et au journal.
 
+### P3-4 — Suite API séquentielle non reproductible à cause de la base de test
+
+**Fichiers concernés :**
+
+- `C:\Users\notta\dev\flaix-expert\infra\outils\tests-un-par-un.mjs`
+- `C:\Users\notta\dev\flaix-expert\apps\api\test\preparation-base.ts`
+- `C:\Users\notta\dev\flaix-expert\apps\api\test\wallet.test.ts`
+
+La commande complète `pnpm --filter @flaix/api test:un-par-un` a échoué sur `wallet.test.ts` avec 18 tests en échec, dont plusieurs erreurs `relation "abonne_fidelite" does not exist`. Une nouvelle tentative isolée de `wallet.test.ts` a d'abord rencontré un deadlock pendant `DROP SCHEMA public CASCADE`, puis, après libération de l'état de test, les 22 tests wallet ont repassé seuls.
+
+Cela ressemble à une fuite de connexion ou à une course lors de la remise à zéro de la base de test, et non à un défaut fonctionnel wallet reproductible : le test wallet isolé est vert. Mais le contrat de la suite est justement de pouvoir repartir d'une base neuve pour chaque fichier ; une suite complète non fiable réduit la valeur de la non-régression.
+
+**Correction recommandée :** identifier les connexions conservées par le fichier précédent, attendre/fermer explicitement les pools dans tous les `afterAll`, ajouter une vérification de présence de `schema_migrations` et des tables critiques après `reinitialiser`, puis relancer la suite complète plusieurs fois.
+
 ## 7. Corrections de l'audit précédent vérifiées
 
 - La relation facture → livraison est désormais composée par `(lieu_id, livraison_id)` et les lectures/validations restent filtrées par lieu.
@@ -211,4 +226,25 @@ L'écran parle de `Col/Pack`, mais l'alias facture reconnaît `PCB`, `colisage`,
 
 Les fondations sont bonnes et les corrections précédentes sont bien intégrées. Les règles de calcul sont fiables dans les cas habituels, et les entrées d'ingrédients/CUMP sont correctement reliées aux recettes lorsqu'elles sont confirmées et que la validation demande l'entrée en réserve.
 
-En revanche, il ne faut pas annoncer aujourd'hui que « tout se décompte automatiquement dès le dépôt d'une facture » ni que « l'import Excel contrôle automatiquement le total ». Le système est **semi-automatique avec confirmation de validation**, et il reste cinq points P2 à traiter avant de considérer le flux factures/réserve comme totalement sûr.
+En revanche, il ne faut pas annoncer aujourd'hui que « tout se décompte automatiquement dès le dépôt d'une facture » ni que « l'import Excel contrôle automatiquement le total ». Le système est **semi-automatique avec confirmation de validation**, la suite API complète doit être stabilisée, et il reste six points P2 à traiter avant de considérer le flux factures/réserve/wallets comme totalement sûr.
+
+## 9. Suivi des corrections
+
+Ajouté par Claude après le rapport (le texte de l'audit ci-dessus n'est pas modifié). Numéros du registre :
+`docs/gouvernance/BUGS_ET_INCIDENTS.md`.
+
+| Point | Registre | État | Commit |
+|---|---|---|---|
+| P2-1 total HT Excel/CSV | BUG-2026-012 | Corrigé le 2026-11-13 | `f25f529` |
+| P2-2 feuille du classeur | BUG-2026-013 | Corrigé le 2026-11-13 | `f25f529` |
+| P2-3 arrondi colis → unités | BUG-2026-014 | Écart calculé et tracé au journal ; règle à valider par Rémi | `04780c0` |
+| P2-4 bornes des ingrédients | BUG-2026-015 | Corrigé le 2026-11-13 | `d54be5a` |
+| P2-5 avoir CDB | BUG-2026-016 | Corrigé : refusé avec la raison | `d54be5a` |
+| P2-6 recette Wallet réelle | BUG-2026-017 | Ouvert : avec Rémi | — |
+| P3-1 PDF réels dans les tests | BUG-2026-018 | Ouvert | — |
+| P3-2 colonne « Col/Pack » | BUG-2026-019 | Corrigé le 2026-11-13 | `f25f529` |
+| P3-3 compteur de recettes | BUG-2026-020 | Corrigé, migration 0063 | `d54be5a` |
+
+Question métier soulevée (§ 2) : la réserve ne se met à jour qu'à la **validation** de la facture, case « entrer en réserve »
+cochée — c'est voulu (éviter une double entrée quand la livraison a déjà été saisie) ; à confirmer par Rémi comme règle.
+

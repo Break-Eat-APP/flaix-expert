@@ -5843,3 +5843,43 @@ factures, achats : 17). À l'écran, en local : « Hot dog complet » créé dep
 
 **Reste** : changer de lieu dans l'application pour un directeur de plusieurs lieux (aujourd'hui, le premier seulement).
 
+### 15.181 Gouvernance appliquée ; audit de Codex du 2026-11-12 corrigé (2026-11-13)
+
+**Contexte** : Rémi a remis sa gouvernance (2026-11-11), adaptée à FlaiX Expert (`docs/gouvernance/GOUVERNANCE_FLAIX_EXPERT.md`,
+2026-11-12). Le 2026-11-13 : « à partir de maintenant, tu vas mettre à jour les documents à chaque fois que tu développes du
+code […] et oui, tu peux lancer » (registre des bugs, correction des points de Codex, documents manquants). Rapport :
+`docs/audits/AUDIT_2026-11-12_codex-phases-79-81-calculs-imports-stock-wallets.md` (aucun P1 ; six P2, trois P3).
+
+**Ce qui est fait** :
+- Registres de la gouvernance : `BUGS_ET_INCIDENTS.md` (BUG-2026-001 à 020 : corrigés depuis le 2026-10-26, puis points de
+  Codex), `SECURITE.md`, `TESTS.md`, `MISE_EN_LIGNE.md`, `.env.example` (noms et rôles des variables, aucune valeur).
+- BUG-2026-015 : ligne de facture → ingrédient bornée à la saisie et à la validation (message lisible).
+- BUG-2026-016 : avoir Montaner Pietrini refusé par la lecture automatique, avec la raison ; `FacturePdfLue.refus`.
+- BUG-2026-020 : migration 0063, recettes réellement ajoutées comptées par la copie de catalogue.
+- BUG-2026-012 : total HT lu dans le fichier Excel/CSV (`LectureFacture.totalHt`), reporté à l'écran, contrôle dit.
+- BUG-2026-013 : feuille d'un classeur choisie avec les règles d'une facture (`lireFichierVentes(…, "facture")`), choix de
+  la feuille à l'écran Factures.
+- BUG-2026-019 : colonne « Col/Pack » reconnue.
+- BUG-2026-014 : écart d'arrondi colis → unités calculé (`ecartArrondiUnites`) et inscrit au journal de la validation.
+
+**Vérifié** :
+
+| Test | Commande | Résultat |
+|---|---|---|
+| Lecteur PDF (avoir refusé) | `vitest run src/factures-pdf.test.ts` (domaine) | 7 réussis |
+| Import Excel/CSV (total, Col/Pack, arrondi) | `vitest run src/factures-import.test.ts` (domaine) | 8 réussis |
+| Classeur à trois feuilles, écran Factures | `vitest run src/pages/caisses-connectees src/pages/factures` (écran) | 11 réussis |
+| Factures, réserve, ingrédients, livraison du lieu, copie, export, formation | `vitest run test/<fichier>.test.ts --pool=forks --maxWorkers=1` (serveur, un par un) | 8 + 5 + 4 + 3 + 3 + 2 + 2 réussis |
+| Vraies factures (hors dépôt) | script local pdf.js + lecteur | 4 511,74 € ; 7 297,65 € ; 3 831,61 € retombent juste |
+| Types | `tsc --noEmit` (domaine, serveur, écran) | sans erreur |
+
+Le premier passage de `catalogue-copie` a montré « 3 ignorés » (base de test en cours de migration) ; relancé seul : 3 réussis.
+
+**Risques restants** : BUG-2026-014, règle à valider (écart de quelques centimes tracé, ou deux mouvements par ligne) ;
+BUG-2026-017 recette Wallet réelle ; BUG-2026-018 PDF réels dans les tests. Règle métier à confirmer par Rémi : la réserve
+ne bouge qu'à la validation de la facture (case « entrer en réserve »), pas au dépôt.
+
+**Mise en ligne et retour arrière** : sauvegarde puis mise en ligne sur le serveur de test (migration 0063 : remplace une
+fonction, aucune donnée touchée) ; retour arrière = remettre le commit précédent, la fonction de 0063 reste (sans effet sur
+les données).
+
