@@ -474,7 +474,7 @@ function DetailProduit({ produit, stands, categories, majProduits }: { produit: 
       </div>
 
       <h3 style={{ marginTop: 22, marginBottom: 8 }}>Recette</h3>
-      <p className="discret" style={{ margin: "0 0 8px" }}>Pour un produit fabriqué (burger, hot-dog…) : coche ses ingrédients et leur quantité ; le coût de fabrication devient son coût matière.</p>
+      <p className="discret" style={{ margin: "0 0 8px" }}>Pour un produit fabriqué (burger, hot-dog…) : ce que tu achètes pour en faire une portion. Le coût de fabrication devient son coût matière, et la marge s'affiche dessous.</p>
       <RecetteProduit produit={produit} />
 
       <h3 style={{ marginTop: 22, marginBottom: 8 }}>Conditionnement</h3>

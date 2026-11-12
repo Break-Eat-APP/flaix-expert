@@ -160,9 +160,23 @@ interface LigneSaisie {
   quantite: string;
 }
 
-/** Recette d'un produit vendu : ingrédients cochés et quantités, coût de fabrication en direct. */
+/**
+ * Recette d'un produit vendu : ingrédients et quantités, coût de fabrication et marge en direct (§15.180). Un ingrédient
+ * manquant se crée ici même, sans quitter le produit. Les prix des ingrédients suivent les factures fournisseurs validées.
+ */
 export function RecetteProduit({ produit }: { produit: Produit }) {
   const client = useQueryClient();
+  const [nouvel, setNouvel] = useState<{ nom: string; unite: UniteIngredient; prix: string } | null>(null);
+  const creer = useMutation({
+    mutationFn: (n: { nom: string; unite: UniteIngredient; prix: number }) => api.post<Ingredient[]>("/ingredients", n),
+    onSuccess: (liste, n) => {
+      client.setQueryData(["ingredients"], liste);
+      const cree = liste.find((i) => i.nom.trim().toLowerCase() === n.nom.trim().toLowerCase());
+      // L'ingrédient créé depuis la recette y entre aussitôt : c'est pour elle qu'il a été créé ; sa quantité reste à dire.
+      if (cree) setLignes((l) => [...(l ?? []), { ingredientId: cree.id, quantite: "" }]);
+      setNouvel(null);
+    },
+  });
   const ingredients = useQuery({ queryKey: ["ingredients"], queryFn: () => api.get<Ingredient[]>("/ingredients") });
   const recette = useQuery({ queryKey: ["recette", produit.id], queryFn: () => api.get<Recette>(`/produits/${produit.id}/recette`) });
   const [lignes, setLignes] = useState<LigneSaisie[] | null>(null);
@@ -192,12 +206,28 @@ export function RecetteProduit({ produit }: { produit: Produit }) {
   const enregistree = JSON.stringify(recette.data!.lignes.map((l) => [l.ingredientId, l.quantiteMilli]).sort()) === JSON.stringify(lues.map((l) => [l.ingredientId, l.milli]).sort());
   const disponibles = (courant: string) => tous.filter((i) => (i.actif || i.id === courant) && (i.id === courant || !lignes.some((l) => l.ingredientId === i.id)));
 
-  if (tous.length === 0) {
-    return <p className="discret">Pour faire une recette, ajoute d'abord tes ingrédients (bouton « Ingrédients » en haut de la page).</p>;
-  }
+  // Marge en direct : prix de vente HT en vigueur, coût des ingrédients et des emballages.
+  const tarif = produit.tarifEnVigueur;
+  const venteHt = tarif ? tarif.prixTtc / (1 + tarif.tauxTva / 10_000) : null;
+  const emballages = (produit.conditionnementMillimes ?? 0) / 10;
+  const coutTotal = total !== null ? total + emballages : null;
+  const nouvelPrix = nouvel ? lireMontant(nouvel.prix) : null;
 
   return (
     <div>
+      <details className="aide-recette" style={{ marginBottom: 10 }}>
+        <summary className="discret" style={{ cursor: "pointer" }}>
+          Comment composer un produit ? (exemple du hot dog)
+        </summary>
+        <div className="discret" style={{ marginTop: 6, lineHeight: 1.5 }}>
+          Une recette, c'est ce que tu achètes pour faire <strong>une</strong> portion vendue.
+          <br />• Ton fournisseur livre le hot dog <strong>complet</strong> (saucisse et pain ensemble) : un seul ingrédient, « Hot dog complet », 1 pièce.
+          <br />• Il livre la <strong>saucisse</strong> et le <strong>pain</strong> à part : deux ingrédients, « Saucisse » 1 pièce + « Pain à hot dog » 1 pièce.
+          <br />• Un produit qui en contient un autre (box = hot dog + nachos) : mets ses ingrédients à lui, « Hot dog complet » 1 pièce + « Nachos » 1 pièce.
+          <br />
+          Le prix de chaque ingrédient se met à jour seul à chaque facture fournisseur validée (Achats) : le coût et la marge ci-dessous suivent.
+        </div>
+      </details>
       {lues.length > 0 && (
         <div className="scroll-x">
           <table className="tableau">
@@ -253,14 +283,63 @@ export function RecetteProduit({ produit }: { produit: Produit }) {
                 <td className="d chiffre">{total !== null ? formaterMontant(total) : "—"}</td>
                 <td />
               </tr>
+              {venteHt !== null && coutTotal !== null && (
+                <tr>
+                  <td colSpan={2}>
+                    Vendu {formaterMontant(Math.round(venteHt))} HT{emballages > 0 ? `, emballages ${euros(emballages)}` : ""} : marge par portion
+                  </td>
+                  <td className="d chiffre">
+                    <strong>{euros(venteHt - coutTotal)}</strong>
+                    <div className="discret" style={{ fontSize: 11.5 }}>{venteHt > 0 ? `${Math.round(((venteHt - coutTotal) / venteHt) * 100)} %` : "—"}</div>
+                  </td>
+                  <td />
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       )}
+      {nouvel && (
+        <form
+          className="ligne-actions"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (nouvel.nom.trim() && nouvelPrix !== null) creer.mutate({ nom: nouvel.nom.trim(), unite: nouvel.unite, prix: nouvelPrix });
+          }}
+        >
+          <input type="text" value={nouvel.nom} onChange={(e) => setNouvel({ ...nouvel, nom: e.target.value })} placeholder="Ex. Saucisse, Pain à hot dog…" maxLength={80} aria-label="Nom du nouvel ingrédient" autoFocus />
+          <select value={nouvel.unite} onChange={(e) => setNouvel({ ...nouvel, unite: e.target.value as UniteIngredient })} aria-label="Unité d'achat du nouvel ingrédient">
+            <option value="piece">à la pièce</option>
+            <option value="kg">au kilo</option>
+            <option value="l">au litre</option>
+          </select>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={nouvel.prix}
+            onChange={(e) => setNouvel({ ...nouvel, prix: e.target.value })}
+            placeholder={`Prix HT / ${UNITES_INGREDIENT[nouvel.unite].achat}`}
+            aria-label="Prix d'achat HT du nouvel ingrédient"
+            style={{ width: 130 }}
+          />
+          <button className="btn" type="submit" disabled={!nouvel.nom.trim() || nouvelPrix === null || creer.isPending}>
+            Créer et ajouter
+          </button>
+          <button className="btn btn-fantome" type="button" onClick={() => setNouvel(null)}>
+            Annuler
+          </button>
+        </form>
+      )}
+      <MessageErreur erreur={creer.error} />
       <div className="ligne-actions">
         <button className="btn btn-fantome" disabled={disponibles("").length === 0} onClick={() => setLignes([...lignes, { ingredientId: "", quantite: "" }])}>
           <Plus size={15} /> Ajouter un ingrédient
         </button>
+        {!nouvel && (
+          <button className="btn btn-fantome" onClick={() => setNouvel({ nom: "", unite: "piece", prix: "" })}>
+            <Plus size={15} /> Nouvel ingrédient
+          </button>
+        )}
         <button
           className="btn"
           disabled={!valide || enregistree || enregistrer.isPending}
