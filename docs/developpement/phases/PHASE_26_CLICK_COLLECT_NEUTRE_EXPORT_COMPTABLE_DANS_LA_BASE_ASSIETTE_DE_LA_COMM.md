@@ -1,6 +1,6 @@
 # Phase 26 — Click & Collect neutre, export comptable dans la base, assiette de la commission
 
-> FlaiX Expert · dossier de développement · généré le 2026-11-11 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-11-12 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|

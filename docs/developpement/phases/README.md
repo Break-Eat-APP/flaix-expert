@@ -1,6 +1,6 @@
 # Dossier de développement par phase — FlaiX Expert
 
-> Généré le 2026-11-11 par `node infra/outils/phases-word.cjs` depuis le dépôt. Un document par phase, en Markdown (ici) et en Word (`word/`). Règles du projet : [`AGENTS.md`](../../../AGENTS.md).
+> Généré le 2026-11-12 par `node infra/outils/phases-word.cjs` depuis le dépôt. Un document par phase, en Markdown (ici) et en Word (`word/`). Règles du projet : [`AGENTS.md`](../../../AGENTS.md).
 
 | Phase | Document | Décision | État |
 |---|---|---|---|
@@ -83,3 +83,4 @@
 | 76 | [Audit des phases 67 à 75 et corrections ; dossier de reprise à jour](PHASE_76_AUDIT_DES_PHASES_67_A_75_ET_CORRECTIONS_DOSSIER_DE_REPRISE_A_JOUR.md) · [Word](word/PHASE_76_AUDIT_DES_PHASES_67_A_75_ET_CORRECTIONS_DOSSIER_DE_REPRISE_A_JOUR.docx) | §15.175 | livrée |
 | 77 | [Audit de Codex : livraison d'une facture limitée à son lieu, dépendances corrigées](PHASE_77_AUDIT_DE_CODEX_LIVRAISON_DUNE_FACTURE_LIMITEE_A_SON_LIEU_DEPENDANCES_C.md) · [Word](word/PHASE_77_AUDIT_DE_CODEX_LIVRAISON_DUNE_FACTURE_LIMITEE_A_SON_LIEU_DEPENDANCES_C.docx) | §15.176 | livrée |
 | 78 | [Audit de Codex : durcissements (annulation, relances wallet, événement privé, compteur, export en flux)](PHASE_78_AUDIT_DE_CODEX_DURCISSEMENTS_ANNULATION_RELANCES_WALLET_EVENEMENT_PRIV.md) · [Word](word/PHASE_78_AUDIT_DE_CODEX_DURCISSEMENTS_ANNULATION_RELANCES_WALLET_EVENEMENT_PRIV.docx) | §15.177 | livrée |
+| 79 | [Factures PDF fabriquées par le logiciel du fournisseur, lues sans IA (Relais d'Or, Montaner Pietrini)](PHASE_79_FACTURES_PDF_FABRIQUEES_PAR_LE_LOGICIEL_DU_FOURNISSEUR_LUES_SANS_IA_RE.md) · [Word](word/PHASE_79_FACTURES_PDF_FABRIQUEES_PAR_LE_LOGICIEL_DU_FOURNISSEUR_LUES_SANS_IA_RE.docx) | §15.178 | livrée |

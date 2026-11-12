@@ -1,6 +1,6 @@
 # Phase 30 — Fidélité à la caisse : code promo et points dans le ticket scellé
 
-> FlaiX Expert · dossier de développement · généré le 2026-11-11 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-11-12 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|

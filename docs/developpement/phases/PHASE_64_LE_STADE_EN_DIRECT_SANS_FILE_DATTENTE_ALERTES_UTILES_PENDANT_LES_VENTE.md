@@ -1,6 +1,6 @@
 # Phase 64 — Le stade en direct sans file d'attente : alertes utiles pendant les ventes
 
-> FlaiX Expert · dossier de développement · généré le 2026-11-11 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
+> FlaiX Expert · dossier de développement · généré le 2026-11-12 depuis le dépôt [Break-Eat-APP/flaix-expert](https://github.com/Break-Eat-APP/flaix-expert). Règles du projet : `AGENTS.md`.
 
 | | |
 |---|---|

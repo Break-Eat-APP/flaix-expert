@@ -1,6 +1,6 @@
 # Points à revoir avec Rémi
 
-Liste tenue à jour à la fin de chaque séance (dernière mise à jour : 2026-11-11). Chaque point dit **qui** doit agir :
+Liste tenue à jour à la fin de chaque séance (dernière mise à jour : 2026-11-12). Chaque point dit **qui** doit agir :
 **Rémi** (compte, clé, test, décision) ou **Claude** (développement, une fois la décision prise). Rien de secret ici :
 les clés et mots de passe ne passent jamais par Claude.
 
@@ -8,7 +8,7 @@ les clés et mots de passe ne passent jamais par Claude.
 
 | # | Point | Ce qu'il faut faire | Réf. |
 |---|---|---|---|
-| 1 | **Lecture des factures PDF par IA (Mistral OCR)** | **La fonction n'existe pas encore.** Créer le compte sur console.mistral.ai (« Mistral Studio »), passer à l'offre payante **« Scale »** (l'offre gratuite « Experiment » peut entraîner les modèles avec les données, sauf si on le coupe), mettre une limite de dépense si la console le propose, créer une clé `flaix-expert-serveur`, l'installer soi-même : `ssh -i C:\Users\notta\.ssh\flaix_ovh debian@146.59.154.196` puis `sudo flaix-admin cle-mistral`. Envoyer à Claude 2 ou 3 factures PDF typiques (dans les Téléchargements : Relais d'or Provence, à confirmer ; une autre, une scannée). | §15.173 |
+| 1 | **Lecture des factures scannées par IA (Mistral OCR)** | Les PDF fabriqués par un logiciel se lisent déjà sans IA (Relais d'Or, Montaner Pietrini, §15.178). Restent les factures **scannées ou photographiées** et les autres mises en page : créer le compte sur console.mistral.ai, offre payante « Scale », clé `flaix-expert-serveur` installée par Rémi (`sudo flaix-admin cle-mistral`). Envoyer une facture scannée d'exemple. | §15.173, §15.178 |
 | 2 | **Google Wallet en mode démo** | Pay & Wallet Console : « Configurer des comptes de test » (son Gmail) ; dans FlaiX Expert, enregistrer le design de la carte, créer le lien d'un abonné de test et l'ouvrir sur Android → « Google Wallet » (crée la classe — ne pas la créer à la main dans la console) ; compléter la fiche d'établissement ; puis « Demander l'accès en publication ». | §15.147 |
 | 3 | **Export réel de l'application Break Eat (Click & Collect)** | Envoyer un vrai export pour vérifier que les colonnes sont reconnues (caisse connectée « Click & Collect (application Break Eat) »). Plus tard : liaison directe avec l'application (touche au projet Break Eat : seulement avec l'accord de Rémi). | §15.171 |
 | 5 | **Premier export pour le comptable** | Faire un export réel (Achats › Factures › Pour le comptable) et ouvrir une facture de vente en PDF : la mise en page n'a pas pu être vue à l'écran pendant le développement. | §15.172 |
@@ -22,7 +22,7 @@ les clés et mots de passe ne passent jamais par Claude.
 
 | # | Point | État |
 |---|---|---|
-| 11 | **Lecture des PDF par IA** : le même bouton accepte un PDF ; Mistral lit fournisseur, n°, date, total et lignes ; puis correspondances, colis, alertes et validation comme pour un Excel. | Attend le point 1. |
+| 11 | **Lecture des PDF scannés par IA** : le même bouton passera la facture scannée à Mistral, qui rendra la même forme de lecture que les PDF fabriqués (§15.178). Ajouter aussi les mises en page des autres fournisseurs de Rémi au fil des factures reçues. |
 | 13 | **Adresse e-mail de dépôt des factures** : transférer une facture par e-mail pour qu'elle s'importe seule. Pour l'instant : dépôt direct dans FlaiX Expert. | Plus tard. |
 | 14 | **Pilote automatique de la soirée** : files d'attente estimées au rythme des tablettes ; anticipation de la mi-temps (réassort poussé au téléphone, « Prévenir le stand ») ; mise en place calculée seule (affluence, adversaire, historique). Le net en direct est fait (§15.170). | À faire, dans cet ordre. |
 | 17 | **Passage en production** : base neuve, reprise de la seule configuration (lieu, stands, caisses, produits, catégories, tarifs, recettes, emballages, équipe, réglages), jamais les données de test. Outil de reprise à préparer et tester avant la bascule, faite avec Rémi. | À préparer. |
@@ -41,3 +41,4 @@ les clés et mots de passe ne passent jamais par Claude.
 | Mode formation : famille des catégories et correspondances fournisseurs recopiées (migration 0058) | 2026-10-25 | §15.175 |
 | Audit de Codex du 2026-10-26 : isolement d'une livraison de facture et dépendances corrigés (migration 0059) | 2026-11-01 | §15.176 |
 | Audit de Codex : auteur d'une annulation, relances wallet, clôture d'un événement privé, compteur d'une caisse connectée, export en flux (migration 0060) | 2026-11-11 | §15.177 |
+| Factures PDF fabriquées par un logiciel lues sans IA : Relais d'Or, Montaner Pietrini (CDB), total contrôlé, PDF joint | 2026-11-12 | §15.178 |

@@ -1,6 +1,6 @@
 # Guide de reprise — pour un développeur qui arrive sur FlaiX Expert
 
-> Écrit le 2026-10-19, **mis à jour le 2026-11-11 : phase 78, migration `0060`**. À relire en premier ; il dit où aller pour
+> Écrit le 2026-10-19, **mis à jour le 2026-11-12 : phase 79, migration `0060`**. À relire en premier ; il dit où aller pour
 > tout le reste. Ce qui a été construit depuis la phase 66 est résumé au § 6 bis.
 
 ## 1. Le projet en cinq minutes
@@ -21,11 +21,11 @@ ses clôtures de caisse.
 | Document | Pour quoi |
 |---|---|
 | [`AGENTS.md`](../../AGENTS.md), [`CLAUDE.md`](../../CLAUDE.md) | Règles du projet (aucune donnée inventée, décision écrite avant code, lecture complète d'un module avant de le modifier…). |
-| [`docs/flaix-gestion-dossier-projet.md`](../flaix-gestion-dossier-projet.md) | **La source de vérité.** Chaque décision prise avec Rémi, avec ses mots, son raisonnement, ce qui a été construit et testé. La partie §15 suit le développement section par section (§15.93 → §15.177). |
+| [`docs/flaix-gestion-dossier-projet.md`](../flaix-gestion-dossier-projet.md) | **La source de vérité.** Chaque décision prise avec Rémi, avec ses mots, son raisonnement, ce qui a été construit et testé. La partie §15 suit le développement section par section (§15.93 → §15.178). |
 | [`docs/avancement.md`](../avancement.md) | Où en est le projet, séance par séance, et ce qui est à faire au passage en production. |
 | [`docs/points-a-revoir.md`](../points-a-revoir.md) | **La liste tenue à jour** de ce qui attend Rémi (comptes, clés, tests, décisions) et des développements suivants. |
 | [`docs/decisions-architecture-production.md`](../decisions-architecture-production.md) | Choix d'architecture validés (§ 10), questions ouvertes (§ 11), incident Docker du poste de Rémi (§ 13). |
-| [`JOURNAL_DES_PHASES.md`](JOURNAL_DES_PHASES.md) et [`phases/`](phases/README.md) | Les 79 phases de construction (0 → 78), dans l'ordre : pour chacune, une fiche en Markdown **et en Word** (décision, commits, fichiers par couche, tests, comment reprendre). |
+| [`JOURNAL_DES_PHASES.md`](JOURNAL_DES_PHASES.md) et [`phases/`](phases/README.md) | Les 80 phases de construction (0 → 79), dans l'ordre : pour chacune, une fiche en Markdown **et en Word** (décision, commits, fichiers par couche, tests, comment reprendre). |
 | [`CARTE_DU_CODE.md`](CARTE_DU_CODE.md) | Où est quoi dans le code, et la ligne exacte des fonctions et routes clés. |
 | [`CHANGELOG.md`](../../CHANGELOG.md) | Tous les commits, regroupés par phase. |
 | `docs/conformite/`, [`docs/questions-expert-comptable.md`](../questions-expert-comptable.md) | Dossier de conformité du système de caisse ; questions fiscales encore ouvertes (NF525…). |

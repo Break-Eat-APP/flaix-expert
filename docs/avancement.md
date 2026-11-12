@@ -4,6 +4,12 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-11-12 : factures PDF lues sans IA (§15.178)
+
+Le bouton de l'écran Factures accepte la facture PDF fabriquée par le logiciel du fournisseur : Relais d'Or et Montaner
+Pietrini (CDB). Fournisseur, n°, date, total HT et lignes lus dans le navigateur, total contrôlé au centime, PDF joint à
+la facture. Les factures scannées attendent toujours la clé Mistral.
+
 ## 2026-11-11 : audit de Codex, les durcissements (§15.177)
 
 Auteur d'une annulation d'import lu dans la session, relances wallet réservées d'un coup, clôture d'un événement privé

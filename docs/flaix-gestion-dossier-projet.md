@@ -5719,3 +5719,42 @@ dans le code ; le sixième (P2-3) est une recette avec les vrais comptes Apple e
 
 **Reste** : P2-3, recette réelle des cartes Wallet (`docs/points-a-revoir.md`, point 10).
 
+### 15.178 Factures PDF fabriquées par le logiciel du fournisseur, lues sans IA (2026-11-12)
+
+**Contexte** : Rémi, le 2026-11-12, a déposé une facture PDF dans l'import automatique : la fonction n'existait pas (seuls
+Excel et CSV étaient lus). Il a envoyé de vraies factures des Spartiates de Marseille : deux de Relais d'Or Provence
+(alimentaire, 57 et 69 lignes) et une de Montaner Pietrini – CDB (boissons, 5 pages, document d'accompagnement des
+droits d'accises). Toutes ont un vrai texte (fabriquées par un logiciel, pas scannées) : elles se lisent **sans IA**,
+gratuitement, et la facture ne quitte pas le poste pour être lue. « oui lance la construction ».
+
+**Ce qui est fait** :
+- `packages/domain/src/factures-pdf.ts` : `lignesDuPdf` regroupe les morceaux de texte positionnés en lignes ;
+  `lireFacturePdf` reconnaît la mise en page et rend fournisseur, n°, date, total HT, lignes (`LigneFactureLue`, la même
+  forme que l'import Excel) et des remarques. Mise en page inconnue ou PDF sans texte : `null`, rien n'est deviné.
+  - **Relais d'Or** : une ligne d'article = référence, désignation, quantité, unité, prix net, montant, code TVA. La
+    lettre de température en tête de désignation (G, S, F) est retirée. Quantité au poids (« 4,800 KG ») : un lot à son
+    montant, signalé. Total : « TOTAL H.T … EUR » (chaque commande a son sous-total, ignoré).
+  - **Montaner Pietrini (CDB)** : colonnes reconnues à leur position (code, colis, unités, désignation, montant HT droits
+    compris). Ligne « GRATUITE FOURNISSEUR » : déduite du montant de la ligne payée, la quantité livrée reste entière.
+    Vides, palettes, consignes : écartés (hors achats). Suites de désignation rattachées. « F G » (frais de gestion) :
+    une ligne. Total HT : sous « TOTAL » en pied de page.
+  - **Contrôle** : la somme des lignes doit retomber sur le total HT imprimé (à 2 centimes) ; sinon, remarque en tête.
+    Total introuvable : dit aussi. Prix à 3 décimales : prix arrondi au centime inférieur, l'écart sur une ligne
+    « Arrondis des prix unitaires » : le total reste exact.
+- `apps/web/src/pages/factures/pdf-texte.ts` : texte du PDF lu par pdf.js 6.4.299 (publié le 2026-10-03), chargé à la
+  première facture PDF seulement (fichier séparé de 430 ko, travailleur à part).
+- Écran Factures : le bouton « Remplir depuis la facture (PDF, Excel ou CSV) » accepte le PDF ; fournisseur (nom déjà
+  connu gardé s'il est voisin, pour reprendre ses correspondances), n°, date, total HT et lignes remplis ; remarques
+  affichées ; **le PDF est joint à la facture à l'enregistrement**. Ensuite, comme pour un Excel : correspondances,
+  colis, alertes, validation, entrée en réserve.
+
+**Vérifié** : sur les trois vraies factures (non versées au dépôt, elles contiennent des données de tiers), la somme des
+lignes retombe au centime sur le total HT : 4 511,74 €, 7 297,65 €, 3 831,61 €. Dans le navigateur, avec pdf.js et son
+travailleur, sur une fausse facture au format Relais d'Or. Tests : `factures-pdf.test.ts` (6, dont 3 [F]), sur des
+factures fictives aux positions relevées sur les vraies. Le parcours complet à l'écran (enregistrement et pièce jointe)
+n'a pas pu être rejoué en local : moteur Docker arrêté sur le poste.
+
+**Reste** : factures scannées ou d'une autre mise en page : IA (clé Mistral) ou nouvelle mise en page à ajouter ici ;
+les produits au poids et les matières premières (steaks, fromages) entrent en réserve comme produits, pas comme
+ingrédients suivis au poids.
+
