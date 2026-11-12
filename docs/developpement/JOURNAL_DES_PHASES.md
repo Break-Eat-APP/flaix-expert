@@ -3292,3 +3292,5 @@
 - [`f5e1a3b`](https://github.com/Break-Eat-APP/flaix-expert/commit/f5e1a3bc1273ad0b6ac9e846763629f035689358) 2026-10-24 — Dossier §15.173, avancement, phase 74
 - [`5a3a5f4`](https://github.com/Break-Eat-APP/flaix-expert/commit/5a3a5f4e860c59daae1bb171d91fc960e0f4b94f) 2026-10-24 — Points à revoir avec Rémi : liste tenue à jour (docs/points-a-revoir.md)
 - [`8b41a40`](https://github.com/Break-Eat-APP/flaix-expert/commit/8b41a400933fd6aeffd0ce0fa3d554387057636b) 2026-10-25 — Dossier §15.174, avancement, phase 75, points à revoir à jour
+- [`2e709b1`](https://github.com/Break-Eat-APP/flaix-expert/commit/2e709b18b0c93fa5dc24641bea139e2fd18913ed) 2026-11-12 — Dossier : factures PDF lues sans IA (§15.178, phase 79)
+- [`a8c8d1f`](https://github.com/Break-Eat-APP/flaix-expert/commit/a8c8d1fb57df8a29b4fabb70bf4ba9531ac7f58d) 2026-11-12 — Factures PDF : lot au poids compté en pièces quand le poids d'une pièce le permet ; export L'Addition : colonnes « URL » retirées avant l'envoi (§15.178, vérification réelle)
