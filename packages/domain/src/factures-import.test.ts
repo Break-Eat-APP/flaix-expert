@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alertesFacture, cleArticle, colisDevine, enUnites, lireFactureExport } from "./factures-import.ts";
+import { alertesFacture, cleArticle, colisDevine, enUnites, lireFactureExport, proposerPourArticle } from "./factures-import.ts";
 
 describe("factures automatisées (§15.173)", () => {
   it("export Excel d'un grossiste : titre au-dessus, PCB, prix déduit du montant, total ignoré, ligne au poids écartée", () => {
@@ -49,5 +49,16 @@ describe("factures automatisées (§15.173)", () => {
       ["prix", "l1"], // 14,40 € l'unité au lieu de 0,58 €
       ["quantite", "l2"], // 480 unités contre 108 d'habitude
     ]);
+  });
+
+  it("proposition pour un article : ressemblance, sinon tous les mots du nom dans le libellé ; [F] rien d'approchant : null", () => {
+    const c = [
+      { id: "f", nom: "Frites" },
+      { id: "s", nom: "Steak haché VBF" },
+      { id: "b", nom: "Bière" },
+    ];
+    expect(proposerPourArticle("Frites 9/9 bi-température", c)?.id).toBe("f");
+    expect(proposerPourArticle("Steak haché VBF bou. 8x150g (4,8 kg)", c)?.id).toBe("s");
+    expect(proposerPourArticle("Sac poubelle noir 20x130L x5", c)).toBeNull();
   });
 });

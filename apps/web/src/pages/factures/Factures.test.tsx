@@ -1,6 +1,7 @@
 /**
- * Factures automatisées à l'écran (§15.173) : un export CSV remplit la saisie, avec le produit et le colis appris pour
- * ce fournisseur, le produit du même nom, ou un produit proposé à vérifier ; les alertes se cochent avant de valider.
+ * Factures automatisées à l'écran (§15.173, §15.179) : un export CSV remplit la saisie avec ce qui est sûr (produit et
+ * colis appris pour ce fournisseur, produit ou ingrédient du même nom) ; ce qui n'est que ressemblant est proposé, jamais
+ * choisi d'office ; un ingrédient se compte dans son unité ; les alertes se cochent avant de valider.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -15,6 +16,7 @@ const PRODUITS = [
   { id: "evian", nom: "Evian 50 cl", actif: true },
   { id: "ora", nom: "Orangina", actif: true },
 ];
+const INGREDIENTS = [{ id: "pain", nom: "Pain hot dog x50", unite: "piece", prix: 20, actif: true, suiviStock: false, recettes: 1 }];
 const avecAlerte: FactureVue = {
   id: "f1",
   fournisseur: "Metro",
@@ -36,6 +38,7 @@ const avecAlerte: FactureVue = {
 function monter(factures: FactureVue[]) {
   const serveur = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === "/api/produits") return reponse(PRODUITS);
+    if (url === "/api/ingredients") return reponse(INGREDIENTS);
     if (url === "/api/factures/correspondances") return reponse([{ fournisseur: "metro", cle: "code:coc33", libelle: "Coca 33cl x24", produitId: "coca", unitesParColis: 24 }]);
     if (init?.method === "POST") return reponse({ factures, fournisseurs: [] } satisfies EtatFactures);
     return reponse({ factures, fournisseurs: ["Metro"] } satisfies EtatFactures);
@@ -57,29 +60,42 @@ afterEach(() => {
 });
 
 describe("factures automatisées à l'écran", () => {
-  it("import CSV : produit et colis appris, même nom, proposé à vérifier ; enregistré avec les colis", async () => {
+  it("import CSV : appris et même nom remplis ; [F] ressemblant et colis deviné seulement proposés ; ingrédient compté dans son unité", async () => {
     const serveur = monter([]);
     fireEvent.click(await screen.findByRole("button", { name: /Saisir une facture/ }));
     fireEvent.change(screen.getByLabelText("Fournisseur"), { target: { value: "Metro" } });
     fireEvent.change(screen.getByLabelText("N° de facture"), { target: { value: "F-10" } });
     await waitFor(() => expect(serveur.mock.calls.some(([u]) => u === "/api/factures/correspondances")).toBe(true));
-    await new Promise((fin) => setTimeout(fin, 50)); // réponse des correspondances lue
-    const csv = ["Réf.;Désignation;Qté;P.U. HT", "COC33;Coca 33cl x24;5;14,40", "EV;Evian 50 cl;10;0,45", "OR;Orangina 25cl x12;2;9,60"].join("\n");
+    await waitFor(() => expect(serveur.mock.calls.some(([u]) => u === "/api/ingredients")).toBe(true));
+    await new Promise((fin) => setTimeout(fin, 50)); // réponses lues
+    const csv = ["Réf.;Désignation;Qté;P.U. HT", "COC33;Coca 33cl x24;5;14,40", "EV;Evian 50 cl;10;0,45", "OR;Orangina 25cl x12;2;9,60", "PAI;Pain hot dog x50;1;9,00"].join("\n");
     const entree = document.querySelector<HTMLInputElement>('.import-facture input[type="file"]')!;
     fireEvent.change(entree, { target: { files: [new File([csv], "facture.csv", { type: "text/csv" })] } });
-    expect(await screen.findByText(/3 lignes lues, 3 reliées à un produit/)).toBeTruthy();
-    expect((screen.getByLabelText("Produit de la ligne 1") as HTMLSelectElement).value).toBe("coca");
+    expect(await screen.findByText(/4 lignes lues, 3 reliées \(déjà connues ou même nom\), 1 proposition à accepter ou non/)).toBeTruthy();
+    const choix = (n: number) => (screen.getByLabelText(`Produit ou ingrédient de la ligne ${n}`) as HTMLSelectElement).value;
+    expect([choix(1), choix(2), choix(4)]).toEqual(["p:coca", "p:evian", "i:pain"]);
     expect((screen.getByLabelText("Unités par colis de la ligne 1") as HTMLInputElement).value).toBe("24");
     expect(screen.getByText("déjà relié pour ce fournisseur")).toBeTruthy();
-    expect(screen.getByText("même nom")).toBeTruthy();
-    // Orangina inconnu : le produit le plus ressemblant est proposé, à vérifier ; colis deviné dans le libellé.
-    expect(screen.getByText("proposé : à vérifier")).toBeTruthy();
+    // [F] Orangina inconnu : rien n'est choisi d'office ; le plus ressemblant et le colis deviné sont proposés.
+    expect(choix(3)).toBe("");
+    expect((screen.getByLabelText("Unités par colis de la ligne 3") as HTMLInputElement).value).toBe("1");
+    expect(screen.getByText(/Proposé : Orangina \?/)).toBeTruthy();
+    expect(screen.getByText(/Colis de 12 \?/)).toBeTruthy();
+    // Enregistrer sans la quantité de l'ingrédient : impossible.
+    expect((screen.getByRole("button", { name: "Enregistrer" }) as HTMLButtonElement).disabled).toBe(true);
+    // Le directeur accepte : la proposition, le colis, la quantité de pain proposée (50 pièces, lue dans « x50 »).
+    fireEvent.click(screen.getByRole("button", { name: "Accepter les 1 propositions" }));
+    for (const b of screen.getAllByRole("button", { name: "Choisir" })) fireEvent.click(b);
+    expect(choix(3)).toBe("p:ora");
     expect((screen.getByLabelText("Unités par colis de la ligne 3") as HTMLInputElement).value).toBe("12");
+    expect((screen.getByLabelText("Quantité d'ingrédient par unité facturée, ligne 4") as HTMLInputElement).value).toBe("50");
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
     await waitFor(() => expect(serveur.mock.calls.some(([u, i]) => u === "/api/factures" && i?.method === "POST")).toBe(true));
     const [, init] = serveur.mock.calls.find(([u, i]) => u === "/api/factures" && i?.method === "POST")!;
     const corps = JSON.parse(init!.body as string);
-    expect(corps.lignes[0]).toMatchObject({ produitId: "coca", codeArticle: "COC33", quantite: 5, prixUnitaire: 1_440, unitesParColis: 24 });
+    expect(corps.lignes[0]).toMatchObject({ produitId: "coca", ingredientId: null, codeArticle: "COC33", quantite: 5, prixUnitaire: 1_440, unitesParColis: 24 });
+    expect(corps.lignes[2]).toMatchObject({ produitId: "ora", unitesParColis: 12 });
+    expect(corps.lignes[3]).toMatchObject({ produitId: null, ingredientId: "pain", ingredientMilliParUnite: 50_000, unitesParColis: 1 });
   });
 
   it("alertes : la validation attend « J'ai vérifié »", async () => {

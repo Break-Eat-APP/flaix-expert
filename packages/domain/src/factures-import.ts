@@ -1,5 +1,5 @@
 import type { Centimes } from "./argent.ts";
-import { lireMontantExport } from "./caisses-externes.ts";
+import { lireMontantExport, suggererCorrespondance } from "./caisses-externes.ts";
 import { lireCsv, sansAccents } from "./csv.ts";
 import { normaliserFournisseur } from "./factures.ts";
 
@@ -169,6 +169,25 @@ export function enIngredient(l: { quantite: number; prixUnitaire: Centimes; ingr
 export function enUnites(l: { quantite: number; prixUnitaire: Centimes; unitesParColis: number }): { quantite: number; prixUnitaire: Centimes } {
   const k = Math.max(1, l.unitesParColis);
   return { quantite: l.quantite * k, prixUnitaire: Math.round(l.prixUnitaire / k) };
+}
+
+/**
+ * Proposition pour un article de facture (§15.179) : le nom le plus ressemblant (`suggererCorrespondance`), sinon celui
+ * dont tous les mots figurent dans le libellé du fournisseur (« Frites » dans « Frites 9/9 bi-température »), le plus
+ * précis d'abord. Une proposition à accepter, jamais un choix fait d'office ; null si rien n'approche.
+ */
+export function proposerPourArticle<T extends { id: string; nom: string }>(libelle: string, candidats: readonly T[]): (T & { score: number }) | null {
+  const proche = suggererCorrespondance(libelle, candidats);
+  if (proche) return proche;
+  const mots = (t: string) => sansAccents(t).split(/\s+/).filter((m) => m.length >= 2);
+  const dansLibelle = new Set(mots(libelle));
+  let meilleur: (T & { score: number }) | null = null;
+  for (const c of candidats) {
+    const m = mots(c.nom);
+    if (!m.length || !m.every((x) => dansLibelle.has(x))) continue;
+    if (!meilleur || m.length > meilleur.score) meilleur = { ...c, score: m.length };
+  }
+  return meilleur && { ...meilleur, score: 0 };
 }
 
 // ---------- Alertes avant validation ----------

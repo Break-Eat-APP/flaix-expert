@@ -8,7 +8,7 @@ import {
   lireFactureExport,
   lireFacturePdf,
   normaliserFournisseur,
-  suggererCorrespondance,
+  proposerPourArticle,
   type CorrespondanceArticle,
   type LigneFactureLue,
   LIBELLES_STATUT_FACTURE,
@@ -19,6 +19,7 @@ import {
   totalHtFacture,
   type EtatFactures,
   type FactureVue,
+  type Ingredient,
   type Produit,
   type StatutFacture,
 } from "@flaix/domain";
@@ -26,6 +27,7 @@ import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
 import { lireFichierVentes } from "../caisses-connectees/fichiers.ts";
 import { textePdf } from "./pdf-texte.ts";
+import { ChoixArticle, UNITE_ACHAT, lireChoix, milliVersQuantiteAchat, quantiteAchatVersMilli, tableau, valeurChoix } from "./article.tsx";
 import { useOptions } from "../../session.tsx";
 
 type Filtre = "a_traiter" | "toutes" | "validee" | "payee";
@@ -203,13 +205,17 @@ function DetailFacture({ f, produits, fournisseurs }: { f: FactureVue; produits:
   // Produits qui entreraient en réserve : ni déjà rapprochés, ni fabriqués (recette) ; seulement avec l'option Stock.
   const stockActif = useOptions().stock !== false;
   const sansLivraison = stockActif ? f.lignes.filter((l) => l.produitId && !l.livraison && !l.produitFabrique).length : 0;
+  // Ingrédients achetés (§15.179) : leur prix (et leur stock s'ils sont suivis) à la validation.
+  const ingredientsAchetes = f.lignes.filter((l) => l.ingredientId).length;
+  const aEntrer = sansLivraison + ingredientsAchetes;
+  const ingredients = useQuery({ queryKey: ["ingredients"], queryFn: () => api.get<Ingredient[]>("/ingredients") });
   const [entrer, setEntrer] = useState(true);
   const [verifie, setVerifie] = useState(false);
   const valider = useMutation({
-    mutationFn: () => api.post<EtatFactures>(`/factures/${f.id}/validation`, { motif: motif || null, entrerEnReserve: entrer && sansLivraison > 0, alertesVerifiees: verifie }),
+    mutationFn: () => api.post<EtatFactures>(`/factures/${f.id}/validation`, { motif: motif || null, entrerEnReserve: entrer && aEntrer > 0, alertesVerifiees: verifie }),
     onSuccess: (r) => {
       maj(r);
-      for (const cle of ["reserve", "stock", "produits", "fournisseurs"]) void client.invalidateQueries({ queryKey: [cle] });
+      for (const cle of ["reserve", "stock", "produits", "fournisseurs", "ingredients"]) void client.invalidateQueries({ queryKey: [cle] });
     },
   });
   const payer = useMutation({ mutationFn: () => api.post<EtatFactures>(`/factures/${f.id}/paiement`, { datePaiement }), onSuccess: maj });
@@ -255,7 +261,12 @@ function DetailFacture({ f, produits, fournisseurs }: { f: FactureVue; produits:
                 </td>
                 <td className="d chiffre">{formaterMontant(l.prixUnitaire)}</td>
                 <td style={{ whiteSpace: "normal" }}>
-                  {!l.produitId ? (
+                  {l.ingredientId ? (
+                    <span className="discret">
+                      ingrédient : {tableau<Ingredient>(ingredients.data).find((g) => g.id === l.ingredientId)?.nom ?? "…"}
+                      {l.ingredientMilliParUnite && ` · ${milliVersQuantiteAchat(l.ingredientMilliParUnite)} ${UNITE_ACHAT[tableau<Ingredient>(ingredients.data).find((g) => g.id === l.ingredientId)?.unite ?? "piece"]} par unité facturée`}
+                    </span>
+                  ) : !l.produitId ? (
                     <span className="discret">sans produit</span>
                   ) : figee ? (
                     l.livraison ? (
@@ -349,11 +360,14 @@ function DetailFacture({ f, produits, fournisseurs }: { f: FactureVue; produits:
           </label>
         </div>
       )}
-      {!figee && sansLivraison > 0 && (
+      {!figee && aEntrer > 0 && (
         <label className="case" style={{ marginTop: 10 }}>
           <input type="checkbox" checked={entrer} onChange={(ev) => setEntrer(ev.target.checked)} />
           <span>
-            Faire entrer en réserve centrale {sansLivraison} produit{sansLivraison > 1 ? "s" : ""} sans livraison saisie (quantité, prix et date de la facture)
+            {sansLivraison > 0 && `Faire entrer en réserve centrale ${sansLivraison} produit${sansLivraison > 1 ? "s" : ""} sans livraison saisie (quantité, prix et date de la facture)`}
+            {sansLivraison > 0 && ingredientsAchetes > 0 && " ; "}
+            {ingredientsAchetes > 0 &&
+              `${sansLivraison > 0 ? "m" : "M"}ettre à jour ${ingredientsAchetes} ingrédient${ingredientsAchetes > 1 ? "s" : ""} : prix (donc coût des recettes et marge) et réserve s'il est suivi`}
           </span>
         </label>
       )}
@@ -417,20 +431,45 @@ async function pieceJointe(fichier: File) {
 const estPdf = (f: File) => f.type === "application/pdf" || /\.pdf$/i.test(f.name);
 
 interface LigneSaisie {
-  produitId: string;
+  /** Produit ou ingrédient de la ligne (§15.179) : « p:<id> », « i:<id> », vide. */
+  choix: string;
   libelle: string;
   quantite: string;
   prix: string;
-  /** Unités vendues par unité facturée (§15.173). */
+  /** Unités vendues par unité facturée (§15.173), pour un produit. */
   colis: string;
+  /** Quantité d'ingrédient dans une unité facturée, dans son unité d'achat (« 32 » pièces, « 4,8 » kg). */
+  qteIngredient: string;
   code: string;
-  /** D'où vient le produit d'une ligne importée : correspondance apprise, même nom, ressemblance. */
-  origine?: "appris" | "exact" | "suggere";
+  /** D'où vient le lien d'une ligne importée : correspondance apprise ou même nom (sûrs). */
+  origine?: "appris" | "exact";
+  /** Lien seulement ressemblant : proposé, jamais choisi d'office (Rémi, 2026-11-12). */
+  proposition?: { valeur: string; nom: string };
+  /** Colis deviné dans le libellé (« x24 ») : proposé, jamais rempli d'office. */
+  colisPropose?: number;
+  /** Colis lu dans le fichier (colonne PCB, « Col/Pack ») : un fait, pas une supposition. */
+  colisLu?: number;
 }
-const LIGNE_VIDE: LigneSaisie = { produitId: "", libelle: "", quantite: "", prix: "", colis: "1", code: "" };
+const LIGNE_VIDE: LigneSaisie = { choix: "", libelle: "", quantite: "", prix: "", colis: "1", qteIngredient: "", code: "" };
+
+/**
+ * Quantité d'ingrédient à proposer pour une unité facturée : pièces = colis lu dans le fichier ou deviné (« 32x160g ») ;
+ * kg ou L = poids ou volume écrit dans le libellé (« (4,8 kg) », « 30 L »). Une proposition, jamais un remplissage.
+ */
+function quantitePropose(l: LigneSaisie, g: Ingredient | undefined): string | null {
+  if (!g) return null;
+  if (g.unite === "piece") {
+    const n = l.colisLu ?? colisDevine(l.libelle);
+    return n && n > 1 ? String(n) : null;
+  }
+  const m = new RegExp(String.raw`(\d+(?:[.,]\d+)?)\s*${g.unite === "kg" ? "kg" : "l"}\b`, "i").exec(l.libelle);
+  return m ? m[1]!.replace(".", ",") : null;
+}
 
 function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produits: Produit[]; fournisseurs: string[]; facture?: FactureVue; fermer: (id?: string) => void }) {
   const client = useQueryClient();
+  const ingredientsQ = useQuery({ queryKey: ["ingredients"], queryFn: () => api.get<Ingredient[]>("/ingredients") });
+  const ingredients = tableau<Ingredient>(ingredientsQ.data).filter((g) => g.actif);
   const [s, setS] = useState({
     fournisseur: facture?.fournisseur ?? "",
     numero: facture?.numero ?? "",
@@ -445,53 +484,87 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
   const [pdfLu, setPdfLu] = useState<File | null>(null);
   const [lignes, setLignes] = useState<LigneSaisie[]>(
     facture?.lignes.map((l) => ({
-      produitId: l.produitId ?? "",
+      choix: valeurChoix(l.produitId, l.ingredientId),
       libelle: l.libelle,
       quantite: String(l.quantite),
       prix: montantPourSaisie(l.prixUnitaire),
       colis: String(l.unitesParColis),
+      qteIngredient: l.ingredientMilliParUnite ? milliVersQuantiteAchat(l.ingredientMilliParUnite) : "",
       code: l.codeArticle ?? "",
     })) ?? [{ ...LIGNE_VIDE }],
   );
-  const lues = lignes.map((l) => ({
-    produitId: l.produitId || null,
-    libelle: l.libelle.trim(),
-    quantite: Number(l.quantite),
-    prixUnitaire: lireMontant(l.prix),
-    unitesParColis: Number(l.colis || "1"),
-    codeArticle: l.code.trim() || null,
-  }));
-  const valides = lues.every((l) => l.libelle && Number.isInteger(l.quantite) && l.quantite > 0 && l.prixUnitaire !== null && Number.isInteger(l.unitesParColis) && l.unitesParColis >= 1);
+  const lues = lignes.map((l) => {
+    const { produitId, ingredientId } = lireChoix(l.choix);
+    return {
+      produitId,
+      ingredientId,
+      ingredientMilliParUnite: ingredientId ? quantiteAchatVersMilli(l.qteIngredient) : null,
+      libelle: l.libelle.trim(),
+      quantite: Number(l.quantite),
+      prixUnitaire: lireMontant(l.prix),
+      unitesParColis: ingredientId ? 1 : Number(l.colis || "1"),
+      codeArticle: l.code.trim() || null,
+    };
+  });
+  const valides = lues.every(
+    (l) =>
+      l.libelle &&
+      Number.isInteger(l.quantite) &&
+      l.quantite > 0 &&
+      l.prixUnitaire !== null &&
+      Number.isInteger(l.unitesParColis) &&
+      l.unitesParColis >= 1 &&
+      (!l.ingredientId || l.ingredientMilliParUnite !== null),
+  );
   const totalAnnonce = s.totalAnnonce.trim() ? lireMontant(s.totalAnnonce) : null;
   const totalLignes = valides ? totalHtFacture(lues as { quantite: number; prixUnitaire: number }[]) : 0;
 
   /**
-   * Lignes lues dans un fichier (§15.173) : chaque ligne reprend le produit et le colis déjà retenus pour ce fournisseur,
-   * sinon le produit du même nom, sinon le plus ressemblant ; le colis est lu dans le fichier (PCB) ou deviné dans le
-   * libellé (« x24 »). Tout reste modifiable avant d'enregistrer.
+   * Lignes lues dans un fichier (§15.173, §15.179). Seul ce qui est sûr est rempli : la correspondance déjà validée pour
+   * ce fournisseur, le produit ou l'ingrédient du même nom, le colis écrit dans le fichier. Ce qui n'est que ressemblant
+   * (nom proche, colis deviné dans le libellé) est proposé, à accepter d'un clic : jamais choisi d'office (Rémi,
+   * 2026-11-12 : « quand il ne sait pas, il doit proposer »).
    */
   const remplir = (lues: readonly LigneFactureLue[], fournisseur: string) => {
     const four = normaliserFournisseur(fournisseur);
     const appris = new Map((correspondances.data ?? []).filter((c) => c.fournisseur === four).map((c) => [c.cle, c]));
     const nouvelles: LigneSaisie[] = lues.map((l) => {
-      const c = appris.get(cleArticle(l.codeArticle, l.libelle));
-      const exact = c ? null : correspondanceExacte(l.libelle, produits);
-      const proche = c || exact ? null : suggererCorrespondance(l.libelle, produits);
-      const produitId = c?.produitId ?? exact?.id ?? proche?.id ?? "";
-      return {
-        produitId,
+      const base: LigneSaisie = {
+        ...LIGNE_VIDE,
         libelle: l.libelle,
         quantite: String(l.quantite),
         prix: montantPourSaisie(l.prixUnitaire),
-        colis: String(c?.unitesParColis ?? l.unitesParColis ?? colisDevine(l.libelle) ?? 1),
         code: l.codeArticle ?? "",
-        origine: c ? "appris" : exact ? "exact" : proche ? "suggere" : undefined,
+        colis: String(l.unitesParColis ?? 1),
+        colisLu: l.unitesParColis ?? undefined,
       };
+      const c = appris.get(cleArticle(l.codeArticle, l.libelle));
+      if (c && (c.produitId || c.ingredientId)) {
+        return {
+          ...base,
+          choix: valeurChoix(c.produitId, c.ingredientId),
+          colis: String(c.unitesParColis),
+          qteIngredient: c.ingredientMilliParUnite ? milliVersQuantiteAchat(c.ingredientMilliParUnite) : "",
+          origine: "appris",
+        };
+      }
+      // Seul le colis a été retenu pour cet article : il reprend, le produit reste à proposer.
+      if (c) Object.assign(base, { colis: String(c.unitesParColis), colisLu: c.unitesParColis });
+      const devine = base.colisLu ? undefined : (colisDevine(l.libelle) ?? undefined);
+      const exactP = correspondanceExacte(l.libelle, produits);
+      if (exactP) return { ...base, choix: `p:${exactP.id}`, origine: "exact", colisPropose: devine };
+      const exactI = correspondanceExacte(l.libelle, ingredients);
+      if (exactI) return { ...base, choix: `i:${exactI.id}`, origine: "exact" };
+      const procheP = proposerPourArticle(l.libelle, produits);
+      const procheI = proposerPourArticle(l.libelle, ingredients);
+      const proche = procheI && (!procheP || procheI.score > procheP.score) ? { valeur: `i:${procheI.id}`, nom: procheI.nom } : procheP ? { valeur: `p:${procheP.id}`, nom: procheP.nom } : undefined;
+      return { ...base, proposition: proche, colisPropose: devine };
     });
     if (!nouvelles.length) throw new Error("Aucune ligne d'article lue dans ce fichier.");
     setLignes(nouvelles);
-    const reconnues = nouvelles.filter((l) => l.produitId).length;
-    return `${nouvelles.length} ligne${nouvelles.length > 1 ? "s" : ""} lue${nouvelles.length > 1 ? "s" : ""}, ${reconnues} reliée${reconnues > 1 ? "s" : ""} à un produit${four ? "" : " (saisis le fournisseur avant l'import pour reprendre ses correspondances)"}`;
+    const reliees = nouvelles.filter((l) => l.choix).length;
+    const proposees = nouvelles.filter((l) => !l.choix && l.proposition).length;
+    return `${nouvelles.length} ligne${nouvelles.length > 1 ? "s" : ""} lue${nouvelles.length > 1 ? "s" : ""}, ${reliees} reliée${reliees > 1 ? "s" : ""} (déjà connue${reliees > 1 ? "s" : ""} ou même nom)${proposees ? `, ${proposees} proposition${proposees > 1 ? "s" : ""} à accepter ou non` : ""}${four ? "" : " (saisis le fournisseur avant l'import pour reprendre ses correspondances)"}`;
   };
 
   /**
@@ -515,7 +588,7 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
     const lu = remplir(f.lignes, fournisseur);
     setPdfLu(fichier);
     setImport({
-      message: `Facture n° ${f.numero ?? "?"} de ${fournisseur} : ${lu}. Le PDF sera joint à la facture. Vérifie les produits « proposés » et les colis, puis enregistre.`,
+      message: `Facture n° ${f.numero ?? "?"} de ${fournisseur} : ${lu}. Le PDF sera joint à la facture. Accepte ou non les propositions, vérifie les colis, puis enregistre.`,
       erreurs: f.remarques,
     });
   };
@@ -528,7 +601,7 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
       const lu = lireFactureExport((await lireFichierVentes(fichier)).contenu);
       if (lu.manquants.length) throw new Error(`Colonnes introuvables dans le fichier : ${lu.manquants.join(", ")}.`);
       setImport({
-        message: `${remplir(lu.lignes, s.fournisseur)}. Vérifie les produits « proposés » et les colis, puis enregistre.`,
+        message: `${remplir(lu.lignes, s.fournisseur)}. Accepte ou non les propositions, vérifie les colis, puis enregistre.`,
         erreurs: lu.erreurs.map((e) => `Ligne ${e.ligne} : ${e.message}`),
       });
     } catch (e) {
@@ -612,10 +685,12 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
         <table className="tableau">
           <thead>
             <tr>
-              <th>Produit</th>
+              <th>Produit ou ingrédient</th>
               <th>Libellé sur la facture</th>
               <th>Quantité</th>
-              <th title="Unités vendues dans une unité facturée : 24 pour un colis de 24 canettes">Unités / colis</th>
+              <th title="Produit : unités vendues dans une unité facturée (24 pour un colis de 24 canettes). Ingrédient : sa quantité dans une unité facturée (32 pièces, 4,8 kg).">
+                Colis ou contenu
+              </th>
               <th>Prix unitaire HT (€)</th>
               <th />
             </tr>
@@ -624,23 +699,24 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
             {lignes.map((l, i) => (
               <tr key={i}>
                 <td>
-                  <select
-                    value={l.produitId}
-                    onChange={(ev) => {
-                      const p = produits.find((x) => x.id === ev.target.value);
-                      maj(i, { produitId: ev.target.value, libelle: l.libelle || p?.nom || "", origine: undefined });
+                  <ChoixArticle
+                    valeur={l.choix}
+                    produits={produits}
+                    ingredients={ingredients}
+                    libelle={`Produit ou ingrédient de la ligne ${i + 1}`}
+                    onChange={(choix) => {
+                      const { produitId } = lireChoix(choix);
+                      maj(i, { choix, libelle: l.libelle || produits.find((x) => x.id === produitId)?.nom || "", origine: undefined, proposition: undefined });
                     }}
-                    aria-label={`Produit de la ligne ${i + 1}`}
-                  >
-                    <option value="">Sans produit (frais…)</option>
-                    {produits.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nom}
-                      </option>
-                    ))}
-                  </select>
-                  {l.origine && l.produitId && (
-                    <div className={`origine-ligne origine-${l.origine}`}>{l.origine === "appris" ? "déjà relié pour ce fournisseur" : l.origine === "exact" ? "même nom" : "proposé : à vérifier"}</div>
+                  />
+                  {l.origine && l.choix && <div className={`origine-ligne origine-${l.origine}`}>{l.origine === "appris" ? "déjà relié pour ce fournisseur" : "même nom"}</div>}
+                  {!l.choix && l.proposition && (
+                    <div className="origine-ligne origine-suggere">
+                      Proposé : {l.proposition.nom} ?{" "}
+                      <button className="btn-lien" onClick={() => maj(i, { choix: l.proposition!.valeur, proposition: undefined })}>
+                        Choisir
+                      </button>
+                    </div>
                   )}
                 </td>
                 <td>
@@ -650,8 +726,49 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
                   <input type="text" inputMode="numeric" value={l.quantite} onChange={(ev) => maj(i, { quantite: ev.target.value.replace(/\D/g, "") })} style={{ width: 90 }} aria-label={`Quantité de la ligne ${i + 1}`} />
                 </td>
                 <td>
-                  <input type="text" inputMode="numeric" value={l.colis} onChange={(ev) => maj(i, { colis: ev.target.value.replace(/\D/g, "").slice(0, 5) })} style={{ width: 70 }} aria-label={`Unités par colis de la ligne ${i + 1}`} />
-                  {Number(l.colis) > 1 && Number(l.quantite) > 0 && <div className="discret" style={{ fontSize: 11.5 }}>= {Number(l.quantite) * Number(l.colis)} unités</div>}
+                  {(() => {
+                    const g = ingredients.find((x) => x.id === lireChoix(l.choix).ingredientId);
+                    if (g) {
+                      const propose = l.qteIngredient ? null : quantitePropose(l, g);
+                      return (
+                        <>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={l.qteIngredient}
+                            onChange={(ev) => maj(i, { qteIngredient: ev.target.value.replace(/[^\d.,]/g, "").slice(0, 9) })}
+                            style={{ width: 70 }}
+                            placeholder="?"
+                            aria-label={`Quantité d'ingrédient par unité facturée, ligne ${i + 1}`}
+                          />{" "}
+                          <span className="discret">{UNITE_ACHAT[g.unite]}</span>
+                          {propose && (
+                            <div className="origine-ligne origine-suggere">
+                              {propose} {UNITE_ACHAT[g.unite]} ?{" "}
+                              <button className="btn-lien" onClick={() => maj(i, { qteIngredient: propose })}>
+                                Choisir
+                              </button>
+                            </div>
+                          )}
+                          {!l.qteIngredient && !propose && <div className="discret" style={{ fontSize: 11.5 }}>contenu d'une unité facturée</div>}
+                        </>
+                      );
+                    }
+                    return (
+                      <>
+                        <input type="text" inputMode="numeric" value={l.colis} onChange={(ev) => maj(i, { colis: ev.target.value.replace(/\D/g, "").slice(0, 5), colisPropose: undefined })} style={{ width: 70 }} aria-label={`Unités par colis de la ligne ${i + 1}`} />
+                        {Number(l.colis) > 1 && Number(l.quantite) > 0 && <div className="discret" style={{ fontSize: 11.5 }}>= {Number(l.quantite) * Number(l.colis)} unités</div>}
+                        {l.colisPropose && l.colisPropose > 1 && Number(l.colis) <= 1 && (
+                          <div className="origine-ligne origine-suggere">
+                            Colis de {l.colisPropose} ?{" "}
+                            <button className="btn-lien" onClick={() => maj(i, { colis: String(l.colisPropose), colisPropose: undefined })}>
+                              Choisir
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </td>
                 <td>
                   <input type="text" inputMode="decimal" value={l.prix} onChange={(ev) => maj(i, { prix: ev.target.value })} style={{ width: 110 }} aria-label={`Prix unitaire HT de la ligne ${i + 1}`} />
@@ -669,9 +786,19 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
         </table>
       </div>
       <div className="actions" style={{ justifyContent: "space-between", flexWrap: "wrap", marginTop: 10 }}>
-        <button className="btn btn-fantome" onClick={() => setLignes([...lignes, { ...LIGNE_VIDE }])}>
-          Ajouter une ligne
-        </button>
+        <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button className="btn btn-fantome" onClick={() => setLignes([...lignes, { ...LIGNE_VIDE }])}>
+            Ajouter une ligne
+          </button>
+          {lignes.some((l) => !l.choix && l.proposition) && (
+            <button
+              className="btn btn-fantome"
+              onClick={() => setLignes(lignes.map((l) => (!l.choix && l.proposition ? { ...l, choix: l.proposition.valeur, proposition: undefined } : l)))}
+            >
+              Accepter les {lignes.filter((l) => !l.choix && l.proposition).length} propositions
+            </button>
+          )}
+        </span>
         <span className="chiffre">
           Total HT : {formaterMontant(totalLignes)}
           {totalAnnonce !== null && valides && Math.abs(totalAnnonce - totalLignes) > 2 && (
