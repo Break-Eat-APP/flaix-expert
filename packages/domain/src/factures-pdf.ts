@@ -54,6 +54,11 @@ export interface FacturePdfLue {
   lignes: LigneFactureLue[];
   /** Ce que la lecture a arrangé et que le directeur doit savoir (poids, produits offerts, consignes, arrondis). */
   remarques: string[];
+  /**
+   * Document que la lecture automatique refuse (un avoir, BUG-2026-016) : la raison, à montrer telle quelle ; les lignes
+   * sont alors vides et rien ne doit être rempli. null : document lu.
+   */
+  refus: string | null;
 }
 
 /** « 4.511,74 », « 1658.67 », « .90 », « -178.76 » → centimes ; null si ce n'est pas un montant. */
@@ -80,7 +85,7 @@ function ligne(codeArticle: string | null, libelle: string, quantite: number, mo
   return { codeArticle, libelle: libelle.replace(/\s+/g, " ").trim().slice(0, 160), quantite, prixUnitaire: prix, unitesParColis };
 }
 
-function terminer(f: Omit<FacturePdfLue, "remarques">, remarques: string[], reste: { centimes: number }): FacturePdfLue {
+function terminer(f: Omit<FacturePdfLue, "remarques" | "refus">, remarques: string[], reste: { centimes: number }): FacturePdfLue {
   if (reste.centimes > 0) {
     f.lignes.push({ codeArticle: null, libelle: "Arrondis des prix unitaires (facture PDF)", quantite: 1, prixUnitaire: reste.centimes, unitesParColis: null });
     remarques.push(`Prix à plus de deux décimales : arrondis au centime, l'écart (${(reste.centimes / 100).toFixed(2).replace(".", ",")} €) figure sur une ligne à part.`);
@@ -90,7 +95,7 @@ function terminer(f: Omit<FacturePdfLue, "remarques">, remarques: string[], rest
     remarques.unshift(`Attention : les lignes lues font ${(somme / 100).toFixed(2).replace(".", ",")} € HT, la facture annonce ${(f.totalHt / 100).toFixed(2).replace(".", ",")} € : une ligne n'a pas été lue, compare avec le PDF.`);
   }
   if (f.totalHt === null) remarques.unshift("Attention : total HT introuvable dans le PDF, les lignes n'ont pas pu être contrôlées : compare avec la facture.");
-  return { ...f, remarques };
+  return { ...f, remarques, refus: null };
 }
 
 // ---------- Relais d'Or ----------
@@ -199,11 +204,24 @@ function lireCdb(lignes: readonly LignePdf[]): FacturePdfLue {
       if (ht) totalHt = montantPdf(ht.texte);
     }
   }
+  // Un avoir (article négatif, total négatif) ne se lit pas comme une facture : refusé, à saisir à la main (BUG-2026-016).
+  if (articles.some((a) => a.montant < 0) || (totalHt !== null && totalHt < 0)) {
+    return {
+      modele: "cdb",
+      fournisseur: "Montaner Pietrini (CDB)",
+      numero,
+      date: d ? jourCourt(d[1]!, d[2]!, d[3]!) : null,
+      totalHt,
+      lignes: [],
+      remarques: [],
+      refus: `Ce document${numero ? ` n° ${numero}` : ""} est un avoir (montants négatifs) : la lecture automatique ne le prend pas. Saisis-le à la main, en accord avec ton comptable.`,
+    };
+  }
   const lues = articles.map((a) => {
     // Quantité en colis (cas, fût) avec les unités de chaque colis ; sans colis, en unités.
     const q = a.cas > 0 ? a.cas : Math.max(1, a.colis);
     const parColis = a.cas > 0 && a.colis > a.cas && a.colis % a.cas === 0 ? a.colis / a.cas : null;
-    return ligne(a.code, a.libelle, q, Math.max(0, a.montant), parColis, reste);
+    return ligne(a.code, a.libelle, q, a.montant, parColis, reste);
   });
   if (fraisGestion > 0) lues.push({ codeArticle: null, libelle: "Frais de gestion", quantite: 1, prixUnitaire: fraisGestion, unitesParColis: null });
   if (offerts > 0) remarques.push(`Produits offerts par le fournisseur (${(offerts / 100).toFixed(2).replace(".", ",")} €) : déduits du prix des lignes concernées, les quantités livrées restent entières.`);

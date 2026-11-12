@@ -575,6 +575,7 @@ function FormulaireFacture({ produits, fournisseurs, facture, fermer }: { produi
     const morceaux = await textePdf(fichier);
     if (!morceaux.length) throw new Error("Ce PDF ne contient pas de texte (facture scannée ou photographiée) : saisis les lignes à la main, ou utilise l'export Excel du fournisseur.");
     const f = lireFacturePdf(morceaux);
+    if (f?.refus) throw new Error(f.refus);
     if (!f) throw new Error("La mise en page de ce fournisseur n'est pas encore reconnue (reconnues : Relais d'Or, Montaner Pietrini). Utilise l'export Excel du fournisseur, ou saisis les lignes à la main.");
     // Un fournisseur déjà connu sous un nom voisin garde son nom : ses correspondances s'appliquent.
     const fournisseur = fournisseurs.find((x) => normaliserFournisseur(x) === normaliserFournisseur(f.fournisseur)) ?? f.fournisseur;

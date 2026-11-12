@@ -54,12 +54,19 @@ afterAll(async () => {
 });
 
 describe("facture fournisseur : ligne reliée à un ingrédient", () => {
-  it("[F] produit et ingrédient à la fois, quantité d'ingrédient absente, ingrédient d'un autre lieu : refusés", async () => {
+  it("[F] produit et ingrédient à la fois, quantité d'ingrédient absente, quantités ou montants hors bornes, ingrédient d'un autre lieu : refusés", async () => {
     const deux = await appel<{ erreur: string }>("POST", "/api/factures", facture("F-0", [{ ...LIGNE_SAUCISSE, produitId: hotdog.id }]));
     expect(deux.statut).toBe(400);
     expect(deux.corps.erreur).toContain("pas aux deux");
     const sansQuantite = await appel<{ erreur: string }>("POST", "/api/factures", facture("F-0", [{ ...LIGNE_SAUCISSE, ingredientMilliParUnite: null }]));
     expect(sansQuantite.statut).toBe(400);
+    // [F] BUG-2026-015 : 1 000 000 cartons de 32 000 pièces, ou un montant au-delà d'une livraison : refusés à la saisie.
+    const tropGrand = await appel<{ erreur: string }>("POST", "/api/factures", facture("F-0", [{ ...LIGNE_SAUCISSE, quantite: 1_000_000 }]));
+    expect(tropGrand.statut).toBe(400);
+    expect(tropGrand.corps.erreur).toContain("quantité × contenu trop grand");
+    const tropCher = await appel<{ erreur: string }>("POST", "/api/factures", facture("F-0", [{ ...LIGNE_SAUCISSE, quantite: 30_000, prixUnitaire: 5_000 }]));
+    expect(tropCher.statut).toBe(400);
+    expect(tropCher.corps.erreur).toContain("montant de la ligne trop grand");
     const ailleurs = await appel<{ erreur: string }>("POST", "/api/factures", facture("F-0", [LIGNE_SAUCISSE]), cookieB);
     expect(ailleurs.statut).toBe(404);
     expect(ailleurs.corps.erreur).toContain("Ingrédient introuvable");

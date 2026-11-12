@@ -102,6 +102,14 @@ describe("factures PDF fabriquées par un logiciel (§15.178)", () => {
     expect(lireFacturePdf(sansEur)!.totalHt).toBe(117_168);
   });
 
+  it("[F] avoir Montaner Pietrini (article négatif) : refusé avec la raison, aucune ligne remplie (BUG-2026-016)", () => {
+    const avoir = CDB.map((m) => (m.texte === "1658.67" ? { ...m, texte: "-1658.67" } : m));
+    const f = lireFacturePdf(avoir)!;
+    expect(f.lignes).toEqual([]);
+    expect(f.refus).toMatch(/n° 6100000001 est un avoir/);
+    expect(lireFacturePdf(CDB)!.refus).toBeNull();
+  });
+
   it("[F] mise en page inconnue ou PDF scanné (sans texte) : pas de lecture devinée", () => {
     expect(lireFacturePdf([])).toBeNull();
     expect(lireFacturePdf(ligne(1, 700, [10, "FACTURE n° 12"], [200, "Total 10,00"]))).toBeNull();

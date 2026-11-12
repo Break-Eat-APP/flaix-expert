@@ -39,6 +39,9 @@ import { pdfFactureVente } from "../pdf-facture.ts";
  * Factures fournisseurs (module 12b ; dossier §15.115) : saisie, pièce jointe, rapprochement avec
  * les livraisons du Stock, validation (motif si écart), paiement. Écarts signalés, jamais corrigés.
  */
+/** Plafonds d'une livraison d'ingrédient (contraintes de `ingredient_mouvement`, migration 0023). */
+const INGREDIENT_MAX_MILLI = 1_000_000_000;
+const INGREDIENT_MAX_PRIX = 100_000_000;
 const Jour = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date attendue au format AAAA-MM-JJ.");
 const Saisie = z
   .object({
@@ -61,7 +64,14 @@ const Saisie = z
           ingredientMilliParUnite: z.number().int().min(1, "Quantité d'ingrédient invalide.").max(100_000_000).nullable().default(null),
         })
         .refine((l) => !(l.produitId && l.ingredientId), "Une ligne se relie à un produit ou à un ingrédient, pas aux deux.")
-        .refine((l) => (l.ingredientId === null) === (l.ingredientMilliParUnite === null), "Indique la quantité d'ingrédient contenue dans une unité facturée."),
+        .refine((l) => (l.ingredientId === null) === (l.ingredientMilliParUnite === null), "Indique la quantité d'ingrédient contenue dans une unité facturée.")
+        // Bornes d'une livraison d'ingrédient (migration 0023), vérifiées dès la saisie (BUG-2026-015) : au-delà, presque
+        // toujours un colis ou une quantité mal saisis.
+        .refine(
+          (l) => !l.ingredientId || l.quantite * (l.ingredientMilliParUnite ?? 0) <= INGREDIENT_MAX_MILLI,
+          "Ingrédient : quantité × contenu trop grand pour une livraison (1 000 000 kg, L ou pièces au plus) ; vérifie la quantité ou le contenu.",
+        )
+        .refine((l) => !l.ingredientId || l.quantite * l.prixUnitaire <= INGREDIENT_MAX_PRIX, "Ingrédient : montant de la ligne trop grand pour une livraison (1 000 000 € au plus) ; vérifie la quantité ou le prix."),
       )
       .min(1, "Une facture a au moins une ligne.")
       .max(300),
@@ -612,6 +622,10 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
         // facture devient son prix. Les recettes qui l'utilisent suivent : la marge des produits vendus aussi.
         for (const l of f.lignes.filter((x) => x.ingredientId && x.ingredientMilliParUnite)) {
           const { quantiteMilli, prixTotal } = enIngredient({ quantite: l.quantite, prixUnitaire: l.prixUnitaire, ingredientMilliParUnite: l.ingredientMilliParUnite! });
+          // Garde-fou pour une facture enregistrée avant le contrôle de saisie (BUG-2026-015) : refus lisible, pas d'erreur de base.
+          if (!Number.isSafeInteger(quantiteMilli) || quantiteMilli > INGREDIENT_MAX_MILLI || !Number.isSafeInteger(prixTotal) || prixTotal > INGREDIENT_MAX_PRIX) {
+            throw new ErreurMetier(400, `« ${l.libelle} » : quantité ou montant trop grand pour une livraison d'ingrédient. Corrige la ligne (« Modifier la saisie »).`);
+          }
           const { rows: g } = await c.query<{ nom: string; suivi: boolean; prix: number | null }>(
             "SELECT nom, suivi_stock AS suivi, prix_centimes AS prix FROM ingredient WHERE lieu_id = $1 AND id = $2",
             [auth.lieuId, l.ingredientId],

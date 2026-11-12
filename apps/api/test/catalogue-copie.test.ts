@@ -105,6 +105,7 @@ describe("copie du catalogue entre deux lieux du même client", () => {
 
   it("une seconde copie n'ajoute rien", async () => {
     const r = await copier(cible.lieuId, source.lieuId);
-    expect(r.corps).toMatchObject({ categories: 0, produits: 0, ingredients: 0, emballages: 0, correspondances: 0 });
+    // [F] BUG-2026-020 : le produit a déjà sa recette, rien n'est ajouté, rien n'est annoncé.
+    expect(r.corps).toMatchObject({ categories: 0, produits: 0, ingredients: 0, recettes: 0, emballages: 0, correspondances: 0 });
   });
 });
