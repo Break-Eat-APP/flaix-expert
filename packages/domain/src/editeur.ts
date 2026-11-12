@@ -118,6 +118,17 @@ export interface DirecteurRemis {
   motDePasseProvisoire: string | null;
 }
 
+/** Catalogue copié d'un lieu dans un autre du même client (§15.180) : ce qui a été ajouté (rien n'est écrasé). */
+export interface CatalogueCopie {
+  categories: number;
+  produits: number;
+  ingredients: number;
+  /** Produits qui ont désormais la recette du lieu d'origine. */
+  recettes: number;
+  emballages: number;
+  correspondances: number;
+}
+
 export interface LieuCree {
   lieuId: string;
   nom: string;

@@ -7,6 +7,7 @@ import { calculerEmpreinte, jsonCanonique, type ChampScelle } from "./chaine.ts"
  */
 export const TYPES_JET = {
   lieu_cree: "Lieu créé",
+  catalogue_copie: "Catalogue copié d'un autre lieu du même client (FlaiX Expert)",
   lieu_identite_modifiee: "Identité du lieu modifiée",
   connexion: "Connexion",
   connexion_refusee: "Connexion refusée (mot de passe ou code erroné)",

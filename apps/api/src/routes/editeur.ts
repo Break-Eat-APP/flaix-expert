@@ -7,6 +7,7 @@ import {
   OPTIONS_PAR_DEFAUT,
   coutJetons,
   jourParis,
+  type CatalogueCopie,
   type ConsommationIA,
   type DirecteurParc,
   type DirecteurRemis,
@@ -26,6 +27,7 @@ import { NouveauMotDePasse } from "../auth/routes.ts";
 import { verifierClotures } from "./periodes.ts";
 import { ParamId, Uuid, corps, texte } from "./outils.ts";
 import { suivreToutesLesCartes } from "./wallet.ts";
+import { recalculerCoutsRecettes } from "./recettes.ts";
 import { modeleIA } from "../ia/fournisseur.ts";
 
 /**
@@ -258,6 +260,26 @@ export async function routesEditeur(app: FastifyInstance, { base }: { base: Base
       await changerLieu(c, lieuId);
       await inscrireJet(c, { lieuId, type: "lieu_cree", utilisateurId: e.utilisateurId, details: { nom, par: `FlaiX Expert — ${e.nom}` } });
       return { lieuId, nom, directeur: await ajouterDirecteur(c, lieuId, directeur, e) };
+    });
+  });
+
+  // Copier le catalogue d'un autre lieu du même client (§15.180) : seulement entre lieux qui ont un directeur en commun ;
+  // rien n'est écrasé. Les coûts des recettes sont recalculés avec les prix des ingrédients du lieu rempli.
+  app.post("/api/editeur/lieux/:id/copie-catalogue", async (req): Promise<CatalogueCopie> => {
+    const e = await exigerEditeur(base, req);
+    const { id } = ParamId.parse(req.params);
+    const { source } = corps(z.object({ source: Uuid }), req);
+    return base.transaction({ utilisateurId: e.utilisateurId }, async (c) => {
+      const { rows } = await c.query<CatalogueCopie>("SELECT * FROM copier_catalogue_editeur($1, $2)", [source, id]).catch((erreur: { code?: string; message?: string }) => {
+        if (erreur.code === "42501" && erreur.message) throw new ErreurMetier(403, erreur.message);
+        return refusLisible(erreur);
+      });
+      const { rows: noms } = await c.query<{ nom: string }>("SELECT nom FROM vue_parc() WHERE lieu_id = $1", [source]);
+      await changerLieu(c, id);
+      const recalcules = await recalculerCoutsRecettes(c, id);
+      const copie = rows[0]!;
+      await inscrireJet(c, { lieuId: id, type: "catalogue_copie", utilisateurId: e.utilisateurId, details: { depuis: noms[0]?.nom ?? source, ...copie, couts_recalcules: recalcules.length, par: `FlaiX Expert — ${e.nom}` } });
+      return copie;
     });
   });
 

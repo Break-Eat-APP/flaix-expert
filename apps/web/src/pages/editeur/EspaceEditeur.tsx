@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Cpu, Eye, KeyRound, LogOut, Plus, ShieldCheck } from "lucide-react";
+import { Copy, Cpu, Eye, KeyRound, LogOut, Plus, ShieldCheck } from "lucide-react";
 import {
   LONGUEUR_MIN_MOT_DE_PASSE,
   OPTIONS_LIEU,
   alertesLieuParc,
+  type CatalogueCopie,
   type ConsommationIA,
   type DirecteurRemis,
   type LieuCree,
@@ -175,6 +176,7 @@ function Parc({ nom }: { nom: string }) {
                           <span>dernière activité : {l.derniereActivite ? formaterDateHeure(l.derniereActivite) : "—"}</span>
                         </div>
                         <DirecteursDuLieu lieu={l} />
+                        <CopieCatalogue lieu={l} lieux={parc.data!.lieux} />
                         <div className="editeur-options">
                           <span className="discret" style={{ fontSize: 12.5 }}>Options :</span>
                           {OPTIONS_LIEU.map((o) => (
@@ -415,6 +417,70 @@ function NouveauLieu() {
 }
 
 /** Directeurs d'un lieu : en ajouter un, ou lui donner un nouveau mot de passe provisoire. */
+/**
+ * Copier le catalogue d'un autre lieu du même client (§15.180) : seuls sont proposés les lieux qui ont un directeur actif
+ * en commun avec celui-ci. Rien n'est écrasé ; ce qui est propre au lieu (stands, caisses) reste à faire sur place.
+ */
+function CopieCatalogue({ lieu, lieux }: { lieu: LieuParc; lieux: readonly LieuParc[] }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [source, setSource] = useState("");
+  const miens = new Set(lieu.directeurs.filter((d) => d.actif).map((d) => d.utilisateurId));
+  const possibles = lieux.filter((x) => x.lieuId !== lieu.lieuId && x.directeurs.some((d) => d.actif && miens.has(d.utilisateurId)));
+  const copier = useMutation({ mutationFn: () => api.post<CatalogueCopie>(`/editeur/lieux/${lieu.lieuId}/copie-catalogue`, { source }) });
+  if (!possibles.length) return null;
+  const r = copier.data;
+  return (
+    <div className="editeur-directeurs">
+      {!ouvert ? (
+        <button
+          className="btn-lien"
+          onClick={() => {
+            setOuvert(true);
+            copier.reset();
+          }}
+        >
+          <Copy size={13} /> Copier le catalogue d'un autre lieu de ce client
+        </button>
+      ) : (
+        <form
+          className="editeur-ajout"
+          onSubmit={(e) => {
+            e.preventDefault();
+            copier.mutate();
+          }}
+        >
+          <select value={source} onChange={(e) => setSource(e.target.value)} aria-label="Lieu dont copier le catalogue" required>
+            <option value="">Copier depuis…</option>
+            {possibles.map((x) => (
+              <option key={x.lieuId} value={x.lieuId}>
+                {x.nom}
+              </option>
+            ))}
+          </select>
+          <button className="btn" type="submit" disabled={!source || copier.isPending}>
+            Copier
+          </button>
+          <button className="btn btn-fantome" type="button" onClick={() => setOuvert(false)}>
+            Fermer
+          </button>
+          <p className="aide" style={{ margin: 0, width: "100%" }}>
+            Catégories, produits et leurs prix, ingrédients et recettes, emballages, correspondances des factures fournisseurs. Rien de ce qui existe déjà ici n'est remplacé. Les
+            stands et les caisses restent à créer, puis à donner à chaque produit.
+          </p>
+        </form>
+      )}
+      <MessageErreur erreur={copier.error} />
+      {r && (
+        <p className="aide" style={{ margin: 0, width: "100%" }}>
+          Ajouté : {r.categories} catégorie{r.categories > 1 ? "s" : ""}, {r.produits} produit{r.produits > 1 ? "s" : ""}, {r.ingredients} ingrédient{r.ingredients > 1 ? "s" : ""},{" "}
+          {r.recettes} recette{r.recettes > 1 ? "s" : ""}, {r.emballages} emballage{r.emballages > 1 ? "s" : ""}, {r.correspondances} correspondance{r.correspondances > 1 ? "s" : ""}{" "}
+          fournisseur. Inscrit au journal du lieu.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function DirecteursDuLieu({ lieu }: { lieu: LieuParc }) {
   const client = useQueryClient();
   const [ajout, setAjout] = useState(false);
