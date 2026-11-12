@@ -23,7 +23,7 @@ les clés et mots de passe ne passent jamais par Claude.
 | # | Point | État |
 |---|---|---|
 | 11 | **Lecture des PDF scannés par IA** : le même bouton passera la facture scannée à Mistral, qui rendra la même forme de lecture que les PDF fabriqués (§15.178). Ajouter aussi les mises en page des autres fournisseurs de Rémi au fil des factures reçues. |
-| 12 | **Copier le catalogue et les correspondances d'un lieu à un autre** (même directeur) : à l'ouverture d'un nouveau lieu, aucune liaison à refaire. Proposé à Rémi le 2026-11-12. | À faire. |
+| 12 | **Changer de lieu dans l'application** : un directeur de plusieurs lieux n'accède aujourd'hui qu'au premier (la copie du catalogue se fait depuis le back-office, §15.180). | À faire. |
 | 13 | **Adresse e-mail de dépôt des factures** : transférer une facture par e-mail pour qu'elle s'importe seule. Pour l'instant : dépôt direct dans FlaiX Expert. | Plus tard. |
 | 14 | **Pilote automatique de la soirée** : files d'attente estimées au rythme des tablettes ; anticipation de la mi-temps (réassort poussé au téléphone, « Prévenir le stand ») ; mise en place calculée seule (affluence, adversaire, historique). Le net en direct est fait (§15.170). | À faire, dans cet ordre. |
 | 17 | **Passage en production** : base neuve, reprise de la seule configuration (lieu, stands, caisses, produits, catégories, tarifs, recettes, emballages, équipe, réglages), jamais les données de test. Outil de reprise à préparer et tester avant la bascule, faite avec Rémi. | À préparer. |
@@ -44,3 +44,4 @@ les clés et mots de passe ne passent jamais par Claude.
 | Audit de Codex : auteur d'une annulation, relances wallet, clôture d'un événement privé, compteur d'une caisse connectée, export en flux (migration 0060) | 2026-11-11 | §15.177 |
 | Factures PDF fabriquées par un logiciel lues sans IA : Relais d'Or, Montaner Pietrini (CDB), total contrôlé, PDF joint | 2026-11-12 | §15.178 |
 | Ligne de facture reliée à un ingrédient (prix, réserve, coût des recettes) ; à l'import, le sûr rempli et le ressemblant proposé (migration 0061) | 2026-11-12 | §15.179 |
+| Copie du catalogue entre lieux d'un même client (back-office) ; recette avec ingrédient créé sur place et marge en direct (migration 0062) | 2026-11-12 | §15.180 |

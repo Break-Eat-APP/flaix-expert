@@ -4,6 +4,11 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-11-12 : catalogue copié d'un lieu à l'autre ; composer un produit simplement (§15.180)
+
+Back-office : copier le catalogue d'un autre lieu du même client (directeur commun), sans rien écraser (migration 0062).
+Recette d'un produit : ingrédient créé sur place, marge par portion en direct, exemples du hot dog.
+
 ## 2026-11-12 : facture reliée à un ingrédient ; le sûr rempli, le reste proposé (§15.179)
 
 Une ligne de facture se relie à un produit ou à un ingrédient (saucisse, pain, fût) : à la validation, l'ingrédient entre en

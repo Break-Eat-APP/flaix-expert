@@ -5812,3 +5812,34 @@ produits L'Addition reliés, les recettes saisies et les factures validées.
 **Reste** : copier le catalogue et les correspondances d'un lieu à un autre du même directeur ; reprendre dans le compte réel
 de Rémi la liaison des 27 produits L'Addition et les recettes (hot dog, box hot dog, toppings).
 
+### 15.180 Copier le catalogue d'un lieu à l'autre ; composer un produit simplement (2026-11-12)
+
+**Contexte** : Rémi, le 2026-11-12, « ok lance » pour la copie du catalogue entre lieux, et : « Il faut que ce soit facile
+[…] lorsque tu vas faire l'addition de plusieurs ingrédients dans un produit comme le hot dog […] Il peut y avoir aussi
+des hot dogs qui sont déjà fournis avec le pain. Peut-être que d'autres achèteront que la saucisse […] il faut que ce soit
+facile d'utilisation. »
+
+**Constat** : un directeur de plusieurs lieux est toujours connecté au premier ; l'application ne permet pas de changer de
+lieu. La copie se fait donc là où les lieux s'ouvrent : le back-office FlaiX Expert.
+
+**Ce qui est fait** :
+- Migration 0062, `copier_catalogue_editeur(source, cible)` : catégories, produits et leur prix en vigueur, ingrédients et
+  recettes, emballages et conditionnement, correspondances des factures fournisseurs (vers le produit ou l'ingrédient du même
+  nom). Réservée à l'éditeur ; **seulement entre deux lieux qui ont un directeur actif en commun** (le catalogue d'un client
+  ne va jamais chez un autre) ; **rien n'est écrasé** : un élément du même nom déjà présent est gardé et sert de lien ; une
+  recette ou un conditionnement ne s'ajoute qu'à un produit qui n'en a pas. Ni stands, ni caisses, ni ventes, ni stock. Les
+  éléments copiés sont signés du directeur commun (un lieu ne voit que ses membres ; une première version signée du compte
+  éditeur rendait les prix copiés invisibles, vu au test) ; le journal du lieu (`catalogue_copie`) dit que la copie vient de
+  FlaiX Expert. Les coûts des recettes sont recalculés avec les prix du lieu rempli.
+- Back-office, fiche d'un lieu : « Copier le catalogue d'un autre lieu de ce client », qui ne propose que les lieux au
+  directeur commun, et dit ce qui a été ajouté.
+- Recette d'un produit : « Nouvel ingrédient » créé sans quitter le produit (et ajouté à la recette, quantité à dire) ;
+  **marge par portion en direct** (prix de vente HT en vigueur, ingrédients, emballages) ; aide repliable avec les trois cas
+  du hot dog : livré complet (un ingrédient), saucisse et pain à part (deux), box = hot dog + nachos.
+
+**Vérifié** : `catalogue-copie.test.ts` (3, dont [F] deux clients différents : refusé, rien de copié ; seconde copie : rien
+d'ajouté ; produit déjà présent : prix gardé, recette reçue, coût recalculé). Tests des écrans (paramètres, back-office,
+factures, achats : 17). À l'écran, en local : « Hot dog complet » créé depuis la box, coût 1,69 €, marge 81 % affichés.
+
+**Reste** : changer de lieu dans l'application pour un directeur de plusieurs lieux (aujourd'hui, le premier seulement).
+
