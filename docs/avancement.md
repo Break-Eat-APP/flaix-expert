@@ -4,6 +4,12 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-11-12 : facture reliée à un ingrédient ; le sûr rempli, le reste proposé (§15.179)
+
+Une ligne de facture se relie à un produit ou à un ingrédient (saucisse, pain, fût) : à la validation, l'ingrédient entre en
+réserve (s'il est suivi) ou prend le prix de la facture, et le coût des recettes suit (migration 0061). À l'import, seul ce
+qui est sûr est rempli ; le ressemblant est proposé, à accepter d'un clic (demande de Rémi).
+
 ## 2026-11-12 : factures PDF lues sans IA (§15.178)
 
 Le bouton de l'écran Factures accepte la facture PDF fabriquée par le logiciel du fournisseur : Relais d'Or et Montaner

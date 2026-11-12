@@ -92,6 +92,7 @@ et validation refusée sans « J'ai vérifié ») ; écrans 2 (import CSV : appr
   - [F] colonnes introuvables : dites, rien n'est lu
   - colis devinés dans un libellé ; clé d'article ; conversion à l'unité
   - alertes : total, colis oublié, prix et quantité inhabituels ; rien quand tout est normal
+  - proposition pour un article : ressemblance, sinon tous les mots du nom dans le libellé ; [F] rien d'approchant : null
 
 ## 5. Pour reprendre ou vérifier cette phase
 

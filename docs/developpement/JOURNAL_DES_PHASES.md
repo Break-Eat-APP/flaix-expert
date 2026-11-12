@@ -84,7 +84,8 @@
 | 76 | [Audit des phases 67 à 75 et corrections ; dossier de reprise à jour](#phase-76) | §15.175 | [`0ff2657`](https://github.com/Break-Eat-APP/flaix-expert/commit/0ff265774c65cdde7f72d140c99b0eaaed28b3c6) [`117a10d`](https://github.com/Break-Eat-APP/flaix-expert/commit/117a10d6b54087eba2d604665aa913c496274350) [`96c1e51`](https://github.com/Break-Eat-APP/flaix-expert/commit/96c1e51e9c1b4b2d1125ac7bf39dd48eecb80265) [`050b9bc`](https://github.com/Break-Eat-APP/flaix-expert/commit/050b9bced66b5ed084dcbcbc2b16fbab497a4114) | livrée |
 | 77 | [Audit de Codex : livraison d'une facture limitée à son lieu, dépendances corrigées](#phase-77) | §15.176 | [`dca4c8f`](https://github.com/Break-Eat-APP/flaix-expert/commit/dca4c8fd30c535d1dcda32289bf075c9fa2a8fad) [`124fd9e`](https://github.com/Break-Eat-APP/flaix-expert/commit/124fd9e039a53c32ef9d0f2374ed7871e1f95632) | livrée |
 | 78 | [Audit de Codex : durcissements (annulation, relances wallet, événement privé, compteur, export en flux)](#phase-78) | §15.177 | [`ace2a94`](https://github.com/Break-Eat-APP/flaix-expert/commit/ace2a944113b78fb7b081e8e79e6740938e1f957) [`12aef8f`](https://github.com/Break-Eat-APP/flaix-expert/commit/12aef8f05e2d22590618a05f809e335c310bde5f) [`9a30294`](https://github.com/Break-Eat-APP/flaix-expert/commit/9a30294487dc631762e53b7cd6fcdccd991f43e1) | livrée |
-| 79 | [Factures PDF fabriquées par le logiciel du fournisseur, lues sans IA (Relais d'Or, Montaner Pietrini)](#phase-79) | §15.178 | [`2d699d5`](https://github.com/Break-Eat-APP/flaix-expert/commit/2d699d5056b9c69d282c97d5ed75a928051cdbc3) [`ac2b4e5`](https://github.com/Break-Eat-APP/flaix-expert/commit/ac2b4e5bd5b992e4159e32b00ab3eecfc97c4d56) [`2e709b1`](https://github.com/Break-Eat-APP/flaix-expert/commit/2e709b18b0c93fa5dc24641bea139e2fd18913ed) [`a8c8d1f`](https://github.com/Break-Eat-APP/flaix-expert/commit/a8c8d1fb57df8a29b4fabb70bf4ba9531ac7f58d) [`74b0c36`](https://github.com/Break-Eat-APP/flaix-expert/commit/74b0c36675c86d87d9ef0cb5e37b92c6e9263baf) | livrée |
+| 79 | [Factures PDF fabriquées par le logiciel du fournisseur, lues sans IA (Relais d'Or, Montaner Pietrini)](#phase-79) | §15.178 | [`2d699d5`](https://github.com/Break-Eat-APP/flaix-expert/commit/2d699d5056b9c69d282c97d5ed75a928051cdbc3) [`ac2b4e5`](https://github.com/Break-Eat-APP/flaix-expert/commit/ac2b4e5bd5b992e4159e32b00ab3eecfc97c4d56) [`2e709b1`](https://github.com/Break-Eat-APP/flaix-expert/commit/2e709b18b0c93fa5dc24641bea139e2fd18913ed) [`a8c8d1f`](https://github.com/Break-Eat-APP/flaix-expert/commit/a8c8d1fb57df8a29b4fabb70bf4ba9531ac7f58d) [`74b0c36`](https://github.com/Break-Eat-APP/flaix-expert/commit/74b0c36675c86d87d9ef0cb5e37b92c6e9263baf) [`98bff2b`](https://github.com/Break-Eat-APP/flaix-expert/commit/98bff2bcdbfb5e717b9279dccb55b2b394816ee3) | livrée |
+| 80 | [Ligne de facture reliée à un ingrédient ; à l'import, le sûr rempli et le ressemblant proposé](#phase-80) | §15.179 | [`1d5f58f`](https://github.com/Break-Eat-APP/flaix-expert/commit/1d5f58f9e642c012849f3deb670bbeed0a3b7d1b) [`2f1a337`](https://github.com/Break-Eat-APP/flaix-expert/commit/2f1a337604ffb9f503d5b03e23015bfd262803b7) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -3224,6 +3225,7 @@
   - [`2e709b1`](https://github.com/Break-Eat-APP/flaix-expert/commit/2e709b18b0c93fa5dc24641bea139e2fd18913ed) 2026-11-12 — Dossier : factures PDF lues sans IA (§15.178, phase 79)
   - [`a8c8d1f`](https://github.com/Break-Eat-APP/flaix-expert/commit/a8c8d1fb57df8a29b4fabb70bf4ba9531ac7f58d) 2026-11-12 — Factures PDF : lot au poids compté en pièces quand le poids d'une pièce le permet ; export L'Addition : colonnes « URL » retirées avant l'envoi (§15.178, vérification réelle)
   - [`74b0c36`](https://github.com/Break-Eat-APP/flaix-expert/commit/74b0c36675c86d87d9ef0cb5e37b92c6e9263baf) 2026-11-12 — Dossier : vérification réelle des factures PDF et de l'export L'Addition (§15.178)
+  - [`98bff2b`](https://github.com/Break-Eat-APP/flaix-expert/commit/98bff2bcdbfb5e717b9279dccb55b2b394816ee3) 2026-11-12 — Dossier : vérification réelle des factures PDF et de l'export L'Addition, texte (§15.178)
 - **Moteur de calcul (packages/domain)** :
   - [`packages/domain/src/factures-pdf.ts`](../../packages/domain/src/factures-pdf.ts) — créé
   - [`packages/domain/src/index.ts`](../../packages/domain/src/index.ts) — modifié
@@ -3410,6 +3412,35 @@
   - [`docs/README.md`](../../docs/README.md) — modifié
 - **Autres** :
   - [`pnpm-lock.yaml`](../../pnpm-lock.yaml) — modifié
+
+<a id="phase-80"></a>
+## Phase 80 — Ligne de facture reliée à un ingrédient ; à l'import, le sûr rempli et le ressemblant proposé
+
+- **Dates** : 2026-11-12
+- **Décision et raisonnement** : dossier projet §15.179
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`1d5f58f`](https://github.com/Break-Eat-APP/flaix-expert/commit/1d5f58f9e642c012849f3deb670bbeed0a3b7d1b) 2026-11-12 — Factures (§15.179) : une ligne se relie à un ingrédient — livraison en réserve s'il est suivi, prix repris sinon, coûts des recettes recalculés ; correspondances apprises avec l'ingrédient ; migration 0061 (et copie en formation)
+  - [`2f1a337`](https://github.com/Break-Eat-APP/flaix-expert/commit/2f1a337604ffb9f503d5b03e23015bfd262803b7) 2026-11-12 — Factures (§15.179) : produit ou ingrédient au choix à l'écran et dans les correspondances ; seul le sûr est rempli (appris, même nom, colis du fichier), le ressemblant et le colis deviné sont proposés ; proposition par mots contenus dans le libellé
+- **Migrations (base)** :
+  - [`db/migrations/0061_facture_vers_ingredient.sql`](../../db/migrations/0061_facture_vers_ingredient.sql) — créé
+- **Moteur de calcul (packages/domain)** :
+  - [`packages/domain/src/factures-import.ts`](../../packages/domain/src/factures-import.ts) — modifié
+  - [`packages/domain/src/factures.ts`](../../packages/domain/src/factures.ts) — modifié
+  - [`packages/domain/src/journal-technique.ts`](../../packages/domain/src/journal-technique.ts) — modifié
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/factures.ts`](../../apps/api/src/routes/factures.ts) — modifié
+  - [`apps/api/src/routes/stock-ingredients.ts`](../../apps/api/src/routes/stock-ingredients.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/achats/Correspondances.tsx`](../../apps/web/src/pages/achats/Correspondances.tsx) — modifié
+  - [`apps/web/src/pages/factures/article.tsx`](../../apps/web/src/pages/factures/article.tsx) — créé
+  - [`apps/web/src/pages/factures/Factures.test.tsx`](../../apps/web/src/pages/factures/Factures.test.tsx) — modifié
+  - [`apps/web/src/pages/factures/Factures.tsx`](../../apps/web/src/pages/factures/Factures.tsx) — modifié
+- **Tests** :
+  - [`apps/api/test/facture-ingredient.test.ts`](../../apps/api/test/facture-ingredient.test.ts) — créé
+  - [`apps/api/test/facture-reserve.test.ts`](../../apps/api/test/facture-reserve.test.ts) — modifié
+  - [`apps/api/test/formation-complements.test.ts`](../../apps/api/test/formation-complements.test.ts) — modifié
+  - [`packages/domain/src/factures-import.test.ts`](../../packages/domain/src/factures-import.test.ts) — modifié
 
 ## Commits non rattachés à une phase
 
