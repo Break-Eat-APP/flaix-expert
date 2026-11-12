@@ -59,14 +59,15 @@ describe("factures PDF fabriquées par un logiciel (§15.178)", () => {
   it("Relais d'Or : fournisseur, n°, date, lignes, total ; poids compté en lot ; les lignes retombent sur le total HT", () => {
     const f = lireFacturePdf(RELAIS)!;
     expect(f).toMatchObject({ modele: "relais-d-or", fournisseur: "Relais d'Or Provence", numero: "420000001", date: "2026-10-08", totalHt: 117_168 });
-    expect(f.lignes.map((l) => [l.codeArticle, l.libelle, l.quantite, l.prixUnitaire])).toEqual([
-      ["939504", "Box hotdog maxi porc 32x160g", 18, 5_415],
-      ["970554", "Frites 9/9 bi-température", 60, 149],
-      ["939338", "Steak haché VBF bou. 8x150g (4,8 kg)", 1, 7_392],
-      ["946200", "Serviette papier blc 30x30cm x500", 9, 374],
+    expect(f.lignes.map((l) => [l.codeArticle, l.libelle, l.quantite, l.prixUnitaire, l.unitesParColis])).toEqual([
+      ["939504", "Box hotdog maxi porc 32x160g", 18, 5_415, null],
+      ["970554", "Frites 9/9 bi-température", 60, 149, null],
+      // [F] 4,8 kg de steaks de 150 g : 32 pièces, pas le « 8 » du carton.
+      ["939338", "Steak haché VBF bou. 8x150g (4,8 kg)", 1, 7_392, 32],
+      ["946200", "Serviette papier blc 30x30cm x500", 9, 374, null],
     ]);
     expect(f.lignes.reduce((s, l) => s + l.quantite * l.prixUnitaire, 0)).toBe(117_168);
-    expect(f.remarques).toEqual([expect.stringContaining("au poids")]);
+    expect(f.remarques).toEqual([expect.stringContaining("au poids — compté en un lot de 73,92 €, soit 32 pièces")]);
   });
 
   it("Montaner Pietrini (CDB) : colis, produits offerts déduits, suite de désignation, consignes écartées, frais de gestion, arrondis ; total exact", () => {

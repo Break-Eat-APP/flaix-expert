@@ -97,6 +97,16 @@ function meilleureFeuille(feuilles: readonly string[], lire: (nom: string) => st
 }
 
 /**
+ * Colonnes d'adresse (« URL Ticket » de L'Addition : le lien vers le ticket du client) retirées avant tout envoi : FlaiX
+ * Expert n'en a pas besoin et ne doit ni les garder ni les faire circuler. En-têtes cherchés dans les 20 premières lignes.
+ */
+function sansAdresses(lignes: string[][]): string[][] {
+  const retirees = new Set<number>();
+  for (const l of lignes.slice(0, 20)) l.forEach((v, i) => /^\s*url\b/i.test(v) && retirees.add(i));
+  return retirees.size ? lignes.map((l) => l.filter((_, i) => !retirees.has(i))) : lignes;
+}
+
+/**
  * Lit le fichier choisi : un CSV tel quel ; un classeur, sa feuille demandée ou la première qui contient des données.
  */
 export async function lireFichierVentes(f: File, feuille?: string): Promise<FichierLu> {
@@ -119,5 +129,5 @@ export async function lireFichierVentes(f: File, feuille?: string): Promise<Fich
   const lire = (nom: string) => lues.get(nom) ?? lues.set(nom, lignesDeLaFeuille(X, classeur.Sheets[nom]!)).get(nom)!;
   const choisie = feuille && feuilles.includes(feuille) ? feuille : (meilleureFeuille(feuilles, lire) ?? feuilles.find((n) => lire(n).length > 1) ?? feuilles[0]);
   if (!choisie) throw new Error("Ce classeur ne contient aucune feuille.");
-  return { contenu: enCsv(lire(choisie)), feuilles, feuille: choisie };
+  return { contenu: enCsv(sansAdresses(lire(choisie))), feuilles, feuille: choisie };
 }

@@ -120,8 +120,16 @@ function lireRelaisDor(lignes: readonly LignePdf[]): FacturePdfLue {
     const q = nombrePdf(qte);
     if (Number.isInteger(q) && q > 0) lues.push(ligne(e[0]!, libelle, q, montant, null, reste));
     else {
-      lues.push(ligne(e[0]!, `${libelle} (${qte.replace(/0+$/, "").replace(/,$/, "")} ${unite.toLowerCase()})`, 1, montant, null, reste));
-      remarques.push(`« ${libelle} » : ${qte} ${unite}, au poids — compté en un lot de ${(montant / 100).toFixed(2).replace(".", ",")} €.`);
+      // Au poids : un lot. Ses pièces se comptent quand le libellé donne le poids d'une pièce et que le compte tombe juste
+      // (4,8 kg de steaks « 8x150g » : 32 steaks) ; sinon 1, à corriger à la main — jamais le « 8 » du carton.
+      const piece = unite === "KG" ? /(\d+(?:,\d+)?)\s*(kg|g)\b(?!.*\d\s*(?:kg|g)\b)/i.exec(libelle) : null;
+      const grammes = piece ? Number(piece[1]!.replace(",", ".")) * (piece[2]!.toLowerCase() === "kg" ? 1000 : 1) : 0;
+      const pieces = grammes > 0 ? (q * 1000) / grammes : 0;
+      const parLot = Number.isInteger(Math.round(pieces * 1e6) / 1e6) && pieces >= 1 ? Math.round(pieces) : 1;
+      lues.push(ligne(e[0]!, `${libelle} (${qte.replace(/0+$/, "").replace(/,$/, "")} ${unite.toLowerCase()})`, 1, montant, parLot, reste));
+      remarques.push(
+        `« ${libelle} » : ${qte} ${unite}, au poids — compté en un lot de ${(montant / 100).toFixed(2).replace(".", ",")} €${parLot > 1 ? `, soit ${parLot} pièces` : " ; indique le nombre de pièces du lot"}.`,
+      );
     }
   }
   return terminer(
