@@ -5758,3 +5758,17 @@ n'a pas pu être rejoué en local : moteur Docker arrêté sur le poste.
 les produits au poids et les matières premières (steaks, fromages) entrent en réserve comme produits, pas comme
 ingrédients suivis au poids.
 
+**Suite du même jour, vérification réelle** (Rémi : « Revérifie, j'ai rallumé Docker », avec l'export L'Addition
+d'octobre des Spartiates) :
+- Parcours complet à l'écran, en local : facture PDF déposée, fournisseur, n°, date et total remplis, enregistrée sans
+  alerte, PDF joint (`fichier` présent sur la facture). Le test a montré un défaut : un lot au poids « Steak haché 8x150g,
+  4,800 KG » recevait le colis « 8 » deviné dans le libellé (8 steaks au lieu de 32). Désormais, un lot au poids compte ses
+  pièces quand le libellé donne le poids d'une pièce et que le compte tombe juste (4 800 g / 150 g = 32), sinon 1 avec une
+  remarque « indique le nombre de pièces ».
+- Export L'Addition `SalesDocumentLines` (classeur de 7 feuilles) : feuille trouvée seule, colonnes reconnues, 372 ventes,
+  1 072 articles, 6 286,30 € TTC, identiques à la feuille `ProductAnalytics` de L'Addition ; la feuille `SalesDocument`
+  compte 374 tickets, dont 2 à 0 € sans article (9 octobre). Import, puis résultats par produit, stand et heure.
+- **Colonne « URL Ticket »** : le serveur ne la gardait pas, mais le navigateur l'envoyait dans le CSV. Les colonnes dont
+  l'en-tête commence par « URL » sont maintenant retirées du classeur avant tout envoi (`sansAdresses`,
+  `apps/web/src/pages/caisses-connectees/fichiers.ts`) ; vérifié : plus aucun lien dans le contenu envoyé.
+

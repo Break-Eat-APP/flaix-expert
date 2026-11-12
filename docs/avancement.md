@@ -8,7 +8,7 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 Le bouton de l'écran Factures accepte la facture PDF fabriquée par le logiciel du fournisseur : Relais d'Or et Montaner
 Pietrini (CDB). Fournisseur, n°, date, total HT et lignes lus dans le navigateur, total contrôlé au centime, PDF joint à
-la facture. Les factures scannées attendent toujours la clé Mistral.
+la facture. Les factures scannées attendent toujours la clé Mistral. Vérifié à l'écran le jour même, avec l'export L'Addition d'octobre (372 ventes, 6 286,30 €, identique à L'Addition) ; colonne « URL Ticket » retirée avant l'envoi.
 
 ## 2026-11-11 : audit de Codex, les durcissements (§15.177)
 

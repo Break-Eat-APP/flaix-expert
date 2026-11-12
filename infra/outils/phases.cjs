@@ -82,7 +82,7 @@ const PHASES = [
   { n: 76, titre: "Audit des phases 67 à 75 et corrections ; dossier de reprise à jour", dossier: "§15.175", commits: ["0ff2657", "117a10d", "96c1e51", "050b9bc"] },
   { n: 77, titre: "Audit de Codex : livraison d'une facture limitée à son lieu, dépendances corrigées", dossier: "§15.176", commits: ["dca4c8f", "124fd9e"] },
   { n: 78, titre: "Audit de Codex : durcissements (annulation, relances wallet, événement privé, compteur, export en flux)", dossier: "§15.177", commits: ["ace2a94", "12aef8f", "9a30294"] },
-  { n: 79, titre: "Factures PDF fabriquées par le logiciel du fournisseur, lues sans IA (Relais d'Or, Montaner Pietrini)", dossier: "§15.178", commits: ["2d699d5", "ac2b4e5"] },
+  { n: 79, titre: "Factures PDF fabriquées par le logiciel du fournisseur, lues sans IA (Relais d'Or, Montaner Pietrini)", dossier: "§15.178", commits: ["2d699d5", "ac2b4e5", "2e709b1", "a8c8d1f", "74b0c36"] },
 ];
 
 module.exports = { PHASES };
