@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alertesFacture, cleArticle, colisDevine, enUnites, lireFactureExport, proposerPourArticle } from "./factures-import.ts";
+import { alertesFacture, cleArticle, colisDevine, ecartArrondiUnites, enUnites, lireFactureExport, proposerPourArticle } from "./factures-import.ts";
 
 describe("factures automatisées (§15.173)", () => {
   it("export Excel d'un grossiste : titre au-dessus, PCB, prix déduit du montant, total ignoré, ligne au poids écartée", () => {
@@ -80,5 +80,11 @@ describe("factures automatisées (§15.173)", () => {
     ]);
     // [F] Un total TTC n'est jamais pris pour le total HT.
     expect(lireFactureExport(avecTotal.replace("Total HT;;;;33,30\n", "").replace("Sous-total HT;;;;33,30\n", "")).totalHt).toBeNull();
+  });
+
+  it("écart d'arrondi d'une entrée en réserve : colis de 3 à 10,00 € → 1 centime ; colis qui se divise juste → 0 (BUG-2026-014)", () => {
+    expect(ecartArrondiUnites({ quantite: 1, prixUnitaire: 1_000, unitesParColis: 3 })).toBe(1);
+    expect(ecartArrondiUnites({ quantite: 2, prixUnitaire: 1_440, unitesParColis: 24 })).toBe(0);
+    expect(ecartArrondiUnites({ quantite: 1, prixUnitaire: 1_001, unitesParColis: 2 })).toBe(-1);
   });
 });

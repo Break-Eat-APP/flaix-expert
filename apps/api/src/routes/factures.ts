@@ -10,6 +10,7 @@ import {
   type LigneRecapFacture,
   alertesFacture,
   cleArticle,
+  ecartArrondiUnites,
   enIngredient,
   enUnites,
   normaliserFournisseur,
@@ -600,6 +601,9 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
       // Entrée en réserve (§15.172) : chaque produit de la facture sans livraison rapprochée devient une livraison, au prix
       // et à la date de la facture, puis lui est rapproché. Un produit fabriqué (avec une recette) ne se livre pas.
       const entrees: string[] = [];
+      // Écarts d'arrondi colis → unités (BUG-2026-014) : la valeur du stock entré peut différer de quelques centimes du
+      // montant de la ligne ; ils sont inscrits au journal, la facture garde le montant exact.
+      const arrondis: { ligne: string; centimes: number }[] = [];
       if (entrerEnReserve) {
         for (const l of f.lignes.filter((x) => x.produitId && !x.livraison && !x.produitFabrique)) {
           const u = enUnites(l);
@@ -617,6 +621,8 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
           });
           await c.query("UPDATE ligne_facture_fournisseur SET livraison_id = $3 WHERE lieu_id = $1 AND id = $2", [auth.lieuId, l.id, livraison]);
           entrees.push(l.libelle);
+          const ecart = ecartArrondiUnites(l);
+          if (ecart !== 0) arrondis.push({ ligne: l.libelle, centimes: ecart });
         }
         // Ingrédients achetés (§15.179) : suivi en stock, livraison (réserve, coût moyen pondéré) ; sinon, le prix de la
         // facture devient son prix. Les recettes qui l'utilisent suivent : la marge des produits vendus aussi.
@@ -664,7 +670,7 @@ export async function routesFactures(app: FastifyInstance, { base }: { base: Bas
         lieuId: auth.lieuId,
         type: "facture_validee",
         utilisateurId: auth.utilisateurId,
-        details: { facture: id, fournisseur: f.fournisseur, numero: f.numero, statut_avant: f.statut, motif, total_ht: f.totalHt, entrees_en_reserve: entrees, alertes_verifiees: alertes },
+        details: { facture: id, fournisseur: f.fournisseur, numero: f.numero, statut_avant: f.statut, motif, total_ht: f.totalHt, entrees_en_reserve: entrees, arrondis_reserve: arrondis, alertes_verifiees: alertes },
       });
       return etat(c, auth.lieuId);
     });

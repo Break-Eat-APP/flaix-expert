@@ -180,6 +180,16 @@ export function enIngredient(l: { quantite: number; prixUnitaire: Centimes; ingr
   return { quantiteMilli: l.quantite * l.ingredientMilliParUnite, prixTotal: l.quantite * l.prixUnitaire };
 }
 
+/**
+ * Écart d'arrondi d'une entrée en réserve (BUG-2026-014) : montant de la ligne de facture moins la valeur du stock entré
+ * (unités × prix unitaire arrondi). Un colis de 3 à 10,00 € entre à 3 × 3,33 € : 1 centime. La facture garde le montant
+ * exact ; l'écart est inscrit au journal de la validation.
+ */
+export function ecartArrondiUnites(l: { quantite: number; prixUnitaire: Centimes; unitesParColis: number }): Centimes {
+  const u = enUnites(l);
+  return l.quantite * l.prixUnitaire - u.quantite * u.prixUnitaire;
+}
+
 /** Ligne de facture ramenée à l'unité vendue : quantité × colis, prix ÷ colis (arrondi au centime). */
 export function enUnites(l: { quantite: number; prixUnitaire: Centimes; unitesParColis: number }): { quantite: number; prixUnitaire: Centimes } {
   const k = Math.max(1, l.unitesParColis);
