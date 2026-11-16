@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight } from "lucide-react";
+import { Download } from "lucide-react";
 import {
   estIdPeriode,
   estJour,
@@ -139,8 +139,10 @@ export function Tableaux() {
             </button>
           )}
           {!d.periode && e.etat === "clos" && (
-            <Link className="btn" to={`/rapport-soiree/${e.id}`}>
-              Rapport de soirée <ArrowUpRight size={15} />
+            // Bouton discret (Rémi, 2026-11-16) : le rapport s'ouvre et propose aussitôt de l'enregistrer en PDF ; l'onglet
+            // « Rapports de soirée » reste le chemin principal.
+            <Link className="btn btn-fantome btn-petit" to={`/rapport-soiree/${e.id}?pdf=1`} title="Ouvrir le rapport de soirée et l'enregistrer en PDF">
+              <Download size={14} /> Rapport PDF
             </Link>
           )}
         </div>
@@ -537,7 +539,7 @@ function ChoixPeriode({ periode, changer }: { periode: Periode; changer: (p: Per
         au
         <input type="date" value={au} onChange={(e) => setAu(e.target.value)} onBlur={() => valide && changer({ du, au })} aria-label="Dernier jour" />
       </label>
-      <button className="btn" disabled={!valide || (du === periode.du && au === periode.au)} onClick={() => changer({ du, au })}>
+      <button className="btn btn-fantome btn-petit" disabled={!valide || (du === periode.du && au === periode.au)} onClick={() => changer({ du, au })}>
         Voir
       </button>
       {!valide && <span className="texte-ambre">Dates à vérifier</span>}

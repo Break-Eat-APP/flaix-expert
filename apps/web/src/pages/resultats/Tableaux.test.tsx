@@ -110,7 +110,7 @@ describe("Vue d'ensemble au design de la 2e maquette (§15.174)", () => {
       </MemoryRouter>,
     );
     expect(await screen.findByText("Gap", { selector: ".bilan-de strong" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Rapport de soirée/ }).getAttribute("href")).toBe("/rapport-soiree/gap");
+    expect(screen.getByRole("link", { name: /Rapport PDF/ }).getAttribute("href")).toBe("/rapport-soiree/gap?pdf=1");
     expect(screen.getByRole("button", { name: /Comparé à Rouen/ })).toBeTruthy();
     expect(screen.getAllByText("+100 %").length).toBeGreaterThan(0); // 14,00 € contre 7,00 €
     expect(screen.getByText("Rupture : bière blonde")).toBeTruthy();

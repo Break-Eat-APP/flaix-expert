@@ -230,6 +230,7 @@ td.allergene-colonne input { width: 18px; height: 18px; accent-color: var(--viol
 .btn-lien { background: none; border: 0; color: var(--violet); font: inherit; font-weight: 700; cursor: pointer; padding: 0; }
 .btn-lien:hover { box-shadow: none; transform: none; }
 .btn-bloc { width: 100%; }
+.btn.btn-petit { padding: 7px 14px; font-size: 12.5px; gap: 6px; }
 
 .champ { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .champ > span { font-size: 12px; font-weight: 600; color: var(--muted); }

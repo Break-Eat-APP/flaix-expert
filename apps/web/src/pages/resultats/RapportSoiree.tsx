@@ -1,4 +1,5 @@
-import { Link, useParams } from "react-router";
+import { useEffect } from "react";
+import { Link, useParams, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Printer, ShieldCheck, ShieldAlert } from "lucide-react";
 import { formaterMontant, formaterPourcentage, libelleTauxTva, LIBELLE_RESTE, type Ecart, type LigneCascade, type BriefSoiree, type RapportSoireeFige } from "@flaix/domain";
@@ -20,6 +21,15 @@ const partHt = (montant: number | null, caHt: number) => (montant === null || ca
 export function RapportSoiree() {
   const { evenementId } = useParams();
   const q = useQuery({ queryKey: ["rapport-soiree", evenementId], queryFn: () => api.get<Lu>(`/rapports-soiree/${evenementId}`), retry: false });
+  // Ouvert par « Rapport PDF » (Résultats) : la fenêtre d'enregistrement en PDF s'ouvre dès que le rapport est affiché.
+  const [params, setParams] = useSearchParams();
+  const pdf = params.get("pdf") === "1";
+  useEffect(() => {
+    if (!pdf || !q.data) return;
+    setParams({}, { replace: true });
+    const minuterie = window.setTimeout(() => window.print(), 300);
+    return () => window.clearTimeout(minuterie);
+  }, [pdf, q.data, setParams]);
 
   return (
     <div className="rapport-page">

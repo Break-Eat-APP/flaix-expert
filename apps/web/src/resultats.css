@@ -7,7 +7,8 @@
 .resultats-colonne, .resultats-panneau { display: grid; gap: 16px; min-width: 0; }
 .resultats-colonne { container-type: inline-size; }
 .resultats-colonne > .carte, .resultats-panneau > .carte { margin-bottom: 0; }
-.choix-match { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+/* Libellé et liste sur la même ligne que la bascule et le bouton : tout est aligné au centre (Rémi, 2026-11-16). */
+.choix-match { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; white-space: nowrap; font-size: 12.5px; color: var(--muted); }
 .choix-match select { max-width: 300px; }
 
 /* « Ce qu'il te reste » en tête de l'accueil (§15.154) */
