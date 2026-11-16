@@ -47,5 +47,5 @@ connectées ; fidélité et cartes Wallet ; back-office.
 - Recette réelle Apple Wallet et Google Wallet (BUG-2026-017).
 - Lecteur PDF sur de vrais fichiers PDF dans les tests (BUG-2026-018) : contrôlé à la main sur les vraies factures.
 - Tests de charge (affluence d'un match) : à définir.
-- Restauration d'une sauvegarde : commande prête (`sudo flaix-admin essai-restauration-locale`), répétée sur le poste ; premier
-  passage sur le serveur à faire (MISE_EN_LIGNE.md § 4).
+- Restauration d'une sauvegarde : passée sur le serveur le 2026-11-16 (`sudo flaix-admin essai-restauration-locale`) ; à
+  refaire chaque trimestre (MISE_EN_LIGNE.md § 4).

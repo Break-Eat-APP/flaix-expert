@@ -4209,3 +4209,4 @@
 - [`f5e1a3b`](https://github.com/Break-Eat-APP/flaix-expert/commit/f5e1a3bc1273ad0b6ac9e846763629f035689358) 2026-10-24 — Dossier §15.173, avancement, phase 74
 - [`5a3a5f4`](https://github.com/Break-Eat-APP/flaix-expert/commit/5a3a5f4e860c59daae1bb171d91fc960e0f4b94f) 2026-10-24 — Points à revoir avec Rémi : liste tenue à jour (docs/points-a-revoir.md)
 - [`8b41a40`](https://github.com/Break-Eat-APP/flaix-expert/commit/8b41a400933fd6aeffd0ce0fa3d554387057636b) 2026-10-25 — Dossier §15.174, avancement, phase 75, points à revoir à jour
+- [`a01e07d`](https://github.com/Break-Eat-APP/flaix-expert/commit/a01e07df6b4ce8b59bc020996075d2a9969a4610) 2026-11-16 — Dossier : factures scannées abandonnées, essai de restauration des sauvegardes (§15.184, phase 85)

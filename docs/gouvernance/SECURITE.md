@@ -67,7 +67,7 @@ et où**, et ce qui reste à faire ; toute règle ou tout contrôle qui change l
 
 ## 9. À faire
 
-- Passer l'essai de restauration sur le serveur : `sudo flaix-admin essai-restauration-locale` (MISE_EN_LIGNE.md § 4).
+- Essai de restauration du serveur : passé le 2026-11-16 ; à refaire chaque trimestre (MISE_EN_LIGNE.md § 4).
 - Régler la copie chiffrée des sauvegardes hors serveur (`flaix-admin sauvegarde-externe`) — état à confirmer avec Rémi.
 - Décider d'un outil de suivi des erreurs (sous-traitant à déclarer).
 - Recette réelle des cartes Wallet avec les vrais comptes (BUG-2026-017).

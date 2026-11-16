@@ -7,8 +7,8 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 ## 2026-11-16 : factures scannées abandonnées ; essai de restauration des sauvegardes (§15.184)
 
 Plus de lecture des factures scannées (Mistral) : elles arrivent toujours en PDF. Nouvelle commande
-`sudo flaix-admin essai-restauration-locale` pour vérifier qu'une sauvegarde du serveur se restaure ; premier passage à
-faire par Rémi. Copie hors serveur chez OVH toujours à régler.
+`sudo flaix-admin essai-restauration-locale` : **passée sur le serveur par Rémi le jour même** (restauration en 2 s,
+tables identiques). Copie hors serveur chez OVH toujours à régler.
 
 ## 2026-11-16 : changer de lieu (§15.183)
 

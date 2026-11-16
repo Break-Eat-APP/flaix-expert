@@ -574,8 +574,8 @@ déclarer.
 Sauvegarde quotidienne de la base sur le serveur (14 jours, celle du 1er de chaque mois gardée), plus une avant chaque
 mise en ligne ; copie chiffrée hors serveur chez OVHcloud une fois réglée par Rémi (`flaix-admin sauvegarde-externe`,
 état **À confirmer**). Essai de restauration : `sudo flaix-admin essai-restauration-locale` (sauvegarde du serveur, depuis le
-2026-11-16) et `essai-restauration` (copie OVH, mécanisme essayé le 2026-09-30) ; à passer sur le serveur avant la
-production, puis chaque trimestre (`MISE_EN_LIGNE.md` § 4). Une sauvegarde
+2026-11-16) et `essai-restauration` (copie OVH, mécanisme essayé le 2026-09-30) ; essai du serveur passé le 2026-11-16 (2 s,
+tables identiques), à refaire chaque trimestre (`MISE_EN_LIGNE.md` § 4). Une sauvegarde
 non restaurée n'est pas une reprise garantie.
 
 ## 16.5 Retour arrière
@@ -802,7 +802,7 @@ valider par Rémi les règles structurantes ; mettre à jour la version et l'his
 Les règles marquées [proposée] et les points « À confirmer » attendent la validation de Rémi.
 
 **Appliquée depuis le 2026-11-12** : registres `BUGS_ET_INCIDENTS.md`, `SECURITE.md`, `TESTS.md`, `MISE_EN_LIGNE.md` et
-`.env.example` créés. **Reste à faire** : passer l'essai de restauration sur le serveur ; décider de la règle de mise en ligne en
+`.env.example` créés. **Reste à faire** : régler la copie des sauvegardes hors serveur ; décider de la règle de mise en ligne en
 production, du serveur de test séparé et de l'outil de suivi des erreurs.
 
 ---

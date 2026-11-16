@@ -47,6 +47,12 @@ une panne du disque du serveur les emporterait toutes.
 **Mise en ligne et retour arrière** : sauvegarde puis mise en ligne (installe le nouvel outil) ; retour arrière = commit
 précédent.
 
+**Suite du même jour** : Rémi a lancé l'essai sur le serveur
+(`ssh -t … "sudo flaix-admin essai-restauration-locale"`) : sauvegarde `flaix-20261116-1221.dump` (2,9 Mo) restaurée en
+**2 s** ; `schema_migrations` 63, `lieu` 3, `utilisateur` 4, `produit` 38, `evenement` 4, `journal_caisse` 18, `ligne_ticket`
+56, `journal_technique` 196, `cloture_periode` 3, `facture_fournisseur` 0, `stock_mouvement` 20 — identiques à la base en
+service. Premier essai réel réussi ; à refaire chaque trimestre. Reste la copie hors serveur.
+
 ## 2. Ce qui a été construit — commits
 
 - [`284edd8`](https://github.com/Break-Eat-APP/flaix-expert/commit/284edd88911e2eb36ced490d0f1cfdfef135d356) — 2026-11-16 — Serveur : « flaix-admin essai-restauration-locale » restaure la dernière sauvegarde du serveur dans une base temporaire, compare et mesure la durée (§15.184)
