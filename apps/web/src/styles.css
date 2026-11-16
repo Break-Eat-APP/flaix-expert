@@ -491,7 +491,7 @@ input[aria-invalid="true"] { border-color: var(--red); }
 }
 /* Sections d'un module (Rémi, 2026-11-16) : la barre est violette, en couleur inverse de la page, pour que l'œil la
    reconnaisse comme un menu ; la section choisie est la seule en blanc, texte violet. */
-.onglets { display: flex; width: fit-content; max-width: 100%; gap: 4px; margin-bottom: 18px; flex-wrap: wrap; padding: 5px; border-radius: 26px; background: var(--violet); box-shadow: var(--ombre-violet); }
+.onglets { display: flex; width: fit-content; max-width: 100%; gap: 4px; margin-bottom: 22px; flex-wrap: wrap; padding: 5px; border-radius: 26px; background: var(--violet); box-shadow: var(--ombre-violet); }
 .onglet { padding: 9px 18px; border-radius: 999px; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; border: 0; background: transparent; color: rgba(255, 255, 255, 0.86); transition: background 0.15s ease, color 0.15s ease; }
 .onglet:hover { color: #fff; background: rgba(255, 255, 255, 0.14); }
 .onglet:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }

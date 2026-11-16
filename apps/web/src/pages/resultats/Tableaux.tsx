@@ -95,7 +95,8 @@ export function Tableaux() {
   return (
     <>
       <BilanDe d={d} />
-      <div className="en-ligne" style={{ justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+      {/* La barre violette et la ligne de choix respirent (Rémi, 2026-11-16) : 18 px entre elles, 20 px dessous. */}
+      <div className="en-ligne" style={{ justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: "18px 10px" }}>
         <div className="onglets" style={{ marginBottom: 0 }}>
           {vues.map(([id, libelle]) => (
             <button key={id} className={`onglet${vue === id ? " actif" : ""}`} onClick={() => setVue(id)}>
