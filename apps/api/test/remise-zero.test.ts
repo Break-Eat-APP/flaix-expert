@@ -69,12 +69,17 @@ describe("remise à zéro du stock", () => {
     expect(await soldeReserve()).toBe(80);
     expect((await appel("POST", "/api/stock/remise-a-zero", { motif: "abc" })).statut).toBe(400);
 
+    // Un produit jamais compté et sans mouvement (solde 0) : la remise le compte aussi à 0 (§15.186).
+    const eau = (await appel<Produit[]>("POST", "/api/produits", { nom: "Eau", prixTtc: 200, tauxTva: 550, coutMatiere: 30 })).corps.find((x) => x.nom === "Eau")!;
+    expect((await appel<EtatReserve>("GET", "/api/stock/reserve")).corps.produits.find((x) => x.produitId === eau.id)!.inventaire).toBeNull();
     const r = await appel<{ produits: number }>("POST", "/api/stock/remise-a-zero", { motif: "Essais de septembre" });
     expect(r.statut).toBe(200);
-    expect(r.corps.produits).toBe(1);
+    expect(r.corps.produits).toBe(2);
+    expect((await appel<EtatReserve>("GET", "/api/stock/reserve")).corps.produits.find((x) => x.produitId === eau.id)!.inventaire).toMatchObject({ compte: 0 });
     expect((await ligneStock(prochain)).reste).toBe(0);
     expect(await soldeReserve()).toBe(0);
-    expect((await jet()).find((e) => e.type === "stock_remis_a_zero")!.details).toMatchObject({ motif: "Essais de septembre", reserveProduits: { Frites: 80 } });
+    // Le journal garde ce qui a été effacé (seuls les soldes non nuls) et le nombre de produits comptés à 0.
+    expect((await jet()).find((e) => e.type === "stock_remis_a_zero")!.details).toMatchObject({ motif: "Essais de septembre", reserveProduits: { Frites: 80 }, produitsComptesA0: 2 });
     const p = (await appel<Produit[]>("GET", "/api/produits")).corps.find((x) => x.id === frites.id)!;
     expect(p.tarifEnVigueur!.prixTtc).toBe(500);
   });

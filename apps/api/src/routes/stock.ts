@@ -474,9 +474,10 @@ export async function routesStock(app: FastifyInstance, { base }: { base: Base }
       if ((await listerEvenements(c, auth.lieuId)).some((e) => e.etat === "ouvert"))
         throw new ErreurMetier(409, "Un événement est ouvert : clôture-le avant de remettre le stock à zéro.");
       const { rows } = await c.query<{ le: Date }>("INSERT INTO stock_remise_zero (lieu_id, motif, par) VALUES ($1, $2, $3) RETURNING le", [auth.lieuId, motif, auth.utilisateurId]);
-      // Réserve : un inventaire à 0 pour chaque produit et ingrédient qui y a un solde.
-      const produits = (await reserveParProduit(c, auth.lieuId)).filter((r) => r.solde !== 0);
-      const ingredients = (await reserveParIngredient(c, auth.lieuId)).filter((r) => r.solde !== 0);
+      // Réserve : un inventaire à 0 pour TOUS les produits actifs et ingrédients suivis, même ceux déjà à 0 : après la
+      // remise, aucun ne reste « jamais compté » (§15.186). Le journal garde ce qui a été effacé (soldes non nuls).
+      const produits = await reserveParProduit(c, auth.lieuId);
+      const ingredients = await reserveParIngredient(c, auth.lieuId);
       if (produits.length || ingredients.length) {
         const { rows: inv } = await c.query<{ id: string }>("INSERT INTO inventaire_reserve (lieu_id, date_inventaire, par) VALUES ($1, $2, $3) RETURNING id", [
           auth.lieuId,
@@ -497,7 +498,13 @@ export async function routesStock(app: FastifyInstance, { base }: { base: Base }
         lieuId: auth.lieuId,
         type: "stock_remis_a_zero",
         utilisateurId: auth.utilisateurId,
-        details: { motif, reserveProduits: Object.fromEntries(produits.map((r) => [r.nom, r.solde])), reserveIngredients: Object.fromEntries(ingredients.map((r) => [r.nom, r.solde])) },
+        details: {
+          motif,
+          reserveProduits: Object.fromEntries(produits.filter((r) => r.solde !== 0).map((r) => [r.nom, r.solde])),
+          reserveIngredients: Object.fromEntries(ingredients.filter((r) => r.solde !== 0).map((r) => [r.nom, r.solde])),
+          produitsComptesA0: produits.length,
+          ingredientsComptesA0: ingredients.length,
+        },
       });
       return { le: rows[0]!.le.toISOString(), produits: produits.length, ingredients: ingredients.length };
     });

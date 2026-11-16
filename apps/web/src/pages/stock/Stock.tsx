@@ -599,7 +599,7 @@ function Reserve() {
                   <td>
                     <strong>{p.nom}</strong>
                   </td>
-                  <td className="d chiffre">{p.inventaire ? `${p.inventaire.compte} au ${new Date(p.inventaire.date).toLocaleDateString("fr-FR")}` : <span className="discret">non déclaré</span>}</td>
+                  <td className="d chiffre">{p.inventaire ? `${p.inventaire.compte} au ${new Date(p.inventaire.date).toLocaleDateString("fr-FR")}` : <span className="discret" title="Ce produit n'a jamais été compté dans la réserve : son stock part de 0. Fais un inventaire de la réserve pour donner son stock de départ.">jamais compté</span>}</td>
                   <td className="d chiffre">{p.livreDepuis}</td>
                   <td className="d chiffre">{p.sortiDepuis}</td>
                   <td className="d chiffre" style={p.solde < 0 ? { color: "var(--red)" } : undefined}>

@@ -34,7 +34,7 @@ describe("remettre le stock à zéro", () => {
     fireEvent.change(screen.getByLabelText(/Motif/), { target: { value: "Essais du 23 septembre" } });
     fireEvent.click(bouton);
     expect(await screen.findByText("Stock remis à zéro")).toBeTruthy();
-    expect(screen.getByText(/la réserve est à 0 \(3 produits, 1 ingrédient\)/)).toBeTruthy();
+    expect(screen.getByText(/la réserve est comptée à 0 pour 3 produits et 1 ingrédient/)).toBeTruthy();
     const [url, init] = serveur.mock.calls[0]! as unknown as [string, RequestInit];
     expect(url).toBe("/api/stock/remise-a-zero");
     expect(JSON.parse(init.body as string)).toEqual({ motif: "Essais du 23 septembre" });

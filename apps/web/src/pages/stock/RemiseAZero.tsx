@@ -25,8 +25,8 @@ export function RemiseAZero({ fermer }: { fermer: () => void }) {
         <p style={{ margin: "0 0 12px" }}>
           Les stands repartent de 0 au prochain événement
           {remettre.data.produits + remettre.data.ingredients > 0
-            ? `, et la réserve est à 0 (${remettre.data.produits} produit${remettre.data.produits > 1 ? "s" : ""}${remettre.data.ingredients ? `, ${remettre.data.ingredients} ingrédient${remettre.data.ingredients > 1 ? "s" : ""}` : ""}).`
-            : " ; la réserve était déjà vide."}{" "}
+            ? `, et la réserve est comptée à 0 pour ${remettre.data.produits} produit${remettre.data.produits > 1 ? "s" : ""}${remettre.data.ingredients ? ` et ${remettre.data.ingredients} ingrédient${remettre.data.ingredients > 1 ? "s" : ""}` : ""}.`
+            : " ; il n'y a encore aucun produit à compter."}{" "}
           Tu peux saisir ta mise en place et tes livraisons.
         </p>
         <button className="btn btn-fantome" onClick={fermer}>
