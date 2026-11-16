@@ -48,3 +48,4 @@ les clés et mots de passe ne passent jamais par Claude.
 | Lecture des factures scannées par IA (Mistral) **abandonnée** : les factures arrivent toujours en PDF fabriqué par le logiciel du fournisseur (décision de Rémi) | 2026-11-16 | §15.184 |
 | Essai de restauration de la sauvegarde du serveur : commande prête | 2026-11-16 | §15.184 |
 | Essai de restauration de la sauvegarde du serveur passé (2 s, tables identiques) | 2026-11-16 | §15.184 |
+| Résultats : barre de choix alignée, « Rapport PDF » discret avec icône de téléchargement | 2026-11-16 | §15.185 |

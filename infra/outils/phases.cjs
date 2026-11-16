@@ -88,7 +88,8 @@ const PHASES = [
   { n: 82, titre: "Gouvernance appliquée (registres) ; audit de Codex du 2026-11-12 corrigé", dossier: "§15.181", commits: ["c4c1540", "d9483cf", "d54be5a", "f25f529", "04780c0", "a7d63d0", "387f2a6"] },
   { n: 83, titre: "Deux règles validées (réserve à la validation, arrondi tracé) ; barre des sections en violet", dossier: "§15.182", commits: ["45e297e", "a67af9f"] },
   { n: 84, titre: "Changer de lieu depuis le menu (directeur de plusieurs lieux)", dossier: "§15.183", commits: ["e43f0c7", "cd035c8"] },
-  { n: 85, titre: "Factures scannées abandonnées ; essai de restauration des sauvegardes du serveur", dossier: "§15.184", commits: ["284edd8"] },
+  { n: 85, titre: "Factures scannées abandonnées ; essai de restauration des sauvegardes du serveur", dossier: "§15.184", commits: ["284edd8", "a01e07d", "bf55b35"] },
+  { n: 86, titre: "Résultats : barre de choix alignée, « Rapport PDF » discret", dossier: "§15.185", commits: ["fe7bef8"] },
 ];
 
 module.exports = { PHASES };

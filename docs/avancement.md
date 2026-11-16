@@ -4,6 +4,11 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-11-16 : Résultats, barre de choix alignée et « Rapport PDF » discret (§15.185)
+
+Bascule, liste de l'événement et bouton alignés ; le gros bouton violet devient « Rapport PDF », discret, avec une icône de
+téléchargement, qui ouvre le rapport et propose aussitôt de l'enregistrer en PDF.
+
 ## 2026-11-16 : factures scannées abandonnées ; essai de restauration des sauvegardes (§15.184)
 
 Plus de lecture des factures scannées (Mistral) : elles arrivent toujours en PDF. Nouvelle commande

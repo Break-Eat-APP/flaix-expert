@@ -5991,3 +5991,34 @@ précédent.
 56, `journal_technique` 196, `cloture_periode` 3, `facture_fournisseur` 0, `stock_mouvement` 20 — identiques à la base en
 service. Premier essai réel réussi ; à refaire chaque trimestre. Reste la copie hors serveur.
 
+### 15.185 Résultats : barre de choix alignée, « Rapport PDF » discret (2026-11-16)
+
+**Contexte** : Rémi, capture à l'appui (Résultats : « Un événement / Une période », liste « Événement », bouton « Rapport de
+soirée ↗ ») : « peux-tu m'aligner correctement les CTA et le gros CTA violet rapport de soirée me dérange visuellement : il se
+fond avec la barre violette et puis doublon avec rapport de soirée dans le menu ; faudrait lui donner une couleur plus soft
+et le dimensionner plus petit, et à la place de la flèche mettre une icône de téléchargement ».
+
+**Ce qui est fait** :
+- `apps/web/src/resultats.css` : le libellé « Événement » et sa liste restent sur une ligne (`.choix-match`, plus de retour à
+  la ligne) : bascule, liste et bouton ont le même centre vertical.
+- `apps/web/src/pages/resultats/Tableaux.tsx` : le bouton devient « Rapport PDF », discret (`btn btn-fantome btn-petit`,
+  blanc bordé, texte violet), icône de téléchargement ; il ouvre le rapport avec `?pdf=1`. Même style pour le bouton de la
+  période. Nouvelle classe `.btn-petit` (`styles.css`).
+- `apps/web/src/pages/resultats/RapportSoiree.tsx` : ouvert avec `?pdf=1`, le rapport lance l'enregistrement en PDF dès
+  qu'il est affiché (fenêtre « Imprimer / Enregistrer en PDF » du navigateur), puis retire le paramètre. L'onglet
+  « Rapports de soirée » reste le chemin principal.
+
+**Vérifié** :
+
+| Test | Commande | Résultat |
+|---|---|---|
+| Écrans de Résultats | `vitest run src/pages/resultats` (écran) | 20 réussis (lien « Rapport PDF » vers `/rapport-soiree/<id>?pdf=1`) |
+| Types | `tsc --noEmit` (écran) | sans erreur |
+| Alignement | application locale, vraies feuilles de style : centre vertical de la bascule, de la liste et du bouton | 162 px pour les trois |
+
+**Risques restants** : aucun (écran seul). L'ouverture automatique de la fenêtre PDF dépend du navigateur (elle peut être
+bloquée ; le bouton « Imprimer ou enregistrer en PDF » du rapport reste là).
+
+**Mise en ligne et retour arrière** : sauvegarde puis mise en ligne sur le serveur de test ; retour arrière = commit
+précédent.
+
