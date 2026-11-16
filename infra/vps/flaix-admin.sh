@@ -5,6 +5,7 @@
 #   flaix-admin creer-editeur         crée un compte FlaiX Expert pour le back-office (supervision, §15.116)
 #   flaix-admin sauvegarde-externe    règle la copie chiffrée des sauvegardes chez OVHcloud (dossier §15.108)
 #   flaix-admin essai-restauration    restaure la dernière copie OVH dans une base temporaire et la compare
+#   flaix-admin essai-restauration-locale  restaure la dernière sauvegarde du serveur dans une base temporaire et la compare (§15.184)
 #   flaix-admin cle-mistral           règle (ou retire) la clé de l'API Mistral de l'assistant IA (dossier §15.136)
 #   flaix-admin cle-ovh-ia            règle (ou retire) le jeton OVHcloud AI Endpoints, moteur de l'assistant IA (dossier §15.137, §15.145)
 #   flaix-admin cle-brevo             règle (ou retire) la clé Brevo et l'adresse d'expédition des e-mails (dossier §15.146)
@@ -132,6 +133,38 @@ ENV
     echo "La base temporaire va être supprimée."
     ;;
 
+  essai-restauration-locale)
+    # Gouvernance § 16.4 : une sauvegarde non restaurée n'est pas une reprise garantie. La dernière sauvegarde du serveur
+    # est restaurée dans une base temporaire, comparée à la base en service, puis supprimée. La base en service n'est pas
+    # touchée.
+    DERNIER="$(ls -1t /var/backups/flaix/flaix-*.dump 2>/dev/null | head -1)"
+    [ -n "$DERNIER" ] || { echo "Aucune sauvegarde trouvée dans /var/backups/flaix."; exit 1; }
+    echo "Sauvegarde essayée : $(basename "$DERNIER") ($(du -h "$DERNIER" | cut -f1), du $(date -r "$DERNIER" '+%d/%m/%Y à %H:%M'))"
+    TMP="$(mktemp -d)"
+    ESSAI=flaix_essai_restauration
+    trap 'rm -rf "$TMP"; sudo -u postgres dropdb --if-exists "$ESSAI" >/dev/null 2>&1 || true' EXIT
+    cp "$DERNIER" "$TMP/copie.dump"
+    chmod 755 "$TMP" && chmod 644 "$TMP/copie.dump"
+    DEBUT=$(date +%s)
+    sudo -u postgres dropdb --if-exists "$ESSAI" >/dev/null 2>&1
+    sudo -u postgres createdb "$ESSAI"
+    if ! sudo -u postgres pg_restore --no-owner --no-privileges --exit-on-error -d "$ESSAI" "$TMP/copie.dump"; then
+      echo
+      echo "ÉCHEC : la sauvegarde ne se restaure pas entièrement. Préviens Claude avec ce message."
+      exit 1
+    fi
+    DUREE=$(( $(date +%s) - DEBUT ))
+    echo
+    printf '%-24s %12s %12s\n' "Table" "Sauvegarde" "En service"
+    for t in schema_migrations lieu utilisateur produit evenement journal_caisse ligne_ticket journal_technique cloture_periode facture_fournisseur stock_mouvement; do
+      a="$(sudo -u postgres psql -d "$ESSAI" -tAc "SELECT count(*) FROM $t" 2>/dev/null || echo '-')"
+      b="$(sudo -u postgres psql -d flaix -tAc "SELECT count(*) FROM $t" 2>/dev/null || echo '-')"
+      printf '%-24s %12s %12s\n' "$t" "$a" "$b"
+    done
+    echo
+    echo "Restauration réussie en ${DUREE} s : la sauvegarde du serveur se relit entièrement. (Des écarts sont normaux si des ventes ou des réglages ont eu lieu depuis la sauvegarde.)"
+    echo "La base temporaire va être supprimée."
+    ;;
   cle-mistral)
     # Clé de l'API Mistral : assistant et brief reformulé (dossier §15.136). Tapée par Rémi, jamais affichée.
     echo "Clé de l'API Mistral (assistant IA de FlaiX Expert)."
@@ -373,7 +406,7 @@ JS
     ;;
 
   *)
-    echo "Usage : flaix-admin creer-lieu | nouveau-mot-de-passe | creer-editeur | sauvegarde-externe | essai-restauration | cle-mistral | cle-ovh-ia | cle-brevo | wallet-apple-demande | wallet-apple-certificat | wallet-google | wallet-retirer"
+    echo "Usage : flaix-admin creer-lieu | nouveau-mot-de-passe | creer-editeur | sauvegarde-externe | essai-restauration | essai-restauration-locale | cle-mistral | cle-ovh-ia | cle-brevo | wallet-apple-demande | wallet-apple-certificat | wallet-google | wallet-retirer"
     exit 1
     ;;
 esac
