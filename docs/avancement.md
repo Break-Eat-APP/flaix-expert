@@ -4,6 +4,11 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-11-16 : changer de lieu (§15.183)
+
+Un directeur de plusieurs lieux passe de l'un à l'autre depuis le menu (« Changer de lieu ») ; la session est fermée et
+rouverte dans le lieu choisi, inscrit au journal des deux lieux.
+
 ## 2026-11-16 : deux règles validées ; barre des sections en violet (§15.182)
 
 Rémi valide : la réserve ne bouge qu'à la validation de la facture ; l'écart d'arrondi colis → unités est accepté et

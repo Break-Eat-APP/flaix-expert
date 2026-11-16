@@ -86,7 +86,8 @@ const PHASES = [
   { n: 80, titre: "Ligne de facture reliée à un ingrédient ; à l'import, le sûr rempli et le ressemblant proposé", dossier: "§15.179", commits: ["1d5f58f", "2f1a337", "9d2b38b"] },
   { n: 81, titre: "Catalogue copié d'un lieu à l'autre du même client ; composer un produit simplement", dossier: "§15.180", commits: ["2ed8cbc", "e550426", "76b440c"] },
   { n: 82, titre: "Gouvernance appliquée (registres) ; audit de Codex du 2026-11-12 corrigé", dossier: "§15.181", commits: ["c4c1540", "d9483cf", "d54be5a", "f25f529", "04780c0", "a7d63d0", "387f2a6"] },
-  { n: 83, titre: "Deux règles validées (réserve à la validation, arrondi tracé) ; barre des sections en violet", dossier: "§15.182", commits: ["45e297e"] },
+  { n: 83, titre: "Deux règles validées (réserve à la validation, arrondi tracé) ; barre des sections en violet", dossier: "§15.182", commits: ["45e297e", "a67af9f"] },
+  { n: 84, titre: "Changer de lieu depuis le menu (directeur de plusieurs lieux)", dossier: "§15.183", commits: ["e43f0c7"] },
 ];
 
 module.exports = { PHASES };

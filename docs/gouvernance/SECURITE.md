@@ -20,6 +20,9 @@ et où**, et ce qui reste à faire ; toute règle ou tout contrôle qui change l
 - Caissières : code personnel, sur une tablette enregistrée par le directeur.
 - Back-office éditeur : comptes et cookie séparés de l'application des lieux ; ne voit ni montant, ni ticket, ni salarié.
 - Support (niveau 2) : seulement sur autorisation datée du lieu, en lecture.
+- Changer de lieu (§15.183) : seulement vers un lieu où le compte est membre actif ; la session est fermée et une
+  nouvelle ouverte (une session ne change jamais de lieu) ; inscrit au journal des deux lieux. Test :
+  `changement-lieu.test.ts`.
 
 ## 3. Points d'entrée du serveur
 
