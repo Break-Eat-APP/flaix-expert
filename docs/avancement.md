@@ -4,6 +4,11 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-11-16 : deux règles validées ; barre des sections en violet (§15.182)
+
+Rémi valide : la réserve ne bouge qu'à la validation de la facture ; l'écart d'arrondi colis → unités est accepté et
+tracé. Toutes les barres de sections des modules passent en violet, la section choisie en blanc.
+
 ## 2026-11-12 : gouvernance appliquée ; audit de Codex du 2026-11-12 corrigé (§15.181)
 
 Registres créés (bugs et incidents, sécurité, tests, mise en ligne, `.env.example`). Corrigés : total HT des fichiers Excel,

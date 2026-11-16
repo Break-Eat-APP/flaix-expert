@@ -5883,3 +5883,35 @@ ne bouge qu'à la validation de la facture (case « entrer en réserve »), pas 
 fonction, aucune donnée touchée) ; retour arrière = remettre le commit précédent, la fonction de 0063 reste (sans effet sur
 les données).
 
+### 15.182 Deux règles validées ; barre des sections en violet (2026-11-16)
+
+**Contexte** : Rémi, le 2026-11-16, sur les deux règles laissées ouvertes au §15.181 : « je valide ». Et, captures d'écran à
+l'appui (Équipe, Résultats, Stock) : « pour chaque module […] lorsque tu présentes des sections, elles soient plutôt de
+couleur inverse aux couleurs de la page, c'est-à-dire que la barre du menu du module soit de couleur violette et lorsque tu
+cliques dessus, ça soit une autre couleur […] Ça permet à l'œil de faire une différence entre sur quelle page je suis,
+qu'est-ce qui est le menu. »
+
+**Ce qui est fait** :
+- Règles écrites dans la gouvernance (§ 11.3) : la réserve ne bouge qu'à la validation de la facture (case « entrer en
+  réserve »), jamais au dépôt ; l'écart d'arrondi colis → unités (quelques centimes) est accepté et inscrit au journal.
+  BUG-2026-014 passe ACCEPTÉ ; suivi de l'audit Codex à jour.
+- `apps/web/src/styles.css`, classes `.onglets` et `.onglet` (toutes les barres de sections : Stock, Résultats, Équipe,
+  Achats, Caisses, Caisses connectées, Clôtures… 12 écrans) : barre violette (`--violet`, ombre violette), sections en blanc,
+  la section choisie en blanc avec texte violet (couleur inverse de la barre) ; survol plus clair ; contour blanc au
+  clavier. La page reste claire : seule la barre du menu est en couleur.
+
+**Vérifié** :
+
+| Test | Commande | Résultat |
+|---|---|---|
+| Écrans avec barres de sections | `vitest run src/pages/<stock, achats, factures, caisses-connectees>` (écran) | 3 + 1 + 2 + 9 réussis |
+| Rendu | page de l'application (style réel) avec deux barres, capture | barre `rgb(77, 4, 244)`, section choisie blanche |
+
+Contrôle sur une page connectée non fait : Docker arrêté sur le poste (pas de base locale) ; rendu vérifié avec la vraie
+feuille de style.
+
+**Risques restants** : aucun sur les données ; à regarder par Rémi sur téléphone (barre qui passe sur deux lignes).
+
+**Mise en ligne et retour arrière** : sauvegarde puis mise en ligne sur le serveur de test ; retour arrière = commit
+précédent (style seul, aucune migration).
+

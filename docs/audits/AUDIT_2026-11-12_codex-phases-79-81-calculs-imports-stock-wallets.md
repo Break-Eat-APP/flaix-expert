@@ -237,7 +237,7 @@ Ajouté par Claude après le rapport (le texte de l'audit ci-dessus n'est pas mo
 |---|---|---|---|
 | P2-1 total HT Excel/CSV | BUG-2026-012 | Corrigé le 2026-11-12 | `f25f529` |
 | P2-2 feuille du classeur | BUG-2026-013 | Corrigé le 2026-11-12 | `f25f529` |
-| P2-3 arrondi colis → unités | BUG-2026-014 | Écart calculé et tracé au journal ; règle à valider par Rémi | `04780c0` |
+| P2-3 arrondi colis → unités | BUG-2026-014 | Écart calculé et tracé au journal ; règle validée par Rémi le 2026-11-16 | `04780c0` |
 | P2-4 bornes des ingrédients | BUG-2026-015 | Corrigé le 2026-11-12 | `d54be5a` |
 | P2-5 avoir CDB | BUG-2026-016 | Corrigé : refusé avec la raison | `d54be5a` |
 | P2-6 recette Wallet réelle | BUG-2026-017 | Ouvert : avec Rémi | — |
@@ -246,5 +246,6 @@ Ajouté par Claude après le rapport (le texte de l'audit ci-dessus n'est pas mo
 | P3-3 compteur de recettes | BUG-2026-020 | Corrigé, migration 0063 | `d54be5a` |
 
 Question métier soulevée (§ 2) : la réserve ne se met à jour qu'à la **validation** de la facture, case « entrer en réserve »
-cochée — c'est voulu (éviter une double entrée quand la livraison a déjà été saisie) ; à confirmer par Rémi comme règle.
+cochée — c'est voulu (éviter une double entrée quand la livraison a déjà été saisie) ; **règle validée par Rémi le
+2026-11-16**, écrite dans la gouvernance (§ 11.3).
 

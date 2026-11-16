@@ -411,7 +411,10 @@ Ces règles sont prioritaires : elles concernent le cœur de la caisse et sa con
 
 - **Stock** : chaque mouvement est tracé ; le coût moyen pondéré se recalcule à chaque livraison.
 - **Factures fournisseurs** : à l'import, seul ce qui est sûr est rempli, le reste est proposé ; le total des lignes est
-  contrôlé contre le total imprimé ; une facture validée est figée.
+  contrôlé contre le total imprimé ; une facture validée est figée. **La réserve ne bouge qu'à la validation** de la
+  facture, case « entrer en réserve » cochée, jamais au simple dépôt (une livraison déjà saisie n'est pas comptée deux
+  fois) ; un colis entre en réserve au prix unitaire arrondi au centime, l'écart de quelques centimes avec le montant de la
+  ligne est inscrit au journal (règles validées par Rémi le 2026-11-16).
 - **Caisses connectées** (L'Addition…) : un import se retire en entier s'il est faux ; **la colonne « URL Ticket » n'est
   jamais gardée, répétée ni envoyée**.
 - **Fidélité et cartes Wallet** : chaque mouvement de points est tracé (vente, ajustement avec commentaire) ; quand

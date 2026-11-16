@@ -25,7 +25,7 @@ dossier projet ; ils ne sont pas renumérotés ici.
 | BUG-2026-011 | Copie de catalogue : prix copiés invisibles (signés du compte éditeur) | SEV-2 | VÉRIFIÉ | Test avant mise en ligne, 2026-11-12 | `2ed8cbc`, migration 0062 (§15.180) |
 | BUG-2026-012 | Import Excel/CSV de facture : total HT non lu, donc non contrôlé | SEV-2 | CORRIGÉ | Audit Codex 2026-11-12, P2-1 | `f25f529` (§15.181) |
 | BUG-2026-013 | Import Excel de facture : feuille choisie avec les règles des ventes de caisse | SEV-2 | CORRIGÉ | Audit Codex 2026-11-12, P2-2 | `f25f529` (§15.181) |
-| BUG-2026-014 | Entrée en réserve d'un colis : prix unitaire arrondi, valeur du stock ≠ montant de la ligne | SEV-3 | CORRIGÉ (écart tracé ; règle à valider par Rémi) | Audit Codex 2026-11-12, P2-3 | `04780c0` (§15.181) |
+| BUG-2026-014 | Entrée en réserve d'un colis : prix unitaire arrondi, valeur du stock ≠ montant de la ligne | SEV-3 | ACCEPTÉ (écart tracé, règle validée par Rémi le 2026-11-16) | Audit Codex 2026-11-12, P2-3 | `04780c0` (§15.181, §15.182) |
 | BUG-2026-015 | Ligne de facture → ingrédient : quantités et montants extrêmes non bornés avant la réserve | SEV-3 | CORRIGÉ | Audit Codex 2026-11-12, P2-4 | `d54be5a` (§15.181) |
 | BUG-2026-016 | Lecteur PDF Montaner Pietrini : un avoir (ligne négative) lu comme une ligne à zéro | SEV-2 | CORRIGÉ | Audit Codex 2026-11-12, P2-5 | `d54be5a` (§15.181) |
 | BUG-2026-017 | Cartes Wallet : recette réelle Apple et Google non faite | SEV-2 | OUVERT | Audits Codex 2026-10-26 (P2-3) et 2026-11-12 (P2-6) | Recette avec Rémi (points à revoir n° 10) |
@@ -89,8 +89,8 @@ dossier projet ; ils ne sont pas renumérotés ici.
 - Constat : un colis de 3 à 10,00 € entre en réserve à 3 × 3,33 € ; la valeur du stock perd 1 centime.
 - Correction retenue : la facture garde le montant exact ; l'écart de chaque ligne (`ecartArrondiUnites`) est inscrit au
   journal de la validation (`arrondis_reserve`). Un seul mouvement de stock par ligne est gardé, car le rapprochement
-  facture ↔ livraison compare une ligne à une livraison. **À valider par Rémi** : écart de quelques centimes accepté et
-  tracé, ou deux mouvements par ligne (refonte du rapprochement). Test : `factures-import.test.ts`.
+  facture ↔ livraison compare une ligne à une livraison. **Validé par Rémi le 2026-11-16** : écart de quelques centimes
+  accepté et tracé (statut ACCEPTÉ). Test : `factures-import.test.ts`.
 
 ### BUG-2026-015 — Bornes des lignes d'ingrédient
 - Correction : refus à la saisie (quantité × contenu ≤ 10⁹ millièmes, montant ≤ 1 000 000 €), et garde-fou lisible à la
