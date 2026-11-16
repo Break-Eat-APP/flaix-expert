@@ -10,6 +10,13 @@ import type { OuvertureCaisse } from "./caisse-auto.ts";
 
 export type Role = "directeur" | "operateur" | "verificateur" | "support";
 
+/** Un lieu où le compte peut travailler (§15.183) : membre actif, hors caissière et hors lieu de formation. */
+export interface LieuDuCompte {
+  id: string;
+  nom: string;
+  role: Role;
+}
+
 export interface SessionInfo {
   /** E-mail absent pour une caissière, qui se connecte avec un code (dossier §15.100). */
   utilisateur: { id: string; nom: string; email: string | null };

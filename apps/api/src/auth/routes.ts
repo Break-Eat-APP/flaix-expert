@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { FastifyReply } from "fastify";
-import { refusMotDePasse, type AccueilTablette, type Role, type SessionInfo } from "@flaix/domain";
+import { refusMotDePasse, type AccueilTablette, type LieuDuCompte, type Role, type SessionInfo } from "@flaix/domain";
 import { changerLieu, type Base } from "../base.ts";
 import { config } from "../config.ts";
 import { ErreurMetier } from "../erreurs.ts";
@@ -53,6 +53,23 @@ export function infoSession(
     formation: a.formation,
     support: a.role === "support" && a.supportJusqua ? { jusqua: a.supportJusqua } : null,
   };
+}
+
+/**
+ * Lieux où le compte peut travailler (§15.183) : membre actif, sauf comme caissière (elle se connecte par code sur une
+ * tablette) et sauf les lieux de formation (on y entre depuis le vrai lieu). Ses propres fiches de membre sont visibles
+ * de partout ; le nom de chaque lieu est lu dans ce lieu.
+ */
+export async function lieuxDuCompte(base: Base, utilisateurId: string): Promise<LieuDuCompte[]> {
+  const { rows } = await base.transaction({ utilisateurId }, (c) =>
+    c.query<{ lieu_id: string; role: Role }>(
+      `SELECT lieu_id, role FROM membre
+        WHERE utilisateur_id = $1 AND actif AND role <> 'operateur' AND NOT est_lieu_formation(lieu_id)
+        ORDER BY (role = 'directeur') DESC, cree_le`,
+      [utilisateurId],
+    ),
+  );
+  return Promise.all(rows.map(async (m) => ({ id: m.lieu_id, nom: await nomDuLieu(base, m.lieu_id, utilisateurId), role: m.role })));
 }
 
 export function poserCookieSession(rep: FastifyReply, jeton: string, expire: Date) {
@@ -285,6 +302,45 @@ export async function routesAuth(app: FastifyInstance, { base }: { base: Base })
       );
     },
   );
+
+  // ---------- Changer de lieu (§15.183) : un directeur de plusieurs lieux passe de l'un à l'autre ----------
+  app.get("/api/auth/lieux", async (req): Promise<LieuDuCompte[]> => {
+    const auth = exigerSession(req);
+    // Caissière sur sa tablette, support FlaiX Expert, mode formation : on reste dans le lieu de la session.
+    if (auth.appareilId || auth.role === "support" || auth.formation) return [];
+    return lieuxDuCompte(base, auth.utilisateurId);
+  });
+
+  app.post("/api/auth/lieu", async (req, rep): Promise<SessionInfo> => {
+    const auth = exigerSession(req);
+    if (auth.appareilId || auth.role === "support") throw new ErreurMetier(403, "Cette session ne change pas de lieu.");
+    if (auth.formation) throw new ErreurMetier(409, "Quitte d'abord le mode formation.");
+    const { lieuId } = z.object({ lieuId: z.string().uuid() }).parse(req.body);
+    const lieux = await lieuxDuCompte(base, auth.utilisateurId);
+    const cible = lieux.find((l) => l.id === lieuId);
+    // Même réponse pour un lieu inconnu ou un lieu dont on n'est pas (ou plus) membre : rien n'est révélé.
+    if (!cible) throw new ErreurMetier(404, "Lieu introuvable.");
+    if (lieuId === auth.lieuId) return infoSession(auth, cible.nom);
+    const depuis = lieux.find((l) => l.id === auth.lieuId)?.nom ?? null;
+    // Une session ne change jamais de lieu : l'actuelle est fermée, une nouvelle est ouverte dans le lieu choisi.
+    const { jeton, empreinte } = nouveauJetonSession();
+    const expire = new Date(Date.now() + config.dureeSessionHeures * 3_600_000);
+    await base.transaction({ lieuId: auth.lieuId, utilisateurId: auth.utilisateurId }, async (c) => {
+      await c.query("UPDATE session SET revoquee_le = now() WHERE jeton_hash = $1", [auth.jetonEmpreinte]);
+      await inscrireJet(c, { lieuId: auth.lieuId, type: "changement_lieu", utilisateurId: auth.utilisateurId, details: { vers: cible.nom } });
+      await c.query("INSERT INTO session (jeton_hash, utilisateur_id, lieu_id, role, expire_le) VALUES ($1, $2, $3, $4, $5)", [
+        empreinte,
+        auth.utilisateurId,
+        cible.id,
+        cible.role,
+        expire,
+      ]);
+      await changerLieu(c, cible.id);
+      await inscrireJet(c, { lieuId: cible.id, type: "connexion", utilisateurId: auth.utilisateurId, details: { role: cible.role, depuis } });
+    });
+    poserCookieSession(rep, jeton, expire);
+    return infoSession({ ...auth, lieuId: cible.id, role: cible.role, formation: false, appareilId: null, appareilCaisseId: null }, cible.nom);
+  });
 
   app.get("/api/auth/session", async (req): Promise<SessionInfo> => {
     const auth = exigerSession(req);

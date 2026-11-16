@@ -10,6 +10,7 @@ export const TYPES_JET = {
   catalogue_copie: "Catalogue copié d'un autre lieu du même client (FlaiX Expert)",
   lieu_identite_modifiee: "Identité du lieu modifiée",
   connexion: "Connexion",
+  changement_lieu: "Changement de lieu (le directeur passe dans un autre de ses lieux)",
   connexion_refusee: "Connexion refusée (mot de passe ou code erroné)",
   deconnexion: "Déconnexion",
   mot_de_passe_modifie: "Mot de passe modifié",

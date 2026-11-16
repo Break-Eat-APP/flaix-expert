@@ -81,6 +81,21 @@ export function useBasculeFormation() {
   });
 }
 
+/**
+ * Changer de lieu (§15.183) : le serveur ferme la session et en ouvre une dans le lieu choisi ; tout ce qui était affiché
+ * appartient à l'ancien lieu et est oublié.
+ */
+export function useChangementLieu() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (lieuId: string) => api.post<SessionInfo>("/auth/lieu", { lieuId }),
+    onSuccess: (s) => {
+      client.setQueryData(["session"], s);
+      client.removeQueries({ predicate: (q) => q.queryKey[0] !== "session" });
+    },
+  });
+}
+
 /** Options du lieu activées par FlaiX Expert (§15.118) ; toutes actives tant qu'elles ne sont pas lues. */
 export function useOptions(): OptionsLieu {
   const q = useQuery({ queryKey: ["options"], queryFn: () => api.get<OptionsLieu>("/lieu/options"), staleTime: 60_000 });

@@ -1,10 +1,10 @@
 import { Suspense, useEffect, useState, type ComponentType } from "react";
-import { NavLink, Outlet, useLocation } from "react-router";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Cable, ChartLine, FileText, Heart, KeyRound, Lock, LogOut, Menu, Package, Radio, Receipt, ShieldCheck, SlidersHorizontal, Sparkles, Users, Wheat, Wine, X } from "lucide-react";
-import type { OptionLieu, OptionsLieu, SessionInfo, Stand } from "@flaix/domain";
+import type { LieuDuCompte, OptionLieu, OptionsLieu, SessionInfo, Stand } from "@flaix/domain";
 import { api } from "../api.ts";
-import { useDeconnexion, useOptions } from "../session.tsx";
+import { useChangementLieu, useDeconnexion, useOptions } from "../session.tsx";
 import { BandeauFormation } from "./Formation.tsx";
 import { Logo } from "./Logo.tsx";
 import { Chargement } from "./communs.tsx";
@@ -54,6 +54,15 @@ export function Coquille({ session }: { session: SessionInfo }) {
   const evenements = useQuery({ queryKey: ["evenements"], queryFn: () => api.get<{ etat: string }[]>("/evenements"), enabled: session.role === "directeur" || session.role === "support" });
   const enCours = evenements.data?.some((e) => e.etat === "ouvert") ?? false;
   const stands = useQuery({ queryKey: ["stands"], queryFn: () => api.get<Stand[]>("/stands"), enabled: session.role === "directeur" || session.role === "support" });
+  // Lieux du compte (§15.183) : le choix n'apparaît que pour un directeur de plusieurs lieux, hors mode formation.
+  const lieux = useQuery({
+    queryKey: ["lieux-du-compte"],
+    queryFn: () => api.get<LieuDuCompte[]>("/auth/lieux"),
+    enabled: session.role === "directeur" && !session.formation && !session.appareil,
+  });
+  const autresLieux = Array.isArray(lieux.data) && lieux.data.length > 1 ? lieux.data : null;
+  const changerLieu = useChangementLieu();
+  const naviguer = useNavigate();
 
   useEffect(() => setMobileVisible(false), [pathname]);
 
@@ -90,6 +99,30 @@ export function Coquille({ session }: { session: SessionInfo }) {
               : "…"}
           </small>
         </NavLink>
+        {autresLieux && (
+          <label className="changer-lieu">
+            <span>Changer de lieu</span>
+            <select
+              value={session.lieu.id}
+              disabled={changerLieu.isPending}
+              onChange={(ev) =>
+                changerLieu.mutate(ev.target.value, {
+                  onSuccess: () => {
+                    setMobileVisible(false);
+                    void naviguer("/");
+                  },
+                })
+              }
+              aria-label="Changer de lieu"
+            >
+              {autresLieux.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.nom}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <nav className="nav" aria-label="Menu principal">
           {menuDuLieu(options).map((entree) => {

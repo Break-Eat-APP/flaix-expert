@@ -75,6 +75,9 @@ a { color: var(--violet); }
 .lieu-actif { padding: 12px 14px; border-radius: 18px; background: var(--violet-soft); }
 .lieu-actif strong { display: block; color: var(--ink); font-size: 13px; }
 .lieu-actif small { color: var(--muted); font-size: 11.5px; }
+/* Changer de lieu (§15.183), sous le lieu actif, pour un directeur de plusieurs lieux. */
+.changer-lieu { display: flex; flex-direction: column; gap: 4px; margin: 8px 2px 0; font-size: 11.5px; color: var(--muted); font-weight: 600; }
+.changer-lieu select { width: 100%; font-size: 13px; }
 .nav { display: flex; flex-direction: column; gap: 4px; }
 .nav-section, .nav-module {
   display: flex; align-items: center; gap: 10px; width: 100%;
