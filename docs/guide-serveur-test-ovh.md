@@ -73,7 +73,7 @@ Pourquoi : aujourd'hui les sauvegardes restent sur le serveur. S'il est perdu, e
 5. OVH te demande de lier un **utilisateur S3** : crée-en un nouveau, avec les droits **lecture et écriture**. OVH affiche sa **clé d'accès** et sa **clé secrète** : garde la page ouverte. **Ne me les envoie pas.**
 6. Sur la page du conteneur, OVH affiche son adresse, du type `https://s3.gra.io.cloud.ovh.net` : le mot entre `s3.` et `.io` est la **région** (ici `gra`).
 
-Coût : les sauvegardes font aujourd'hui 0,3 Mo chacune ; le prix exact est affiché par OVH à la création (quelques centimes par mois à ce volume).
+Coût : une sauvegarde fait 2,9 Mo (le 2026-11-16) ; le prix exact est affiché par OVH à la création (quelques centimes par mois à ce volume).
 
 **2. Le régler sur le serveur (dans ton terminal)**
 1. Se connecter au serveur : `ssh -i ~/.ssh/flaix_ovh debian@146.59.154.196`
