@@ -92,6 +92,7 @@
 | 84 | [Changer de lieu depuis le menu (directeur de plusieurs lieux)](#phase-84) | §15.183 | [`e43f0c7`](https://github.com/Break-Eat-APP/flaix-expert/commit/e43f0c75e7797a0e2cc28f71542cca6220bf4f55) [`cd035c8`](https://github.com/Break-Eat-APP/flaix-expert/commit/cd035c8702d250f7272903132d98626428389ff4) | livrée |
 | 85 | [Factures scannées abandonnées ; essai de restauration des sauvegardes du serveur](#phase-85) | §15.184 | [`284edd8`](https://github.com/Break-Eat-APP/flaix-expert/commit/284edd88911e2eb36ced490d0f1cfdfef135d356) [`a01e07d`](https://github.com/Break-Eat-APP/flaix-expert/commit/a01e07df6b4ce8b59bc020996075d2a9969a4610) [`bf55b35`](https://github.com/Break-Eat-APP/flaix-expert/commit/bf55b35509fb532400a92d26a3214298dee056b8) | livrée |
 | 86 | [Résultats : barre de choix alignée, « Rapport PDF » discret](#phase-86) | §15.185 | [`fe7bef8`](https://github.com/Break-Eat-APP/flaix-expert/commit/fe7bef8119689f31ff45d2af1dc61bc1bfce572f) [`f209acf`](https://github.com/Break-Eat-APP/flaix-expert/commit/f209acfd878f74cbec9180bb43e7a7afec1192d7) | livrée |
+| 87 | [Remise à zéro de la réserve : tout compté à 0 ; « jamais compté »](#phase-87) | §15.186 | [`295423c`](https://github.com/Break-Eat-APP/flaix-expert/commit/295423ca78ee4a95572cdd64c0ed204a30fc325d) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -4276,6 +4277,23 @@
   - [`apps/web/src/resultats.css`](../../apps/web/src/resultats.css) — modifié
   - [`apps/web/src/styles.css`](../../apps/web/src/styles.css) — modifié
 
+<a id="phase-87"></a>
+## Phase 87 — Remise à zéro de la réserve : tout compté à 0 ; « jamais compté »
+
+- **Dates** : 2026-11-16
+- **Décision et raisonnement** : dossier projet §15.186
+- **État** : livrée (tests au vert au moment du commit)
+- **Commits** :
+  - [`295423c`](https://github.com/Break-Eat-APP/flaix-expert/commit/295423ca78ee4a95572cdd64c0ed204a30fc325d) 2026-11-16 — Stock : la remise à zéro compte à 0 tous les produits et ingrédients suivis, même déjà à 0 ; « non déclaré » devient « jamais compté », avec une explication (§15.186)
+- **Serveur (apps/api)** :
+  - [`apps/api/src/routes/stock.ts`](../../apps/api/src/routes/stock.ts) — modifié
+- **Écrans (apps/web)** :
+  - [`apps/web/src/pages/stock/RemiseAZero.test.tsx`](../../apps/web/src/pages/stock/RemiseAZero.test.tsx) — modifié
+  - [`apps/web/src/pages/stock/RemiseAZero.tsx`](../../apps/web/src/pages/stock/RemiseAZero.tsx) — modifié
+  - [`apps/web/src/pages/stock/Stock.tsx`](../../apps/web/src/pages/stock/Stock.tsx) — modifié
+- **Tests** :
+  - [`apps/api/test/remise-zero.test.ts`](../../apps/api/test/remise-zero.test.ts) — modifié
+
 ## Commits non rattachés à une phase
 
 - [`c2c517e`](https://github.com/Break-Eat-APP/flaix-expert/commit/c2c517e5fc91cf8a5e5e26b19a1b8601121c9b65) 2026-10-04 — Journal et dossiers de phase régénérés
@@ -4338,3 +4356,4 @@
 - [`4d808dd`](https://github.com/Break-Eat-APP/flaix-expert/commit/4d808dd8f0b90aabbc3733c7b411a7202dcd8f66) 2026-11-16 — Guide serveur : taille actuelle d'une sauvegarde
 - [`ca8dbfb`](https://github.com/Break-Eat-APP/flaix-expert/commit/ca8dbfbf8dce8271dc01779ece904f7e3908cfe6) 2026-11-16 — Dossier : Résultats, barre de choix et « Rapport PDF » (§15.185, phase 86)
 - [`210fa29`](https://github.com/Break-Eat-APP/flaix-expert/commit/210fa29e791809fa221af5984c68a0470d82419e) 2026-11-16 — Points à revoir : copie des sauvegardes hors serveur reportée par Rémi
+- [`5891727`](https://github.com/Break-Eat-APP/flaix-expert/commit/589172728402ab4bd85253e9c9fa966582687065) 2026-11-16 — Dossier : espace sous la barre violette (§15.185)

@@ -49,3 +49,4 @@ les clés et mots de passe ne passent jamais par Claude.
 | Essai de restauration de la sauvegarde du serveur : commande prête | 2026-11-16 | §15.184 |
 | Essai de restauration de la sauvegarde du serveur passé (2 s, tables identiques) | 2026-11-16 | §15.184 |
 | Résultats : barre de choix alignée, « Rapport PDF » discret avec icône de téléchargement | 2026-11-16 | §15.185 |
+| Remise à zéro de la réserve : tout compté à 0 ; « non déclaré » devient « jamais compté » | 2026-11-16 | §15.186 |

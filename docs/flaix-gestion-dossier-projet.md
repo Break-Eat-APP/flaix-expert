@@ -6027,3 +6027,35 @@ sous la barre menu violette ». Espace sous toute barre de sections porté de 18
 Résultats, 18 px entre la barre violette et la ligne de choix (10 avant), 20 px sous la ligne de choix (`Tableaux.tsx`).
 Vérifié : `vitest run src/pages/resultats` (20 réussis) ; écart mesuré dans l'application locale : 18 px. Commit `f209acf`.
 
+### 15.186 Remise à zéro de la réserve : tout est compté à 0 ; « jamais compté » (2026-11-16)
+
+**Contexte** : Rémi, capture de la réserve centrale (Hot-dog « non déclaré », 200 livrés, 200 sortis) : « ça veut dire quoi
+non déclaré ? », puis « est-ce que, dans la version test, c'est possible d'avoir un bouton qui remet la réserve centrale à
+zéro ? ». Le bouton existe (Stock › Remettre à zéro, §15.165), mais il ne comptait à 0 que les produits **au solde non nul** :
+un produit déjà à 0 jamais compté restait « non déclaré » après la remise. Proposé, puis Rémi : « oui fais-le ».
+
+**Ce qui est fait** :
+- `apps/api/src/routes/stock.ts`, `POST /api/stock/remise-a-zero` : l'inventaire à 0 porte sur **tous** les produits actifs et
+  ingrédients suivis, même déjà à 0. Le journal (`stock_remis_a_zero`) garde ce qui a été effacé (soldes non nuls) et ajoute
+  le nombre d'articles comptés à 0. Le reste ne change pas (motif obligatoire, refus si un événement est ouvert, rien
+  d'effacé, produits et tarifs intacts).
+- Écran Stock, réserve centrale : « non déclaré » devient **« jamais compté »**, avec une bulle : « Ce produit n'a jamais été
+  compté dans la réserve : son stock part de 0. Fais un inventaire de la réserve pour donner son stock de départ. »
+- Écran de confirmation de la remise : « la réserve est comptée à 0 pour N produits et M ingrédients ».
+
+**Vérifié** :
+
+| Test | Commande | Résultat |
+|---|---|---|
+| Remise à zéro (serveur) | `vitest run test/remise-zero.test.ts --pool=forks --maxWorkers=1` | 5 réussis : un produit jamais compté et à 0 est compté à 0 ; journal (Frites 80, 2 comptés) |
+| Stock, ingrédients (serveur) | `vitest run test/stock.test.ts`, `test/stock-ingredients.test.ts` | 11 + 11 réussis |
+| Écrans du stock | `vitest run src/pages/stock` | 3 réussis (message de confirmation mis à jour) |
+| Types | `tsc --noEmit` (serveur, écran) | sans erreur |
+
+À l'écran, en local : deux produits jamais comptés à 0 → après la remise, « 0 au 16/11/2026 » ; un produit ajouté ensuite →
+« jamais compté », bulle d'explication.
+
+**Risques restants** : aucun sur les données (un inventaire de plus, daté et journalisé).
+
+**Mise en ligne et retour arrière** : sauvegarde puis mise en ligne ; retour arrière = commit précédent.
+

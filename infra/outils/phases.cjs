@@ -90,6 +90,7 @@ const PHASES = [
   { n: 84, titre: "Changer de lieu depuis le menu (directeur de plusieurs lieux)", dossier: "§15.183", commits: ["e43f0c7", "cd035c8"] },
   { n: 85, titre: "Factures scannées abandonnées ; essai de restauration des sauvegardes du serveur", dossier: "§15.184", commits: ["284edd8", "a01e07d", "bf55b35"] },
   { n: 86, titre: "Résultats : barre de choix alignée, « Rapport PDF » discret", dossier: "§15.185", commits: ["fe7bef8", "f209acf"] },
+  { n: 87, titre: "Remise à zéro de la réserve : tout compté à 0 ; « jamais compté »", dossier: "§15.186", commits: ["295423c"] },
 ];
 
 module.exports = { PHASES };

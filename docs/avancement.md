@@ -4,6 +4,11 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-11-16 : remise à zéro de la réserve, tout compté à 0 ; « jamais compté » (§15.186)
+
+La remise à zéro compte à 0 tous les produits et ingrédients suivis, même déjà à 0 ; « non déclaré » devient « jamais
+compté », avec une explication.
+
 ## 2026-11-16 : Résultats, barre de choix alignée et « Rapport PDF » discret (§15.185)
 
 Bascule, liste de l'événement et bouton alignés ; le gros bouton violet devient « Rapport PDF », discret, avec une icône de
