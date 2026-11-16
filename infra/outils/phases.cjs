@@ -89,7 +89,7 @@ const PHASES = [
   { n: 83, titre: "Deux règles validées (réserve à la validation, arrondi tracé) ; barre des sections en violet", dossier: "§15.182", commits: ["45e297e", "a67af9f"] },
   { n: 84, titre: "Changer de lieu depuis le menu (directeur de plusieurs lieux)", dossier: "§15.183", commits: ["e43f0c7", "cd035c8"] },
   { n: 85, titre: "Factures scannées abandonnées ; essai de restauration des sauvegardes du serveur", dossier: "§15.184", commits: ["284edd8", "a01e07d", "bf55b35"] },
-  { n: 86, titre: "Résultats : barre de choix alignée, « Rapport PDF » discret", dossier: "§15.185", commits: ["fe7bef8"] },
+  { n: 86, titre: "Résultats : barre de choix alignée, « Rapport PDF » discret", dossier: "§15.185", commits: ["fe7bef8", "f209acf"] },
 ];
 
 module.exports = { PHASES };

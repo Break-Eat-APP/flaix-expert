@@ -7,7 +7,7 @@
 | Dates | 2026-11-16 |
 | Décision | dossier projet §15.185 |
 | État | livrée, tests au vert au moment du commit |
-| Commits | 1 |
+| Commits | 2 |
 
 ## 1. Ce qui a été décidé, et pourquoi
 
@@ -42,19 +42,25 @@ bloquée ; le bouton « Imprimer ou enregistrer en PDF » du rapport reste là).
 **Mise en ligne et retour arrière** : sauvegarde puis mise en ligne sur le serveur de test ; retour arrière = commit
 précédent.
 
+**Suite du même jour** : Rémi, capture à l'appui : « laisse un peu plus respirer les barres entre elles, laisse de l'espace
+sous la barre menu violette ». Espace sous toute barre de sections porté de 18 à 22 px (`styles.css`, `.onglets`) ; dans
+Résultats, 18 px entre la barre violette et la ligne de choix (10 avant), 20 px sous la ligne de choix (`Tableaux.tsx`).
+Vérifié : `vitest run src/pages/resultats` (20 réussis) ; écart mesuré dans l'application locale : 18 px. Commit `f209acf`.
+
 ## 2. Ce qui a été construit — commits
 
 - [`fe7bef8`](https://github.com/Break-Eat-APP/flaix-expert/commit/fe7bef8119689f31ff45d2af1dc61bc1bfce572f) — 2026-11-16 — Résultats : bascule, liste et bouton alignés ; « Rapport PDF » discret avec icône de téléchargement, qui ouvre le rapport et propose l'enregistrement en PDF (§15.185)
+- [`f209acf`](https://github.com/Break-Eat-APP/flaix-expert/commit/f209acfd878f74cbec9180bb43e7a7afec1192d7) — 2026-11-16 — Écrans : plus d'espace sous la barre violette des sections (22 px) ; Résultats : 18 px entre la barre et la ligne de choix (§15.185)
 
 ## 3. Fichiers, par couche
 
 ### Écrans (apps/web)
 
-- `apps/web/src/pages/resultats/RapportSoiree.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/fe7bef8119689f31ff45d2af1dc61bc1bfce572f/apps/web/src/pages/resultats/RapportSoiree.tsx)
-- `apps/web/src/pages/resultats/Tableaux.test.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/fe7bef8119689f31ff45d2af1dc61bc1bfce572f/apps/web/src/pages/resultats/Tableaux.test.tsx)
-- `apps/web/src/pages/resultats/Tableaux.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/fe7bef8119689f31ff45d2af1dc61bc1bfce572f/apps/web/src/pages/resultats/Tableaux.tsx)
-- `apps/web/src/resultats.css` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/fe7bef8119689f31ff45d2af1dc61bc1bfce572f/apps/web/src/resultats.css)
-- `apps/web/src/styles.css` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/fe7bef8119689f31ff45d2af1dc61bc1bfce572f/apps/web/src/styles.css)
+- `apps/web/src/pages/resultats/RapportSoiree.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/f209acfd878f74cbec9180bb43e7a7afec1192d7/apps/web/src/pages/resultats/RapportSoiree.tsx)
+- `apps/web/src/pages/resultats/Tableaux.test.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/f209acfd878f74cbec9180bb43e7a7afec1192d7/apps/web/src/pages/resultats/Tableaux.test.tsx)
+- `apps/web/src/pages/resultats/Tableaux.tsx` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/f209acfd878f74cbec9180bb43e7a7afec1192d7/apps/web/src/pages/resultats/Tableaux.tsx)
+- `apps/web/src/resultats.css` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/f209acfd878f74cbec9180bb43e7a7afec1192d7/apps/web/src/resultats.css)
+- `apps/web/src/styles.css` — modifié — [voir sur GitHub](https://github.com/Break-Eat-APP/flaix-expert/blob/f209acfd878f74cbec9180bb43e7a7afec1192d7/apps/web/src/styles.css)
 
 ## 4. Tests créés dans cette phase
 

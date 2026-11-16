@@ -6022,3 +6022,8 @@ bloquée ; le bouton « Imprimer ou enregistrer en PDF » du rapport reste là).
 **Mise en ligne et retour arrière** : sauvegarde puis mise en ligne sur le serveur de test ; retour arrière = commit
 précédent.
 
+**Suite du même jour** : Rémi, capture à l'appui : « laisse un peu plus respirer les barres entre elles, laisse de l'espace
+sous la barre menu violette ». Espace sous toute barre de sections porté de 18 à 22 px (`styles.css`, `.onglets`) ; dans
+Résultats, 18 px entre la barre violette et la ligne de choix (10 avant), 20 px sous la ligne de choix (`Tableaux.tsx`).
+Vérifié : `vitest run src/pages/resultats` (20 réussis) ; écart mesuré dans l'application locale : 18 px. Commit `f209acf`.
+

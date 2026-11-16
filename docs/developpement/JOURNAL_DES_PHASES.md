@@ -91,7 +91,7 @@
 | 83 | [Deux règles validées (réserve à la validation, arrondi tracé) ; barre des sections en violet](#phase-83) | §15.182 | [`45e297e`](https://github.com/Break-Eat-APP/flaix-expert/commit/45e297ed6482b6809bafc8cd79fa6c1288616dd2) [`a67af9f`](https://github.com/Break-Eat-APP/flaix-expert/commit/a67af9f74c704f617bf29ed25548d11ba7ec4769) | livrée |
 | 84 | [Changer de lieu depuis le menu (directeur de plusieurs lieux)](#phase-84) | §15.183 | [`e43f0c7`](https://github.com/Break-Eat-APP/flaix-expert/commit/e43f0c75e7797a0e2cc28f71542cca6220bf4f55) [`cd035c8`](https://github.com/Break-Eat-APP/flaix-expert/commit/cd035c8702d250f7272903132d98626428389ff4) | livrée |
 | 85 | [Factures scannées abandonnées ; essai de restauration des sauvegardes du serveur](#phase-85) | §15.184 | [`284edd8`](https://github.com/Break-Eat-APP/flaix-expert/commit/284edd88911e2eb36ced490d0f1cfdfef135d356) [`a01e07d`](https://github.com/Break-Eat-APP/flaix-expert/commit/a01e07df6b4ce8b59bc020996075d2a9969a4610) [`bf55b35`](https://github.com/Break-Eat-APP/flaix-expert/commit/bf55b35509fb532400a92d26a3214298dee056b8) | livrée |
-| 86 | [Résultats : barre de choix alignée, « Rapport PDF » discret](#phase-86) | §15.185 | [`fe7bef8`](https://github.com/Break-Eat-APP/flaix-expert/commit/fe7bef8119689f31ff45d2af1dc61bc1bfce572f) | livrée |
+| 86 | [Résultats : barre de choix alignée, « Rapport PDF » discret](#phase-86) | §15.185 | [`fe7bef8`](https://github.com/Break-Eat-APP/flaix-expert/commit/fe7bef8119689f31ff45d2af1dc61bc1bfce572f) [`f209acf`](https://github.com/Break-Eat-APP/flaix-expert/commit/f209acfd878f74cbec9180bb43e7a7afec1192d7) | livrée |
 
 <a id="phase-0"></a>
 ## Phase 0 — Socle de production et configuration d'un lieu vide
@@ -4268,6 +4268,7 @@
 - **État** : livrée (tests au vert au moment du commit)
 - **Commits** :
   - [`fe7bef8`](https://github.com/Break-Eat-APP/flaix-expert/commit/fe7bef8119689f31ff45d2af1dc61bc1bfce572f) 2026-11-16 — Résultats : bascule, liste et bouton alignés ; « Rapport PDF » discret avec icône de téléchargement, qui ouvre le rapport et propose l'enregistrement en PDF (§15.185)
+  - [`f209acf`](https://github.com/Break-Eat-APP/flaix-expert/commit/f209acfd878f74cbec9180bb43e7a7afec1192d7) 2026-11-16 — Écrans : plus d'espace sous la barre violette des sections (22 px) ; Résultats : 18 px entre la barre et la ligne de choix (§15.185)
 - **Écrans (apps/web)** :
   - [`apps/web/src/pages/resultats/RapportSoiree.tsx`](../../apps/web/src/pages/resultats/RapportSoiree.tsx) — modifié
   - [`apps/web/src/pages/resultats/Tableaux.test.tsx`](../../apps/web/src/pages/resultats/Tableaux.test.tsx) — modifié
@@ -4335,3 +4336,5 @@
 - [`5a3a5f4`](https://github.com/Break-Eat-APP/flaix-expert/commit/5a3a5f4e860c59daae1bb171d91fc960e0f4b94f) 2026-10-24 — Points à revoir avec Rémi : liste tenue à jour (docs/points-a-revoir.md)
 - [`8b41a40`](https://github.com/Break-Eat-APP/flaix-expert/commit/8b41a400933fd6aeffd0ce0fa3d554387057636b) 2026-10-25 — Dossier §15.174, avancement, phase 75, points à revoir à jour
 - [`4d808dd`](https://github.com/Break-Eat-APP/flaix-expert/commit/4d808dd8f0b90aabbc3733c7b411a7202dcd8f66) 2026-11-16 — Guide serveur : taille actuelle d'une sauvegarde
+- [`ca8dbfb`](https://github.com/Break-Eat-APP/flaix-expert/commit/ca8dbfbf8dce8271dc01779ece904f7e3908cfe6) 2026-11-16 — Dossier : Résultats, barre de choix et « Rapport PDF » (§15.185, phase 86)
+- [`210fa29`](https://github.com/Break-Eat-APP/flaix-expert/commit/210fa29e791809fa221af5984c68a0470d82419e) 2026-11-16 — Points à revoir : copie des sauvegardes hors serveur reportée par Rémi
