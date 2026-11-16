@@ -8,21 +8,19 @@ les clés et mots de passe ne passent jamais par Claude.
 
 | # | Point | Ce qu'il faut faire | Réf. |
 |---|---|---|---|
-| 1 | **Lecture des factures scannées par IA (Mistral OCR)** | Les PDF fabriqués par un logiciel se lisent déjà sans IA (Relais d'Or, Montaner Pietrini, §15.178). Restent les factures **scannées ou photographiées** et les autres mises en page : créer le compte sur console.mistral.ai, offre payante « Scale », clé `flaix-expert-serveur` installée par Rémi (`sudo flaix-admin cle-mistral`). Envoyer une facture scannée d'exemple. | §15.173, §15.178 |
 | 2 | **Google Wallet en mode démo** | Pay & Wallet Console : « Configurer des comptes de test » (son Gmail) ; dans FlaiX Expert, enregistrer le design de la carte, créer le lien d'un abonné de test et l'ouvrir sur Android → « Google Wallet » (crée la classe — ne pas la créer à la main dans la console) ; compléter la fiche d'établissement ; puis « Demander l'accès en publication ». | §15.147 |
 | 3 | **Export réel de l'application Break Eat (Click & Collect)** | Envoyer un vrai export pour vérifier que les colonnes sont reconnues (caisse connectée « Click & Collect (application Break Eat) »). Plus tard : liaison directe avec l'application (touche au projet Break Eat : seulement avec l'accord de Rémi). | §15.171 |
 | 5 | **Premier export pour le comptable** | Faire un export réel (Achats › Factures › Pour le comptable) et ouvrir une facture de vente en PDF : la mise en page n'a pas pu être vue à l'écran pendant le développement. | §15.172 |
 | 6 | **Notifications sur les téléphones** | Sur chaque téléphone de directeur : Paramètres › Notifications › « Activer sur cet appareil » ; sur iPhone, ajouter d'abord FlaiX Expert à l'écran d'accueil (Safari › Partager) et l'ouvrir par son icône. | §15.140 |
 | 7 | **Stand gris dans le lieu en 3D (ventes par L'Addition)** | Décider : passer un stand en vert dès qu'il a des ventes dans le fichier importé (aujourd'hui gris faute de caisse FlaiX Expert ouverte). | §15.162 |
 | 8 | **Assistant IA** | Activer l'option « Assistant IA » d'un lieu ; la clé Mistral du point 1 peut servir aussi à l'assistant. Clé OVHcloud IA : toujours non installée. | §15.136 |
-| 9 | **Sauvegardes hors du serveur** | Vérifier que la copie chiffrée des sauvegardes chez OVH est réglée (`sudo flaix-admin sauvegarde-externe`). | guide serveur |
+| 9 | **Sauvegardes : essai de restauration et copie hors serveur** | (1) Lancer `sudo flaix-admin essai-restauration-locale` sur le serveur et envoyer le résultat à Claude (avant la production, puis chaque trimestre) ; (2) régler la copie chiffrée chez OVH (`sudo flaix-admin sauvegarde-externe`) et garder la clé de restauration à deux endroits. | §15.184, guide serveur |
 | 10 | **Recette réelle des cartes Wallet** (Codex P2-3) | Essayer une carte sur un vrai iPhone et un vrai Android, avec les vrais comptes Apple et Google (voir le point 2). | §15.176 |
 
 ## 2. À développer ensuite (Claude), décisions prises ou à prendre
 
 | # | Point | État |
 |---|---|---|
-| 11 | **Lecture des PDF scannés par IA** : le même bouton passera la facture scannée à Mistral, qui rendra la même forme de lecture que les PDF fabriqués (§15.178). Ajouter aussi les mises en page des autres fournisseurs de Rémi au fil des factures reçues. |
 | 13 | **Adresse e-mail de dépôt des factures** : transférer une facture par e-mail pour qu'elle s'importe seule. Pour l'instant : dépôt direct dans FlaiX Expert. | Plus tard. |
 | 14 | **Pilote automatique de la soirée** : files d'attente estimées au rythme des tablettes ; anticipation de la mi-temps (réassort poussé au téléphone, « Prévenir le stand ») ; mise en place calculée seule (affluence, adversaire, historique). Le net en direct est fait (§15.170). | À faire, dans cet ordre. |
 | 17 | **Passage en production** : base neuve, reprise de la seule configuration (lieu, stands, caisses, produits, catégories, tarifs, recettes, emballages, équipe, réglages), jamais les données de test. Outil de reprise à préparer et tester avant la bascule, faite avec Rémi. | À préparer. |
@@ -47,3 +45,5 @@ les clés et mots de passe ne passent jamais par Claude.
 | Gouvernance appliquée (registres) ; audit Codex du 2026-11-12 corrigé : total Excel, feuille, Col/Pack, bornes ingrédients, avoir, compteur de recettes (migration 0063) | 2026-11-12 | §15.181 |
 | Règles validées : réserve à la validation de la facture ; écart d'arrondi colis → unités tracé. Barre des sections d'un module en violet | 2026-11-16 | §15.182 |
 | Changer de lieu depuis le menu, pour un directeur de plusieurs lieux | 2026-11-16 | §15.183 |
+| Lecture des factures scannées par IA (Mistral) **abandonnée** : les factures arrivent toujours en PDF fabriqué par le logiciel du fournisseur (décision de Rémi) | 2026-11-16 | §15.184 |
+| Essai de restauration de la sauvegarde du serveur : commande prête | 2026-11-16 | §15.184 |

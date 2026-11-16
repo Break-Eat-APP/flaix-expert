@@ -4,6 +4,12 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-11-16 : factures scannées abandonnées ; essai de restauration des sauvegardes (§15.184)
+
+Plus de lecture des factures scannées (Mistral) : elles arrivent toujours en PDF. Nouvelle commande
+`sudo flaix-admin essai-restauration-locale` pour vérifier qu'une sauvegarde du serveur se restaure ; premier passage à
+faire par Rémi. Copie hors serveur chez OVH toujours à régler.
+
 ## 2026-11-16 : changer de lieu (§15.183)
 
 Un directeur de plusieurs lieux passe de l'un à l'autre depuis le menu (« Changer de lieu ») ; la session est fermée et

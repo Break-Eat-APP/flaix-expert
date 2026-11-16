@@ -82,6 +82,7 @@ Coût : les sauvegardes font aujourd'hui 0,3 Mo chacune ; le prix exact est affi
 4. Une première copie part aussitôt : la dernière ligne indique « copie chiffrée envoyée chez OVH ».
 
 **3. Vérifier qu'on sait restaurer (à refaire une fois par trimestre)**
+- `sudo flaix-admin essai-restauration-locale` (depuis le 2026-11-16) : restaure la **dernière sauvegarde du serveur** dans une base temporaire, compare avec la base en service, affiche la durée, puis supprime la base temporaire. Aucune clé à donner ; rien n'est modifié dans la base en service.
 - `sudo flaix-admin essai-restauration` : télécharge la dernière copie, te demande la clé de restauration (elle ne s'affiche pas), restaure dans une base temporaire, compare avec la base en service, puis supprime la base temporaire. Rien n'est modifié dans la base en service.
 
 ## Assistant IA : brancher l'IA d'OVHcloud (à faire par toi, environ 5 minutes)

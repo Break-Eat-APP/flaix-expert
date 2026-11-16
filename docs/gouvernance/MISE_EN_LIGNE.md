@@ -38,8 +38,11 @@ Le script « TERMINE » ne suffit pas : le contrôle de santé, et au besoin un 
   serveur, celle du 1er de chaque mois sans limite (tickets conservés sans limite, dossier §15.106).
 - Copie chiffrée hors serveur chez OVHcloud, une fois réglée par Rémi (`sudo flaix-admin sauvegarde-externe`) — **état à
   confirmer**.
-- **Restauration : jamais testée à ce jour.** À faire avant la production, sur une base à part, en notant la durée et les
-  vérifications. Une sauvegarde non restaurée n'est pas une reprise garantie.
+- **Essai de restauration** : Mécanisme de la copie chez OVH essayé le 2026-09-30 sur le serveur (faux stockage, clé jetable : restauration
+  complète). Depuis le 2026-11-16, `sudo flaix-admin essai-restauration-locale` restaure la dernière sauvegarde **du
+  serveur** dans une base temporaire, compare et mesure la durée (répétition sur le poste : 5 s, comptes identiques) ;
+  **son premier passage sur le serveur est à faire par Rémi**, puis une fois par trimestre. Copie OVH : `sudo flaix-admin
+  essai-restauration` (demande la clé de restauration). Une sauvegarde non restaurée n'est pas une reprise garantie.
 
 ## 5. Retour arrière
 
@@ -52,6 +55,6 @@ Le script « TERMINE » ne suffit pas : le contrôle de santé, et au besoin un 
 ## 6. Ce qui manque avant la production
 
 - Serveur de production distinct du serveur de test (coût à valider par Rémi).
-- Restauration testée ; copie hors serveur réglée.
+- Essai de restauration passé sur le serveur ; copie hors serveur réglée.
 - Outil de suivi des erreurs (à choisir).
 - Règle de feu vert pour la production confirmée.
