@@ -32,6 +32,8 @@ dossier projet ; ils ne sont pas renumérotés ici.
 | BUG-2026-018 | Lecteur PDF : pas de fichiers PDF réels dans les tests (mises en page, polices, avoirs) | SEV-4 | OUVERT | Audit Codex 2026-11-12, P3-1 | — |
 | BUG-2026-019 | Import Excel de facture : colonne « Col/Pack » non reconnue comme colis | SEV-3 | CORRIGÉ | Audit Codex 2026-11-12, P3-2 | `f25f529` (§15.181) |
 | BUG-2026-020 | Copie de catalogue : nombre de recettes annoncé même quand rien n'est ajouté | SEV-4 | CORRIGÉ | Audit Codex 2026-11-12, P3-3 | `d54be5a`, migration 0063 (§15.181) |
+| BUG-2026-021 | Import Excel/CSV de facture : « Sous-total HT » seul non lu comme total HT | SEV-3 | CORRIGÉ | Audit Codex 2026-11-16, P2 | `775bcf2` (§15.188) |
+| BUG-2026-022 | Essais de restauration : copie temporaire de la base lisible par tous les comptes du serveur (644) | SEV-2 | CORRIGÉ (essai serveur à refaire par Rémi) | Audit Codex 2026-11-16, P2 | `775bcf2` (§15.188) |
 
 ## Fiches
 
@@ -106,4 +108,14 @@ dossier projet ; ils ne sont pas renumérotés ici.
 ### BUG-2026-020 — Compteur de recettes de la copie
 - Correction : migration 0063, le compte vient des recettes réellement ajoutées. Test : `catalogue-copie.test.ts` ([F]
   seconde copie : 0).
+
+### BUG-2026-021 — « Sous-total HT » seul
+- Constat (Codex) : `Designation;Qte;PU HT;Montant HT` / `Biere;1;10;10` / `Sous-total HT;;;10` → total HT non lu.
+- Correction : « Sous-total HT » (et ses variantes) retenu quand il n'y a pas de « Total HT » ; le dernier s'il y en a
+  plusieurs ; un écart avec la somme des lignes reste signalé. Test : `factures-import.test.ts` ([F] sous-total TTC).
+
+### BUG-2026-022 — Droits de la copie temporaire de restauration
+- Constat (Codex) : `chmod 755` sur le dossier et `chmod 644` sur la copie, pour que `postgres` la lise.
+- Correction : dossier donné à `postgres`, 700 ; copie en 600. Vérification : `bash -n` ; essai réel à refaire sur le
+  serveur par Rémi (`sudo flaix-admin essai-restauration-locale`).
 

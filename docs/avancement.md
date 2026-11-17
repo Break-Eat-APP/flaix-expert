@@ -4,6 +4,11 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-11-17 : audit Codex du 2026-11-16, points 1 et 2 (§15.188)
+
+« Sous-total HT » seul est lu comme total HT d'une facture Excel/CSV ; la copie temporaire des essais de restauration
+n'est plus lisible que par root et postgres.
+
 ## 2026-11-17 : garde-fou avant l'ouverture d'un événement (§15.187)
 
 Avant d'ouvrir un événement, FlaiX Expert liste les stands sans mise en place : « Faire la mise en place » ou « Ouvrir quand

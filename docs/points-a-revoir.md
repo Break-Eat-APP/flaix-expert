@@ -51,3 +51,5 @@ les clés et mots de passe ne passent jamais par Claude.
 | Résultats : barre de choix alignée, « Rapport PDF » discret avec icône de téléchargement | 2026-11-16 | §15.185 |
 | Remise à zéro de la réserve : tout compté à 0 ; « non déclaré » devient « jamais compté » | 2026-11-16 | §15.186 |
 | Garde-fou avant l'ouverture : stands sans mise en place signalés, rappel du jour même ; jamais bloquant | 2026-11-17 | §15.187 |
+| Audit Codex 2026-11-16 : « Sous-total HT » lu (BUG-2026-021) ; copie de restauration en 700/600 (BUG-2026-022) — Rémi : refaire `sudo flaix-admin essai-restauration-locale` | 2026-11-17 | §15.188 |
+| Audit Codex 2026-11-16, reste : message de l'essai de restauration à reformuler (« volumes comparés »), copie hors serveur OVH (reportée), Wallet réel, PDF réels | 2026-11-17 | §15.188 |

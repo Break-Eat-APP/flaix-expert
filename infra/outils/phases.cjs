@@ -91,7 +91,8 @@ const PHASES = [
   { n: 85, titre: "Factures scannées abandonnées ; essai de restauration des sauvegardes du serveur", dossier: "§15.184", commits: ["284edd8", "a01e07d", "bf55b35"] },
   { n: 86, titre: "Résultats : barre de choix alignée, « Rapport PDF » discret", dossier: "§15.185", commits: ["fe7bef8", "f209acf"] },
   { n: 87, titre: "Remise à zéro de la réserve : tout compté à 0 ; « jamais compté »", dossier: "§15.186", commits: ["295423c", "e5eed9c"] },
-  { n: 88, titre: "Garde-fou avant l'ouverture d'un événement : la mise en place d'abord", dossier: "§15.187", commits: ["7426233"] },
+  { n: 88, titre: "Garde-fou avant l'ouverture d'un événement : la mise en place d'abord", dossier: "§15.187", commits: ["7426233", "8711827"] },
+  { n: 89, titre: "Audit Codex du 2026-11-16 : « Sous-total HT » et droits des copies de restauration", dossier: "§15.188", commits: ["775bcf2"] },
 ];
 
 module.exports = { PHASES };
