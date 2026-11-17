@@ -117,7 +117,8 @@ ENV
       exit 1
     fi
     rm -f "$TMP/cle"
-    chmod 755 "$TMP" && chmod 644 "$TMP/copie.dump"
+    # Copie de la base lisible par root et postgres seuls (audit Codex 2026-11-16) : jamais par les autres comptes.
+    chown -R postgres:postgres "$TMP" && chmod 700 "$TMP" && chmod 600 "$TMP/copie.dump"
     sudo -u postgres dropdb --if-exists "$ESSAI" >/dev/null 2>&1
     sudo -u postgres createdb "$ESSAI"
     sudo -u postgres pg_restore --no-owner --no-privileges -d "$ESSAI" "$TMP/copie.dump"
@@ -144,7 +145,8 @@ ENV
     ESSAI=flaix_essai_restauration
     trap 'rm -rf "$TMP"; sudo -u postgres dropdb --if-exists "$ESSAI" >/dev/null 2>&1 || true' EXIT
     cp "$DERNIER" "$TMP/copie.dump"
-    chmod 755 "$TMP" && chmod 644 "$TMP/copie.dump"
+    # Copie de la base lisible par root et postgres seuls (audit Codex 2026-11-16) : jamais par les autres comptes.
+    chown -R postgres:postgres "$TMP" && chmod 700 "$TMP" && chmod 600 "$TMP/copie.dump"
     DEBUT=$(date +%s)
     sudo -u postgres dropdb --if-exists "$ESSAI" >/dev/null 2>&1
     sudo -u postgres createdb "$ESSAI"

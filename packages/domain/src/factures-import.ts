@@ -55,8 +55,8 @@ export interface LectureFacture {
   /** Il faut au moins un libellé, une quantité et un prix ou un montant. */
   manquants: string[];
   /**
-   * Total HT écrit dans le fichier (ligne « Total HT », la dernière si plusieurs sous-totaux), pour contrôler la somme des
-   * lignes (BUG-2026-012) ; null : le fichier n'en a pas.
+   * Total HT écrit dans le fichier, pour contrôler la somme des lignes (BUG-2026-012) : la ligne « Total HT » (la dernière
+   * s'il y en a plusieurs) ; sans elle, le dernier « Sous-total HT » (BUG-2026-021) ; null : le fichier n'en a pas.
    */
   totalHt: Centimes | null;
 }
@@ -64,6 +64,8 @@ export interface LectureFacture {
 const TOTAL = /^(sous[ -]?)?totaux?\b|^total\b|^net a payer|^tva\b|^remise globale/;
 /** Ligne du total hors taxes (« Total HT », « Total H.T. », « Montant total HT ») ; pas TTC, TVA ni net à payer. */
 const TOTAL_HT = /^(montant )?total( general)? h ?t\b|^total hors taxes?\b/;
+/** « Sous-total HT », « Sous total H.T. », « Sous-total hors taxes » : retenu seulement s'il n'y a pas de « Total HT ». */
+const SOUS_TOTAL_HT = /^sous ?total h ?t\b|^sous ?total hors taxes?\b/;
 
 /**
  * Lit un export de facture (une ligne par article) : en-têtes cherchés dans les 20 premières lignes, prix unitaire
@@ -88,15 +90,18 @@ export function lireFactureExport(texte: string): LectureFacture {
   ];
   const lecture: LectureFacture = { entetes, colonnes, lignes: [], erreurs: [], manquants, totalHt: null };
   if (manquants.length) return lecture;
+  let sousTotalHt: Centimes | null = null;
   for (const { numero, champs } of toutes.slice(k + 1)) {
     const champ = (f: ChampFacture) => (colonnes[f] === undefined ? "" : (champs[colonnes[f]!] ?? "").trim());
     const libelle = champ("libelle");
     // Total HT : son libellé peut être dans n'importe quelle colonne ; sa valeur, dans celle du montant, sinon la dernière
     // case chiffrée de la ligne.
-    if (champs.some((v) => TOTAL_HT.test(sansAccents(v)))) {
+    const general = champs.some((v) => TOTAL_HT.test(sansAccents(v)));
+    if (general || champs.some((v) => SOUS_TOTAL_HT.test(sansAccents(v)))) {
       const chiffres = champs.map((v) => (v.trim() ? lireMontantExport(v) : null)).filter((x): x is Centimes => x !== null);
       const valeur = (champ("montant") ? lireMontantExport(champ("montant")) : null) ?? chiffres.at(-1) ?? null;
-      if (valeur !== null) lecture.totalHt = valeur;
+      if (valeur !== null && general) lecture.totalHt = valeur;
+      else if (valeur !== null) sousTotalHt = valeur;
       continue;
     }
     if (!libelle && !champ("quantite")) continue; // ligne vide
@@ -130,6 +135,9 @@ export function lireFactureExport(texte: string): LectureFacture {
       unitesParColis: Number.isInteger(colis) && colis > 1 && colis <= 10_000 ? colis : null,
     });
   }
+  // Sans « Total HT », le dernier sous-total HT : s'il ne couvre qu'une partie des lignes, le contrôle de la somme le
+  // signale (rien n'est validé en silence).
+  lecture.totalHt ??= sousTotalHt;
   return lecture;
 }
 

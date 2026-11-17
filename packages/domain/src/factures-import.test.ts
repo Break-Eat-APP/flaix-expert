@@ -82,6 +82,21 @@ describe("factures automatisées (§15.173)", () => {
     expect(lireFactureExport(avecTotal.replace("Total HT;;;;33,30\n", "").replace("Sous-total HT;;;;33,30\n", "")).totalHt).toBeNull();
   });
 
+  it("« Sous-total HT » seul : retenu comme total HT ; plusieurs : le dernier ; un « Total HT » passe toujours avant (BUG-2026-021)", () => {
+    const seul = ["Designation;Qte;PU HT;Montant HT", "Biere;1;10;10", "Sous-total HT;;;10"].join("\n");
+    expect(lireFactureExport(seul).totalHt).toBe(1_000);
+    expect(lireFactureExport(seul.replace("Sous-total HT", "Sous total H.T.")).totalHt).toBe(1_000);
+    expect(lireFactureExport(seul.replace("Sous-total HT", "Sous-total hors taxes")).totalHt).toBe(1_000);
+    const plusieurs = ["Designation;Qte;PU HT;Montant HT", "Biere;1;10;10", "Sous-total HT;;;10", "Chips;2;1;2", "Sous-total HT;;;12"].join("\n");
+    const lu = lireFactureExport(plusieurs);
+    expect(lu.totalHt).toBe(1_200);
+    expect(lu.lignes.map((l) => l.libelle)).toEqual(["Biere", "Chips"]);
+    // Un « Total HT », même placé avant, l'emporte sur les sous-totaux.
+    expect(lireFactureExport(["Designation;Qte;PU HT;Montant HT", "Biere;1;10;10", "Total HT;;;10", "Sous-total HT;;;99"].join("\n")).totalHt).toBe(1_000);
+    // [F] Un sous-total TTC n'est jamais pris pour le total HT.
+    expect(lireFactureExport(seul.replace("Sous-total HT", "Sous-total TTC")).totalHt).toBeNull();
+  });
+
   it("écart d'arrondi d'une entrée en réserve : colis de 3 à 10,00 € → 1 centime ; colis qui se divise juste → 0 (BUG-2026-014)", () => {
     expect(ecartArrondiUnites({ quantite: 1, prixUnitaire: 1_000, unitesParColis: 3 })).toBe(1);
     expect(ecartArrondiUnites({ quantite: 2, prixUnitaire: 1_440, unitesParColis: 24 })).toBe(0);
