@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Minus, PackagePlus, Plus, RotateCcw, Sparkles } from "lucide-react";
 import { formaterMontant, lireMontant, type EtatReserve, type Evenement, type LigneStock, type StockMatch } from "@flaix/domain";
@@ -33,8 +33,11 @@ const PARCOURS: Partial<Record<Onglet, string>> = {
 
 export function Stock() {
   // Ouverture sur la réserve centrale, d'où part tout le stock ; pendant un événement, sur le réassort (§15.169).
-  const [ongletChoisi, setOnglet] = useState<Onglet | null>(null);
-  const [evenementId, setEvenementId] = useState<string | null>(null);
+  // « /stock?onglet=mep&evenement=… » : ouverture directe sur la mise en place d'un événement (garde-fou, §15.187).
+  const [params] = useSearchParams();
+  const ongletDemande = params.get("onglet");
+  const [ongletChoisi, setOnglet] = useState<Onglet | null>(ongletDemande === "mep" || ongletDemande === "match" || ongletDemande === "comptage" || ongletDemande === "reserve" ? ongletDemande : null);
+  const [evenementId, setEvenementId] = useState<string | null>(params.get("evenement"));
   const [standId, setStandId] = useState("");
   const [remise, setRemise] = useState(false);
   const evenements = useQuery({ queryKey: ["evenements"], queryFn: () => api.get<Evenement[]>("/evenements") });

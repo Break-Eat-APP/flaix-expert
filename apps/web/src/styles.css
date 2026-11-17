@@ -497,6 +497,9 @@ input[aria-invalid="true"] { border-color: var(--red); }
 .onglet:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .btn.btn-cloture { background: var(--red, #d93f45); }
 .direct-ouvrir { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; margin-top: 4px; }
+/* Confirmation d'ouverture avec garde-fou de mise en place (§15.187). */
+.confirmer-ouverture { margin: 0; text-align: left; }
+.confirmer-ouverture .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .stock-parcours { margin: -6px 0 16px; padding: 10px 14px; border-radius: 14px; background: var(--onglets); color: #4a4560; font-size: 13.5px; line-height: 1.45; }
 .onglet.actif { background: var(--surface); color: var(--violet); font-weight: 800; box-shadow: 0 2px 8px rgba(20, 16, 36, 0.18); }
 

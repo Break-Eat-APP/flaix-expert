@@ -5,7 +5,8 @@ import type { Base, Client } from "../base.ts";
 import { exigerDirecteur } from "../auth/contexte.ts";
 import { ErreurMetier, introuvable } from "../erreurs.ts";
 import { inscrireJet } from "../journal-technique.ts";
-import { restesDuMatch } from "./stock.ts";
+import { restesDuMatch, standsSansMiseEnPlace } from "./stock.ts";
+import { lireOptions } from "../options.ts";
 import { figerConsommationIngredients } from "./stock-ingredients.ts";
 import { figerRapportSoiree } from "./rapport-soiree.ts";
 import { envoyerBriefSoiree } from "./notifications.ts";
@@ -153,6 +154,19 @@ export async function routesEvenements(app: FastifyInstance, { base }: { base: B
         details: { evenement: id, libelle: e.libelle, debut: e.debut.toISOString(), lignesStock: rows[0]!.stock, affectations: rows[0]!.planning },
       });
       return listerEvenements(c, auth.lieuId);
+    });
+  });
+
+  // Garde-fou avant l'ouverture (§15.187) : la mise en place est-elle faite à chaque stand ? Rien n'est bloqué : l'écran
+  // prévient et propose « Faire la mise en place » ou « Ouvrir quand même ». Sans l'option Stock, rien à vérifier.
+  app.get("/api/evenements/:id/preparation", async (req) => {
+    const auth = await exigerDirecteur(req, base);
+    const { id } = ParamId.parse(req.params);
+    return base.transaction(contexte(auth), async (c) => {
+      const e = await lireEvenement(c, auth.lieuId, id);
+      const stockSuivi = (await lireOptions(c, auth.lieuId)).stock;
+      const sans = stockSuivi && e.etat === "a_venir" ? await standsSansMiseEnPlace(c, auth.lieuId, id) : [];
+      return { stockSuivi, standsSansMiseEnPlace: sans };
     });
   });
 

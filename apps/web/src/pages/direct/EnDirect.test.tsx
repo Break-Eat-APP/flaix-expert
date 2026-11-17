@@ -100,9 +100,10 @@ const finances = {
   margeBrute: cascade.margeBrute, margeNette: cascade.margeNette, cascade: cascade.lignes, cible: { lieu: null, evenement: null, effective: null }, etatCible: null,
 } as FinancesSoiree;
 
-const monter = (plan: PlanStade, evenements: Evenement[]) => {
+const monter = (plan: PlanStade, evenements: Evenement[], sansMiseEnPlace: { id: string; nom: string }[] = []) => {
   const serveur = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === "/api/evenements") return reponse(evenements);
+    if (url.endsWith("/preparation")) return reponse({ stockSuivi: true, standsSansMiseEnPlace: sansMiseEnPlace });
     if (url === "/api/direct") return reponse(plan.evenement ? tableau : null);
     if (url.startsWith("/api/finances")) return reponse(finances);
     if (init?.method === "PUT") return reponse({ ...plan, modele: "patinoire" });
@@ -218,9 +219,39 @@ describe("En direct", () => {
     const prochain = { id: "p", libelle: "FC Rouen – Orléans", etat: "a_venir", debut: "2026-10-24T18:30:00.000Z" } as Evenement;
     const serveur = monter({ ...enDirect, evenement: null, direct: null, stands: [] }, [prochain]);
     fireEvent.click(await screen.findByRole("button", { name: "Ouvrir l'événement" }));
-    expect(screen.getByText(/La mise en place du stock sera figée/)).toBeTruthy();
+    // Mise en place faite à chaque stand (§15.187) : la confirmation habituelle.
+    expect(await screen.findByText(/elle sera figée, ensuite on passe par le réassort/)).toBeTruthy();
     expect(serveur.mock.calls.some(([u]) => u.endsWith("/ouverture"))).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: "Confirmer l'ouverture" }));
+    await waitFor(() => expect(serveur.mock.calls.some(([u, i]) => u === "/api/evenements/p/ouverture" && i?.method === "POST")).toBe(true));
+  });
+
+  it("le matin même (§15.187) : rappel des stands sans mise en place, avant que la première caisse n'ouvre l'événement", async () => {
+    const ceSoir = { id: "p", libelle: "FC Rouen – Orléans", etat: "a_venir", debut: new Date().toISOString() } as Evenement;
+    monter({ ...enDirect, evenement: null, direct: null, stands: [] }, [ceSoir], [{ id: "s", nom: "Bar Sud" }]);
+    expect(await screen.findByText("Mise en place à faire avant l'ouverture : 1 stand")).toBeTruthy();
+    expect(screen.getByText(/\(Bar Sud\)\. La première caisse d'une caissière ouvrira l'événement/)).toBeTruthy();
+  });
+
+  it("pas le jour même : aucun rappel", async () => {
+    const plusTard = { id: "p", libelle: "FC Rouen – Orléans", etat: "a_venir", debut: new Date(Date.now() + 3 * 86_400_000).toISOString() } as Evenement;
+    const serveur = monter({ ...enDirect, evenement: null, direct: null, stands: [] }, [plusTard], [{ id: "s", nom: "Bar Sud" }]);
+    expect(await screen.findByRole("button", { name: "Ouvrir l'événement" })).toBeTruthy();
+    expect(screen.queryByText(/Mise en place à faire/)).toBeNull();
+    expect(serveur.mock.calls.some(([u]) => u.endsWith("/preparation"))).toBe(false);
+  });
+
+  it("garde-fou (§15.187) : stands sans mise en place signalés ; « Faire la mise en place » ou « Ouvrir quand même »", async () => {
+    const prochain = { id: "p", libelle: "FC Rouen – Orléans", etat: "a_venir", debut: "2026-10-24T18:30:00.000Z" } as Evenement;
+    const serveur = monter({ ...enDirect, evenement: null, direct: null, stands: [] }, [prochain], [{ id: "n", nom: "Bar Nord" }, { id: "s", nom: "Bar Sud" }]);
+    fireEvent.click(await screen.findByRole("button", { name: "Ouvrir l'événement" }));
+    expect(await screen.findByText("Mise en place non faite pour 2 stands")).toBeTruthy();
+    expect(screen.getByText(/Bar Nord, Bar Sud/)).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Faire la mise en place" }).getAttribute("href")).toBe("/stock?onglet=mep&evenement=p");
+    expect(screen.queryByRole("button", { name: "Confirmer l'ouverture" })).toBeNull();
+    expect(serveur.mock.calls.some(([u]) => u.endsWith("/ouverture"))).toBe(false);
+    // Jamais bloquant : le directeur peut ouvrir quand même.
+    fireEvent.click(screen.getByRole("button", { name: "Ouvrir quand même" }));
     await waitFor(() => expect(serveur.mock.calls.some(([u, i]) => u === "/api/evenements/p/ouverture" && i?.method === "POST")).toBe(true));
   });
 });

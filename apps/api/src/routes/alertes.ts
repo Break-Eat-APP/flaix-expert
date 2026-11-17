@@ -8,6 +8,7 @@ import {
   ecartMercuriale,
   etatCible,
   formaterMontant,
+  jourParis,
   margeConfiguree,
   niveauAPousser,
   prixUnitaireLivraison,
@@ -39,7 +40,7 @@ import { listerEvenements } from "./evenements.ts";
 import { notifierDirecteurs } from "./notifications.ts";
 import { analysePertes } from "./pertes.ts";
 import { resumeMatchs, statsMatch } from "./resultats.ts";
-import { stockDuMatch } from "./stock.ts";
+import { standsSansMiseEnPlace, stockDuMatch } from "./stock.ts";
 import { Uuid, contexte, corps } from "./outils.ts";
 
 /*
@@ -113,6 +114,26 @@ export async function centreAlertes(c: Client, lieuId: string): Promise<CentreAl
           lien: "/direct",
         });
       }
+    }
+  }
+
+  // Le matin même (jour à Paris) d'un événement à venir : stands sans mise en place (§15.187). L'événement peut s'ouvrir
+  // tout seul avec la première caisse d'une caissière ; la mise en place serait alors figée.
+  if (options.stock) {
+    const jour = jourParis(new Date());
+    for (const e of evenements.filter((x) => x.etat === "a_venir" && jourParis(x.debut) === jour)) {
+      const sans = await standsSansMiseEnPlace(c, lieuId, e.id);
+      if (!sans.length) continue;
+      alertes.push({
+        id: `mise_en_place:${e.id}`,
+        type: "mise_en_place",
+        source: "calculee",
+        niveau: "forte",
+        titre: `Mise en place à faire avant ${e.libelle} : ${sans.length} stand${sans.length > 1 ? "s" : ""}`,
+        detail: `${sans.map((s) => s.nom).join(", ")}. L'événement s'ouvre avec la première caisse ; ensuite, la mise en place est figée et seul le réassort reste possible.`,
+        impact: null,
+        lien: `/stock?onglet=mep&evenement=${e.id}`,
+      });
     }
   }
 

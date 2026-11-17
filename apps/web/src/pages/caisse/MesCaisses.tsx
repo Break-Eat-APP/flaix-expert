@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, ShieldCheck } from "lucide-react";
 import { formaterMontant, libelleTauxTva, MOTIFS_AJUSTEMENT, type Evenement, type StatsCaisse, type TauxTvaPb, type TicketVue, type VerificationCaisses } from "@flaix/domain";
 import { api, formaterDateHeure } from "../../api.ts";
 import { Carte, Chargement, EntetePage, EtatVide, MessageErreur, Regles } from "../../composants/communs.tsx";
+import { ConfirmerOuverture } from "../../composants/ConfirmerOuverture.tsx";
 import { BoutonTicketClient } from "./TicketClient.tsx";
 
 const ETAT = { a_venir: "à venir", ouvert: "ouvert", clos: "clos" } as const;
@@ -100,6 +101,7 @@ function MatchDuJour({ evts }: { evts: Evenement[] }) {
     onSuccess: (l) => {
       client.setQueryData(["evenements"], l);
       client.invalidateQueries({ queryKey: ["tableau-caisses"] });
+      void client.invalidateQueries({ queryKey: ["stock"] });
       setAConfirmer(null);
     },
   });
@@ -131,30 +133,25 @@ function MatchDuJour({ evts }: { evts: Evenement[] }) {
         actions={ouvert ? <Link to="/direct" className="btn btn-fantome">Vue téléphone</Link> : undefined} description="Le jour J, l'événement s'ouvre tout seul avec la première caisse d'une caissière. Tu peux aussi l'ouvrir ici. Un seul événement peut être ouvert à la fois, et l'ouverture est définitive.">
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {aVenir.slice(0, 3).map((e) => (
-          <div key={e.id} className="caisse">
-            <div style={{ flex: 1 }}>
-              <strong>{e.libelle}</strong>
-              <div className="discret" style={{ fontSize: 12.5 }}>
-                {formaterDateHeure(e.debut)}
+          <Fragment key={e.id}>
+            <div className="caisse">
+              <div style={{ flex: 1 }}>
+                <strong>{e.libelle}</strong>
+                <div className="discret" style={{ fontSize: 12.5 }}>
+                  {formaterDateHeure(e.debut)}
+                </div>
               </div>
-            </div>
-            <div className="actions">
-              {aConfirmer === e.id ? (
-                <>
-                  <button className="btn" disabled={ouvrir.isPending} onClick={() => ouvrir.mutate(e.id)}>
-                    Confirmer l'ouverture
+              {aConfirmer !== e.id && (
+                <div className="actions">
+                  <button className="btn" onClick={() => setAConfirmer(e.id)}>
+                    Ouvrir l'événement
                   </button>
-                  <button className="btn btn-fantome" onClick={() => setAConfirmer(null)}>
-                    Annuler
-                  </button>
-                </>
-              ) : (
-                <button className="btn" onClick={() => setAConfirmer(e.id)}>
-                  Ouvrir l'événement
-                </button>
+                </div>
               )}
             </div>
-          </div>
+            {/* Garde-fou (§15.187) : stands sans mise en place signalés avant d'ouvrir. */}
+            {aConfirmer === e.id && <ConfirmerOuverture evenement={e} ouvrir={() => ouvrir.mutate(e.id)} enCours={ouvrir.isPending} annuler={() => setAConfirmer(null)} />}
+          </Fragment>
         ))}
       </div>
       {aVenir.length > 3 && (

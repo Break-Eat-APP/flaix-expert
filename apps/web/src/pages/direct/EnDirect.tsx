@@ -8,6 +8,7 @@ import { Carte, Chargement, EtatVide, MessageErreur } from "../../composants/com
 import { LIBELLE, LieuEnDirect, PUCE, TEINTE } from "../resultats/PlanStade.tsx";
 import { Anneau, CourbeHeures, MiniCourbe } from "../resultats/graphiques.tsx";
 import { ResteSoiree } from "../resultats/ResteSoiree.tsx";
+import { ConfirmerOuverture, RappelMiseEnPlace } from "../../composants/ConfirmerOuverture.tsx";
 
 const RAFRAICHISSEMENT_MS = 10_000;
 const COULEURS = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--c5)"];
@@ -140,6 +141,7 @@ export function EnDirect({ session }: { session: SessionInfo }) {
             {prochain ? `Prochain événement : ${prochain.libelle}, le ${formaterDateHeure(prochain.debut)}. ` : ""}
             Il s'ouvre tout seul avec la première caisse d'une caissière, ou ici. Les chiffres et les couleurs s'allument à son ouverture ; en attendant, tu peux placer tes stands. Les événements terminés se comparent dans <Link to="/">Résultats</Link>.
           </EtatVide>
+          {prochain && !session.support && <RappelMiseEnPlace evenement={prochain} />}
           {prochain && !session.support && <OuvrirEvenement evenement={prochain} />}
         </Carte>
       )}
@@ -247,19 +249,8 @@ function OuvrirEvenement({ evenement }: { evenement: Evenement }) {
   return (
     <div className="direct-ouvrir">
       {confirmer ? (
-        <>
-          <span>
-            Ouvrir <strong>{evenement.libelle}</strong> maintenant ? La mise en place du stock sera figée ; ensuite, on passe par le réassort.
-          </span>
-          <div className="actions">
-            <button className="btn" disabled={ouvrir.isPending} onClick={() => ouvrir.mutate()}>
-              Confirmer l'ouverture
-            </button>
-            <button className="btn btn-fantome" onClick={() => setConfirmer(false)}>
-              Annuler
-            </button>
-          </div>
-        </>
+        // Garde-fou (§15.187) : stands sans mise en place signalés avant d'ouvrir.
+        <ConfirmerOuverture evenement={evenement} ouvrir={() => ouvrir.mutate()} enCours={ouvrir.isPending} annuler={() => setConfirmer(false)} />
       ) : (
         <button className="btn" onClick={() => setConfirmer(true)}>
           Ouvrir l'événement

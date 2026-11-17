@@ -122,6 +122,24 @@ async function reserveParProduit(c: Client, lieuId: string): Promise<ProduitRese
   }));
 }
 
+/**
+ * Garde-fou d'ouverture (§15.187) : les stands actifs qui vendent au moins un produit actif et qui n'ont encore aucune
+ * mise en place (produit ou ingrédient) pour cet événement. Une fois l'événement ouvert, la mise en place est figée.
+ */
+export async function standsSansMiseEnPlace(c: Client, lieuId: string, evenementId: string): Promise<{ id: string; nom: string }[]> {
+  const { rows } = await c.query<{ id: string; nom: string }>(
+    `SELECT s.id, s.nom FROM stand s
+      WHERE s.lieu_id = $1 AND s.actif
+        AND EXISTS (SELECT 1 FROM produit_stand ps JOIN produit p ON p.lieu_id = ps.lieu_id AND p.id = ps.produit_id
+                     WHERE ps.lieu_id = s.lieu_id AND ps.stand_id = s.id AND p.actif)
+        AND NOT EXISTS (SELECT 1 FROM stock_mouvement m WHERE m.lieu_id = s.lieu_id AND m.stand_id = s.id AND m.evenement_id = $2 AND m.type = 'mise_en_place')
+        AND NOT EXISTS (SELECT 1 FROM ingredient_mouvement m WHERE m.lieu_id = s.lieu_id AND m.stand_id = s.id AND m.evenement_id = $2 AND m.type = 'mise_en_place')
+      ORDER BY lower(s.nom)`,
+    [lieuId, evenementId],
+  );
+  return rows;
+}
+
 /** L'état du stock de chaque stand pour un événement. */
 export async function stockDuMatch(c: Client, lieuId: string, e: Evenement): Promise<StockMatch> {
   const evenements = await listerEvenements(c, lieuId);
