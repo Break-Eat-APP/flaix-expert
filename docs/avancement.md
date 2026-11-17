@@ -4,6 +4,12 @@ Mis à jour le 2026-10-05 vers 4 h : les quatre modules demandés le 04/10 au so
 
 **Points en attente (décisions et actions de Rémi, développements suivants) : `docs/points-a-revoir.md`.**
 
+## 2026-11-17 : garde-fou avant l'ouverture d'un événement (§15.187)
+
+Avant d'ouvrir un événement, FlaiX Expert liste les stands sans mise en place : « Faire la mise en place » ou « Ouvrir quand
+même ». Le jour même, rappel dans En direct et le Centre d'alertes (la première caisse peut ouvrir l'événement). Jamais
+bloquant.
+
 ## 2026-11-16 : remise à zéro de la réserve, tout compté à 0 ; « jamais compté » (§15.186)
 
 La remise à zéro compte à 0 tous les produits et ingrédients suivis, même déjà à 0 ; « non déclaré » devient « jamais

@@ -1,6 +1,6 @@
 # Dossier de développement par phase — FlaiX Expert
 
-> Généré le 2026-11-16 par `node infra/outils/phases-word.cjs` depuis le dépôt. Un document par phase, en Markdown (ici) et en Word (`word/`). Règles du projet : [`AGENTS.md`](../../../AGENTS.md).
+> Généré le 2026-11-17 par `node infra/outils/phases-word.cjs` depuis le dépôt. Un document par phase, en Markdown (ici) et en Word (`word/`). Règles du projet : [`AGENTS.md`](../../../AGENTS.md).
 
 | Phase | Document | Décision | État |
 |---|---|---|---|
@@ -92,3 +92,4 @@
 | 85 | [Factures scannées abandonnées ; essai de restauration des sauvegardes du serveur](PHASE_85_FACTURES_SCANNEES_ABANDONNEES_ESSAI_DE_RESTAURATION_DES_SAUVEGARDES_DU.md) · [Word](word/PHASE_85_FACTURES_SCANNEES_ABANDONNEES_ESSAI_DE_RESTAURATION_DES_SAUVEGARDES_DU.docx) | §15.184 | livrée |
 | 86 | [Résultats : barre de choix alignée, « Rapport PDF » discret](PHASE_86_RESULTATS_BARRE_DE_CHOIX_ALIGNEE_RAPPORT_PDF_DISCRET.md) · [Word](word/PHASE_86_RESULTATS_BARRE_DE_CHOIX_ALIGNEE_RAPPORT_PDF_DISCRET.docx) | §15.185 | livrée |
 | 87 | [Remise à zéro de la réserve : tout compté à 0 ; « jamais compté »](PHASE_87_REMISE_A_ZERO_DE_LA_RESERVE_TOUT_COMPTE_A_0_JAMAIS_COMPTE.md) · [Word](word/PHASE_87_REMISE_A_ZERO_DE_LA_RESERVE_TOUT_COMPTE_A_0_JAMAIS_COMPTE.docx) | §15.186 | livrée |
+| 88 | [Garde-fou avant l'ouverture d'un événement : la mise en place d'abord](PHASE_88_GARDE_FOU_AVANT_LOUVERTURE_DUN_EVENEMENT_LA_MISE_EN_PLACE_DABORD.md) · [Word](word/PHASE_88_GARDE_FOU_AVANT_LOUVERTURE_DUN_EVENEMENT_LA_MISE_EN_PLACE_DABORD.docx) | §15.187 | livrée |
